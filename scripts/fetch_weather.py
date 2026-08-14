@@ -47,6 +47,14 @@ from gridup.turkish import join_key  # noqa: E402
 
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
+# 429 (hiz siniri) sonrasi bekleme merdiveni, saniye. Olculen: uzun tarih
+# araligi + cok konum istegi dakikalik kotayi hizla tuketiyor ve 2-4 sn'lik
+# geri cekilme yetmiyor. Kota dakika bazli oldugu icin bir dakikayi asmali.
+RATE_LIMIT_BACKOFF = (65, 130, 300)
+
+# Istekler arasi varsayilan bekleme. Uzun aralik cekerken artir.
+DEFAULT_PAUSE = 1.5
+
 # Il merkezleri. GDZ = Izmir, Manisa | ADM = Aydin, Denizli, Mugla.
 # Koordinatlar il merkezidir; buyuk illerde ilce bazi daha dogrudur (--districts).
 PROVINCE_COORDINATES: dict[str, tuple[float, float]] = {
@@ -151,6 +159,22 @@ def fetch_location(
     for attempt in range(1, retries + 1):
         try:
             response = requests.get(ARCHIVE_URL, params=params, timeout=timeout)
+
+            # 429 = hiz siniri. Bu, gecici bir ag hatasi DEGIL -- kisa bir geri
+            # cekilme ise yaramaz. Olculen davranis: 2 sn ve 4 sn beklemek
+            # yetmedi, ardisik 7 konum dustu. Sunucu Retry-After verirse ona
+            # uy, vermezse dakika mertebesinde bekle.
+            if response.status_code == 429:
+                header = response.headers.get("Retry-After")
+                wait = int(header) if header and header.isdigit() else RATE_LIMIT_BACKOFF[
+                    min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)
+                ]
+                print(f"  {name}: hiz siniri (429); {wait} sn bekleniyor "
+                      f"[deneme {attempt}/{retries}]")
+                time.sleep(wait)
+                last_error = requests.HTTPError("429 Too Many Requests")
+                continue
+
             response.raise_for_status()
             payload = response.json()
             break
@@ -224,20 +248,53 @@ def main() -> int:
     parser.add_argument(
         "--out", default="data/external", help="Cikti dizini (varsayilan: data/external)"
     )
+    parser.add_argument(
+        "--pause", type=float, default=DEFAULT_PAUSE,
+        help=f"Istekler arasi bekleme, sn (varsayilan: {DEFAULT_PAUSE})",
+    )
+    parser.add_argument(
+        "--fresh", action="store_true",
+        help="Mevcut dosyayi yok say ve her konumu bastan indir",
+    )
     args = parser.parse_args()
 
     locations = dict(PROVINCE_COORDINATES)
     if args.districts:
         locations.update(DISTRICT_COORDINATES)
 
-    print(f"{len(locations)} konum, {args.start} - {args.end}, ", end="")
+    output_dir = Path(args.out)
+    suffix = "saatlik" if args.hourly else "gunluk"
+    output_path = output_dir / f"hava_{suffix}.parquet"
+
+    # DEVAM ETME: onceki kosuda inen konumlari tekrar indirme. Hiz siniri
+    # nedeniyle kismi kalan bir indirmeyi tamamlamak icin -- 20 konumun 13'u
+    # inmisse yalnizca 7'sini istemek hem hizli hem kotaya nazik.
+    frames: list[pd.DataFrame] = []
+    already: set[str] = set()
+
+    if output_path.exists() and not args.fresh:
+        existing = pd.read_parquet(output_path)
+        covered = set(existing["konum"].unique())
+        # Yalnizca istenen tarih araligini KAPSAYAN konumlari kabul et.
+        time_column = "tarih" if not args.hourly else "zaman"
+        wanted_start, wanted_end = pd.Timestamp(args.start), pd.Timestamp(args.end)
+        for name in covered:
+            span = existing.loc[existing["konum"] == name, time_column]
+            if span.min() <= wanted_start and span.max() >= wanted_end:
+                already.add(name)
+        if already:
+            frames.append(existing[existing["konum"].isin(already)])
+            print(f"Mevcut dosyada {len(already)} konum tam kapsamli -- atlaniyor.")
+
+    pending = {name: coords for name, coords in locations.items() if name not in already}
+
+    print(f"{len(pending)} konum indirilecek, {args.start} - {args.end}, ", end="")
     print("saatlik" if args.hourly else "gunluk")
 
-    frames = []
     failures = []
 
-    for index, (name, (latitude, longitude)) in enumerate(locations.items(), start=1):
-        print(f"[{index}/{len(locations)}] {name} ...", end=" ", flush=True)
+    for index, (name, (latitude, longitude)) in enumerate(pending.items(), start=1):
+        print(f"[{index}/{len(pending)}] {name} ...", end=" ", flush=True)
         try:
             frame = fetch_location(
                 name, latitude, longitude, args.start, args.end, hourly=args.hourly
@@ -249,7 +306,7 @@ def main() -> int:
 
         frames.append(frame)
         print(f"{len(frame)} satir")
-        time.sleep(0.4)  # API'ye nazik ol
+        time.sleep(args.pause)  # API'ye nazik ol
 
     if not frames:
         print("\nHicbir konum icin veri alinamadi. Internet baglantisini kontrol et.")
@@ -259,10 +316,8 @@ def main() -> int:
     if not args.hourly:
         combined = add_derived_features(combined)
 
-    output_dir = Path(args.out)
     output_dir.mkdir(parents=True, exist_ok=True)
-    suffix = "saatlik" if args.hourly else "gunluk"
-    output_path = output_dir / f"hava_{suffix}.parquet"
+    combined = combined.drop_duplicates(subset=["konum", "tarih" if not args.hourly else "zaman"])
     combined.to_parquet(output_path, index=False)
 
     print(f"\nYazildi: {output_path}")

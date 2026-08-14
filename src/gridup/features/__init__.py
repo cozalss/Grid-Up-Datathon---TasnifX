@@ -24,6 +24,12 @@ from .categorical import (
     oof_target_encode,
     reduce_rare_categories,
 )
+from .spatial import (
+    add_neighbour_feature_mean,
+    add_neighbour_target_lag,
+    haversine_matrix,
+    nearest_neighbours,
+)
 from .temporal import (
     add_calendar_features,
     add_cyclical_features,
@@ -32,6 +38,13 @@ from .temporal import (
     add_rolling_features,
     add_turkish_holiday_features,
     shared_origin,
+)
+from .weather import (
+    add_physical_derivatives,
+    add_regional_aggregates,
+    add_weather_accumulators,
+    aggregate_hourly_to_daily,
+    circular_mean,
 )
 
 __all__ = [
@@ -50,4 +63,15 @@ __all__ = [
     "add_group_statistics",
     "add_ratio_features",
     "add_target_free_aggregates",
+    # mekansal
+    "nearest_neighbours",
+    "add_neighbour_target_lag",
+    "add_neighbour_feature_mean",
+    "haversine_matrix",
+    # hava
+    "aggregate_hourly_to_daily",
+    "add_regional_aggregates",
+    "add_physical_derivatives",
+    "add_weather_accumulators",
+    "circular_mean",
 ]
