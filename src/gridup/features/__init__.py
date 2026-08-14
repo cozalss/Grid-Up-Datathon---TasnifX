@@ -24,6 +24,7 @@ from .categorical import (
     oof_target_encode,
     reduce_rare_categories,
 )
+from .outage_reason import add_reason_features, classify_reason, reason_family_report
 from .spatial import (
     add_neighbour_feature_mean,
     add_neighbour_target_lag,
@@ -63,6 +64,10 @@ __all__ = [
     "add_group_statistics",
     "add_ratio_features",
     "add_target_free_aggregates",
+    # ariza sebebi
+    "classify_reason",
+    "add_reason_features",
+    "reason_family_report",
     # mekansal
     "nearest_neighbours",
     "add_neighbour_target_lag",
