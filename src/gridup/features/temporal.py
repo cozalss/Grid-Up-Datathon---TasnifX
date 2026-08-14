@@ -30,10 +30,13 @@ from ..turkish import tr_lower
 __all__ = [
     "ADMINISTRATIVE_LEAVE",
     "HOLIDAY_CODES",
+    "LAST_TEN_NIGHTS",
     "MISSING_HOLIDAY_DISTANCE",
     "add_calendar_features",
     "add_cyclical_features",
+    "add_ramadan_features",
     "add_turkish_holiday_features",
+    "ramadan_calendar",
     "add_lag_features",
     "add_rolling_features",
     "add_expanding_features",
@@ -283,6 +286,166 @@ def _holiday_code(name: str) -> int:
     return HOLIDAY_NONE
 
 
+#: Ramazan hicri takvimin 9. ayidir. Sonraki ayin (Sevval) 1'i bayramin
+#: birinci gunudur; Ramazan onun bir onceki gunu biter.
+_RAMADAN_MONTH = 9
+_SHAWWAL_MONTH = 10
+
+#: Ramazanin son on gunu Kadir Gecesi'ni icerir; camii, carsi ve gece
+#: hareketliligi belirgin sekilde artar. Ayri bayrak olarak veriyoruz.
+LAST_TEN_NIGHTS = 10
+
+
+def ramadan_calendar(years: Sequence[int]) -> dict[int, tuple[pd.Timestamp, pd.Timestamp]]:
+    """Verilen miladi yillar icin Ramazan ayi baslangic/bitis tarihleri.
+
+    Args:
+        years: Miladi yillar.
+
+    Returns:
+        ``{miladi_yil: (baslangic, bitis)}``. Bir miladi yila iki Ramazan
+        dusebilir (nadiren, ~33 yilda bir); o durumda **ilki** dondurulur --
+        veri araligimiz icin bu dal hic calismaz.
+
+    Raises:
+        ImportError: ``hijridate`` kurulu degilse.
+
+    DOGRULAMA (bu makinede olculdu)
+    -------------------------------
+    ``frtgnn/turkish-calendar`` veri setinin ``RAMADAN_FLAG`` kolonuyla
+    2020-2024 arasi **birebir** ortusuyor -- 2023'un 29 gunluk Ramazani dahil::
+
+        1441 AH: 2020-04-24 -> 2020-05-23  (30 gun)
+        1442 AH: 2021-04-13 -> 2021-05-12  (30 gun)
+        1443 AH: 2022-04-02 -> 2022-05-01  (30 gun)
+        1444 AH: 2023-03-23 -> 2023-04-20  (29 gun)
+        1445 AH: 2024-03-11 -> 2024-04-09  (30 gun)
+        1446 AH: 2025-03-01 -> 2025-03-29  (29 gun)
+        1447 AH: 2026-02-18 -> 2026-03-19  (30 gun)
+    """
+    try:
+        from hijridate import Gregorian, Hijri
+    except ImportError as exc:  # pragma: no cover - kurulum yolu
+        raise ImportError(
+            "Ramazan feature'lari icin hijridate gerekli: pip install hijridate\n"
+            "Kaggle'da internet kapaliysa ramadan_calendar ciktisini sabit bir "
+            "sozluk olarak notebook'a gom -- yilda iki satir."
+        ) from exc
+
+    calendar: dict[int, tuple[pd.Timestamp, pd.Timestamp]] = {}
+    for year in sorted(set(years)):
+        # Miladi yilin ortasindan hicri yila gecip komsu hicri yillari tara:
+        # Ramazan miladi takvimde yilda ~11 gun kaydigi icin tek bir hicri yil
+        # her zaman dogru olmaz.
+        pivot = Gregorian(year, 7, 1).to_hijri().year
+        for hijri_year in (pivot - 1, pivot, pivot + 1):
+            try:
+                start = Hijri(hijri_year, _RAMADAN_MONTH, 1).to_gregorian()
+                end = Hijri(hijri_year, _SHAWWAL_MONTH, 1).to_gregorian()
+            except (ValueError, OverflowError):
+                continue
+            if start.year != year:
+                continue
+            calendar[year] = (
+                pd.Timestamp(start.year, start.month, start.day),
+                pd.Timestamp(end.year, end.month, end.day) - pd.Timedelta(days=1),
+            )
+            break
+    return calendar
+
+
+def add_ramadan_features(
+    frame: pd.DataFrame,
+    time_column: str,
+    *,
+    prefix: str = "ramazan",
+) -> pd.DataFrame:
+    """Ramazan ayi feature'lari ekler. YENI frame dondurur.
+
+    NEDEN AYRI BIR KOLON SART
+    -------------------------
+    Ramazan **ayi**, Ramazan **Bayrami**ndan farklidir: bayram 3 gundur,
+    Ramazan 29-30 gundur ve tuketim profilini butunuyle degistirir:
+
+      * **Sahur** (~03:00-05:00): normalde olu olan saatte ulke capinda
+        es zamanli pisirme ve aydinlatma tepesi.
+      * **Iftar** (gun batimi): tum hanelerde ayni dakikada baslayan pisirme.
+        Saati Ramazan boyunca ~30 dakika kayar -- ``solar`` modulundeki
+        ``gun_uzunlugu_saat`` ile birlikte kullanildiginda cok gucludur.
+      * **Teravih ve gece hareketliligi**: aksam yuku uzar.
+      * **Gunduz sanayi/ticaret** dususu.
+
+    Ve kritik olan su: Ramazan hicri takvime gore **her yil ~11 gun geriye
+    kayar**. 2020'de Nisan'da, 2026'da Subat'ta. Bu yuzden ``ay``,
+    ``dayofyear`` veya sinus/kosinus mevsimsellik kolonlari onu **hicbir
+    sekilde ogrenemez** -- agac modeli "Nisan" ile "Ramazan"i baglar, ertesi
+    yil o bag yanlis olur. Ayri kolon olmadan bu sinyal tamamen kaybolur.
+
+    Args:
+        frame: Girdi frame'i (degistirilmez).
+        time_column: Zaman kolonu adi.
+        prefix: Uretilen kolonlarin oneki.
+
+    Returns:
+        Su kolonlar eklenmis yeni frame:
+          * ``{prefix}_ayi`` -- Ramazan icinde mi (0/1)
+          * ``{prefix}_gunu`` -- ayin kacinci gunu (Ramazan disinda 0)
+          * ``{prefix}_ilerleme`` -- 0..1 arasi konum (Ramazan disinda 0.0)
+          * ``{prefix}_son_on_gun`` -- Kadir Gecesi donemi (0/1)
+          * ``{prefix}_bayrama_kalan`` -- bayramin ilk gunune kac gun kaldigi
+            (Ramazan disinda ``MISSING_HOLIDAY_DISTANCE``)
+
+    Raises:
+        KeyError: ``time_column`` frame'de yoksa.
+        ImportError: ``hijridate`` kurulu degilse.
+    """
+    if time_column not in frame.columns:
+        raise KeyError(f"Zaman kolonu '{time_column}' frame'de yok.")
+
+    result = frame.copy()
+    times = pd.to_datetime(result[time_column], errors="coerce").dt.normalize()
+
+    valid = times.dropna()
+    if valid.empty:
+        result[f"{prefix}_ayi"] = 0
+        result[f"{prefix}_gunu"] = 0
+        result[f"{prefix}_ilerleme"] = 0.0
+        result[f"{prefix}_son_on_gun"] = 0
+        result[f"{prefix}_bayrama_kalan"] = MISSING_HOLIDAY_DISTANCE
+        return result
+
+    years = range(int(valid.dt.year.min()) - 1, int(valid.dt.year.max()) + 2)
+    calendar = ramadan_calendar(list(years))
+
+    day_number = np.zeros(len(result), dtype=np.int16)
+    length = np.zeros(len(result), dtype=np.int16)
+    days_to_eid = np.full(len(result), MISSING_HOLIDAY_DISTANCE, dtype=np.int16)
+
+    values = times.to_numpy()
+    for start, end in calendar.values():
+        inside = (values >= start.to_datetime64()) & (values <= end.to_datetime64())
+        if not inside.any():
+            continue
+        offset = (times[inside] - start).dt.days.to_numpy(dtype=np.int16)
+        day_number[inside] = offset + 1
+        length[inside] = int((end - start).days) + 1
+        # Bayramin 1. gunu Ramazanin bitiminden bir sonraki gundur.
+        days_to_eid[inside] = ((end - times[inside]).dt.days + 1).to_numpy(dtype=np.int16)
+
+    in_ramadan = day_number > 0
+    with np.errstate(divide="ignore", invalid="ignore"):
+        progress = np.where(in_ramadan, (day_number - 1) / np.maximum(length - 1, 1), 0.0)
+
+    result[f"{prefix}_ayi"] = in_ramadan.astype(np.int8)
+    result[f"{prefix}_gunu"] = day_number
+    result[f"{prefix}_ilerleme"] = progress.astype(np.float32)
+    result[f"{prefix}_son_on_gun"] = (
+        in_ramadan & (days_to_eid <= LAST_TEN_NIGHTS)
+    ).astype(np.int8)
+    result[f"{prefix}_bayrama_kalan"] = days_to_eid
+    return result
+
+
 def add_turkish_holiday_features(
     frame: pd.DataFrame,
     time_column: str,
@@ -299,8 +462,20 @@ def add_turkish_holiday_features(
     patlar. Dini bayramlar HICRI takvime gore her yil ~11 gun KAYAR, bu yuzden
     ``ay + gun`` kolonlari onlari YAKALAYAMAZ. Ayri bir kolon sart.
 
-    2024 GDZ Datathon birincisinin en yuksek onemli feature'larindan biri
-    "TatilAd" idi -- yani bu aile bu problemde cok gucludur.
+    2023 GDZ Elektrik Datathon birincisi tatil bayraklarini KATEGORIK feature
+    olarak modele verdi (``PUBLIC_HOLIDAY_FLAG``, ``RELIGIOUS_DAY_FLAG_SK``,
+    ``NATIONAL_DAY_FLAG_SK``, ``WEEKEND_FLAG``, ``RAMADAN_FLAG``) -- yani bu
+    aile bu problemde kanitlanmis sekilde gucludur.
+
+    DOGRULAMA (bu makinede olculdu, 2020-2024 kesisimi)
+    ---------------------------------------------------
+    Birincinin kullandigi Kaggle takvim veri seti (``frtgnn/turkish-calendar``)
+    ile ``holidays`` kutuphanesi karsilastirildi. Sonuc: kutuphanenin hafta ici
+    resmi tatil listesi Kaggle setinin **tam ust kumesi** (60'a 17; Kaggle'da
+    olup kutuphanede olmayan TEK gun yok). Kaggle setinin
+    ``PUBLIC_HOLIDAY_FLAG``i butun DINI bayramlari kaciriyor -- birinci onlari
+    ayri ``RELIGIOUS_DAY_FLAG_SK`` kolonundan aldigi icin sorun yasamamis.
+    Bizim kaynagimiz daha iyi; degistirmeye gerek yok.
 
     Args:
         window_days: Bayram oncesi/sonrasi kopru gunlerini yakalamak icin

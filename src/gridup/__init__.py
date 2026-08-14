@@ -29,6 +29,7 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 
+from .ablation import FeatureGroup, ablation_ensemble, leave_one_group_out
 from .compat import environment_report, reduce_memory
 from .config import CONFIG, PATHS, CompetitionConfig, Paths, set_global_seed
 from .io_utils import read_any, read_table, sniff_dialect, to_parquet_cache
@@ -89,6 +90,8 @@ __all__ = [
     # model zoo ve arama
     "make_model_zoo", "sweep_count_objectives", "ZooEntry",
     "tune_with_optuna", "TuningResult",
+    # feature grubu ablasyonu ve dayaniklilik harmani
+    "FeatureGroup", "ablation_ensemble", "leave_one_group_out",
     # submission
     "write_submission", "validate_submission",
 ]

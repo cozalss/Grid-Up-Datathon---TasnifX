@@ -283,11 +283,57 @@ def build_splitter(
     return builders[scheme]()
 
 
+def _equal_count_windows(n_rows: int, n_splits: int) -> list[tuple[int, int]]:
+    """Satir sayisi esit dogrulama pencereleri (klasik davranis)."""
+    edges = np.linspace(0, n_rows, n_splits + 2, dtype=int)[1:]
+    return [(int(edges[i]), int(edges[i + 1])) for i in range(n_splits)]
+
+
+def _fixed_span_windows(
+    sorted_times: np.ndarray,
+    n_splits: int,
+    test_span: pd.Timedelta,
+    skipped: list[str],
+) -> list[tuple[int, int]]:
+    """Veri sonuna capalanmis, esit ZAMAN uzunlugunda dogrulama pencereleri.
+
+    Fold'lar kronolojik sirada dondurulur (en eski once). Boylece
+    ``folds[-1]`` her zaman gercek test blogunun hemen oncesindeki donemdir --
+    yarismada en cok guvendigin fold odur.
+    """
+    last_moment = sorted_times[-1]
+    span = test_span.to_timedelta64()
+
+    windows: list[tuple[int, int]] = []
+    for fold in range(n_splits):
+        # Pencere (lower, upper] yarı-acik araligidir. side="right" ust siniri
+        # ICERIR -- yoksa ilk fold veri setinin son anini kaybeder. Ardisik
+        # pencereler bu sayede ne cakisir ne de bosluk birakir.
+        upper = last_moment - fold * span
+        lower = upper - span
+        start = int(np.searchsorted(sorted_times, lower, side="right"))
+        end = int(np.searchsorted(sorted_times, upper, side="right"))
+        if start >= end:
+            skipped.append(
+                f"fold {fold + 1}: {test_span} uzunlugunda pencerede hic satir yok"
+            )
+            continue
+        windows.append((start, end))
+
+    if len(windows) < n_splits:
+        skipped.append(
+            f"veri araligi {n_splits} x {test_span} icin yetersiz "
+            f"({pd.Timestamp(sorted_times[-1]) - pd.Timestamp(sorted_times[0])} mevcut)"
+        )
+    return list(reversed(windows))
+
+
 def purged_time_series_split(
     times: pd.Series,
     *,
     embargo: pd.Timedelta,
     n_splits: int = 5,
+    test_span: pd.Timedelta | None = None,
     verbose: bool = True,
 ) -> list[tuple[np.ndarray, np.ndarray]]:
     """Fold sinirinda 'ambargo' bosluğu birakan zaman serisi bolmesi.
@@ -305,10 +351,28 @@ def purged_time_series_split(
             pencereler kullaniyorsan ``pd.Timedelta(days=30)`` uygun bir baslangictir.
             Ambargo istemiyorsan ``pd.Timedelta(0)`` yaz -- bilincli bir karar olsun.
         n_splits: Fold sayisi.
+        test_span: Verilirse her dogrulama penceresi **tam olarak bu kadar zaman**
+            kaplar ve pencereler veri sonundan geriye dogru dizilir. Verilmezse
+            satir sayisi esitlenir (eski davranis). Asagiya bak.
         verbose: Uretilen fold sayisi istenenden azsa uyarir.
 
     Returns:
         ``(train_idx, valid_idx)`` konumsal indeks ciftlerinin listesi.
+
+    ``test_span`` NEDEN ONEMLI (2023 GDZ birincisinden)
+    ---------------------------------------------------
+    2023 GDZ Elektrik Datathon birincisi ``TimeSeriesSplit(n_splits=3,
+    test_size=744)`` kullandi. 744 saat = 31 gun = **test blogunun tam boyu**.
+    Bu tesaduf degil: CV, tahmin edilecek ufku birebir taklit etmelidir.
+
+    Satir sayisina gore esit bolme, PANEL veride yanlis pencere uretir. 96
+    ilcelik gunluk bir panelde bir "ay" 96 x 30 = 2880 satirdir; satir sayisiyla
+    bolersen fold uzunlugu veri yogunluguna gore kayar ve bazi fold'lar iki ay,
+    bazilari on gun olur. Skorlar o zaman birbiriyle karsilastirilamaz.
+
+    ``test_span`` verildiginde pencereler **veri sonuna capalanir** ve geriye
+    dogru dizilir -- yani son fold, gercek test blogunun hemen oncesindeki
+    donemdir. Yarismada en cok onemsedigin fold budur.
 
     ``embargo`` NEDEN ZORUNLU
     -------------------------
@@ -322,6 +386,8 @@ def purged_time_series_split(
     """
     if len(times) == 0:
         raise ValueError("Bos zaman serisi ile bolme yapilamaz.")
+    if test_span is not None and test_span <= pd.Timedelta(0):
+        raise ValueError(f"test_span pozitif olmali, {test_span} verildi.")
 
     # Metin olarak saklanmis tarih SOZLUKSEL siralanir ("2024-1-10" < "2024-1-2")
     # ve fold'lar kronolojik olmaz. Cevirmeyi garanti altina aliyoruz.
@@ -332,13 +398,16 @@ def purged_time_series_split(
     values = parsed.to_numpy()
     order = np.argsort(values, kind="stable")
     sorted_times = values[order]
-    fold_edges = np.linspace(0, len(order), n_splits + 2, dtype=int)[1:]
 
     folds: list[tuple[np.ndarray, np.ndarray]] = []
     skipped: list[str] = []
 
-    for fold in range(n_splits):
-        valid_start, valid_end = fold_edges[fold], fold_edges[fold + 1]
+    if test_span is None:
+        windows = _equal_count_windows(len(order), n_splits)
+    else:
+        windows = _fixed_span_windows(sorted_times, n_splits, test_span, skipped)
+
+    for fold, (valid_start, valid_end) in enumerate(windows):
         if valid_start >= valid_end:
             skipped.append(f"fold {fold + 1}: dogrulama penceresi bos")
             continue
