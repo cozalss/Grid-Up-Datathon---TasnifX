@@ -18,7 +18,14 @@ import pandas as pd
 
 from .metrics import get_metric
 
-__all__ = ["hill_climb_weights", "rank_average", "correlation_matrix", "greedy_forward_selection"]
+__all__ = [
+    "hill_climb_weights",
+    "rank_average",
+    "correlation_matrix",
+    "greedy_forward_selection",
+    "stack_oof",
+    "prune_by_correlation",
+]
 
 
 def correlation_matrix(predictions: dict[str, np.ndarray]) -> pd.DataFrame:
@@ -173,6 +180,181 @@ def greedy_forward_selection(
             print(f"  {name:<28} {weight:.4f}")
 
     return counts
+
+
+def prune_by_correlation(
+    oof_predictions: dict[str, np.ndarray],
+    y_true: np.ndarray,
+    *,
+    metric: str = "rmse",
+    max_correlation: float = 0.99,
+    max_members: int = 8,
+) -> list[str]:
+    """Birbirine cok benzeyen modelleri eler, cesitliligi korur.
+
+    YONTEM: En iyi modelden basla. Sirayla ekle; ama eklenecek model zaten
+    secilmis bir modelle ``max_correlation`` uzerinde korelasyona sahipse ATLA.
+
+    NEDEN: Korelasyonu 0,995 olan iki model harmanlandiginda kazanc yaklasik
+    sifirdir -- ama her ikisi de tahmin suresini, model boyutunu ve
+    aciklanabilirlik maliyetini iki katina cikarir. Juri notebook'u okuyacagi
+    bu yarismada bu maliyet gercektir.
+
+    Args:
+        max_correlation: Bu esigin ustunde korelasyon varsa ikincisi elenir.
+        max_members: Harmanda en fazla kac model kalsin.
+
+    Returns:
+        Tutulacak model adlari, en iyiden baslayarak.
+    """
+    metric_fn, greater_is_better, _ = get_metric(metric)
+
+    scores = {
+        name: float(metric_fn(y_true, prediction))
+        for name, prediction in oof_predictions.items()
+    }
+    order = sorted(scores, key=lambda name: scores[name], reverse=greater_is_better)
+
+    frame = pd.DataFrame(oof_predictions)
+    correlations = frame.corr()
+
+    kept: list[str] = []
+    for name in order:
+        if len(kept) >= max_members:
+            break
+        if any(abs(correlations.loc[name, other]) > max_correlation for other in kept):
+            continue
+        kept.append(name)
+
+    return kept
+
+
+def stack_oof(
+    oof_predictions: dict[str, np.ndarray],
+    y_true: np.ndarray,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    *,
+    test_predictions: dict[str, np.ndarray] | None = None,
+    meta: str = "ridge",
+    metric: str = "rmse",
+    seed: int = 42,
+    verbose: bool = True,
+) -> dict[str, object]:
+    """Ikinci seviye model (stacking) ile harmanlar.
+
+    Hill climbing agirliklari OGRENIR ama hepsi POZITIF ve toplami 1'dir.
+    Stacking bu kisiti kaldirir: bir model sistematik olarak fazla tahmin
+    ediyorsa meta-model ona NEGATIF agirlik verip duzeltebilir.
+
+    Bedeli aciklanabilirliktir. Bu yarismada notebook juri tarafindan
+    okunuyor; stacking kazanci kucukse hill climbing tercih edilmelidir.
+    ``vs_hill_climbing`` alani bu karari vermen icin ikisini de raporluyor.
+
+    KRITIK -- SIZINTI: Meta-model, birinci seviye OOF tahminleri uzerinde
+    AYNI FOLD'LARLA capraz dogrulanir. Tum OOF uzerinde tek seferde egitmek,
+    meta-modelin birinci seviyenin hatalarina asiri uymasina yol acar.
+
+    Args:
+        meta: ``ridge`` (dogrusal, aciklanabilir) veya ``lgbm`` (dogrusal
+            olmayan, daha guclu ama daha opak).
+
+    Returns:
+        ``oof`` (meta-modelin OOF tahmini), ``test``, ``score``,
+        ``vs_hill_climbing``, ``coefficients`` iceren sozluk.
+    """
+    metric_fn, greater_is_better, _ = get_metric(metric)
+
+    names = list(oof_predictions)
+    features = pd.DataFrame(oof_predictions)
+    y = np.asarray(y_true, dtype="float64")
+
+    meta_oof = np.zeros(len(y), dtype="float64")
+    covered = np.zeros(len(y), dtype=bool)
+    coefficient_rows: list[np.ndarray] = []
+    fold_models: list[object] = []
+
+    for train_idx, valid_idx in folds:
+        model = _build_meta(meta, seed)
+        model.fit(features.iloc[train_idx], y[train_idx])
+        meta_oof[valid_idx] = model.predict(features.iloc[valid_idx])
+        covered[valid_idx] = True
+        fold_models.append(model)
+        if hasattr(model, "coef_"):
+            coefficient_rows.append(np.asarray(model.coef_, dtype="float64").ravel())
+
+    score = float(metric_fn(y[covered], meta_oof[covered])) if covered.any() else float("nan")
+
+    # Karsilastirma: hill climbing ne veriyordu?
+    weights = hill_climb_weights(
+        {name: oof_predictions[name][covered] for name in names},
+        y[covered], metric=metric, verbose=False,
+    )
+    hill_blend = sum(
+        weights[name] * oof_predictions[name][covered] for name in names
+    )
+    hill_score = float(metric_fn(y[covered], hill_blend))
+
+    stacking_wins = score > hill_score if greater_is_better else score < hill_score
+
+    test_blend = None
+    if test_predictions:
+        test_features = pd.DataFrame({name: test_predictions[name] for name in names})
+        # Fold modellerinin ortalamasi -- tek model yerine, varyansi dusurur.
+        test_blend = np.mean(
+            [model.predict(test_features) for model in fold_models], axis=0
+        )
+
+    coefficients = (
+        dict(zip(names, np.mean(coefficient_rows, axis=0), strict=True))
+        if coefficient_rows else {}
+    )
+
+    if verbose:
+        print(f"Stacking ({meta}) {metric}: {score:.6f}")
+        print(f"Hill climbing  {metric}: {hill_score:.6f}")
+        print(
+            "  -> " + (
+                "stacking kazandi" if stacking_wins
+                else "hill climbing kazandi (daha aciklanabilir, onu tercih et)"
+            )
+        )
+        if coefficients:
+            print("  Meta-model katsayilari:")
+            for name, value in sorted(coefficients.items(), key=lambda p: -abs(p[1])):
+                marker = "  (negatif -- duzeltici)" if value < 0 else ""
+                print(f"    {name:<28} {value:+.4f}{marker}")
+
+    return {
+        "oof": meta_oof,
+        "test": test_blend,
+        "score": score,
+        "coverage": float(covered.mean()),
+        "coefficients": coefficients,
+        "vs_hill_climbing": {
+            "stacking": score,
+            "hill_climbing": hill_score,
+            "stacking_wins": bool(stacking_wins),
+            "hill_weights": weights,
+        },
+    }
+
+
+def _build_meta(meta: str, seed: int) -> object:
+    """Meta-model orneği kurar."""
+    if meta == "ridge":
+        from sklearn.linear_model import Ridge
+
+        return Ridge(alpha=1.0, random_state=seed)
+
+    if meta == "lgbm":
+        import lightgbm as lgb
+
+        return lgb.LGBMRegressor(
+            n_estimators=200, learning_rate=0.05, num_leaves=7,
+            min_child_samples=50, verbose=-1, random_state=seed,
+        )
+
+    raise ValueError(f"Bilinmeyen meta model '{meta}'. 'ridge' veya 'lgbm'.")
 
 
 def rank_average(

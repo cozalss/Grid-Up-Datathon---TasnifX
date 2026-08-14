@@ -48,5 +48,11 @@ ignore = [
 "src/gridup/validation.py" = ["PLR0912"]
 "src/gridup/submission.py" = ["PLR0912"]
 "src/gridup/profiling.py" = ["PLR0911"]
-# Notebook'lar Kaggle'da da calisabilmek icin ilk hucrede sys.path ayarlar.
-"notebooks/*" = ["E402"]
+# Notebook'lar Kaggle'da da calisabilmek icin ilk hucrede sys.path ayarlar (E402).
+# F401: ilk hucre, kullanicinin SONRA yazacagi hucreler icin gereken her seyi
+# import eder -- sablonun isi budur. I001: import sirasi notebook'ta okunabilirlik
+# icin mantiksal gruplanmis (cekirdek / feature / model / harman).
+# F821: sablon hucreleri, kullanicinin onceki hucrelerde tanimlayacagi
+# degiskenlere (y_true, y_pred) atifta bulunur -- sablonun dogasi budur.
+# E702: grafik hucrelerinde 'plot(...); plt.show()' okunabilirligi artiriyor.
+"notebooks/*" = ["E402", "F401", "I001", "F821", "E702"]

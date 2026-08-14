@@ -303,15 +303,27 @@ IS_KAGGLE = Path("/kaggle/input").exists()
 if not IS_KAGGLE:
     sys.path.insert(0, str(Path.cwd().parent / "src"))
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
-from gridup import cross_validate, read_any, set_global_seed, write_submission
+from gridup import (
+    conditional_quantile_from_hurdle, cross_validate, fit_quantile_ladder,
+    fit_two_stage, make_model_zoo, read_any, set_global_seed,
+    sweep_count_objectives, tune_with_optuna, write_submission, zero_baseline_score,
+)
 from gridup.compat import categorical_columns
+from gridup.ensemble import hill_climb_weights, prune_by_correlation, stack_oof
 from gridup.experiment import ExperimentLog, ExperimentRecord
-from gridup.features import add_calendar_features, add_frequency_encoding, shared_origin
+from gridup.features import (
+    add_calendar_features, add_frequency_encoding, add_lag_features,
+    add_neighbour_target_lag, add_physical_derivatives, add_regional_aggregates,
+    nearest_neighbours, shared_origin,
+)
 from gridup.metrics import inverse_log_transform, log_transform_target
 from gridup.models import starter_params
-from gridup.validation import build_splitter, purged_time_series_split
+from gridup.refit import estimate_full_data_rounds, extract_best_iterations, multi_seed_refit
+from gridup.selection import null_importance_filter, shap_backward_selection
+from gridup.validation import adversarial_validation, build_splitter, purged_time_series_split
 
 set_global_seed(42)
 
@@ -463,21 +475,121 @@ log.leaderboard()
     markdown("""
 ## Sonraki adımlar
 
-1. **Adversarial validation** — `validation.adversarial_validation(train, test)`
-   ile train/test kayması var mı ölç
-2. **Lag / rolling — `horizon=HORIZON` ile** (zaman varsa en güçlü feature ailesi):
-   ```python
-   out = add_lag_features(out, TARGET, [1, 7, 28], time_column=TIME_COLUMN,
-                          group_columns=[GROUP_COLUMN], horizon=HORIZON)
-   ```
-3. **Hedef kodlama** — `features.oof_target_encode` (yüksek kardinaliteli kolonlar)
-4. **Harici veri** — `scripts/fetch_weather.py`.
-   Hava durumunda **ortalama değil `max` ve quantile** kullan — hasarı rüzgârın
-   ortalaması değil tepesi yapar. Hem ilçe hem bölge-geneli agregatlar üret.
-5. **CatBoost + XGBoost** — çeşitlilik için, sonra `ensemble.hill_climb_weights`
-6. **Metrik MAE ise**: `objective="mae"` kullan (L2 değil), ve tam sayı hedefte
-   tahminleri **yuvarlamayı** dene — MAE'de medyan optimaldir, yuvarlama skor kazandırır.
-7. **Eşik optimizasyonu** — sınıflandırmaysa `metrics.optimize_threshold`
+Sıra önemli — her adımdan sonra CV'yi ölçüp deftere yazın.
+
+**1 · Kayma kontrolü**
+```python
+sonuc = adversarial_validation(train[FEATURES], test[FEATURES])
+print(sonuc["auc"], sonuc["verdict"])   # AUC > 0.8 ise ayrıştıran feature'ı çıkar
+```
+
+**2 · Ufuk-farkındalıklı lag/rolling** — en güçlü aile
+```python
+out = add_lag_features(out, TARGET, [1, 7, 28], time_column=TIME_COLUMN,
+                       group_columns=[GROUP_COLUMN], horizon=HORIZON)
+```
+
+**3 · Hazır harici veri** (indirilmiş, `data/` altında)
+```python
+hava = pd.read_parquet("../data/external/hava_gunluk.parquet")
+ilceler = pd.read_parquet("../data/reference/ilceler_gdz_adm.parquet")
+komsu = nearest_neighbours(ilceler, key_column="ilce_key",
+                           latitude_column="lat", longitude_column="lon", k=3)
+out = add_neighbour_target_lag(out, komsu, key_column="ilce_key",
+                               time_column=TIME_COLUMN, target_column=TARGET,
+                               horizon=HORIZON)
+```
+Havada **ortalama değil `max` ve quantile** kullanın — hasarı rüzgârın ortalaması
+değil tepesi yapar: `add_regional_aggregates`, `add_physical_derivatives`.
+
+**4 · Sayım hedefiyse objective süpürmesi**
+```python
+zoo = sweep_count_objectives(train[FEATURES], y, folds, metric=METRIC)
+print(zoo.leaderboard())   # poisson / tweedie / mae / l2 aynı fold'larda
+```
+
+**5 · Sıfır oranı > %40 ise iki aşamalı model**
+```python
+print(zero_baseline_score(y, metric="mae"))   # önce bunu geçtiğini gör
+sonuc = fit_two_stage(train[FEATURES], y, folds, metric=METRIC)
+```
+Metrik MAE ise `q* = 1 − 0.5/p` çözücüsünü kullanın — `expected` ve
+`thresholded` modlarının **ikisi de** MAE altında suboptimaldir:
+```python
+merdiven = fit_quantile_ladder(train[FEATURES], y, folds)
+tahmin = conditional_quantile_from_hurdle(sonuc.oof_probability,
+                                          {q: r.oof_predictions for q, r in merdiven.items()})
+```
+
+**6 · Hiperparametre araması** — objective'i de arama uzayına koyun
+```python
+tuned = tune_with_optuna(train[FEATURES], y, folds, metric=METRIC,
+                         timeout=3600, search_objective=True)
+print(tuned.objective_comparison())
+```
+
+**7 · Model zoo + harman**
+```python
+zoo = make_model_zoo(train[FEATURES], y, folds, metric=METRIC, test=test[FEATURES])
+secilen = prune_by_correlation(zoo.oof_matrix, y, max_members=5)
+agirliklar = hill_climb_weights({k: zoo.oof_matrix[k] for k in secilen}, y, metric=METRIC)
+stack = stack_oof(zoo.oof_matrix, y, folds, test_predictions=zoo.test_matrix)
+```
+`stack_oof` hem stacking hem hill climbing skorunu raporlar. Fark küçükse
+**hill climbing'i tercih edin** — jüri notebook'u okuyacak, açıklanabilirlik değerli.
+
+**8 · Feature eleme**
+```python
+temiz = null_importance_filter(train[FEATURES], y)          # dakikalar
+secim = shap_backward_selection(train[temiz["keep"]], y, folds)  # saatler
+```
+
+**9 · Son gün: çok tohumlu tam veri refit**
+```python
+tur = estimate_full_data_rounds(extract_best_iterations(result.models), n_folds=len(folds))
+final = multi_seed_refit(train[FINAL], y, test[FINAL], params=tuned.best_params,
+                         n_estimators=tur, seeds=range(15))
+```
+"""),
+    markdown("""
+## Jüri çıktıları
+
+Bunları **son gün üretmeye kalkmayın** — pipeline'ın parçası olmalı.
+Değerlendirmenin üçte ikisi notebook + sunum.
+"""),
+    code("""
+from gridup.reporting import (
+    business_impact, cv_fold_table, error_by_segment,
+    feature_importance_table, model_footprint,
+    plot_error_by_segment, plot_fold_scores, plot_prediction_timeline,
+)
+
+# 1 · Fold tablosu — kararlılığı gösterir
+display(cv_fold_table(result))
+plot_fold_scores(result); plt.show()
+
+# 2 · Model NEREDE yanılıyor — sunumun en ikna edici bölümü
+segment_hatasi = error_by_segment(y_true, y_pred, test[GROUP_COLUMN], metric=METRIC)
+plot_error_by_segment(segment_hatasi, metric=METRIC); plt.show()
+
+# 3 · Sinyal nereden geliyor — 400 satırlık önem listesi yerine aile dağılımı
+display(feature_importance_table(result, group_prefixes=(
+    "tarih_", "tatil_", "komsu_", "bolge_", "sebep_")))
+
+# 4 · Operasyonel maliyet — jüri bunu soruyor, modeli gerçekten çalıştıracak
+print(model_footprint(result.models, elapsed_seconds=result.elapsed_seconds))
+
+# 5 · İş dili — "MAE 2.95" değil, "ortalama 3 kesinti hatayla tahmin ediyoruz"
+print(business_impact(y_true, y_pred, unit_label="kesinti")["ozet"])
+"""),
+    markdown("""
+## Sunum için not
+
+Jüri koltuğunda **mühendisler ve iş birimleri** var, akademisyen değil.
+2024 birincisinin sunumunun son üç slaydı tamamen iş değeriydi: açıklanabilir
+çözüm, daraltılmış feature seti, ~25 MB model, yeni veriyle eğitilebilirlik.
+
+Skor ilk 10'a sokar; bu bölüm ödülü belirler.
 """),
 ]
 

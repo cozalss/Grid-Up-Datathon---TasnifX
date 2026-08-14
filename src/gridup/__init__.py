@@ -44,8 +44,16 @@ from .panel import build_panel, panel_coverage
 from .profiling import profile, quick_look
 from .refit import estimate_full_data_rounds, extract_best_iterations, multi_seed_refit
 from .submission import validate_submission, write_submission
+from .tuning import TuningResult, tune_with_optuna
 from .turkish import diagnose_join, join_key, tr_lower, tr_sorted, tr_upper
-from .two_stage import fit_two_stage, tune_threshold, zero_baseline_score
+from .two_stage import (
+    conditional_quantile_from_hurdle,
+    fit_quantile_ladder,
+    fit_two_stage,
+    mae_optimal_quantile,
+    tune_threshold,
+    zero_baseline_score,
+)
 from .validation import (
     adversarial_validation,
     build_splitter,
@@ -53,6 +61,7 @@ from .validation import (
     purged_time_series_split,
     suggest_scheme,
 )
+from .zoo import ZooEntry, make_model_zoo, sweep_count_objectives
 
 __all__ = [
     # konfig
@@ -76,6 +85,10 @@ __all__ = [
     "multi_seed_refit", "estimate_full_data_rounds", "extract_best_iterations",
     # iki asamali (sifir-siskin)
     "fit_two_stage", "tune_threshold", "zero_baseline_score",
+    "mae_optimal_quantile", "fit_quantile_ladder", "conditional_quantile_from_hurdle",
+    # model zoo ve arama
+    "make_model_zoo", "sweep_count_objectives", "ZooEntry",
+    "tune_with_optuna", "TuningResult",
     # submission
     "write_submission", "validate_submission",
 ]

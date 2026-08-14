@@ -47,9 +47,57 @@ from .metrics import get_metric
 from .models import CVResult, ModelKind, cross_validate, starter_params
 from .validation import assert_folds_align
 
-__all__ = ["TwoStageResult", "fit_two_stage", "tune_threshold", "zero_baseline_score"]
+__all__ = [
+    "TwoStageResult",
+    "fit_two_stage",
+    "fit_quantile_ladder",
+    "mae_optimal_quantile",
+    "conditional_quantile_from_hurdle",
+    "tune_threshold",
+    "zero_baseline_score",
+]
 
-PredictMode = Literal["expected", "thresholded"]
+PredictMode = Literal["expected", "thresholded", "mae_optimal"]
+
+
+def mae_optimal_quantile(positive_probability: np.ndarray) -> np.ndarray:
+    """MAE altinda optimal kosullu kuantil seviyesini hesaplar.
+
+    TUREV
+    -----
+    Hedefin dagilimi bir KARISIM: ``(1-p)`` agirlikla tam 0'da kutle, ``p``
+    agirlikla ``F(y | y>0)`` kosullu dagilimi.
+
+    MAE'yi minimize eden tahmin, karisimin MEDYANIDIR. Medyan ``q``,
+    ``CDF(q) = 0.5`` kosulunu saglar::
+
+        CDF(q) = (1 - p) + p * F(q | y>0) = 0.5
+        =>  p * F = p - 0.5
+        =>  F = 1 - 0.5 / p
+
+    Yani 2. asamadan istenmesi gereken kuantil ``q* = 1 - 0.5/p``dir.
+
+    NE ANLAMA GELIYOR
+    -----------------
+    ``p = 0.50``  ->  q* = 0.00   sinirda; medyan tam 0
+    ``p = 0.60``  ->  q* = 0.167  kosullu dagilimin ALT ucundan
+    ``p = 0.80``  ->  q* = 0.375
+    ``p = 1.00``  ->  q* = 0.50   klasik medyan
+
+    ``p <= 0.5`` ise karisimin medyani 0'dir -- tahmin 0 olmalidir. Fonksiyon
+    bu satirlar icin ``NaN`` dondurur; cagiran taraf onlari sifirlar.
+
+    BU NEDEN ONEMLI
+    ---------------
+    ``expected`` modu (``p * E[y|y>0]``) BEKLENEN degeri verir -- kare hatali
+    metrikler icin dogru, MAE icin degil. ``thresholded`` modu ise kosullu
+    dagilimin MEDYANINI (q=0.5) kullanir; oysa ``p < 1`` iken dogru kuantil
+    her zaman 0.5'in ALTINDADIR. Ikisi de MAE altinda suboptimaldir.
+    """
+    probability = np.asarray(positive_probability, dtype="float64")
+    with np.errstate(divide="ignore", invalid="ignore"):
+        quantile = 1.0 - 0.5 / probability
+    return np.where(quantile > 0, quantile, np.nan)
 
 
 def zero_baseline_score(y_true: np.ndarray, *, metric: str = "mae") -> float:
@@ -165,6 +213,106 @@ def tune_threshold(
         ),
         "score_all_zero": zero_baseline_score(y_true, metric=metric),
     }
+
+
+def fit_quantile_ladder(
+    train: pd.DataFrame,
+    target: np.ndarray,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    *,
+    quantiles: Sequence[float] = (0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9),
+    test: pd.DataFrame | None = None,
+    params: dict[str, Any] | None = None,
+    early_stopping_rounds: int = 100,
+    verbose: bool = True,
+) -> dict[float, CVResult]:
+    """Birden fazla kuantil seviyesinde regresyon egitir -- "kuantil merdiveni".
+
+    ``mae_optimal_quantile`` her SATIR icin farkli bir kuantil seviyesi ister.
+    Tek bir modelle bu saglanamaz; bir merdiven egitip aradaki degerleri
+    interpolasyonla elde ederiz.
+
+    Args:
+        quantiles: Egitilecek seviyeler. Sik aralik daha iyi interpolasyon
+            verir ama her seviye AYRI bir CV kosusu demektir -- 10 seviye x
+            5 fold = 50 model egitimi.
+
+    Returns:
+        ``{kuantil: CVResult}``.
+
+    NOT: LightGBM'de ``objective="quantile"`` ve ``alpha`` kullanilir. Bu
+    surumde (4.6.0) ``alpha=0.5`` sorunsuz calisiyor -- olculdu, bir donem
+    bildirilen best_iteration=1 hatasi burada YOK.
+    """
+    ladder: dict[float, CVResult] = {}
+    base = dict(params) if params else starter_params("lightgbm", "regression")
+
+    for level in quantiles:
+        level_params = dict(base)
+        level_params["objective"] = "quantile"
+        level_params["alpha"] = float(level)
+
+        if verbose:
+            print(f"  kuantil {level:.2f} egitiliyor...")
+
+        ladder[float(level)] = cross_validate(
+            train, target, folds,
+            kind="lightgbm", task_type="regression", metric="mae",
+            params=level_params, test=test,
+            early_stopping_rounds=early_stopping_rounds, verbose=False,
+        )
+
+    return ladder
+
+
+def conditional_quantile_from_hurdle(
+    positive_probability: np.ndarray,
+    ladder_predictions: dict[float, np.ndarray],
+) -> np.ndarray:
+    """Kuantil merdivenini kullanarak MAE-optimal tahmini uretir.
+
+    Her satir icin:
+      1. ``q* = 1 - 0.5/p`` hesapla
+      2. ``q* <= 0`` ise (yani ``p <= 0.5``) tahmin **0**
+      3. Degilse merdivendeki komsu iki seviye arasinda dogrusal interpolasyon
+
+    Args:
+        positive_probability: 1. asamanin OOF olasiliklari.
+        ladder_predictions: ``{kuantil: tahmin dizisi}`` -- her dizi tum
+            satirlar icin o kuantil seviyesindeki tahmin.
+
+    Returns:
+        MAE-optimal tahminler.
+
+    Raises:
+        ValueError: Merdiven bossa veya dizi uzunluklari uyusmuyorsa.
+    """
+    if not ladder_predictions:
+        raise ValueError("Kuantil merdiveni bos.")
+
+    levels = np.array(sorted(ladder_predictions), dtype="float64")
+    matrix = np.column_stack([ladder_predictions[level] for level in levels])
+
+    probability = np.asarray(positive_probability, dtype="float64")
+    if len(probability) != matrix.shape[0]:
+        raise ValueError(
+            f"Olasilik ({len(probability)}) ve tahmin ({matrix.shape[0]}) "
+            "uzunluklari farkli."
+        )
+
+    targets = mae_optimal_quantile(probability)
+    result = np.zeros(len(probability), dtype="float64")
+
+    needs_quantile = ~np.isnan(targets)
+    if needs_quantile.any():
+        wanted = np.clip(targets[needs_quantile], levels.min(), levels.max())
+        rows = np.flatnonzero(needs_quantile)
+        # Satir bazinda interpolasyon: her satirin kendi merdiven degerleri
+        # uzerinde, kendi hedef kuantiline gore.
+        for row, level in zip(rows, wanted, strict=True):
+            result[row] = float(np.interp(level, levels, matrix[row]))
+
+    return np.clip(result, 0, None)
 
 
 def _stage2_predictions_everywhere(
