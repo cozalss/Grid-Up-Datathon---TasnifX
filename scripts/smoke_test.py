@@ -43,6 +43,7 @@ from gridup.features import (  # noqa: E402
     add_turkish_holiday_features,
     oof_target_encode,
 )
+from gridup.features.temporal import shared_origin  # noqa: E402
 from gridup.metrics import log_transform_target  # noqa: E402
 from gridup.synthetic import SyntheticSpec, make_distribution_dataset  # noqa: E402
 from gridup.turkish import diagnose_join, join_key  # noqa: E402
@@ -126,38 +127,41 @@ def main() -> int:
     banner("6. FEATURE URETIMI")
     drop_columns = [TARGET, "ariza_var_mi", "ariza_tipi"]
 
+    train[TIME_COLUMN] = pd.to_datetime(train[TIME_COLUMN])
+    test[TIME_COLUMN] = pd.to_datetime(test[TIME_COLUMN])
+
+    # ORTAK origin: train ve test icin ayri ayri hesaplanirsa test'in gun
+    # sayaci yeniden 0'dan baslar ve model test'i train'in gecmisi sanir.
+    origin = shared_origin(train, test, time_column=TIME_COLUMN)
+    print(f"  Ortak zaman baslangici: {origin.date()}")
+
+    # Test bloğu 3 ay ileride -> tahmin aninda son 90 gunun verisi YOK.
+    # Lag/rolling'ler bu ufka gore kaydirilmali, aksi halde model uretimde
+    # sahip olmayacagi bir sinyale bagimli olur.
+    horizon = int((test[TIME_COLUMN].max() - test[TIME_COLUMN].min()).days) + 1
+    print(f"  Tahmin ufku (test blok uzunlugu): {horizon} gun")
+
     def build_features(frame: pd.DataFrame) -> pd.DataFrame:
         """Train ve test'e AYNI donusumleri uygular -- egitim/servis esdegerligi."""
-        out = frame.copy()
-        out[TIME_COLUMN] = pd.to_datetime(out[TIME_COLUMN])
-        out = add_calendar_features(out, TIME_COLUMN, include_year=False)
+        out = add_calendar_features(frame, TIME_COLUMN, include_year=False, origin=origin)
         out = add_turkish_holiday_features(out, TIME_COLUMN)
         out = add_group_statistics(
             out, ["ilce"], ["tuketim_kwh", "sicaklik_c"],
-            aggregations=("mean", "std", "max"),
+            aggregations=("mean", "std", "max"), target_column=TARGET,
         )
-        return add_frequency_encoding(out, ["ilce", "il", "fider_no", "abone_grubu"])
+        out = add_frequency_encoding(out, ["ilce", "il", "fider_no", "abone_grubu"])
+        out = add_lag_features(
+            out, "tuketim_kwh", [1, 7, 28],
+            time_column=TIME_COLUMN, group_columns=[GROUP_COLUMN], horizon=horizon,
+        )
+        return add_rolling_features(
+            out, "tuketim_kwh", [7, 28],
+            time_column=TIME_COLUMN, group_columns=[GROUP_COLUMN], horizon=horizon,
+            aggregations=("mean", "std"),
+        )
 
     train_features = build_features(train)
     test_features = build_features(test)
-
-    # Lag/rolling YALNIZCA train'de hedef uzerinden -- test'te hedef yok.
-    # Gercek yarismada bu, gecmisi test'e tasiyan ayri bir adim gerektirir;
-    # burada tuketim uzerinden (her ikisinde de var olan) uretiyoruz.
-    for name, frame in (("train", train_features), ("test", test_features)):
-        lagged = add_lag_features(
-            frame, "tuketim_kwh", [1, 7, 28],
-            time_column=TIME_COLUMN, group_columns=[GROUP_COLUMN],
-        )
-        rolled = add_rolling_features(
-            lagged, "tuketim_kwh", [7, 28],
-            time_column=TIME_COLUMN, group_columns=[GROUP_COLUMN],
-            aggregations=("mean", "std"),
-        )
-        if name == "train":
-            train_features = rolled
-        else:
-            test_features = rolled
 
     print(f"  train feature sayisi: {train_features.shape[1]}")
     print(f"  test  feature sayisi: {test_features.shape[1]}")
@@ -165,14 +169,10 @@ def main() -> int:
     # ------------------------------------------------------------------
     banner("7. CV FOLD'LARI (ambargolu zaman serisi -- kayan pencere sizintisini keser)")
     times = pd.to_datetime(train_features[TIME_COLUMN])
-    folds = list(
-        purged_time_series_split(times, n_splits=4, embargo=pd.Timedelta(days=30))
-    )
+    # Ambargo, en uzun kayan pencereden (28) BUYUK secildi.
+    folds = purged_time_series_split(times, n_splits=4, embargo=pd.Timedelta(days=35))
     for index, (train_idx, valid_idx) in enumerate(folds, start=1):
         print(f"  fold {index}: train={len(train_idx):>7,}  valid={len(valid_idx):>7,}")
-    if not folds:
-        print("  BASARISIZ: hic fold uretilmedi.")
-        return 1
 
     # ------------------------------------------------------------------
     banner("8. FOLD-DISI HEDEF KODLAMA (sizintisiz)")

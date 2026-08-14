@@ -11,6 +11,15 @@ from gridup.compat import (
     categorical_columns,
     is_categorical_like,
     safe_concat,
+    safe_str,
+)
+from gridup.features.aggregate import add_group_statistics
+from gridup.features.categorical import add_combination_features, add_frequency_encoding
+from gridup.features.temporal import (
+    MISSING_HOLIDAY_DISTANCE,
+    add_calendar_features,
+    add_lag_features,
+    add_turkish_holiday_features,
 )
 from gridup.io_utils import read_table, sniff_dialect
 from gridup.metrics import (
@@ -23,6 +32,7 @@ from gridup.metrics import (
 from gridup.profiling import profile
 from gridup.submission import blend_submissions, validate_submission, write_submission
 from gridup.synthetic import SyntheticSpec, make_distribution_dataset
+from gridup.turkish import normalize_columns
 
 
 class TestDialectSniffing:
@@ -139,6 +149,142 @@ class TestCompat:
         result = safe_concat([pd.DataFrame({"a": [1]}), pd.DataFrame(columns=["a"])])
         assert len(result) == 1
         assert pd.api.types.is_numeric_dtype(result["a"])
+
+
+class TestDirtyDataSurvival:
+    """Gercek veride kacinilmaz olan bozukluklar pipeline'i COKERTMEMELI.
+
+    Bu testlerin hepsi, adversarial review sirasinda gercekten cokturulen
+    veya sessizce yanlis sonuc ureten senaryolardir.
+    """
+
+    def test_calendar_features_survive_unparseable_dates(self):
+        frame = pd.DataFrame({"tarih": ["2024-01-01", "bozuk-tarih", "2024-01-03"]})
+        result = add_calendar_features(frame, "tarih")
+        assert len(result) == 3
+        assert result["tarih_ay"].isna().sum() == 1
+
+    def test_holiday_distance_does_not_mark_broken_dates_as_holidays(self):
+        """NaT sentinel'i int16'ya kirpilinca 0'a dusuyordu -> 'tam bayram gunu'."""
+        frame = pd.DataFrame(
+            {"tarih": ["2024-06-15", "bozuk-tarih", "2024-07-04", "2024-03-11"]}
+        )
+
+        result = add_turkish_holiday_features(frame, "tarih")
+
+        broken = result.iloc[1]
+        assert broken["tatil_mesafe"] == MISSING_HOLIDAY_DISTANCE
+        assert broken["tatil_yakininda"] == 0
+
+    def test_lag_features_survive_missing_group_values(self):
+        """np.lexsort ham object dizisinde str/None karsilastirmasiyla cokuyordu."""
+        frame = pd.DataFrame(
+            {
+                "tarih": pd.to_datetime(
+                    ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04"]
+                ),
+                "trafo_id": ["A", None, "A", None],
+                "deger": [10.0, 20.0, 30.0, 40.0],
+            }
+        )
+
+        result = add_lag_features(
+            frame, "deger", [1], time_column="tarih", group_columns=["trafo_id"]
+        )
+
+        assert len(result) == 4
+        # Eksik grup kendi icinde bir grup olur; A grubunun 2. satiri 10.0 gorur.
+        assert result.loc[2, "deger_lag1"] == pytest.approx(10.0)
+
+    def test_lag_features_sort_string_dates_chronologically(self):
+        """Sifir dolgusuz metin tarihte sozluksel siralama yanlis lag uretiyordu."""
+        frame = pd.DataFrame(
+            {
+                "tarih": ["2024-1-2", "2024-1-9", "2024-1-10", "2024-1-20", "2024-1-3"],
+                "trafo_id": ["A"] * 5,
+                "deger": [1.0, 2.0, 3.0, 4.0, 1.5],
+            }
+        )
+
+        result = add_lag_features(
+            frame, "deger", [1], time_column="tarih", group_columns=["trafo_id"]
+        )
+
+        # 2024-1-3 (deger 1.5) satirinin lag1'i 2024-1-2'nin degeri = 1.0 olmali
+        assert result.loc[4, "deger_lag1"] == pytest.approx(1.0)
+
+
+class TestVersionSafeStrings:
+    """.astype(str) pandas 2.x'te NaN'i 'None' stringine cevirir -- safe_str cevirmez."""
+
+    def test_safe_str_preserves_missing_by_default(self):
+        result = safe_str(pd.Series(["a", "b", None]))
+        assert result.isna().sum() == 1
+        assert "None" not in result.dropna().tolist()
+
+    def test_safe_str_applies_sentinel_when_asked(self):
+        result = safe_str(pd.Series(["a", None]), missing="_EKSIK")
+        assert result.tolist() == ["a", "_EKSIK"]
+
+    def test_combination_features_do_not_invent_none_categories(self):
+        frame = pd.DataFrame(
+            {"il": ["izmir", None, "mugla"], "ilce": ["konak", "bornova", None]}
+        )
+
+        result = add_combination_features(frame, [("il", "ilce")])
+        values = result["il__ilce"].astype(object).tolist()
+
+        assert values[0] == "izmir__konak"
+        assert pd.isna(values[1]) and pd.isna(values[2])
+        assert not any(isinstance(v, str) and "None" in v for v in values)
+
+
+class TestEncodingDistinguishesMissingFromUnseen:
+    def test_unseen_category_gets_zero_but_missing_stays_nan(self):
+        reference = pd.DataFrame({"tip": ["a", "a", "b", "b", "b"]})
+        frame = pd.DataFrame({"tip": ["a", "b", "c", None]})
+
+        result = add_frequency_encoding(frame, ["tip"], reference=reference)
+        encoded = result["tip_frekans"]
+
+        assert encoded.iloc[2] == pytest.approx(0.0)   # gorulmemis kategori
+        assert pd.isna(encoded.iloc[3])                 # gercekten eksik
+
+
+class TestAggregateTargetGuard:
+    def test_target_in_value_columns_is_rejected(self):
+        frame = pd.DataFrame({"ilce": ["a", "b"], "hedef": [1.0, 2.0]})
+        with pytest.raises(ValueError, match="sizinti"):
+            add_group_statistics(frame, ["ilce"], ["hedef"], target_column="hedef")
+
+
+class TestSubmissionClippingIsVisible:
+    def test_negative_predictions_are_reported_before_clipping(self, tmp_path, capsys):
+        """Once kirpip sonra dogrulamak uyariyi ASLA tetiklenemez kiliyordu."""
+        write_submission(
+            np.array([1, 2, 3, 4]),
+            np.array([-5.0, -2.0, 10.0, 20.0]),
+            tmp_path / "sub.csv",
+            id_column="ID", target_column="hedef",
+        )
+
+        output = capsys.readouterr().out
+        assert "negatif" in output.lower()
+        assert "KIRPILDI" in output
+
+
+class TestProfileFailsLoudlyOnBadTarget:
+    def test_misspelled_target_raises_instead_of_silently_skipping(self):
+        frame = pd.DataFrame({"hedef": [1.0, 2.0], "x": [1, 2]})
+        with pytest.raises(KeyError):
+            profile(frame, target="Hedef")
+
+
+class TestColumnNormalizationCollisions:
+    def test_suffix_does_not_collide_with_an_existing_raw_name(self):
+        """'A/B' + 'A B' -> a_b, a_b_2 ; ama 'A_B_2' zaten a_b_2'ye gidiyordu."""
+        mapping = normalize_columns(["A/B", "A B", "A_B_2"])
+        assert len(set(mapping.values())) == 3
 
 
 class TestMetrics:
@@ -320,7 +466,9 @@ class TestEndToEnd:
         test = add_calendar_features(test, "tarih", include_year=False)
 
         columns = [c for c in train.columns if c not in drop and c in test.columns]
-        folds = list(purged_time_series_split(train["tarih"], n_splits=3))
+        folds = purged_time_series_split(
+            train["tarih"], n_splits=3, embargo=pd.Timedelta(days=7), verbose=False
+        )
 
         params = starter_params("lightgbm", "regression")
         params["n_estimators"] = 120

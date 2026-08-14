@@ -22,6 +22,9 @@ from collections.abc import Iterable, Sequence
 import numpy as np
 import pandas as pd
 
+from ..compat import safe_str
+from ..validation import assert_folds_align
+
 __all__ = [
     "add_frequency_encoding",
     "add_count_encoding",
@@ -56,8 +59,13 @@ def add_frequency_encoding(
         if column not in frame.columns:
             raise KeyError(f"Kolon '{column}' frame icinde yok.")
         frequencies = source[column].value_counts(normalize=True, dropna=False)
-        new_columns[f"{column}{suffix}"] = (
-            frame[column].map(frequencies).astype("float32").fillna(0.0)
+        mapped = frame[column].map(frequencies).astype("float32")
+        # "Hic gorulmemis kategori" ile "gercekten eksik deger" AYNI SEY DEGILDIR.
+        # Ikisini de 0.0 yapmak modelin ayrimi gormesini engeller: biri "bu tip
+        # hakkinda bilgimiz yok", digeri "bu kayitta tip girilmemis".
+        # Gercekten eksik olan satirlar NaN kalir -- GBDT'ler NaN'i yerli isler.
+        new_columns[f"{column}{suffix}"] = mapped.mask(
+            mapped.isna() & frame[column].notna(), 0.0
         )
 
     return frame.assign(**new_columns)
@@ -83,8 +91,10 @@ def add_count_encoding(
         if column not in frame.columns:
             raise KeyError(f"Kolon '{column}' frame icinde yok.")
         counts = source[column].value_counts(dropna=False)
-        new_columns[f"{column}{suffix}"] = (
-            frame[column].map(counts).astype("float32").fillna(0.0)
+        mapped = frame[column].map(counts).astype("float32")
+        # Bkz. add_frequency_encoding: eksik deger 0 DEGIL, NaN kalir.
+        new_columns[f"{column}{suffix}"] = mapped.mask(
+            mapped.isna() & frame[column].notna(), 0.0
         )
 
     return frame.assign(**new_columns)
@@ -157,8 +167,14 @@ def oof_target_encode(
     if len(train) != len(target):
         raise ValueError(f"train ({len(train)}) ve target ({len(target)}) uzunluklari farkli.")
 
+    # Fold'lar gercekten bu frame icin mi uretildi? Kontrol etmezsek yanlis
+    # satirlar kodlanir ve hicbir hata firlamaz.
+    assert_folds_align(len(train), fold_list)
+
     target_values = pd.Series(np.asarray(target, dtype=float), index=range(len(target)))
-    prior = float(target_values.mean())
+    # Test kodlamasi icin tum train'den hesaplanan prior. Test hedefi zaten
+    # bilinmedigi icin burada sizinti yok.
+    global_prior = float(target_values.mean())
     rng = np.random.default_rng(seed)
 
     train_encoded: dict[str, np.ndarray] = {}
@@ -170,22 +186,34 @@ def oof_target_encode(
 
         categories = train[column].reset_index(drop=True)
         oof = np.full(len(train), np.nan, dtype="float64")
+        fold_priors = np.full(len(train), global_prior, dtype="float64")
 
         for fit_idx, apply_idx in fold_list:
+            # Prior da FOLD ICINDEN hesaplanir. Global prior kullanmak, satirin
+            # kendi hedefinden gelen 1/N buyuklugunde bir katkiyi kendi
+            # kodlamasina sizdirir -- kucuk ama fold izolasyonunu tam kilmayan
+            # bir ihlal. Kucuk veri setlerinde (12 gunluk datathon boyutlari)
+            # ve yuksek smoothing'de etkisi olcülebilir hale gelir.
+            fold_prior = float(target_values.iloc[fit_idx].mean())
             means = _smoothed_means(
                 categories.iloc[fit_idx],
                 target_values.iloc[fit_idx],
-                prior=prior,
+                prior=fold_prior,
                 smoothing=smoothing,
             )
             oof[apply_idx] = categories.iloc[apply_idx].map(means).to_numpy(dtype="float64")
+            fold_priors[apply_idx] = fold_prior
 
-        # Hicbir fold'un gormedigi kategori -> genel ortalama.
-        oof = np.where(np.isnan(oof), prior, oof)
+        # Hicbir fold'un gormedigi kategori -> o fold'un ortalamasi.
+        oof = np.where(np.isnan(oof), fold_priors, oof)
 
         if noise_level > 0:
-            scale = float(target_values.std()) * noise_level
-            oof = oof + rng.normal(0.0, scale, size=len(oof))
+            # Tek satirlik hedefte std() (ddof=1) NaN doner ve TUM kolonu
+            # NaN yapar -- yukaridaki NaN doldurma guvencesini de asar.
+            spread = float(target_values.std())
+            scale = spread * noise_level if np.isfinite(spread) else 0.0
+            if scale > 0:
+                oof = oof + rng.normal(0.0, scale, size=len(oof))
 
         train_encoded[f"{column}{suffix}"] = oof.astype("float32")
 
@@ -193,11 +221,11 @@ def oof_target_encode(
             if column not in test.columns:
                 raise KeyError(f"Kolon '{column}' test icinde yok.")
             full_means = _smoothed_means(
-                categories, target_values, prior=prior, smoothing=smoothing
+                categories, target_values, prior=global_prior, smoothing=smoothing
             )
             mapped = test[column].map(full_means).to_numpy(dtype="float64")
             test_encoded[f"{column}{suffix}"] = np.where(
-                np.isnan(mapped), prior, mapped
+                np.isnan(mapped), global_prior, mapped
             ).astype("float32")
 
     encoded_train = train.assign(**train_encoded)
@@ -226,9 +254,14 @@ def add_combination_features(
             if column not in frame.columns:
                 raise KeyError(f"Kolon '{column}' frame icinde yok.")
         name = f"{left}{separator}{right}"
-        new_columns[name] = (
-            frame[left].astype(str) + separator + frame[right].astype(str)
-        ).astype("category")
+        # safe_str: pandas 2.x'te .astype(str) NaN'i "None" stringine cevirir ve
+        # "None__bornova" gibi UYDURMA kategoriler uretir. Taraflardan biri
+        # eksikse sonuc da eksik olmali -- surumden bagimsiz olarak.
+        left_text = safe_str(frame[left])
+        right_text = safe_str(frame[right])
+        combined = left_text + separator + right_text
+        either_missing = frame[left].isna() | frame[right].isna()
+        new_columns[name] = combined.mask(either_missing).astype("category")
     return frame.assign(**new_columns)
 
 

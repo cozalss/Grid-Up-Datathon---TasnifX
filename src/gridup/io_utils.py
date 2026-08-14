@@ -141,15 +141,23 @@ def _guess_decimal(head: str, delimiter: str) -> tuple[str, str | None]:
         return ".", None
 
     body = head[head.find("\n") + 1 :]  # basligi atla
-    comma_decimal_hits = sum(1 for token in body.split(delimiter) if _looks_like_tr_number(token))
-    dot_decimal_hits = sum(1 for token in body.split(delimiter) if _looks_like_en_number(token))
+    tokens = body.split(delimiter)
+    comma_decimal_hits = sum(1 for token in tokens if _looks_like_tr_number(token))
+    dot_decimal_hits = sum(1 for token in tokens if _looks_like_en_number(token))
 
-    if comma_decimal_hits > dot_decimal_hits:
-        # Binlik ayirici '.' -- 1.234.567,89 TEK sayidir.
-        has_thousands = any("." in token and "," in token for token in body.split(delimiter))
-        return ",", "." if has_thousands else None
+    # ';' ayirici gorulduyse ondalik VARSAYILAN olarak ',' kabul edilir.
+    # Neden: ';' ayirici zaten ',' ondalik oldugu ICIN secilir (Turkce Excel).
+    # Heuristik sayim yanilabilir -- '212.345' gibi nokta-grupli bir trafo ID'si
+    # "Ingilizce ondalik" sayilir ve gercek ondalikli alanlar ornekte seyrekse
+    # sayaci yanlis tarafa kaydirir. Sonuc sessizdir: decimal='.' ile okunan
+    # '1.234,56' hucreleri sayiya cevrilemez, kolon object dtype'da kalir ve
+    # sayisal bir feature kategorik muamelesi gorur.
+    # Bu yuzden ','den ancak GUCLU kanit varsa vazgeciyoruz.
+    if dot_decimal_hits > comma_decimal_hits * 2 and dot_decimal_hits >= 3:
+        return ".", None
 
-    return ".", None
+    has_thousands = any("." in token and "," in token for token in tokens)
+    return ",", "." if has_thousands else None
 
 
 def _looks_like_tr_number(token: str) -> bool:

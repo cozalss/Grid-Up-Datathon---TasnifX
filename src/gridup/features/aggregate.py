@@ -25,6 +25,23 @@ __all__ = ["add_group_statistics", "add_ratio_features", "add_target_free_aggreg
 _DEFAULT_AGGREGATIONS = ("mean", "std", "min", "max", "median")
 
 
+def _reject_target(value_columns: Sequence[str], target_column: str | None) -> None:
+    """Hedef kolonu ``value_columns`` icindeyse ACIKCA reddeder.
+
+    Bu fonksiyon ailesi hedefi kullanmadigi ICIN fold'a ihtiyac duymaz ve
+    train+test uzerinde guvenle calisir. Ama hedef kazara ``value_columns``a
+    girerse, satirin KENDI hedefi kendi grup ortalamasina karisir -- yani
+    ``oof_target_encode``in onlemek icin var oldugu sizinti, baska bir kapidan
+    geri gelir. CV skoru siser, leaderboard coker.
+    """
+    if target_column and target_column in value_columns:
+        raise ValueError(
+            f"Hedef kolon '{target_column}' value_columns icinde. Grup istatistikleri "
+            "fold-disi DEGILDIR; hedefle kullanilirsa dogrudan sizinti olur. "
+            "Hedef bazli kodlama icin features.oof_target_encode kullan."
+        )
+
+
 def add_group_statistics(
     frame: pd.DataFrame,
     group_columns: Sequence[str],
@@ -33,6 +50,7 @@ def add_group_statistics(
     aggregations: Sequence[str] = _DEFAULT_AGGREGATIONS,
     reference: pd.DataFrame | None = None,
     add_deviation: bool = True,
+    target_column: str | None = None,
 ) -> pd.DataFrame:
     """Grup bazli istatistikler ve satirin gruptan sapmasini ekler.
 
@@ -48,6 +66,8 @@ def add_group_statistics(
     Returns:
         Yeni DataFrame.
     """
+    _reject_target(value_columns, target_column)
+
     source = reference if reference is not None else frame
     group_list = list(group_columns)
 
@@ -133,6 +153,7 @@ def add_target_free_aggregates(
     value_columns: Sequence[str],
     *,
     aggregations: Sequence[str] = _DEFAULT_AGGREGATIONS,
+    target_column: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Train ve test'e AYNI grup istatistiklerini uygular. Iki yeni frame dondurur.
 
@@ -144,7 +165,9 @@ def add_target_free_aggregates(
     OLMAYAN standart bir tekniktir -- test'in HEDEFINI degil, yalnizca
     feature dagilimini kullanir.
     """
-    shared = [column for column in (list(group_columns) + list(value_columns))]
+    _reject_target(value_columns, target_column)
+
+    shared = list(group_columns) + list(value_columns)
     missing_train = [column for column in shared if column not in train.columns]
     missing_test = [column for column in shared if column not in test.columns]
     if missing_train or missing_test:
@@ -157,10 +180,10 @@ def add_target_free_aggregates(
     return (
         add_group_statistics(
             train, group_columns, value_columns,
-            aggregations=aggregations, reference=reference,
+            aggregations=aggregations, reference=reference, target_column=target_column,
         ),
         add_group_statistics(
             test, group_columns, value_columns,
-            aggregations=aggregations, reference=reference,
+            aggregations=aggregations, reference=reference, target_column=target_column,
         ),
     )

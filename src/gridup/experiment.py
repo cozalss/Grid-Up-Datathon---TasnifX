@@ -142,6 +142,13 @@ class ExperimentLog:
                 record["lb_score"] = lb_score
                 break
         else:
+            # Notebook'ta donus degeri kolayca gozden kacar. Sessizce False
+            # donmek, CV-LB korelasyonunun eksik veriyle hesaplanmasina yol acar.
+            available = sorted({str(record.get("name")) for record in records})
+            print(
+                f"UYARI: '{name}' adli deney bulunamadi, LB skoru KAYDEDILMEDI. "
+                f"Mevcut deney adlari: {available[:10]}"
+            )
             return False
 
         with self.path.open("w", encoding="utf-8") as handle:

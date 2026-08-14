@@ -296,7 +296,15 @@ def profile(
     time_columns = [column.name for column in columns if column.kind == "tarih"]
 
     target_summary: dict[str, Any] = {}
-    if target and target in train.columns:
+    if target:
+        # Yanlis yazilmis hedef adini SESSIZCE atlamayiz: rapordan "--- HEDEF ---"
+        # bolumu kaybolur, kullanici raporun eksiksiz oldugunu sanir ve
+        # carpiklik/dengesizlik uyarilarini hic gormez.
+        if target not in train.columns:
+            raise KeyError(
+                f"Hedef kolon '{target}' train icinde yok. "
+                f"Mevcut kolonlar: {list(train.columns)[:20]}"
+            )
         target_summary = _summarize_target(train[target])
 
     return DatasetProfile(

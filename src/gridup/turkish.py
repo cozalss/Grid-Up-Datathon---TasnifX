@@ -155,7 +155,22 @@ def normalize_columns(columns: Iterable[str]) -> dict[str, str]:
 
         count = seen.get(safe, 0) + 1
         seen[safe] = count
-        mapping[raw] = safe if count == 1 else f"{safe}_{count}"
+        candidate = safe if count == 1 else f"{safe}_{count}"
+
+        # Sonek eklemek YENI bir cakisma yaratabilir: ham kolonlar arasinda
+        # zaten 'a_b_2' varsa ve 'A/B' + 'A B' cakismasi 'a_b_2' uretiyorsa
+        # iki kolon ayni ada duser. pandas bunu HATA VERMEZ -- frame['a_b_2']
+        # artik Series degil, iki kolonlu bir DataFrame doner ve downstream
+        # kod ya patlar ya sessizce yanlis calisir.
+        while candidate in mapping.values():
+            count += 1
+            seen[safe] = count
+            candidate = f"{safe}_{count}"
+
+        mapping[raw] = candidate
+
+    if len(set(mapping.values())) != len(mapping):  # pragma: no cover - savunma
+        raise ValueError("Kolon adi normalizasyonu cakisma uretti; ham adlari kontrol et.")
 
     return mapping
 

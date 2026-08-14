@@ -173,19 +173,21 @@ def write_submission(
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    values = np.asarray(predictions, dtype="float64").ravel()
-    if clip_negative:
-        values = np.clip(values, 0, None)
+    raw_values = np.asarray(predictions, dtype="float64").ravel()
 
     if sample is not None:
         id_column = sample.columns[0]
         target_column = sample.columns[-1]
 
-    submission = pd.DataFrame({id_column: np.asarray(ids).ravel(), target_column: values})
+    identifiers = np.asarray(ids).ravel()
 
+    # DOGRULAMA KIRPMADAN ONCE yapilir. Once kirpip sonra dogrulamak,
+    # "negatif tahmin var" uyarisini ASLA tetiklenemez hale getirir -- yani
+    # ters log donusumundeki bir isaret hatasi veya olcek hatasi sessizce
+    # 0.0'a bastirilir ve iz birakmaz.
     if validate:
         check = validate_submission(
-            submission,
+            pd.DataFrame({id_column: identifiers, target_column: raw_values}),
             sample=sample,
             id_column=id_column,
             target_column=target_column,
@@ -193,6 +195,23 @@ def write_submission(
         )
         print(check)
         check.raise_if_invalid()
+
+    values = raw_values
+    if clip_negative:
+        negative = raw_values < 0
+        negative_count = int(negative.sum())
+        if negative_count:
+            worst = float(raw_values[negative].min())
+            share = negative_count / len(raw_values) * 100
+            print(
+                f"  KIRPILDI: {negative_count:,} tahmin (%{share:.2f}) "
+                f"negatifti ve 0'a cekildi. En kucuk deger: {worst:.4f}. "
+                "Bu oran yuksekse model olcegi veya ters donusum hatalidir -- "
+                "kirpma bir cozum degil, bir semptom ortbasidir."
+            )
+        values = np.clip(raw_values, 0, None)
+
+    submission = pd.DataFrame({id_column: identifiers, target_column: values})
 
     submission.to_csv(path, index=False, float_format=float_format, encoding="utf-8")
     print(f"Yazildi: {path}  ({len(submission)} satir)")

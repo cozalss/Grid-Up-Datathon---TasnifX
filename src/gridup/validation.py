@@ -28,7 +28,7 @@ KARAR AGACI
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -52,6 +52,7 @@ __all__ = [
     "adversarial_validation",
     "leakage_report",
     "check_train_test_overlap",
+    "assert_folds_align",
 ]
 
 TaskType = Literal["regression", "binary", "multiclass"]
@@ -77,6 +78,52 @@ class SchemeSuggestion:
         for warning in self.warnings:
             lines.append(f"UYARI: {warning}")
         return "\n".join(lines)
+
+
+def assert_folds_align(n_rows: int, folds: Sequence[tuple[np.ndarray, np.ndarray]]) -> None:
+    """Fold indekslerinin verilen frame ile hizali oldugunu dogrular.
+
+    NEDEN GEREKLI: ``cross_validate`` ve ``oof_target_encode`` POZISYONEL
+    (``.iloc``) indeksleme kullanir ve fold'larin ayni siradaki, ayni uzunluktaki
+    bir frame icin uretildigini VARSAYAR.
+
+    Tipik kaza: fold'lar ham ``train`` uzerinden uretilir, sonra feature
+    asamasinda bir ``merge`` (or. hava durumu birlestirmesi), ``dropna()`` veya
+    ``sort_values()`` satir sayisini/sirasini degistirir. Indeksler sinirlar
+    icinde kaldigi surece **hicbir hata firlamaz** -- CV sessizce YANLIS
+    satirlari train/valid olarak esler ve skorlar anlamsizlasir.
+
+    Bu fonksiyon o sessiz hatayi gurultulu bir hataya cevirir.
+
+    Raises:
+        ValueError: Fold bossa, indeks sinir disindaysa veya bir fold'un train
+            ve valid kumeleri kesisiyorsa.
+    """
+    if not folds:
+        raise ValueError(
+            "Fold listesi bos. validation.build_splitter veya "
+            "purged_time_series_split ile uret."
+        )
+
+    for index, (train_idx, valid_idx) in enumerate(folds, start=1):
+        for name, indices in (("train", train_idx), ("valid", valid_idx)):
+            array = np.asarray(indices)
+            if array.size == 0:
+                raise ValueError(f"Fold {index}: '{name}' kumesi bos.")
+            if array.min() < 0 or array.max() >= n_rows:
+                raise ValueError(
+                    f"Fold {index}: '{name}' indeksi [{array.min()}, {array.max()}] "
+                    f"araliginda ama frame yalnizca {n_rows} satir. "
+                    "Fold'lar baska bir frame icin uretilmis olabilir -- "
+                    "merge/dropna/sort satir sayisini degistirdi mi?"
+                )
+
+        overlap = np.intersect1d(train_idx, valid_idx, assume_unique=False)
+        if overlap.size:
+            raise ValueError(
+                f"Fold {index}: {overlap.size} satir hem train hem valid'de. "
+                "Bu dogrudan sizintidir -- CV skoru anlamsiz olur."
+            )
 
 
 def _detect_time_columns(frame: pd.DataFrame) -> list[str]:
@@ -118,8 +165,18 @@ def _detect_group_columns(
     candidates = []
     for column in frame.columns:
         series = frame[column]
+
+        # Float kolonlari KORU SUZCE atlamayiz. Gercek veride bir tamsayi ID
+        # kolonu (trafo_id) tek bir eksik deger yuzunden pandas tarafindan
+        # float64'e yukseltilir. Onu atlarsak GroupKFold onerilmez, duz KFold
+        # onerilir ve ayni trafo hem train hem valid'e duser -- bu modulun
+        # onlemek icin var oldugu grup sizintisinin ta kendisi.
+        # Cozum: tamsayiya esit float'lari (ID gorunumlu) aday kabul et.
         if pd.api.types.is_float_dtype(series):
-            continue
+            finite = series.dropna()
+            if finite.empty or not np.all(np.equal(np.mod(finite.to_numpy(), 1), 0)):
+                continue
+
         unique = series.nunique(dropna=True)
         if unique <= 1:
             continue
@@ -229,9 +286,10 @@ def build_splitter(
 def purged_time_series_split(
     times: pd.Series,
     *,
+    embargo: pd.Timedelta,
     n_splits: int = 5,
-    embargo: pd.Timedelta | None = None,
-) -> Iterator[tuple[np.ndarray, np.ndarray]]:
+    verbose: bool = True,
+) -> list[tuple[np.ndarray, np.ndarray]]:
     """Fold sinirinda 'ambargo' bosluğu birakan zaman serisi bolmesi.
 
     Standart ``TimeSeriesSplit`` train'in son ani ile valid'in ilk anini
@@ -240,32 +298,49 @@ def purged_time_series_split(
     satirlarinin feature'lari ilk valid satirlariyla ayni ham veriyi kullanir.
     Bu, CV'yi iyimser gosteren ince bir sizintidir.
 
-    ``embargo`` kadar bir bosluk birakmak bunu keser. Kural: ambargo, en uzun
-    rolling penceresinden BUYUK olmali.
-
     Args:
         times: Zaman damgalari (frame ile ayni sirada, ayni uzunlukta).
+        embargo: Train ile valid arasinda birakilacak bosluk. **ZORUNLU.**
+            Kural: **en uzun kayan pencerenden BUYUK olmali.** 7/14/30 gunluk
+            pencereler kullaniyorsan ``pd.Timedelta(days=30)`` uygun bir baslangictir.
+            Ambargo istemiyorsan ``pd.Timedelta(0)`` yaz -- bilincli bir karar olsun.
         n_splits: Fold sayisi.
-        embargo: Train ile valid arasinda birakilacak bosluk. ``None`` ise
-            ortalama fold suresinin %1'i kullanilir.
+        verbose: Uretilen fold sayisi istenenden azsa uyarir.
 
-    Yields:
-        ``(train_idx, valid_idx)`` konumsal indeks dizileri.
+    Returns:
+        ``(train_idx, valid_idx)`` konumsal indeks ciftlerinin listesi.
+
+    ``embargo`` NEDEN ZORUNLU
+    -------------------------
+    Onceki surumde varsayilan ``total_span / (n_splits + 1) * 0.01`` idi. Bu,
+    3 yillik gunluk bir veri setinde (n_splits=5) **~2 gun** ambargo demektir --
+    yani 7, 14 veya 30 gunluk kayan pencerelerin neredeyse tamami fold sinirini
+    asar ve tam olarak onlemeye calistigi sizintiya izin verir.
+
+    Sessizce yetersiz bir varsayilan uretmektense, degeri bilincli olarak
+    secmeni istiyoruz.
     """
     if len(times) == 0:
         raise ValueError("Bos zaman serisi ile bolme yapilamaz.")
 
-    order = np.argsort(times.to_numpy())
-    sorted_times = times.to_numpy()[order]
+    # Metin olarak saklanmis tarih SOZLUKSEL siralanir ("2024-1-10" < "2024-1-2")
+    # ve fold'lar kronolojik olmaz. Cevirmeyi garanti altina aliyoruz.
+    parsed = pd.to_datetime(times, errors="coerce")
+    if parsed.isna().all():
+        raise ValueError("Zaman kolonu ayristirilamadi -- kronolojik bolme yapilamaz.")
+
+    values = parsed.to_numpy()
+    order = np.argsort(values, kind="stable")
+    sorted_times = values[order]
     fold_edges = np.linspace(0, len(order), n_splits + 2, dtype=int)[1:]
 
-    total_span = sorted_times[-1] - sorted_times[0]
-    if embargo is None:
-        embargo = total_span / (n_splits + 1) * 0.01
+    folds: list[tuple[np.ndarray, np.ndarray]] = []
+    skipped: list[str] = []
 
     for fold in range(n_splits):
         valid_start, valid_end = fold_edges[fold], fold_edges[fold + 1]
         if valid_start >= valid_end:
+            skipped.append(f"fold {fold + 1}: dogrulama penceresi bos")
             continue
 
         boundary = sorted_times[valid_start]
@@ -274,9 +349,29 @@ def purged_time_series_split(
         train_idx = order[train_mask]
         valid_idx = order[valid_start:valid_end]
 
-        if len(train_idx) == 0 or len(valid_idx) == 0:
+        if len(train_idx) == 0:
+            skipped.append(
+                f"fold {fold + 1}: ambargo ({embargo}) train tarafini tamamen bosaltti"
+            )
             continue
-        yield train_idx, valid_idx
+        folds.append((train_idx, valid_idx))
+
+    # Dusen fold'lari SESSIZ birakmayiz: "5 istedim, 3 aldim" farki, skorlarin
+    # neden beklenenden gurultulu oldugunu acikladigi halde gorunmez kalir.
+    if verbose and len(folds) != n_splits:
+        print(
+            f"[purged_time_series_split] {n_splits} fold istendi, {len(folds)} uretildi."
+        )
+        for reason in skipped:
+            print(f"  atlandi -- {reason}")
+
+    if not folds:
+        raise ValueError(
+            f"Hicbir fold uretilemedi. Ambargo ({embargo}) veri araligina gore "
+            "cok buyuk olabilir; kuculterek veya n_splits'i azaltarak dene."
+        )
+
+    return folds
 
 
 def adversarial_validation(
@@ -395,7 +490,15 @@ def leakage_report(
     numeric_target = pd.api.types.is_numeric_dtype(target_series)
 
     # 1. Hedefle asiri korelasyon
-    if numeric_target:
+    if not numeric_target:
+        # Bu kontrol atlandiginda SESSIZ KALMAYIZ: "0 kritik" ozeti, en guclu
+        # dedektorun hic calismadigini gizler ve kullanici "sizinti yok" saniyor.
+        findings["info"].append(
+            f"Hedef '{target}' sayisal degil ({target_series.dtype}) -- korelasyon "
+            "tabanli sizinti kontrolu ATLANDI. Bu, raporun en guclu kontroludur. "
+            "Hedefi sayisal kodlayip (or. pd.factorize) tekrar calistir."
+        )
+    else:
         for column in train.columns:
             if column == target or not pd.api.types.is_numeric_dtype(train[column]):
                 continue

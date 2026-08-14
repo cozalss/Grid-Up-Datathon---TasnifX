@@ -308,7 +308,7 @@ import pandas as pd
 from gridup import cross_validate, read_any, set_global_seed, write_submission
 from gridup.compat import categorical_columns
 from gridup.experiment import ExperimentLog, ExperimentRecord
-from gridup.features import add_calendar_features, add_frequency_encoding
+from gridup.features import add_calendar_features, add_frequency_encoding, shared_origin
 from gridup.metrics import inverse_log_transform, log_transform_target
 from gridup.models import starter_params
 from gridup.validation import build_splitter, purged_time_series_split
@@ -322,9 +322,16 @@ TARGET = "HEDEF_KOLON"     # TODO
 ID_COLUMN = "id"           # TODO
 TIME_COLUMN = None         # TODO
 GROUP_COLUMN = None        # TODO
-METRIC = "rmse"            # TODO — yarışmanın resmi metriği
+METRIC = "rmse"            # TODO — yarışmanın resmi metriği (2024'te MAE idi!)
 TASK = "regression"        # regression | binary | multiclass
 LOG_TARGET = False         # metrik RMSLE ise veya hedef çok çarpıksa True
+
+# TAHMİN UFKU — en pahalı sessiz hatanın kaynağı.
+# Test ileriideki bir BLOK ise (ör. bir sonraki ay), o bloğun son gününü
+# tahmin ederken elindeki en taze veri blok uzunluğu kadar eskidir.
+# shift(1) ile hesaplanan lag'ler CV'de harika görünür, private LB'de çöker.
+# Veri geldiğinde: HORIZON = (test.tarih.max() - test.tarih.min()).days + 1
+HORIZON = 1                # TODO
 """),
     code("""
 train = read_any(DATA_DIR / "train.csv")
@@ -341,9 +348,11 @@ tüm deneyler **aynı bölmeler** üzerinde karşılaştırılabilir olsun.
 if TIME_COLUMN:
     train[TIME_COLUMN] = pd.to_datetime(train[TIME_COLUMN])
     test[TIME_COLUMN] = pd.to_datetime(test[TIME_COLUMN])
-    # Ambargo: en uzun kayan pencerenden BÜYÜK olmalı
-    folds = list(purged_time_series_split(train[TIME_COLUMN], n_splits=5,
-                                          embargo=pd.Timedelta(days=30)))
+    HORIZON = int((test[TIME_COLUMN].max() - test[TIME_COLUMN].min()).days) + 1
+    print(f"Tahmin ufku (test blok uzunluğu): {HORIZON} gün")
+    # Ambargo: en uzun kayan pencerenden BÜYÜK olmalı (zorunlu parametre)
+    folds = purged_time_series_split(train[TIME_COLUMN], n_splits=5,
+                                     embargo=pd.Timedelta(days=30))
 elif GROUP_COLUMN:
     splitter = build_splitter("GroupKFold", n_splits=5)
     folds = list(splitter.split(train, groups=train[GROUP_COLUMN]))
@@ -362,11 +371,16 @@ for i, (tr, va) in enumerate(folds, 1):
 eğitim/servis uyumsuzluğunun bir numaralı kaynağıdır.
 """),
     code("""
+# ORTAK zaman başlangıcı: train ve test için ayrı ayrı hesaplanırsa test'in
+# gün sayacı yeniden 0'dan başlar ve model test'i train'in geçmişi sanır.
+# Bu hata lokal CV'de GÖRÜNMEZ — sadece leaderboard çöker.
+ORIGIN = shared_origin(train, test, time_column=TIME_COLUMN) if TIME_COLUMN else None
+
 def build_features(frame: pd.DataFrame) -> pd.DataFrame:
     \"\"\"Train ve test'e aynı dönüşümleri uygular. Girdiyi değiştirmez.\"\"\"
     out = frame.copy()
     if TIME_COLUMN:
-        out = add_calendar_features(out, TIME_COLUMN, include_year=False)
+        out = add_calendar_features(out, TIME_COLUMN, include_year=False, origin=ORIGIN)
     # categorical_columns: pandas 2.x ve 3.x'te de doğru çalışır.
     # Düz `dtype == object` kontrolü pandas 3.0'da metin kolonlarını KAÇIRIR.
     categorical = categorical_columns(out)
@@ -451,11 +465,19 @@ log.leaderboard()
 
 1. **Adversarial validation** — `validation.adversarial_validation(train, test)`
    ile train/test kayması var mı ölç
-2. **Hedef kodlama** — `features.oof_target_encode` (yüksek kardinaliteli kolonlar)
-3. **Lag / rolling** — zaman varsa en güçlü feature ailesi
-4. **Harici veri** — `scripts/fetch_weather.py` ile hava durumu
+2. **Lag / rolling — `horizon=HORIZON` ile** (zaman varsa en güçlü feature ailesi):
+   ```python
+   out = add_lag_features(out, TARGET, [1, 7, 28], time_column=TIME_COLUMN,
+                          group_columns=[GROUP_COLUMN], horizon=HORIZON)
+   ```
+3. **Hedef kodlama** — `features.oof_target_encode` (yüksek kardinaliteli kolonlar)
+4. **Harici veri** — `scripts/fetch_weather.py`.
+   Hava durumunda **ortalama değil `max` ve quantile** kullan — hasarı rüzgârın
+   ortalaması değil tepesi yapar. Hem ilçe hem bölge-geneli agregatlar üret.
 5. **CatBoost + XGBoost** — çeşitlilik için, sonra `ensemble.hill_climb_weights`
-6. **Eşik optimizasyonu** — sınıflandırmaysa `metrics.optimize_threshold`
+6. **Metrik MAE ise**: `objective="mae"` kullan (L2 değil), ve tam sayı hedefte
+   tahminleri **yuvarlamayı** dene — MAE'de medyan optimaldir, yuvarlama skor kazandırır.
+7. **Eşik optimizasyonu** — sınıflandırmaysa `metrics.optimize_threshold`
 """),
 ]
 

@@ -38,7 +38,13 @@ __all__ = [
     "reduce_memory",
     "is_categorical_like",
     "categorical_columns",
+    "safe_str",
+    "MISSING_CATEGORY",
 ]
+
+# Eksik kategorik degerler icin acik sentinel. "None"/"nan" gibi kazara olusan
+# stringlerden ayirt edilebilsin diye bilerek gercek bir kategori adina benzemez.
+MISSING_CATEGORY = "_EKSIK"
 
 PANDAS_VERSION: tuple[int, ...] = tuple(int(part) for part in pd.__version__.split(".")[:2])
 NUMPY_VERSION: tuple[int, ...] = tuple(int(part) for part in np.__version__.split(".")[:2])
@@ -84,6 +90,45 @@ def is_categorical_like(series: pd.Series) -> bool:
 def categorical_columns(frame: pd.DataFrame) -> list[str]:
     """Kodlama gerektiren kolon adlarini dondurur (surumden bagimsiz)."""
     return [column for column in frame.columns if is_categorical_like(frame[column])]
+
+
+def safe_str(series: pd.Series, *, missing: str | None = None) -> pd.Series:
+    """Seriyi string'e cevirir; eksik degerleri SURUMDEN BAGIMSIZ ele alir.
+
+    NEDEN ``.astype(str)`` KULLANILMAZ -- olculen davranis::
+
+        pd.Series(["a", "b", None]).astype(str)
+          pandas 2.1.4 -> ['a', 'b', 'None']   <- NaN, LITERAL bir kategori oldu
+          pandas 3.0.3 -> ['a', 'b', NaN]      <- NaN korundu
+
+    Bu fark uc yerde sessizce zarar verir:
+
+    1. **Model egitimi.** pandas 2.x'te ``"None"`` gercek bir kategori sayilir;
+       LightGBM/XGBoost'un YERLI eksik-deger islemesi devre disi kalir. Model,
+       "veri yok" ile "None adli bir trafo grubu" arasindaki farki goremez.
+
+    2. **``.astype(str).fillna(...)`` etkisiz kalir.** pandas 2.x'te ``astype``
+       zaten NaN birakmadigi icin ``fillna`` dolduracak bir sey bulamaz -- yani
+       eksik degeri isaretleme niyeti sessizce iptal olur.
+
+    3. **Etkilesim feature'lari.** ``il + "__" + ilce`` islemi ``"None__bornova"``
+       gibi uydurma kategoriler uretir.
+
+    Cozum: maskeyi ORIJINAL seriden al, donusturdukten sonra geri uygula.
+
+    Args:
+        series: Girdi (degistirilmez).
+        missing: Eksik degerlerin yerine konacak etiket. ``None`` ise eksiklik
+            gercek NaN olarak KORUNUR (agac modelleri bunu yerli olarak isler).
+
+    Returns:
+        Yeni Series.
+    """
+    was_missing = series.isna()
+    converted = series.astype("object").astype(str)
+    return converted.mask(was_missing) if missing is None else converted.mask(
+        was_missing, missing
+    )
 
 
 def environment_report() -> dict[str, Any]:

@@ -25,8 +25,9 @@ from typing import Any, Literal
 import numpy as np
 import pandas as pd
 
-from .compat import categorical_columns
+from .compat import MISSING_CATEGORY, categorical_columns, safe_str
 from .metrics import get_metric
+from .validation import assert_folds_align
 
 __all__ = [
     "CVResult",
@@ -148,10 +149,18 @@ class CVResult:
 
     @property
     def is_stable(self) -> bool:
-        """CV guvenilir mi? Skorun %10'undan kucuk sapma stabil sayilir."""
-        if not self.fold_scores or self.overall_score == 0:
+        """CV guvenilir mi? Skorun %10'undan kucuk sapma stabil sayilir.
+
+        ``overall_score`` sifira cok yakinsa oransal karsilastirma anlamsizdir
+        (bazi metriklerde 0 MUKEMMEL skordur). O durumda mutlak sapmaya bakariz
+        -- kosulsuz "gurultulu" demek yanlis yonde bir sinyaldir.
+        """
+        if not self.fold_scores:
             return False
-        return self.fold_std / abs(self.overall_score) < 0.10
+        scale = abs(self.overall_score)
+        if scale < 1e-12:
+            return self.fold_std < 1e-6
+        return self.fold_std / scale < 0.10
 
     def summary(self) -> str:
         stability = "STABIL" if self.is_stable else "GURULTULU -- dikkat"
@@ -186,24 +195,29 @@ def _prepare_categoricals(
 
     train_out, test_out = train.copy(), (test.copy() if test is not None else None)
 
+    # safe_str kullaniyoruz, .astype(str) DEGIL: pandas 2.x'te .astype(str)
+    # NaN'i literal "None" stringine cevirir ve GBDT'lerin yerli eksik-deger
+    # islemesini sessizce devre disi birakir. Bu makinede (pandas 3.0) NaN
+    # korunur -- yani hata yalnizca Kaggle'in eski imajinda ortaya cikar.
     for column in categorical:
         if test_out is not None and column in test_out.columns:
-            combined = pd.concat(
-                [train_out[column].astype(str), test_out[column].astype(str)], ignore_index=True
-            )
+            train_text = safe_str(train_out[column])
+            test_text = safe_str(test_out[column])
+            combined = pd.concat([train_text, test_text], ignore_index=True)
             categories = pd.Index(combined.dropna().unique())
             dtype = pd.CategoricalDtype(categories=categories)
-            train_out[column] = train_out[column].astype(str).astype(dtype)
-            test_out[column] = test_out[column].astype(str).astype(dtype)
+            train_out[column] = train_text.astype(dtype)
+            test_out[column] = test_text.astype(dtype)
         else:
-            train_out[column] = train_out[column].astype("category")
+            train_out[column] = safe_str(train_out[column]).astype("category")
 
     if kind == "catboost":
-        # CatBoost kategorikleri string olarak ister ve NaN kabul etmez.
+        # CatBoost kategorikleri string olarak ister ve NaN KABUL ETMEZ.
+        # fillna, astype(str)'den ONCE uygulanmali -- safe_str bunu garanti eder.
         for column in categorical:
-            train_out[column] = train_out[column].astype(str).fillna("_EKSIK")
+            train_out[column] = safe_str(train_out[column], missing=MISSING_CATEGORY)
             if test_out is not None and column in test_out.columns:
-                test_out[column] = test_out[column].astype(str).fillna("_EKSIK")
+                test_out[column] = safe_str(test_out[column], missing=MISSING_CATEGORY)
 
     return train_out, test_out, categorical
 
@@ -273,7 +287,13 @@ def _predict(model: Any, features: pd.DataFrame, *, needs_proba: bool) -> np.nda
 
 
 def _extract_importance(model: Any, feature_names: Sequence[str]) -> np.ndarray:
-    """Model tipinden bagimsiz feature onem vektoru."""
+    """Model tipinden bagimsiz feature onem vektoru.
+
+    Cikaramadigi durumda sifir vektoru doner ama SESSIZ KALMAZ: sifirlarla dolu
+    bir onem tablosu, "hicbir feature ise yaramiyor" diye yanlis okunur ve
+    gereksiz feature elemesine yol acar. Sorun feature'larda degil, cikarim
+    mekanizmasindadir -- bunu soylemek zorundayiz.
+    """
     for attribute in ("feature_importances_", "get_feature_importance"):
         value = getattr(model, attribute, None)
         if value is None:
@@ -282,6 +302,13 @@ def _extract_importance(model: Any, feature_names: Sequence[str]) -> np.ndarray:
         importance = np.asarray(importance, dtype="float64").ravel()
         if importance.size == len(feature_names):
             return importance
+
+    print(
+        f"[cross_validate] UYARI: {type(model).__name__} icin feature onemi "
+        "cikarilamadi (beklenen oznitelik yok veya boyut uyusmuyor). "
+        "Onem tablosu SIFIRLARLA dolu -- bunu 'feature'lar ise yaramiyor' "
+        "diye okuma."
+    )
     return np.zeros(len(feature_names))
 
 
@@ -318,12 +345,13 @@ def cross_validate(
         ValueError: Fold listesi bossa veya boyutlar uyumsuzsa.
     """
     fold_list = list(folds)
-    if not fold_list:
-        raise ValueError("Fold listesi bos. validation.build_splitter ile uret.")
-
     y = np.asarray(target).ravel()
     if len(y) != len(train):
         raise ValueError(f"train ({len(train)}) ve target ({len(y)}) uzunluklari farkli.")
+
+    # Fold'lar bu frame icin mi uretildi? Kontrol etmezsek yanlis satirlar
+    # sessizce train/valid olarak eslesir -- bkz. assert_folds_align.
+    assert_folds_align(len(train), fold_list)
 
     metric_fn, _, needs_proba = get_metric(metric)
     model_params = dict(params) if params else starter_params(kind, task_type)
