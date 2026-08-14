@@ -25,7 +25,12 @@ from collections.abc import Sequence
 import numpy as np
 import pandas as pd
 
+from ..turkish import tr_lower
+
 __all__ = [
+    "ADMINISTRATIVE_LEAVE",
+    "HOLIDAY_CODES",
+    "MISSING_HOLIDAY_DISTANCE",
     "add_calendar_features",
     "add_cyclical_features",
     "add_turkish_holiday_features",
@@ -39,6 +44,55 @@ __all__ = [
 # Gecerli bir tarihi olmayan (veya hic tatil bulunmayan) satirlar icin "tatile
 # uzak" sentineli. Gercek bir mesafe olamayacak kadar buyuk secildi.
 MISSING_HOLIDAY_DISTANCE = 999
+
+# Tatil KIMLIKLERI. Serbest metin yerine sabit kod kullaniyoruz cunku
+# kutuphanenin dondurdugu adlar uc sorun tasiyor (bu makinede OLCULDU):
+#
+#   1. Cakismada ';' ile birlesiyorlar:
+#      2022-05-01 -> "Emek ve Dayanisma Gunu; Ramazan Bayrami (saat 13.00'ten)"
+#      Turkce CSV'de ';' ALAN AYIRICISIDIR -- bu ad bir kolona yazilirsa
+#      dosya kayar. Ayrica frekans=1 olan sahte bir "nadir kategori" yaratir.
+#   2. ASCII disi karakter iceriyorlar: i (U+0131), s (U+015F), i (U+00EE),
+#      u (U+00FC), c (U+00E7) ve kesme isareti. Kodlama zincirinin her
+#      halkasinda bozulma riski.
+#   3. Kutuphane surumleri arasinda metin degisebilir; sabit kod degismez.
+HOLIDAY_NONE = 0
+HOLIDAY_CODES: dict[str, int] = {
+    "ramazan": 1,
+    "kurban": 2,
+    "cumhuriyet": 3,
+    "egemenlik": 4,      # 23 Nisan Ulusal Egemenlik ve Cocuk Bayrami
+    "genclik": 5,        # 19 Mayis Ataturk'u Anma, Genclik ve Spor Bayrami
+    "zafer": 6,          # 30 Agustos
+    "emek": 7,           # 1 Mayis
+    "demokrasi": 8,      # 15 Temmuz
+    "yilbasi": 9,
+}
+
+# Cakismada hangi tatil kazanir. Dini bayramlar once: elektrik tuketimi ve
+# isgucu davranisi acisindan baskin olan onlardir (uc gunluk tatil, seyahat,
+# sanayinin durmasi). Milli bayram tek gundur ve etkisi daha zayiftir.
+_HOLIDAY_PRIORITY = ("ramazan", "kurban", "cumhuriyet", "egemenlik",
+                     "genclik", "zafer", "demokrasi", "emek", "yilbasi")
+
+# IDARI IZIN gunleri -- hukumetin bayram oncesi/sonrasi verdigi ek tatil.
+# holidays kutuphanesinde YOKTUR ama kamu kapanir, okullar kapanir, kazi ve
+# planli saha isi durur. Kutuphane bu gunleri normal is gunu sayar.
+#
+# UYARI: Bu liste arastirmadan geldi ve BIRINCIL KAYNAKTAN DOGRULANMADI.
+# Resmi Gazete arsivinden teyit et. Yanlis bir gun eklemek, dogru bir gunu
+# atlamaktan daha zararli degildir -- ama ikisi de sinyal kaybidir.
+# Deger: 1.0 = tam gun, 0.5 = yarim gun.
+ADMINISTRATIVE_LEAVE: dict[str, float] = {
+    "2019-06-03": 0.5, "2019-06-07": 1.0,
+    "2021-05-10": 1.0, "2021-05-11": 1.0, "2021-05-12": 0.5,
+    "2022-07-13": 1.0, "2022-07-14": 1.0,
+    "2023-06-26": 1.0, "2023-06-27": 1.0,
+    "2024-04-08": 1.0, "2024-04-09": 0.5,
+    "2024-06-20": 1.0, "2024-06-21": 1.0,
+    "2025-06-05": 0.5,
+    "2026-05-25": 1.0,
+}
 
 # Ege bolgesi icin mevsimsellik: yaz turizmi ve tarimsal sulama yuku belirleyicidir.
 TURKISH_SEASONS = {
@@ -214,12 +268,29 @@ def add_cyclical_features(
     return result
 
 
+def _holiday_code(name: str) -> int:
+    """Tatil adini SABIT bir koda cevirir.
+
+    Ad, cakismada ``"A; B"`` bicimindedir ve ``"(saat 13.00'ten)"`` gibi ekler
+    tasir. Anahtar kelime aramasi ikisine de dayaniklidir. Cakismada dini
+    bayram kazanir -- elektrik tuketimi ve isgucu davranisi acisindan baskin
+    olan odur (uc gunluk tatil, seyahat, sanayinin durmasi).
+    """
+    lowered = tr_lower(name)
+    for keyword in _HOLIDAY_PRIORITY:
+        if keyword in lowered:
+            return HOLIDAY_CODES[keyword]
+    return HOLIDAY_NONE
+
+
 def add_turkish_holiday_features(
     frame: pd.DataFrame,
     time_column: str,
     *,
     prefix: str = "tatil",
     window_days: int = 3,
+    include_half_days: bool = True,
+    administrative_leave: dict[str, float] | None = None,
 ) -> pd.DataFrame:
     """TR resmi tatil feature'lari ekler. YENI frame dondurur.
 
@@ -228,8 +299,36 @@ def add_turkish_holiday_features(
     patlar. Dini bayramlar HICRI takvime gore her yil ~11 gun KAYAR, bu yuzden
     ``ay + gun`` kolonlari onlari YAKALAYAMAZ. Ayri bir kolon sart.
 
-    ``window_days``: bayram oncesi/sonrasi kopru gunlerini yakalamak icin
-    tatile olan gun mesafesi de uretilir.
+    2024 GDZ Datathon birincisinin en yuksek onemli feature'larindan biri
+    "TatilAd" idi -- yani bu aile bu problemde cok gucludur.
+
+    Args:
+        window_days: Bayram oncesi/sonrasi kopru gunlerini yakalamak icin
+            tatile olan gun mesafesi de uretilir.
+        include_half_days: **Varsayilan True ve oyle kalmali.**
+            ``holidays.country_holidays("TR")`` varsayilan cagrisi ARIFE
+            gunlerini ATLAR. Bu makinede olculdu: 2026 icin varsayilan 14 gun
+            dondururken ``categories=("public", "half_day")`` 17 gun donduruyor.
+            Kacan uc gun: Ramazan, Kurban ve Cumhuriyet arifeleri (13.00'ten).
+            Arifede ogleden sonra isgucu sahayi terk eder, kazi ve planli bakim
+            durur -- yani plansiz/planli kesinti dagilimi degisir. Yilda uc
+            yuksek sinyalli gun, bedava.
+        administrative_leave: ``{"YYYY-AA-GG": agirlik}`` -- hukumetin bayram
+            cevresinde verdigi ek izin gunleri. ``None`` ise modul icindeki
+            ``ADMINISTRATIVE_LEAVE`` kullanilir. Bos sozluk ``{}`` vererek
+            kapatabilirsin.
+
+    Uretilen kolonlar:
+        ``{prefix}_mi``            tam gun tatil mi
+        ``{prefix}_yarim_gun``     arife mi (13.00'ten sonra)
+        ``{prefix}_agirligi``      1.0 tam / 0.5 yarim / 0.0 degil
+        ``{prefix}_kod``           sabit tatil kimligi (bkz. HOLIDAY_CODES)
+        ``{prefix}_cakisma``       ayni gune iki tatil dusmus mu
+        ``{prefix}_mesafe``        en yakin tatile gun mesafesi
+        ``{prefix}_yakininda``     mesafe <= window_days
+        ``{prefix}_veya_haftasonu``
+        ``{prefix}_idari_izin``    idari izin agirligi
+        ``{prefix}_isgucu_kaybi``  tatil + idari izin birlesik agirligi (0..1)
     """
     try:
         import holidays as holidays_lib
@@ -243,13 +342,36 @@ def add_turkish_holiday_features(
     if valid_years.empty:
         return frame.assign(**{f"{prefix}_mi": np.zeros(len(frame), dtype="int8")})
 
-    years = range(int(valid_years.min()) - 1, int(valid_years.max()) + 2)
-    calendar = holidays_lib.country_holidays("TR", years=list(years))
+    years = list(range(int(valid_years.min()) - 1, int(valid_years.max()) + 2))
+    categories = ("public", "half_day") if include_half_days else ("public",)
+    calendar = holidays_lib.TR(years=years, categories=categories)
+
+    # Yarim gunleri ayirt edebilmek icin yalnizca tam gunlerin ayri bir kumesi.
+    full_day_calendar = holidays_lib.TR(years=years, categories=("public",))
 
     dates = times.dt.date
-    is_holiday = dates.map(lambda day: day in calendar if pd.notna(day) else False)
+    in_calendar = dates.map(lambda day: day in calendar if pd.notna(day) else False)
+    is_full_day = dates.map(
+        lambda day: day in full_day_calendar if pd.notna(day) else False
+    )
+    is_half_day = in_calendar.to_numpy() & ~is_full_day.to_numpy()
+
+    names = dates.map(lambda day: calendar.get(day, "") if pd.notna(day) else "")
+    codes = names.map(_holiday_code).astype("int8")
+    collision = names.map(lambda value: 1 if ";" in str(value) else 0).astype("int8")
+
+    leave_table = ADMINISTRATIVE_LEAVE if administrative_leave is None else administrative_leave
+    leave_lookup = {pd.Timestamp(day).date(): weight for day, weight in leave_table.items()}
+    leave_weight = dates.map(
+        lambda day: leave_lookup.get(day, 0.0) if pd.notna(day) else 0.0
+    ).astype("float32")
+
+    holiday_weight = np.where(
+        is_full_day.to_numpy(), 1.0, np.where(is_half_day, 0.5, 0.0)
+    ).astype("float32")
 
     holiday_dates = np.array(sorted(calendar.keys()), dtype="datetime64[D]")
+    is_holiday = is_full_day
 
     # GECERSIZ TARIHLERI MASKELE. NaT'nin int64 sentinel'i (-9223372036854775808)
     # cikarma sonrasi tasar ve np.abs() bile onu duzeltemez; int16'ya cast
@@ -273,14 +395,26 @@ def add_turkish_holiday_features(
             nearest[inverse], 0, MISSING_HOLIDAY_DISTANCE
         ).astype("int16")
 
+    weekend = (times.dt.dayofweek >= 5).fillna(False).to_numpy()
+
     new_columns = {
         f"{prefix}_mi": is_holiday.astype("int8"),
+        f"{prefix}_yarim_gun": is_half_day.astype("int8"),
+        f"{prefix}_agirligi": holiday_weight,
+        f"{prefix}_kod": codes,
+        f"{prefix}_cakisma": collision,
         f"{prefix}_mesafe": distances,
         # Gecersiz tarihli satir "tatile yakin" SAYILMAZ -- maskeye bagli.
         f"{prefix}_yakininda": ((distances <= window_days) & valid_mask).astype("int8"),
-        f"{prefix}_veya_haftasonu": (
-            is_holiday.to_numpy() | (times.dt.dayofweek >= 5).fillna(False).to_numpy()
-        ).astype("int8"),
+        f"{prefix}_veya_haftasonu": (is_holiday.to_numpy() | weekend).astype("int8"),
+        f"{prefix}_idari_izin": leave_weight,
+        # Birlesik isgucu kaybi: tatil, idari izin ve hafta sonunun en buyugu.
+        # Sebeke tarafinda anlamli olan "bugun saha ekibi calisiyor mu" sorusudur;
+        # bu uc kaynagin hangisinden geldigi degil.
+        f"{prefix}_isgucu_kaybi": np.maximum(
+            np.maximum(holiday_weight, leave_weight.to_numpy()),
+            weekend.astype("float32"),
+        ).astype("float32"),
     }
     return frame.assign(**new_columns)
 
