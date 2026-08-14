@@ -1,0 +1,494 @@
+"""Capraz dogrulama semasi secimi ve sizinti (leakage) tespiti.
+
+BU MODUL YARISMANIN KAZANILDIGI YERDIR.
+
+Kaggle'da siralamayi belirleyen sey genellikle model degil, DOGRULAMA SEMASIDIR.
+Yanlis sema iki sekilde oldurur:
+
+  * **Iyimser CV**: lokal skorun yuksek, leaderboard'da cakiliyorsun. Neredeyse
+    her zaman sizinti vardir -- zaman sizintisi (gelecegi gorerek gecmisi tahmin
+    etmek) veya grup sizintisi (ayni trafo/abone hem train hem valid'de).
+
+  * **Gurultulu CV**: fold'lar arasi sapma o kadar yuksek ki hangi degisikligin
+    ise yaradigini goremezsin ve public leaderboard'a gore karar vermeye
+    baslarsin -- ki bu, private leaderboard'da coke (shakeup) gitmenin tarifidir.
+
+KARAR AGACI
+-----------
+    Veride zaman var mi?
+      EVET -> Test train'den SONRAKI bir donem mi?
+                EVET -> TimeSeriesSplit / ileri zincirleme (forward chaining)
+                HAYIR -> zaman bloklu GroupKFold
+      HAYIR -> Tekrarlayan varlik var mi (trafo, abone, fider)?
+                 EVET -> GroupKFold (+ dengesizse StratifiedGroupKFold)
+                 HAYIR -> siniflandirma? StratifiedKFold : KFold
+
+``suggest_scheme()`` bu agaci veriye bakarak calistirir.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
+from typing import Any, Literal
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import (
+    GroupKFold,
+    KFold,
+    StratifiedGroupKFold,
+    StratifiedKFold,
+    TimeSeriesSplit,
+)
+
+from .compat import categorical_columns
+
+__all__ = [
+    "SchemeSuggestion",
+    "suggest_scheme",
+    "build_splitter",
+    "purged_time_series_split",
+    "adversarial_validation",
+    "leakage_report",
+    "check_train_test_overlap",
+]
+
+TaskType = Literal["regression", "binary", "multiclass"]
+
+
+@dataclass(frozen=True)
+class SchemeSuggestion:
+    """Onerilen dogrulama semasi ve gerekcesi."""
+
+    scheme: str
+    reason: str
+    group_column: str | None
+    time_column: str | None
+    stratify: bool
+    warnings: tuple[str, ...] = ()
+
+    def __str__(self) -> str:
+        lines = [f"Onerilen sema: {self.scheme}", f"Gerekce: {self.reason}"]
+        if self.group_column:
+            lines.append(f"Grup kolonu: {self.group_column}")
+        if self.time_column:
+            lines.append(f"Zaman kolonu: {self.time_column}")
+        for warning in self.warnings:
+            lines.append(f"UYARI: {warning}")
+        return "\n".join(lines)
+
+
+def _detect_time_columns(frame: pd.DataFrame) -> list[str]:
+    """Datetime kolonlarini bulur; metin olarak saklanmis tarihleri de dener."""
+    found = [
+        column
+        for column in frame.columns
+        if pd.api.types.is_datetime64_any_dtype(frame[column])
+    ]
+    if found:
+        return found
+
+    name_hints = ("tarih", "date", "time", "zaman", "gun", "saat", "timestamp", "ts")
+    for column in frame.columns:
+        if not any(hint in column.lower() for hint in name_hints):
+            continue
+        sample = frame[column].dropna().head(200)
+        if sample.empty:
+            continue
+        parsed = pd.to_datetime(sample, errors="coerce", format="mixed")
+        if parsed.notna().mean() > 0.9:
+            found.append(column)
+    return found
+
+
+def _detect_group_columns(
+    frame: pd.DataFrame, *, min_repeat: float = 2.0, max_cardinality_ratio: float = 0.5
+) -> list[str]:
+    """Sizintiya yol acabilecek tekrarlayan varlik kolonlarini bulur.
+
+    Bir kolon "grup adayidir" eger: satir sayisi / benzersiz deger sayisi >= 2
+    (yani her varlik ortalama en az 2 kez goruluyor) ve kardinalite cok yuksek
+    degilse.
+    """
+    row_count = len(frame)
+    if row_count == 0:
+        return []
+
+    candidates = []
+    for column in frame.columns:
+        series = frame[column]
+        if pd.api.types.is_float_dtype(series):
+            continue
+        unique = series.nunique(dropna=True)
+        if unique <= 1:
+            continue
+        repeat_factor = row_count / unique
+        if repeat_factor >= min_repeat and unique / row_count < max_cardinality_ratio:
+            candidates.append((column, repeat_factor))
+
+    candidates.sort(key=lambda pair: pair[1], reverse=True)
+    return [column for column, _ in candidates]
+
+
+def suggest_scheme(
+    frame: pd.DataFrame,
+    *,
+    target: str | None = None,
+    task_type: TaskType | None = None,
+    known_group: str | None = None,
+    known_time: str | None = None,
+) -> SchemeSuggestion:
+    """Veriye bakarak dogrulama semasi onerir.
+
+    Bu bir OTOMATIK KARAR DEGIL, bir baslangic noktasidir. Ciktiyi oku ve
+    domain bilginle dogrula -- ozellikle grup kolonu secimini.
+    """
+    warnings: list[str] = []
+
+    time_columns = [known_time] if known_time else _detect_time_columns(frame)
+    group_columns = [known_group] if known_group else _detect_group_columns(frame)
+
+    time_column = time_columns[0] if time_columns else None
+    group_column = group_columns[0] if group_columns else None
+
+    if len(group_columns) > 1:
+        warnings.append(
+            f"Birden fazla grup adayi: {group_columns[:5]}. "
+            "Yanlis olani secmek sizintiya yol acar -- domain bilgisiyle dogrula."
+        )
+
+    stratify = False
+    if target and target in frame.columns:
+        if task_type in {"binary", "multiclass"}:
+            stratify = True
+            counts = frame[target].value_counts(normalize=True)
+            if len(counts) > 0 and counts.min() < 0.01:
+                warnings.append(
+                    f"Ciddi sinif dengesizligi (en nadir sinif %{counts.min() * 100:.2f}). "
+                    "StratifiedKFold zorunlu; ayrica esik optimizasyonu dusun."
+                )
+        elif task_type is None:
+            unique_targets = frame[target].nunique()
+            if unique_targets <= 20:
+                warnings.append(
+                    f"Hedefte {unique_targets} benzersiz deger var -- siniflandirma olabilir. "
+                    "task_type'i acikca belirt."
+                )
+
+    if time_column is not None:
+        scheme = "TimeSeriesSplit"
+        reason = (
+            f"'{time_column}' zaman kolonu bulundu. Test kumesi train'den sonraki bir "
+            "donemse rastgele KFold GELECEGI SIZDIRIR ve CV'yi yapay olarak yukseltir."
+        )
+        if group_column:
+            warnings.append(
+                f"Hem zaman ('{time_column}') hem grup ('{group_column}') var. "
+                "En guvenlisi: zamana gore bol, sonra fold sinirinda gruplari temizle "
+                "(purged_time_series_split)."
+            )
+        return SchemeSuggestion(
+            scheme, reason, group_column, time_column, stratify, tuple(warnings)
+        )
+
+    if group_column is not None:
+        scheme = "StratifiedGroupKFold" if stratify else "GroupKFold"
+        reason = (
+            f"'{group_column}' kolonu tekrarlaniyor (ortalama "
+            f"{len(frame) / max(frame[group_column].nunique(), 1):.1f} satir/varlik). "
+            "Ayni varligin hem train hem valid'de olmasi modelin ezberlemesine izin verir."
+        )
+        return SchemeSuggestion(scheme, reason, group_column, None, stratify, tuple(warnings))
+
+    scheme = "StratifiedKFold" if stratify else "KFold"
+    reason = "Zaman veya tekrarlayan varlik tespit edilmedi; standart K-kat uygun."
+    return SchemeSuggestion(scheme, reason, None, None, stratify, tuple(warnings))
+
+
+def build_splitter(
+    scheme: str, *, n_splits: int = 5, seed: int = 42, **kwargs: Any
+) -> Any:
+    """Sema adindan sklearn bolucusu uretir."""
+    builders = {
+        "KFold": lambda: KFold(n_splits=n_splits, shuffle=True, random_state=seed),
+        "StratifiedKFold": lambda: StratifiedKFold(
+            n_splits=n_splits, shuffle=True, random_state=seed
+        ),
+        "GroupKFold": lambda: GroupKFold(n_splits=n_splits),
+        "StratifiedGroupKFold": lambda: StratifiedGroupKFold(
+            n_splits=n_splits, shuffle=True, random_state=seed
+        ),
+        "TimeSeriesSplit": lambda: TimeSeriesSplit(n_splits=n_splits, **kwargs),
+    }
+    if scheme not in builders:
+        raise ValueError(f"Bilinmeyen sema '{scheme}'. Secenekler: {sorted(builders)}")
+    return builders[scheme]()
+
+
+def purged_time_series_split(
+    times: pd.Series,
+    *,
+    n_splits: int = 5,
+    embargo: pd.Timedelta | None = None,
+) -> Iterator[tuple[np.ndarray, np.ndarray]]:
+    """Fold sinirinda 'ambargo' bosluğu birakan zaman serisi bolmesi.
+
+    Standart ``TimeSeriesSplit`` train'in son ani ile valid'in ilk anini
+    bitisik birakir. Feature'lar kayan pencere (rolling) iceriyorsa -- ki
+    elektrik yuku/ariza problemlerinde neredeyse her zaman icerir -- son train
+    satirlarinin feature'lari ilk valid satirlariyla ayni ham veriyi kullanir.
+    Bu, CV'yi iyimser gosteren ince bir sizintidir.
+
+    ``embargo`` kadar bir bosluk birakmak bunu keser. Kural: ambargo, en uzun
+    rolling penceresinden BUYUK olmali.
+
+    Args:
+        times: Zaman damgalari (frame ile ayni sirada, ayni uzunlukta).
+        n_splits: Fold sayisi.
+        embargo: Train ile valid arasinda birakilacak bosluk. ``None`` ise
+            ortalama fold suresinin %1'i kullanilir.
+
+    Yields:
+        ``(train_idx, valid_idx)`` konumsal indeks dizileri.
+    """
+    if len(times) == 0:
+        raise ValueError("Bos zaman serisi ile bolme yapilamaz.")
+
+    order = np.argsort(times.to_numpy())
+    sorted_times = times.to_numpy()[order]
+    fold_edges = np.linspace(0, len(order), n_splits + 2, dtype=int)[1:]
+
+    total_span = sorted_times[-1] - sorted_times[0]
+    if embargo is None:
+        embargo = total_span / (n_splits + 1) * 0.01
+
+    for fold in range(n_splits):
+        valid_start, valid_end = fold_edges[fold], fold_edges[fold + 1]
+        if valid_start >= valid_end:
+            continue
+
+        boundary = sorted_times[valid_start]
+        train_mask = sorted_times < (boundary - embargo)
+
+        train_idx = order[train_mask]
+        valid_idx = order[valid_start:valid_end]
+
+        if len(train_idx) == 0 or len(valid_idx) == 0:
+            continue
+        yield train_idx, valid_idx
+
+
+def adversarial_validation(
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+    *,
+    feature_columns: Sequence[str] | None = None,
+    n_splits: int = 5,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Train ve test ayni dagilimdan mi geliyor? Bir siniflandirici ile olcer.
+
+    YONTEM: train'e 0, test'e 1 etiketi ver ve ayirt etmeye calis.
+      * AUC ~ 0.5  -> dagilimlar ayni. Rastgele CV guvenli.
+      * AUC > 0.8  -> ciddi kayma var. ``top_features`` sana HANGI kolonun
+                      ayristirdigini soyler; genellikle bir tarih, ID veya
+                      zamanla artan sayac kolonudur.
+      * AUC ~ 1.0  -> bir kolon train/test'i mukemmel ayiriyor. O kolonu
+                      feature olarak KULLANMA; ama test'e en cok benzeyen train
+                      orneklerini secmek icin kullan.
+
+    Bu, public leaderboard'a hic submission yapmadan test dagilimini ogrenmenin
+    en ucuz yoludur.
+
+    Returns:
+        ``auc``, ``top_features``, ``sample_weights`` (test'e benzerlik olasiligi),
+        ``verdict`` iceren sozluk.
+    """
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import StratifiedKFold
+
+    try:
+        import lightgbm as lgb
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError("adversarial_validation icin lightgbm gerekli.") from exc
+
+    shared = [column for column in train.columns if column in test.columns]
+    columns = list(feature_columns) if feature_columns else shared
+    columns = [column for column in columns if column in shared]
+    if not columns:
+        raise ValueError("Train ve test arasinda ortak feature kolonu yok.")
+
+    combined = pd.concat(
+        [train[columns].assign(_is_test=0), test[columns].assign(_is_test=1)],
+        ignore_index=True,
+    )
+    labels = combined.pop("_is_test").to_numpy()
+
+    # Surumden bagimsiz kategorik tespiti: pandas 3.0'da metin 'str' dtype'indadir
+    # ve is_object_dtype onu GORMEZ -- bkz. compat.is_categorical_like.
+    for column in categorical_columns(combined):
+        combined[column] = combined[column].astype("category")
+
+    oof = np.zeros(len(combined))
+    importances = np.zeros(len(columns))
+    splitter = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+
+    for train_idx, valid_idx in splitter.split(combined, labels):
+        model = lgb.LGBMClassifier(
+            n_estimators=200, learning_rate=0.1, num_leaves=31,
+            random_state=seed, verbose=-1,
+        )
+        model.fit(combined.iloc[train_idx], labels[train_idx])
+        oof[valid_idx] = model.predict_proba(combined.iloc[valid_idx])[:, 1]
+        importances += model.feature_importances_ / n_splits
+
+    auc = float(roc_auc_score(labels, oof))
+    ranked = sorted(
+        zip(columns, importances, strict=True), key=lambda pair: pair[1], reverse=True
+    )
+
+    if auc < 0.6:
+        verdict = "Dagilimlar benzer. Rastgele CV guvenli."
+    elif auc < 0.8:
+        verdict = (
+            "Orta duzey kayma. Ilk siradaki feature'lari incele; "
+            "ambargo/zaman bazli CV dusun."
+        )
+    else:
+        verdict = (
+            "CIDDI kayma. Ayristiran feature'lari modelden cikar veya zamana gore bol. "
+            "sample_weights ile test'e benzeyen train orneklerini agirliklandir."
+        )
+
+    return {
+        "auc": auc,
+        "top_features": ranked[:15],
+        "sample_weights": oof[: len(train)],
+        "verdict": verdict,
+    }
+
+
+def leakage_report(
+    train: pd.DataFrame,
+    target: str,
+    *,
+    test: pd.DataFrame | None = None,
+    time_column: str | None = None,
+    correlation_threshold: float = 0.95,
+) -> dict[str, Any]:
+    """Sizinti belirtilerini tarar. Modeli egitmeden ONCE calistir.
+
+    Kontroller:
+      1. Hedefle neredeyse mukemmel korelasyonlu kolonlar (dogrudan sizinti)
+      2. Test'te BULUNMAYAN train kolonlari (tahmin aninda erisilemez)
+      3. Zaman kolonlari: train'in sonu test'in basindan sonra mi (donem ortusmesi)
+      4. Tek basina hedefi belirleyen sabit/ID benzeri kolonlar
+      5. Hedefle ayni benzersiz-deger imzasina sahip kolonlar
+    """
+    findings: dict[str, Any] = {"critical": [], "warning": [], "info": []}
+
+    if target not in train.columns:
+        raise ValueError(f"Hedef kolon '{target}' train icinde yok.")
+
+    target_series = train[target]
+    numeric_target = pd.api.types.is_numeric_dtype(target_series)
+
+    # 1. Hedefle asiri korelasyon
+    if numeric_target:
+        for column in train.columns:
+            if column == target or not pd.api.types.is_numeric_dtype(train[column]):
+                continue
+            valid = train[[column, target]].dropna()
+            if len(valid) < 30:
+                continue
+            correlation = float(valid[column].corr(valid[target]))
+            if abs(correlation) >= correlation_threshold:
+                findings["critical"].append(
+                    f"'{column}' hedefle {correlation:.4f} korelasyonlu -- "
+                    "muhtemelen hedefin turevi veya gelecek bilgisi."
+                )
+
+    # 2. Test'te olmayan kolonlar
+    if test is not None:
+        missing_in_test = [
+            column for column in train.columns if column != target and column not in test.columns
+        ]
+        if missing_in_test:
+            findings["warning"].append(
+                f"Test'te bulunmayan {len(missing_in_test)} train kolonu: "
+                f"{missing_in_test[:10]} -- tahmin aninda erisilemez, feature yapma."
+            )
+
+    # 3. Zaman ortusmesi
+    if time_column and test is not None and time_column in test.columns:
+        train_times = pd.to_datetime(train[time_column], errors="coerce")
+        test_times = pd.to_datetime(test[time_column], errors="coerce")
+        if train_times.notna().any() and test_times.notna().any():
+            train_max, test_min = train_times.max(), test_times.min()
+            if train_max > test_min:
+                findings["critical"].append(
+                    f"Zaman ortusmesi: train {train_max} tarihine kadar uzaniyor ama "
+                    f"test {test_min} tarihinde basliyor. Rastgele CV GELECEGI SIZDIRIR."
+                )
+            else:
+                findings["info"].append(
+                    f"Temiz zaman ayrimi: train <= {train_max}, test >= {test_min}. "
+                    "Ileri zincirleme CV kullan."
+                )
+
+    # 4. ID benzeri kolonlar
+    for column in train.columns:
+        if column == target:
+            continue
+        unique_ratio = train[column].nunique(dropna=False) / max(len(train), 1)
+        if unique_ratio > 0.99:
+            findings["warning"].append(
+                f"'{column}' neredeyse benzersiz (%{unique_ratio * 100:.1f}) -- ID olabilir. "
+                "Sirali ID'ler zaman sizintisi tasir."
+            )
+
+    # 5. Sabit kolonlar (sizinti degil ama gurultu)
+    constant = [column for column in train.columns if train[column].nunique(dropna=False) <= 1]
+    if constant:
+        findings["info"].append(f"Sabit kolonlar (bilgi tasimaz, cikar): {constant}")
+
+    findings["summary"] = (
+        f"{len(findings['critical'])} kritik, "
+        f"{len(findings['warning'])} uyari, {len(findings['info'])} bilgi"
+    )
+    return findings
+
+
+def check_train_test_overlap(
+    train: pd.DataFrame, test: pd.DataFrame, key_columns: Sequence[str]
+) -> dict[str, Any]:
+    """Train ve test arasinda ayni anahtar degerleri var mi?
+
+    Ortusen anahtarlar iki anlama gelir: ya veri sizintisi vardir ya da GroupKFold
+    zorunludur. Her ikisi de bilmen gereken seydir.
+    """
+    columns = [
+        column
+        for column in key_columns
+        if column in train.columns and column in test.columns
+    ]
+    if not columns:
+        return {"overlap": 0, "note": "Ortak anahtar kolonu yok."}
+
+    train_keys = set(map(tuple, train[columns].astype(str).to_numpy()))
+    test_keys = set(map(tuple, test[columns].astype(str).to_numpy()))
+    shared = train_keys & test_keys
+
+    return {
+        "key_columns": columns,
+        "train_unique": len(train_keys),
+        "test_unique": len(test_keys),
+        "overlap": len(shared),
+        "overlap_ratio": len(shared) / max(len(test_keys), 1),
+        "note": (
+            "Ortusme var -> GroupKFold kullan, aksi halde model ezberler."
+            if shared
+            else "Ortusme yok -> gruplar dogal olarak ayrik."
+        ),
+    }

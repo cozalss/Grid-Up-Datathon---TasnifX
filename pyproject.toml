@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gridup"
+version = "0.1.0"
+description = "Grid Up Datathon - Coderspace x GDZ Elektrik x ADM Elektrik yarisma pipeline'i"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --strict-markers"
+markers = [
+    "slow: model egiten testler (varsayilan calisir, -m 'not slow' ile atlanir)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RET", "PTH", "PL"]
+ignore = [
+    "PLR0913",  # cok parametre: feature fonksiyonlari dogal olarak cok parametreli
+    "PLR0917",  # ayni gerekce, konumsal parametreler icin
+    "PLR2004",  # sihirli sayi: esikler zaten adlandirilmis sabitlerde
+    "N803",     # X, y gibi ML kongresi argüman adlari
+    "N806",     # ayni, yerel degiskenler icin
+    # Tembel import KASITLIDIR: lightgbm/catboost/xgboost/torch agir bagimliliklardir.
+    # Modul duzeyinde import etmek, o kutuphaneyi kullanmayan bir notebook'u da
+    # yavaslatir ve Kaggle'da eksik bir paket tum paketi import edilemez kilar.
+    "PLC0415",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR2004", "S101"]
+# Betikler paketi src/ uzerinden bulmak icin import'tan ONCE sys.path'i ayarlar.
+# Bu, kurulum yapmadan calisabilmeleri icin bilincli bir tercihtir.
+"scripts/*" = ["E402", "PLR0912", "PLR0915"]
+# Dogrulama ve submission kontrolleri dogasi geregi cok dalli: her dal ayri bir
+# hata sinifini yakalar. Bolmek okunabilirligi artirmaz, dagitir.
+"src/gridup/validation.py" = ["PLR0912"]
+"src/gridup/submission.py" = ["PLR0912"]
+"src/gridup/profiling.py" = ["PLR0911"]
+# Notebook'lar Kaggle'da da calisabilmek icin ilk hucrede sys.path ayarlar.
+"notebooks/*" = ["E402"]

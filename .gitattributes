@@ -1,0 +1,17 @@
+# Satir sonu normalizasyonu. Windows'ta core.autocrlf heuristigine guvenmek,
+# tum dosyayi degismis gosteren sahte diff'ler uretir. Acikca sabitliyoruz.
+* text=auto eol=lf
+
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.sh   text eol=lf
+
+# Notebook'lar: diff'i okunabilir tut
+*.ipynb text eol=lf
+
+# Ikili dosyalar
+*.png  binary
+*.jpg  binary
+*.parquet binary
+*.pkl  binary

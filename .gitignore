@@ -1,0 +1,70 @@
+# --- Veri: asla commit edilmez (yarisma verisi + turetilmis dosyalar) ---
+data/
+!data/.gitkeep
+*.csv
+*.parquet
+*.feather
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.zip
+*.7z
+*.gz
+
+# --- Model ve deney ciktilari ---
+models/
+artifacts/
+outputs/
+submissions/
+!submissions/.gitkeep
+mlruns/
+wandb/
+optuna_*.db
+*.lgb
+*.cbm
+*.ubj
+*.joblib
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# --- Test / arac cache ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# --- Notebook ---
+.ipynb_checkpoints/
+# Notebook ciktilari commit edilmez: nbstripout kullan (bkz. setup.ps1)
+
+# --- Sirlar ---
+.env
+.env.*
+!.env.example
+*.key
+kaggle.json
+secrets.*
+
+# --- Arac artiklari ---
+# Playwright MCP oturum loglari ve sayfa anlik goruntuleri proje dizinine dusuyor.
+.playwright-mcp/
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
