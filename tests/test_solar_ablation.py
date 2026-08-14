@@ -437,3 +437,85 @@ def test_logo_gercek_sinyali_gurultuden_ayiriyor():
     katki = tablo.set_index("grup")["katki"]
     assert katki["hava"] > katki["deneysel"]
     assert katki["lag"] > katki["deneysel"]
+
+
+# --------------------------------------------------------------------------
+# Cekismeli dogrulamanin bulduklari: idari izin tablosu ve MAPE sifir tuzagi
+# --------------------------------------------------------------------------
+
+
+def test_arife_gunu_tam_isgucu_kaybi_veriyor():
+    """REGRESYON: max() birlesimi arife + sabah idari iznini 0.5'te yutuyordu.
+
+    Arifede yasal tatil 13.00'te baslar (agirlik 0.5); idari izin sabahi
+    kapatir (0.5). Gun TAMAMEN kapalidir -> 1.0 olmali.
+    """
+    from gridup.features.temporal import add_turkish_holiday_features
+
+    frame = pd.DataFrame({"tarih": pd.to_datetime(["2026-05-26", "2024-04-09"])})
+    out = add_turkish_holiday_features(frame, "tarih")
+    assert list(out["tatil_isgucu_kaybi"]) == [1.0, 1.0]
+    # Bilesenler ayri ayri hala yarim gorunmeli -- toplam yalnizca birlesikte.
+    assert list(out["tatil_agirligi"]) == [0.5, 0.5]
+    assert list(out["tatil_idari_izin"]) == [0.5, 0.5]
+
+
+def test_ek_izin_verilmeyen_arife_yarim_kaliyor():
+    """2025 Kurban arifesinde EK idari izin verilmedi -- 0.5 kalmali."""
+    from gridup.features.temporal import add_turkish_holiday_features
+
+    frame = pd.DataFrame({"tarih": pd.to_datetime(["2025-06-05"])})
+    out = add_turkish_holiday_features(frame, "tarih")
+    assert out["tatil_isgucu_kaybi"].iloc[0] == 0.5
+    assert out["tatil_idari_izin"].iloc[0] == 0.0
+
+
+def test_2025_ramazan_idari_izni_tabloda():
+    """26.03.2025 aciklamasi: 2-3-4 Nisan idari izin. Onceki surumde EKSIKTI."""
+    from gridup.features.temporal import ADMINISTRATIVE_LEAVE
+
+    for gun in ("2025-04-02", "2025-04-03", "2025-04-04"):
+        assert ADMINISTRATIVE_LEAVE.get(gun) == 1.0
+
+
+def test_idari_izin_konvansiyonu_tutarli():
+    """Deger = yasal tatilin USTUNE eklenen izin. Arife gunleri 0.5 olmali."""
+    from gridup.features.temporal import ADMINISTRATIVE_LEAVE, add_turkish_holiday_features
+
+    arifeler = [g for g, v in ADMINISTRATIVE_LEAVE.items() if v == 0.5]
+    frame = pd.DataFrame({"tarih": pd.to_datetime(arifeler)})
+    out = add_turkish_holiday_features(frame, "tarih")
+    # 0.5 degeri YALNIZCA yasal yarim gunlerde kullanilmali.
+    assert (out["tatil_yarim_gun"] == 1).all(), (
+        f"0.5 idari izin degeri yarim gun OLMAYAN tarihte: "
+        f"{list(out.loc[out.tatil_yarim_gun == 0, 'tarih'])}"
+    )
+
+
+def test_mape_sifir_dislamasini_sessiz_gecmiyor():
+    """REGRESYON: MAPE sifir satirlari dislarken sayiyi normal gosteriyordu."""
+    import warnings as _w
+
+    from gridup.metrics import mape, mape_coverage
+
+    y_true = np.array([0.0, 0.0, 0.0, 10.0, 20.0])
+    y_pred = np.array([1.0, 1.0, 1.0, 11.0, 19.0])
+
+    with _w.catch_warnings(record=True) as yakalanan:
+        _w.simplefilter("always")
+        mape(y_true, y_pred)
+
+    assert yakalanan, "sifir agirlikli hedefte uyari verilmedi"
+    assert "DISLIYOR" in str(yakalanan[0].message)
+    assert mape_coverage(y_true) == pytest.approx(0.4)
+
+
+def test_mape_sifirsiz_veride_uyarmiyor():
+    import warnings as _w
+
+    from gridup.metrics import mape
+
+    with _w.catch_warnings(record=True) as yakalanan:
+        _w.simplefilter("always")
+        mape(np.array([10.0, 20.0, 30.0]), np.array([11.0, 19.0, 31.0]))
+    assert not yakalanan

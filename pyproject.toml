@@ -8,6 +8,33 @@ version = "0.1.0"
 description = "Grid Up Datathon - Coderspace x GDZ Elektrik x ADM Elektrik yarisma pipeline'i"
 requires-python = ">=3.10"
 
+# Cekirdek: bu ucu paketin HER modulu modul seviyesinde import eder.
+# Ust sinir KOYMUYORUZ -- Kaggle imaji bizim yerel surumumuzden ESKI olabilir
+# (olculdu: Kaggle numpy 2.0.2, yerel 2.4.6) ve bir ust sinir orada kurulumu
+# sessizce reddettirir.
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+]
+
+# Geri kalan her sey TEMBEL import edilir (fonksiyon icinde). Boylece
+# lightgbm kullanmayan bir notebook onu yuklemek zorunda kalmaz ve Kaggle'da
+# eksik tek bir paket TUM paketi import edilemez kilmaz.
+[project.optional-dependencies]
+models = ["lightgbm>=4.0", "xgboost>=2.0", "catboost>=1.2"]
+search = ["optuna>=3.5", "shap>=0.44"]
+features = ["holidays>=0.40", "pvlib>=0.10", "hijridate>=2.4"]
+io = ["pyarrow>=14.0", "requests>=2.31"]
+viz = ["matplotlib>=3.7"]
+full = [
+    "lightgbm>=4.0", "xgboost>=2.0", "catboost>=1.2",
+    "optuna>=3.5", "shap>=0.44",
+    "holidays>=0.40", "pvlib>=0.10", "hijridate>=2.4",
+    "pyarrow>=14.0", "requests>=2.31",
+    "matplotlib>=3.7",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

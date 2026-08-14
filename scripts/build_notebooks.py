@@ -74,7 +74,24 @@ from pathlib import Path
 
 # Kaggle'da: /kaggle/input/<yarisma>/  · yerelde: data/raw/
 IS_KAGGLE = Path("/kaggle/input").exists()
-if not IS_KAGGLE:
+if IS_KAGGLE:
+    # DIKKAT: gridup Kaggle imajinda KURULU DEGILDIR. Onceki surumde sys.path
+    # yalnizca YERELDE ayarlaniyordu; Kaggle'da 'import gridup' ModuleNotFound
+    # veriyordu. Once offline paket dataset'indeki wheel'i kur, o yoksa ham
+    # kaynagi sys.path'e ekle.
+    import glob
+    import subprocess
+
+    _whl = glob.glob("/kaggle/input/*/gridup-*.whl")
+    if _whl:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--no-index", "--no-deps", _whl[0], "-q"],
+            check=False,
+        )
+    else:
+        for _src in glob.glob("/kaggle/input/*/src"):
+            sys.path.insert(0, _src)
+else:
     sys.path.insert(0, str(Path.cwd().parent / "src"))
 
 import matplotlib.pyplot as plt
@@ -300,7 +317,24 @@ import sys
 from pathlib import Path
 
 IS_KAGGLE = Path("/kaggle/input").exists()
-if not IS_KAGGLE:
+if IS_KAGGLE:
+    # DIKKAT: gridup Kaggle imajinda KURULU DEGILDIR. Onceki surumde sys.path
+    # yalnizca YERELDE ayarlaniyordu; Kaggle'da 'import gridup' ModuleNotFound
+    # veriyordu. Once offline paket dataset'indeki wheel'i kur, o yoksa ham
+    # kaynagi sys.path'e ekle.
+    import glob
+    import subprocess
+
+    _whl = glob.glob("/kaggle/input/*/gridup-*.whl")
+    if _whl:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--no-index", "--no-deps", _whl[0], "-q"],
+            check=False,
+        )
+    else:
+        for _src in glob.glob("/kaggle/input/*/src"):
+            sys.path.insert(0, _src)
+else:
     sys.path.insert(0, str(Path.cwd().parent / "src"))
 
 import matplotlib.pyplot as plt

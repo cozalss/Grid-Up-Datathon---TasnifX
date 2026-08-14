@@ -78,23 +78,46 @@ HOLIDAY_CODES: dict[str, int] = {
 _HOLIDAY_PRIORITY = ("ramazan", "kurban", "cumhuriyet", "egemenlik",
                      "genclik", "zafer", "demokrasi", "emek", "yilbasi")
 
-# IDARI IZIN gunleri -- hukumetin bayram oncesi/sonrasi verdigi ek tatil.
+# IDARI IZIN gunleri -- hukumetin bayram oncesi/sonrasi verdigi EK tatil.
 # holidays kutuphanesinde YOKTUR ama kamu kapanir, okullar kapanir, kazi ve
 # planli saha isi durur. Kutuphane bu gunleri normal is gunu sayar.
 #
-# UYARI: Bu liste arastirmadan geldi ve BIRINCIL KAYNAKTAN DOGRULANMADI.
-# Resmi Gazete arsivinden teyit et. Yanlis bir gun eklemek, dogru bir gunu
-# atlamaktan daha zararli degildir -- ama ikisi de sinyal kaybidir.
-# Deger: 1.0 = tam gun, 0.5 = yarim gun.
+# KAYNAK (duzeltildi)
+# -------------------
+# Bayram idari izinleri Resmi Gazete'de numarali "Cumhurbaskani Karari" olarak
+# YAYIMLANMAZ. Dogru kaynak, Cumhurbaskanligi Idari Isler Baskanligi Personel
+# ve Prensipler Genel Mudurlugu'nun kamu kurumlarina gonderdigi YAZI'dir;
+# kamuoyuna Iletisim Baskanligi/AA duyurusu veya Cumhurbaskani aciklamasiyla
+# bildirilir. Onceki surumdeki "Resmi Gazete arsivinden teyit et" talimati
+# yanlis kaynagi gosteriyordu.
+#
+# KONVANSIYON (tek anlam)
+# -----------------------
+# Deger = YASAL TATILIN USTUNE EKLENEN izin.
+#   1.0 = normalde tam is gunu olan gun tamamen izinli
+#   0.5 = arife gunu; yasal tatil 13.00'te basliyor, SABAHI da izinli
+# Bu ayrim onemli: arifede holiday_agirligi zaten 0.5'tir; buraya 1.0 yazmak
+# ayni yarim gunu iki kez saymak olur.
 ADMINISTRATIVE_LEAVE: dict[str, float] = {
     "2019-06-03": 0.5, "2019-06-07": 1.0,
     "2021-05-10": 1.0, "2021-05-11": 1.0, "2021-05-12": 0.5,
     "2022-07-13": 1.0, "2022-07-14": 1.0,
-    "2023-06-26": 1.0, "2023-06-27": 1.0,
+    # 2023 Kurban arifesi: 27 Haziran yasal olarak zaten yarim gun ->
+    # ek izin de yarim gundur. Onceki 1.0 degeri konvansiyonu bozuyordu.
+    "2023-06-26": 1.0, "2023-06-27": 0.5,
     "2024-04-08": 1.0, "2024-04-09": 0.5,
     "2024-06-20": 1.0, "2024-06-21": 1.0,
-    "2025-06-05": 0.5,
-    "2026-05-25": 1.0,
+    # 2025 Ramazan: 26.03.2025 Cumhurbaskani aciklamasi -- "2, 3 ve 4 Nisan'da
+    # kamu calisanlarimiz idari izinli sayilacak" (toplam 9 gunluk tatil).
+    # Onceki surumde bu UC GUN TAMAMEN EKSIKTI.
+    "2025-04-02": 1.0, "2025-04-03": 1.0, "2025-04-04": 1.0,
+    # 2025 Kurban: EK idari izin VERILMEDI. Iletisim Baskanligi aciklamasi
+    # yalnizca YASAL tatili teyit ediyordu (5 Haziran ogleden sonra + 6-9
+    # Haziran). Onceki surumdeki "2025-06-05": 0.5 girdisi HATALIYDI --
+    # zaten yasal olan yarim gunu ek izin sayiyordu; kaldirildi.
+    # 2026 Kurban: 04.05.2026 aciklamasi -- resmi tatile "1,5 gun daha"
+    # eklendi; 26 Mayis Sali OGLEDEN ONCE de izinli.
+    "2026-05-25": 1.0, "2026-05-26": 0.5,
 }
 
 # Ege bolgesi icin mevsimsellik: yaz turizmi ve tarimsal sulama yuku belirleyicidir.
@@ -583,11 +606,17 @@ def add_turkish_holiday_features(
         f"{prefix}_yakininda": ((distances <= window_days) & valid_mask).astype("int8"),
         f"{prefix}_veya_haftasonu": (is_holiday.to_numpy() | weekend).astype("int8"),
         f"{prefix}_idari_izin": leave_weight,
-        # Birlesik isgucu kaybi: tatil, idari izin ve hafta sonunun en buyugu.
-        # Sebeke tarafinda anlamli olan "bugun saha ekibi calisiyor mu" sorusudur;
-        # bu uc kaynagin hangisinden geldigi degil.
+        # Birlesik isgucu kaybi: "bugun saha ekibi ne kadar calisiyor?"
+        #
+        # Tatil ve idari izin TOPLANIR, max ALINMAZ. Sebep: arife gunu ikisi
+        # AYNI GUNUN FARKLI YARILARIDIR -- yasal tatil 13.00'te baslar
+        # (holiday_weight=0.5), idari izin ise sabahi kapatir
+        # (leave_weight=0.5). max() bunu 0.5 gosterir ve gunun tamamen
+        # kapali oldugunu KACIRIR; toplam 1.0 verir, dogrusu budur.
+        # Hafta sonu ise ayri bir kaynak degil ayni gunun baska bir sebebi
+        # oldugu icin onunla max aliriz.
         f"{prefix}_isgucu_kaybi": np.maximum(
-            np.maximum(holiday_weight, leave_weight.to_numpy()),
+            np.minimum(1.0, holiday_weight + leave_weight.to_numpy()),
             weekend.astype("float32"),
         ).astype("float32"),
     }

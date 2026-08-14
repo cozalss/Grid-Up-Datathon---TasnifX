@@ -18,6 +18,7 @@ METRIK -> HILE TABLOSU
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 
 import numpy as np
@@ -35,6 +36,8 @@ __all__ = [
     "rmse",
     "rmsle",
     "mape",
+    "mape_coverage",
+    "MAPE_ZERO_WARN_RATIO",
     "smape",
     "get_metric",
     "METRIC_REGISTRY",
@@ -64,15 +67,53 @@ def rmsle(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     )
 
 
+#: MAPE'de disarida birakilan sifir satirlarinin orani bunu asarsa uyaririz.
+MAPE_ZERO_WARN_RATIO = 0.01
+
+
+def mape_coverage(y_true: np.ndarray, *, epsilon: float = 1e-9) -> float:
+    """MAPE'nin gercekte olctugu satirlarin orani (0..1).
+
+    1.0'dan kucukse metrik verinin TAMAMINI olcmuyor demektir.
+    """
+    values = np.asarray(y_true, dtype="float64")
+    if values.size == 0:
+        return 0.0
+    return float(np.mean(np.abs(values) >= epsilon))
+
+
 def mape(y_true: np.ndarray, y_pred: np.ndarray, *, epsilon: float = 1e-9) -> float:
     """Ortalama mutlak yuzde hata (%).
 
-    UYARI: gercek deger 0'a yaklastikca patlar. Elektrik tuketiminde gece
-    saatlerinde veya kapali abonelerde bu sik olur. MAPE metrikse, sifir
-    yakini satirlarin metrigi domine ettigini kontrol et.
+    Sifir (veya sifira cok yakin) gercek degerli satirlar **dislanir** --
+    aksi halde bolme patlar. Ama bu sessiz bir daralmadir ve tehlikelidir:
+    satirlarin yarisi sifirsa MAPE yalnizca diger yariyi olcer ve sayi gayet
+    normal gorunur. Bu yuzden dislama orani anlamli oldugunda UYARIRIZ.
+
+    2023 GDZ Datathon'unda resmi metrik MAPE'ydi ve orada sorun cikmadi:
+    hedef "Dagitilan Enerji (MWh)" sifirdan cok uzakta calisiyordu. **2026
+    Grid Up icin bu garanti DEGILDIR.** Hedef kesinti suresi / ariza sayisi
+    gibi sifir-siskin bir buyuklukse:
+
+      * MAPE satirlarin cogunda tanimsizdir -> ``smape`` veya ``mae`` kullan
+      * CatBoost/LightGBM'de ``eval_metric="MAPE"`` bu satirlarda anlamsiz
+        gradyan uretir -> erken durdurma gurultuye gore karar verir
+
+    Raises:
+        Uyari degil, ``UserWarning`` -- kosmayi durdurmaz ama loga duser.
     """
     y_true = np.asarray(y_true, dtype="float64")
-    denominator = np.where(np.abs(y_true) < epsilon, np.nan, y_true)
+    covered = np.abs(y_true) >= epsilon
+    excluded = 1.0 - (float(np.mean(covered)) if y_true.size else 0.0)
+    if excluded > MAPE_ZERO_WARN_RATIO:
+        warnings.warn(
+            f"MAPE satirlarin %{excluded * 100:.1f}'ini DISLIYOR (gercek deger ~0). "
+            f"Metrik yalnizca kalan %{(1 - excluded) * 100:.1f}'i olcuyor. "
+            "Sifir-siskin hedefte 'smape' veya 'mae' kullanmayi dusun.",
+            UserWarning,
+            stacklevel=2,
+        )
+    denominator = np.where(covered, y_true, np.nan)
     return float(np.nanmean(np.abs((y_true - y_pred) / denominator)) * 100)
 
 
