@@ -26,9 +26,12 @@ from gridup.metrics import (
     inverse_log_transform,
     log_transform_target,
     optimize_threshold,
+    postprocess_predictions,
     rmsle,
     smape,
 )
+from gridup.models import COUNT_OBJECTIVES, starter_params
+from gridup.panel import build_panel, panel_coverage
 from gridup.profiling import profile
 from gridup.submission import blend_submissions, validate_submission, write_submission
 from gridup.synthetic import SyntheticSpec, make_distribution_dataset
@@ -285,6 +288,113 @@ class TestColumnNormalizationCollisions:
         """'A/B' + 'A B' -> a_b, a_b_2 ; ama 'A_B_2' zaten a_b_2'ye gidiyordu."""
         mapping = normalize_columns(["A/B", "A B", "A_B_2"])
         assert len(set(mapping.values())) == 3
+
+
+class TestPanel:
+    """Olay kayitlarindan tam panel: eksik 'olay olmadi' gunleri doldurulmali."""
+
+    def test_missing_days_are_filled_with_zero(self):
+        # Arrange -- 2 ilce, yalnizca olay olan gunler kayitli
+        events = pd.DataFrame(
+            {
+                "ilce": ["Konak", "Konak", "Bodrum"],
+                "tarih": pd.to_datetime(["2024-01-01", "2024-01-03", "2024-01-02"]),
+                "kesinti": [2.0, 1.0, 5.0],
+            }
+        )
+
+        # Act
+        panel = build_panel(
+            events, entity_columns=["ilce"], time_column="tarih", verbose=False
+        )
+
+        # Assert -- 2 ilce x 3 gun = 6 satir
+        assert len(panel) == 6
+        konak_02 = panel[(panel["ilce"] == "Konak") & (panel["tarih"] == "2024-01-02")]
+        assert konak_02["kesinti"].iloc[0] == 0.0
+
+    def test_same_day_events_are_summed_not_dropped(self):
+        events = pd.DataFrame(
+            {
+                "ilce": ["Konak", "Konak"],
+                "tarih": pd.to_datetime(["2024-01-01", "2024-01-01"]),
+                "kesinti": [2.0, 3.0],
+            }
+        )
+        panel = build_panel(
+            events, entity_columns=["ilce"], time_column="tarih", verbose=False
+        )
+        assert panel["kesinti"].sum() == pytest.approx(5.0)
+
+    def test_synthetic_rows_are_flagged(self):
+        events = pd.DataFrame(
+            {
+                "ilce": ["Konak"],
+                "tarih": pd.to_datetime(["2024-01-01"]),
+                "kesinti": [1.0],
+            }
+        )
+        panel = build_panel(
+            events, entity_columns=["ilce"], time_column="tarih",
+            end="2024-01-03", verbose=False,
+        )
+        assert panel["_dolduruldu"].sum() == 2
+
+    def test_coverage_reports_sparsity(self):
+        events = pd.DataFrame(
+            {
+                "ilce": ["A", "B"],
+                "tarih": pd.to_datetime(["2024-01-01", "2024-01-05"]),
+                "kesinti": [1.0, 1.0],
+            }
+        )
+        result = panel_coverage(events, entity_columns=["ilce"], time_column="tarih")
+        assert result["expected_rows"] == 10.0   # 2 varlik x 5 gun
+        assert result["coverage"] == pytest.approx(0.2)
+
+    def test_missing_entity_column_raises(self):
+        frame = pd.DataFrame({"tarih": pd.to_datetime(["2024-01-01"])})
+        with pytest.raises(KeyError):
+            build_panel(frame, entity_columns=["yok"], time_column="tarih")
+
+
+class TestPostprocess:
+    def test_negatives_are_clipped(self):
+        result = postprocess_predictions(np.array([-3.0, 2.0]), verbose=False)
+        assert result[0] == 0.0
+
+    def test_rounding_for_count_targets(self):
+        result = postprocess_predictions(
+            np.array([2.4, 2.6]), round_to_integer=True, verbose=False
+        )
+        assert result.tolist() == [2.0, 3.0]
+
+    def test_upper_bound_caps_absurd_predictions(self):
+        """Bir arastirma modellerin musteri sayisindan fazla kesinti tahmin
+        ettigini olcmustu (5,2 kat asiri tahmin)."""
+        result = postprocess_predictions(
+            np.array([5.0, 5000.0]), clip_max=100.0, verbose=False
+        )
+        assert result[1] == 100.0
+
+    def test_input_array_is_not_mutated(self):
+        original = np.array([-1.0, 2.0])
+        postprocess_predictions(original, verbose=False)
+        assert original[0] == -1.0
+
+
+class TestCountObjectives:
+    def test_registry_covers_all_three_libraries(self):
+        assert set(COUNT_OBJECTIVES) == {"lightgbm", "xgboost", "catboost"}
+        for mapping in COUNT_OBJECTIVES.values():
+            assert {"poisson", "tweedie", "mae", "l2"} <= set(mapping)
+
+    def test_objective_override_is_applied(self):
+        params = starter_params("lightgbm", "regression", objective="poisson")
+        assert params["objective"] == "poisson"
+
+    def test_default_objective_unchanged_without_override(self):
+        assert starter_params("lightgbm", "regression")["objective"] == "regression"
 
 
 class TestMetrics:

@@ -12,11 +12,14 @@ başlamak.
 
 | | |
 |---|---|
-| Testler | 89 test, tamamı geçiyor (`pytest`) |
+| Testler | **129 test**, tamamı geçiyor (`pytest`) · ruff temiz |
 | Uçtan uca kanıt | `scripts/smoke_test.py` — sentetik veri üzerinde 14 adım, ~60 sn |
-| Sentetik holdout | RMSLE **1.198** vs medyan baseline **1.653** → **%27.6** kazanç |
+| Sentetik holdout | RMSLE **1.200** vs medyan baseline **1.653** → **%27,4** kazanç |
+| Bağımsız denetim | 3 review agent'ı (sızıntı · Python doğruluğu · sessiz hata) — 22 bulgu kapatıldı |
+| Araştırma | 13 agent'lık derin araştırma → [docs/01-strateji-brifingi.md](docs/01-strateji-brifingi.md) |
 | Harici veri | Open-Meteo hava durumu çekicisi gerçek veriyle doğrulandı |
-| Ortam | Python 3.11.9 · pandas 3.0.3 · LightGBM 4.6 · XGBoost 3.2 · CatBoost 1.2.10 |
+| Yerel ortam | Python 3.11.9 · pandas 3.0.3 · numpy 2.4.6 · sklearn 1.8.0 |
+| **Kaggle ortamı** | Python 3.12 · pandas 3.0.4 · **numpy 2.0.2** · sklearn 1.9.0 — numpy Kaggle'da **daha eski** |
 
 ---
 
@@ -68,10 +71,11 @@ src/gridup/
   turkish.py        İ/I tuzağı, join anahtarı, TR sıralama, kolon normalizasyonu
   compat.py         pandas 3.0 / numpy 2.x uyumluluk katmanı, bellek düşürme
   io_utils.py       kodlama + ayırıcı + ondalık otomatik tespiti (cp1254, ';', '1.234,56')
+  panel.py          olay kayıtlarından tam panel (eksik "olay olmadı" günleri sıfırla doldurur)
   profiling.py      otomatik EDA raporu — çarpıklık, sıfır yığılması, ID kolonları, şema farkı
   validation.py     CV şeması seçimi, ambargolu zaman bölmesi, adversarial validation, sızıntı taraması
   features/
-    temporal.py     takvim, döngüsel kodlama, TR tatil, lag, kayan/genişleyen pencere
+    temporal.py     takvim, döngüsel kodlama, TR tatil, ufuk-farkındalıklı lag ve kayan pencere
     categorical.py  frekans, sayım, fold-dışı hedef kodlama, nadir kategori birleştirme
     aggregate.py    grup istatistikleri, sapma/oran/z-skor, oran feature'ları
   metrics.py        RMSE/RMSLE/MAE/MAPE/SMAPE/AUC/F1 + eşik optimizasyonu + log dönüşümü
@@ -99,6 +103,34 @@ Bu dört kural pipeline'ın tamamında geçerlidir ve testlerle korunmaktadır:
 3. **Kayan pencereler mevcut satırı dışlar** (`shift(1)`). pandas varsayılanı dahil eder;
    bu, hedef türevli bir kolonda doğrudan sızıntıdır.
 4. **Sabitler `config.py` içinde yaşar.** Notebook'ta sihirli sayı yok.
+
+---
+
+## Araştırmadan gelen üç kritik kural
+
+**1 · Lag ufkunu tahmin ufkuna sabitleyin.** 2024 birincisinin en yüksek önemli
+feature'ları `shift_29_rolling_3_sum` idi. Test bloğu bir aylıksa, ayın 28'ini tahmin
+ederken 1 günlük lag **yoktur**. `shift(1)` ile hesaplanan rolling CV'de harika görünür,
+private LB'de çöker.
+
+```python
+HORIZON = (test[TIME].max() - test[TIME].min()).days + 1
+out = add_lag_features(out, TARGET, [1, 7, 28], time_column=TIME,
+                       group_columns=[GROUP], horizon=HORIZON)
+```
+
+**2 · Panel yapısını sıfırla doldurun.** "O gün kesinti olmadı" satırları veri setinde
+bulunmayabilir. Doldurulmazsa lag/rolling kayar ve model sıfır tahmin etmeyi öğrenemez.
+
+```python
+panel = build_panel(events, entity_columns=["il", "ilce"], time_column="tarih")
+```
+
+**3 · Havada ortalama değil max ve quantile.** Hasarı rüzgârın ortalaması değil tepesi
+yapar. 2024 birincisinin importance listesinin tepesi `wind_speed_10m_max` ve `..._q01`
+gibi quantile türevleriyle doluydu.
+
+Ayrıntı: [docs/01-strateji-brifingi.md](docs/01-strateji-brifingi.md)
 
 ---
 

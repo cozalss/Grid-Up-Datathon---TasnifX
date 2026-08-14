@@ -86,16 +86,35 @@ CAT_DEFAULTS: dict[str, Any] = {
 }
 
 
-def starter_params(kind: ModelKind, task_type: str) -> dict[str, Any]:
+def starter_params(
+    kind: ModelKind, task_type: str, *, objective: str | None = None
+) -> dict[str, Any]:
     """Model ve gorev tipine gore baslangic parametreleri dondurur.
 
     CatBoost yuksek kardinaliteli kategorik kolonlarda (trafo_id, ilce)
     genellikle en iyi tek modeldir cunku sirali hedef kodlamayi kendi icinde,
     sizintisiz yapar. Once onu dene.
+
+    Args:
+        objective: Varsayilani ezer. Sayim (count) hedefi icin ``COUNT_OBJECTIVES``
+            anahtarlarindan birini kullan: ``poisson``, ``tweedie``, ``mae``.
+
+    OBJECTIVE SECIMI TAHMINLE DEGIL ARAMAYLA YAPILIR
+    -------------------------------------------------
+    Hedef bir SAYIM ise (gunluk kesinti adedi gibi) dagilim saga carpik ve
+    sifir-siskindir. Bu durumda ``l2`` cogu zaman en iyi secim DEGILDIR:
+
+      * ``poisson``  -- saf sayim, asiri yayilim yoksa
+      * ``tweedie``  -- sifir kutlesi olan negatif olmayan veri (M5 kazanani
+                        bunu kullandi); ``tweedie_variance_power`` 1.1-1.5 arasi aranir
+      * ``mae``/``l1`` -- resmi metrik MAE ise dogrudan onu optimize et
+
+    2024 GDZ birincisi objective'i **Optuna arama uzayina koydu** -- yani
+    hangisinin kazandigi veriye baglidir ve deneyle bulunur.
     """
     if kind == "lightgbm":
         params = dict(LGB_DEFAULTS)
-        params["objective"] = {
+        params["objective"] = objective or {
             "regression": "regression",
             "binary": "binary",
             "multiclass": "multiclass",
@@ -104,7 +123,7 @@ def starter_params(kind: ModelKind, task_type: str) -> dict[str, Any]:
 
     if kind == "xgboost":
         params = dict(XGB_DEFAULTS)
-        params["objective"] = {
+        params["objective"] = objective or {
             "regression": "reg:squarederror",
             "binary": "binary:logistic",
             "multiclass": "multi:softprob",
@@ -113,7 +132,7 @@ def starter_params(kind: ModelKind, task_type: str) -> dict[str, Any]:
 
     if kind == "catboost":
         params = dict(CAT_DEFAULTS)
-        params["loss_function"] = {
+        params["loss_function"] = objective or {
             "regression": "RMSE",
             "binary": "Logloss",
             "multiclass": "MultiClass",
@@ -121,6 +140,21 @@ def starter_params(kind: ModelKind, task_type: str) -> dict[str, Any]:
         return params
 
     raise ValueError(f"Bilinmeyen model tipi '{kind}'.")
+
+
+# Sayim hedefi icin denenmesi gereken objective'ler, kutuphane bazinda.
+# Hepsini ayni fold'lar uzerinde calistirip CV ile sec -- tahmin etme.
+COUNT_OBJECTIVES: dict[str, dict[str, str]] = {
+    "lightgbm": {"poisson": "poisson", "tweedie": "tweedie", "mae": "mae", "l2": "regression"},
+    "xgboost": {
+        "poisson": "count:poisson",
+        "tweedie": "reg:tweedie",
+        "mae": "reg:absoluteerror",
+        "l2": "reg:squarederror",
+    },
+    "catboost": {"poisson": "Poisson", "tweedie": "Tweedie:variance_power=1.5",
+                 "mae": "MAE", "l2": "RMSE"},
+}
 
 
 @dataclass

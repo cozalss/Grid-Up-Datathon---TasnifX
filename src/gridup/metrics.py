@@ -41,6 +41,7 @@ __all__ = [
     "optimize_threshold",
     "log_transform_target",
     "inverse_log_transform",
+    "postprocess_predictions",
 ]
 
 
@@ -140,6 +141,62 @@ def optimize_threshold(
         "best_score": float(scores[best_index]),
         "score_at_half": float(metric_fn(y_true, (y_proba >= 0.5).astype(int))),
     }
+
+
+def postprocess_predictions(
+    predictions: np.ndarray,
+    *,
+    round_to_integer: bool = False,
+    clip_min: float | None = 0.0,
+    clip_max: float | None = None,
+    verbose: bool = True,
+) -> np.ndarray:
+    """Tahminleri fiziksel kisitlara ve metrige gore duzeltir. YENI dizi dondurur.
+
+    ÜÇ UCUZ KAZANÇ, hepsi kanitli:
+
+    1. **Negatif kirpma.** Kesinti sayisi, sure, tuketim negatif OLAMAZ.
+       Kirpma tek basina skor kazandirir.
+
+    2. **Yuvarlama (sayim hedefi + MAE).** Hedef tam sayiysa ve metrik MAE ise,
+       ``2.4`` yerine ``2`` tahmin etmek hatayi dogrudan azaltir. 2024 GDZ
+       birincisinin final mimarisi: 25 seed full-data + mean blend +
+       **round** + **clip**.
+       DIKKAT: metrik RMSE ise yuvarlama genellikle ZARAR verir -- RMSE'de
+       optimal tahmin kosullu ORTALAMADIR ve o tam sayi olmak zorunda degildir.
+
+    3. **Fiziksel ust sinir.** Bir arastirma, modellerin sehirlerin %19,8'inde
+       musteri sayisindan FAZLA kesinti tahmin ettigini olcmus (5,2 kat asiri
+       tahmin). ``clip_max`` ile gercekci bir tavan koymak bu ucu keser.
+
+    Args:
+        round_to_integer: Metrik MAE **ve** hedef sayim ise ``True``.
+        clip_min: Alt sinir. Fiziksel buyukluklerde ``0.0`` birak.
+        clip_max: Ust sinir (or. ilcedeki abone sayisi). ``None`` = sinirsiz.
+    """
+    values = np.asarray(predictions, dtype="float64").copy()
+    report: list[str] = []
+
+    if clip_min is not None:
+        below = int((values < clip_min).sum())
+        if below:
+            report.append(f"{below:,} tahmin alt sinira ({clip_min}) cekildi")
+        values = np.maximum(values, clip_min)
+
+    if clip_max is not None:
+        above = int((values > clip_max).sum())
+        if above:
+            report.append(f"{above:,} tahmin ust sinira ({clip_max}) cekildi")
+        values = np.minimum(values, clip_max)
+
+    if round_to_integer:
+        values = np.round(values)
+        report.append("tam sayiya yuvarlandi")
+
+    if verbose and report:
+        print("[postprocess] " + " · ".join(report))
+
+    return values
 
 
 def log_transform_target(y: np.ndarray) -> np.ndarray:
