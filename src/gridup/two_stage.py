@@ -36,7 +36,7 @@ optimize edilir. 0,5 varsayilani neredeyse her zaman yanlistir.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -167,6 +167,55 @@ def tune_threshold(
     }
 
 
+def _stage2_predictions_everywhere(
+    regressor: CVResult,
+    train: pd.DataFrame,
+    fold_list: Sequence[tuple[np.ndarray, np.ndarray]],
+    source_folds: Sequence[int],
+    *,
+    kind: ModelKind,
+) -> np.ndarray:
+    """2. asama modelini SIFIR satirlarinda da calistirir -- fold-disi.
+
+    NEDEN SABIT MEDYAN YANLISTI
+    ---------------------------
+    Onceki surum sifir satirlarina sabit ``median(y[y>0])`` yaziyordu ve
+    gerekce olarak "esik zaten o satirlari sifirlayacak" deniyordu. Bu gerekce
+    DAIRESELDIR: esik tam da bu degerler kullanilarak ayarlaniyor.
+
+    Somut zarar: dusuk bir esik denendiginde sifir satirlari gercek model
+    tahminlerini degil, sabit medyani alir. Medyan bu satirlar icin genellikle
+    fazla yuksektir, dolayisiyla dusuk esiklerin maliyeti YAPAY olarak siser ve
+    ``tune_threshold`` esigi gereginden yukari iter. Model gereginden fazla
+    sifir tahmin eder.
+
+    SIZINTI YOK: 2. asama modeli yalnizca kendi fold'unun POZITIF egitim
+    satirlarinda egitildi; sifir satirlarinin hedefini hic gormedi. Onlarin
+    uzerinde tahmin uretmek, herhangi bir gorulmemis satirda tahmin uretmekle
+    aynidir.
+    """
+    from .models import _predict, _prepare_categoricals
+
+    prepared, _, _ = _prepare_categoricals(train, None, kind)
+    predictions = np.full(len(train), np.nan, dtype="float64")
+
+    for model, fold_position in zip(regressor.models, source_folds, strict=True):
+        _, valid_idx = fold_list[fold_position]
+        predictions[valid_idx] = _predict(
+            model, prepared.iloc[valid_idx], needs_proba=False
+        )
+
+    # Hicbir fold'un dogrulamadigi satirlar kalabilir -- TimeSeriesSplit ilk
+    # donemi hic valid yapmaz. Bu satirlarda 1. asama da (cross_validate) 0
+    # birakir, yani esik ne olursa olsun tahmin 0 cikar. Sabit bir ceza olarak
+    # her esikte AYNI sekilde davranirlar ve esik SECIMINI saptirmazlar.
+    uncovered = np.isnan(predictions)
+    if uncovered.any():
+        predictions[uncovered] = 0.0
+
+    return np.clip(predictions, 0, None)
+
+
 def fit_two_stage(
     train: pd.DataFrame,
     target: np.ndarray | pd.Series,
@@ -240,11 +289,16 @@ def fit_two_stage(
     remap[positive_index] = np.arange(len(positive_index))
 
     positive_folds: list[tuple[np.ndarray, np.ndarray]] = []
-    for train_idx, valid_idx in fold_list:
+    # Hangi pozitif-fold'un hangi ORIJINAL fold'dan geldigini izle: 2. asama
+    # modelini o fold'un TUM validation satirlarinda (sifirlar dahil) kullanmak
+    # icin gerekli.
+    source_folds: list[int] = []
+    for index, (train_idx, valid_idx) in enumerate(fold_list):
         mapped_train = remap[train_idx][remap[train_idx] >= 0]
         mapped_valid = remap[valid_idx][remap[valid_idx] >= 0]
         if mapped_train.size and mapped_valid.size:
             positive_folds.append((mapped_train, mapped_valid))
+            source_folds.append(index)
 
     if not positive_folds:
         raise ValueError(
@@ -259,11 +313,9 @@ def fit_two_stage(
         early_stopping_rounds=early_stopping_rounds, verbose=verbose,
     )
 
-    # 2. asamanin OOF'u yalnizca pozitif satirlar icin var. Sifir satirlarinda
-    # "kac tane olurdu" bilinmiyor; pozitiflerin medyanini kullaniyoruz --
-    # esik zaten o satirlari sifirlayacak.
-    magnitude_oof = np.full(len(train), float(np.median(y[positive])), dtype="float64")
-    magnitude_oof[positive_index] = regressor.oof_predictions
+    magnitude_oof = _stage2_predictions_everywhere(
+        regressor, train, fold_list, source_folds, kind=kind
+    )
 
     tuning = tune_threshold(y, classifier.oof_predictions, magnitude_oof, metric=metric)
 

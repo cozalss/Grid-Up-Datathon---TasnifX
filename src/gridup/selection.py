@@ -44,6 +44,7 @@ __all__ = [
     "SelectionStep",
     "SelectionResult",
     "mean_absolute_shap",
+    "fold_shap_importance",
     "null_importance_filter",
     "shap_backward_selection",
 ]
@@ -132,6 +133,81 @@ def mean_absolute_shap(
     return (
         pd.Series(values.mean(axis=0), index=sample.columns)
         .sort_values(ascending=False)
+    )
+
+
+def fold_shap_importance(
+    models: Sequence[Any],
+    features: pd.DataFrame,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    *,
+    sample_per_fold: int = 2000,
+    seed: int = 42,
+) -> pd.DataFrame:
+    """Her fold'un modelini KENDI VALIDATION satirlarinda degerlendirir.
+
+    NEDEN BU, TEK MODELDEN FARKLI VE NEDEN ONEMLI
+    ---------------------------------------------
+    SHAP'i bir fold modelinin **egitim** satirlarinda hesaplamak, o modelin
+    ezberledigi orgu uzerinde olcum yapmaktir. Asiri uyan bir feature -- ornegin
+    yuksek kardinaliteli bir kimlik kodlamasi -- egitim satirlarinda cok yuksek
+    SHAP alir cunku model onlari gercekten ezberlemistir. Validation satirlarinda
+    ise katkisi cokerdi.
+
+    Sonuc: geri elemede tam da atilmasi gereken feature'lar en yuksek onemi alir
+    ve **elemeden kurtulur**. Eleme, gurultuyu temizlemek yerine gurultuyu korur.
+
+    Bu, ``shap_backward_selection``in onceki surumundeki gercek bir hataydi:
+    ``models[0]`` ile TUM egitim cercevesinde hesap yapiliyordu.
+
+    Args:
+        models: ``CVResult.models`` -- fold sirasiyla.
+        features: Modellerin egitildigi tam feature cercevesi.
+        folds: ``models`` ile AYNI sirada ``(train_idx, valid_idx)`` ciftleri.
+        sample_per_fold: Fold basina SHAP ornek satiri.
+
+    Returns:
+        ``feature``, ``mean_abs_shap``, ``rank_std`` kolonlu DataFrame,
+        onemine gore BUYUKTEN KUCUGE sirali.
+
+        ``rank_std`` bedava bir kararlilik olcusudur: bir feature'in siralamasi
+        fold'lar arasinda cok oynuyorsa, ortalama SHAP'i yuksek olsa bile
+        guvenilmezdir -- muhtemelen belirli bir donemin artefaktidir.
+
+    Raises:
+        ValueError: ``models`` ve ``folds`` uzunluklari farkliysa.
+    """
+    if len(models) != len(folds):
+        raise ValueError(
+            f"models ({len(models)}) ve folds ({len(folds)}) uzunluklari farkli. "
+            "Fold sirasi korunmali -- aksi halde her model yanlis satirlarda olculur."
+        )
+
+    per_fold: list[pd.Series] = []
+    for model, (_, valid_idx) in zip(models, folds, strict=True):
+        validation = features.iloc[valid_idx]
+        if validation.empty:
+            continue
+        per_fold.append(
+            mean_absolute_shap(model, validation, sample_size=sample_per_fold, seed=seed)
+        )
+
+    if not per_fold:
+        raise ValueError("Hicbir fold icin validation satiri bulunamadi.")
+
+    matrix = pd.concat(per_fold, axis=1)
+    ranks = matrix.rank(ascending=False, axis=0)
+
+    return (
+        pd.DataFrame(
+            {
+                "feature": matrix.index,
+                "mean_abs_shap": matrix.mean(axis=1).to_numpy(),
+                "rank_std": ranks.std(axis=1).fillna(0.0).to_numpy(),
+            }
+        )
+        .sort_values("mean_abs_shap", ascending=False)
+        .reset_index(drop=True)
     )
 
 
@@ -235,7 +311,8 @@ def shap_backward_selection(
     min_features: int = 20,
     max_steps: int = 20,
     patience: int = 3,
-    shap_sample: int = 5000,
+    shap_sample: int = 2000,
+    seed: int = 42,
     progress: Callable[[str], None] | None = print,
 ) -> SelectionResult:
     """SHAP tabanli geri eleme. Her adimda en zayif feature'lari atar.
@@ -310,13 +387,14 @@ def shap_backward_selection(
             )
             break
 
-        # En zayif feature'lari SHAP ile bul. Fold modellerinin ilki temsili --
-        # hepsinde hesaplamak maliyeti fold sayisi kadar artirir, siralamayi
-        # anlamli olcude degistirmez.
-        shap_scores = mean_absolute_shap(
-            result.models[0], subset, sample_size=shap_sample
+        # SHAP'i her fold'un KENDI VALIDATION satirlarinda hesapla.
+        # Tek modelin tum egitim cercevesinde hesaplamak, asiri uyan
+        # feature'lara sisirilmis onem verir ve tam da elenmeleri gereken
+        # feature'lari elemeden kurtarir. Ayrintili gerekce: fold_shap_importance.
+        importance = fold_shap_importance(
+            result.models, subset, folds, sample_per_fold=shap_sample, seed=seed
         )
-        weakest = shap_scores.tail(drop_per_step).index.tolist()
+        weakest = importance.tail(drop_per_step)["feature"].tolist()
 
         history.append(
             SelectionStep(len(features), result.overall_score, tuple(weakest), elapsed)
