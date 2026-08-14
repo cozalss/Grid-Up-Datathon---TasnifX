@@ -47,7 +47,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .models import ModelKind, _predict, _prepare_categoricals
+from .models import ModelKind, _predict, _prepare_categoricals, fit_without_validation
 
 __all__ = [
     "RefitResult",
@@ -147,52 +147,6 @@ def extract_best_iterations(models: Sequence[Any]) -> list[int]:
     return rounds
 
 
-def _fit_full(
-    kind: ModelKind,
-    params: dict[str, Any],
-    features: pd.DataFrame,
-    target: np.ndarray,
-    categorical: list[str],
-) -> Any:
-    """Tum veriyle, DOGRULAMA KUMESI OLMADAN egitir.
-
-    ``models._fit_one_fold`` burada KULLANILAMAZ: o, erken durdurma icin bir
-    ``eval_set`` bekler. Tam veri egitiminde ayrilmis bir dogrulama kumesi
-    yoktur; egitim kumesini eval_set olarak vermek modelin kendi egitim kaybina
-    gore durmasina yol acar -- yani asiri uyum noktasinda durur, tam tersi.
-
-    Bu yuzden tur sayisi DISARIDAN gelir (``estimate_full_data_rounds``).
-    """
-    if kind == "lightgbm":
-        import lightgbm as lgb
-
-        is_classification = str(params.get("objective", "")).startswith(("binary", "multiclass"))
-        model_class = lgb.LGBMClassifier if is_classification else lgb.LGBMRegressor
-        model = model_class(**params)
-        model.fit(features, target, categorical_feature=categorical or "auto")
-        return model
-
-    if kind == "xgboost":
-        import xgboost as xgb
-
-        is_classification = str(params.get("objective", "")).startswith(("binary", "multi"))
-        model_class = xgb.XGBClassifier if is_classification else xgb.XGBRegressor
-        model = model_class(**params)
-        model.fit(features, target, verbose=False)
-        return model
-
-    if kind == "catboost":
-        from catboost import CatBoostClassifier, CatBoostRegressor
-
-        is_classification = params.get("loss_function") in {"Logloss", "MultiClass"}
-        model_class = CatBoostClassifier if is_classification else CatBoostRegressor
-        model = model_class(**params)
-        model.fit(features, target, cat_features=categorical or None, verbose=False)
-        return model
-
-    raise ValueError(f"Bilinmeyen model tipi '{kind}'.")
-
-
 def multi_seed_refit(
     train: pd.DataFrame,
     target: np.ndarray | pd.Series,
@@ -253,7 +207,7 @@ def multi_seed_refit(
             seeded["random_seed"] = seed
             seeded.pop("random_state", None)
 
-        model = _fit_full(kind, seeded, train_ready, y, categorical)
+        model = fit_without_validation(kind, seeded, train_ready, y, categorical)
         prediction = _predict(model, test_ready, needs_proba=needs_proba)
         per_seed.append(prediction)
         models.append(model)

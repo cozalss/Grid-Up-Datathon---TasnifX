@@ -32,6 +32,7 @@ from .validation import assert_folds_align
 __all__ = [
     "CVResult",
     "cross_validate",
+    "fit_without_validation",
     "LGB_DEFAULTS",
     "XGB_DEFAULTS",
     "CAT_DEFAULTS",
@@ -307,6 +308,56 @@ def _fit_one_fold(
             early_stopping_rounds=early_stopping_rounds,
             verbose=False,
         )
+        return model
+
+    raise ValueError(f"Bilinmeyen model tipi '{kind}'.")
+
+
+def fit_without_validation(
+    kind: ModelKind,
+    params: dict[str, Any],
+    features: pd.DataFrame,
+    target: np.ndarray,
+    categorical: list[str],
+) -> Any:
+    """Tum veriyle, DOGRULAMA KUMESI OLMADAN egitir.
+
+    ``_fit_one_fold`` burada KULLANILAMAZ: o, erken durdurma icin bir ``eval_set``
+    bekler. Ayrilmis dogrulama kumesi yokken egitim kumesini ``eval_set`` olarak
+    vermek, modelin KENDI EGITIM KAYBINA gore durmasina yol acar -- yani asiri
+    uyum noktasinda durur, tam tersi.
+
+    Bu yuzden tur sayisi disaridan gelir. Kullanan yerler: ``refit.multi_seed_refit``
+    (tur sayisi ``estimate_full_data_rounds`` ile CV'den devralinir) ve
+    ``selection.null_importance_filter`` (sabit, kucuk bir tur sayisi yeter).
+    """
+    if kind == "lightgbm":
+        import lightgbm as lgb
+
+        is_classification = str(params.get("objective", "")).startswith(
+            ("binary", "multiclass")
+        )
+        model_class = lgb.LGBMClassifier if is_classification else lgb.LGBMRegressor
+        model = model_class(**params)
+        model.fit(features, target, categorical_feature=categorical or "auto")
+        return model
+
+    if kind == "xgboost":
+        import xgboost as xgb
+
+        is_classification = str(params.get("objective", "")).startswith(("binary", "multi"))
+        model_class = xgb.XGBClassifier if is_classification else xgb.XGBRegressor
+        model = model_class(**params)
+        model.fit(features, target, verbose=False)
+        return model
+
+    if kind == "catboost":
+        from catboost import CatBoostClassifier, CatBoostRegressor
+
+        is_classification = params.get("loss_function") in {"Logloss", "MultiClass"}
+        model_class = CatBoostClassifier if is_classification else CatBoostRegressor
+        model = model_class(**params)
+        model.fit(features, target, cat_features=categorical or None, verbose=False)
         return model
 
     raise ValueError(f"Bilinmeyen model tipi '{kind}'.")
