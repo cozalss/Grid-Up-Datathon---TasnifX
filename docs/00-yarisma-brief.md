@@ -92,10 +92,14 @@ Bunları 21 Ağustos'ta YouTube sohbetinden sor. Cevapları pipeline kararların
 
 ## Hazırlık kontrol listesi
 
-- [ ] Coderspace ve Kaggle e-postaları **aynı** (en kritik madde)
-- [ ] Kaggle hesabı var, profil tamamlanmış
-- [ ] Takım üyeleri netleşti, herkes formu doldurdu, takım adı üzerinde anlaşıldı
-- [ ] Açılış buluşması takvime eklendi (21 Ağustos 14:00)
-- [ ] Yukarıdaki soru listesi hazır
-- [ ] Bu repo kuruldu, `pytest` yeşil, `smoke_test.py` çalışıyor
-- [ ] Hava durumu verisi indirildi (`scripts/fetch_weather.py`)
+- [x] Coderspace ve Kaggle e-postaları **aynı** (en kritik madde)
+- [x] Kaggle hesabı var, profil tamamlanmış
+- [x] Takım üyeleri netleşti, herkes formu doldurdu, takım adı üzerinde anlaşıldı
+- [x] Açılış buluşması takvime eklendi (21 Ağustos 14:00)
+- [x] Yukarıdaki soru listesi hazır
+- [x] Bu repo kuruldu, `pytest` yeşil, `smoke_test.py` çalışıyor — 330 test, duman testi 57 sn
+- [x] Hava durumu verisi indirildi (`scripts/fetch_weather.py`) — 20 konum, 48.180 satır
+
+> Kalan iş **yarışma günü**ne ait, hazırlığa değil: Kaggle'da takım birleştirme
+> (son tarih 24 Ağustos 23:59, birleşmeden önce submission YOK) ve açılış
+> yayınında on sorunun sorulması.

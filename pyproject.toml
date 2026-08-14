@@ -23,6 +23,9 @@ dependencies = [
 # eksik tek bir paket TUM paketi import edilemez kilmaz.
 [project.optional-dependencies]
 models = ["lightgbm>=4.0", "xgboost>=2.0", "catboost>=1.2"]
+# Sinir agi OPSIYONELDIR: harmana cesitlilik katar, birincil model degildir.
+# Kaggle imajinda torch ZATEN vardir; offline pakete koymuyoruz (yuzlerce MB).
+neural = ["torch>=2.0"]
 search = ["optuna>=3.5", "shap>=0.44"]
 features = ["holidays>=0.40", "pvlib>=0.10", "hijridate>=2.4"]
 io = ["pyarrow>=14.0", "requests>=2.31"]
@@ -33,6 +36,7 @@ full = [
     "holidays>=0.40", "pvlib>=0.10", "hijridate>=2.4",
     "pyarrow>=14.0", "requests>=2.31",
     "matplotlib>=3.7",
+    "torch>=2.0",
 ]
 
 [tool.setuptools.packages.find]

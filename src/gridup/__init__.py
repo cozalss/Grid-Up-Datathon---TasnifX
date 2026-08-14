@@ -41,6 +41,7 @@ from .metrics import (
     rmsle,
 )
 from .models import COUNT_OBJECTIVES, CVResult, cross_validate, starter_params
+from .neural import NeuralConfig, neural_cross_validate
 from .panel import build_panel, panel_coverage
 from .profiling import profile, quick_look
 from .refit import estimate_full_data_rounds, extract_best_iterations, multi_seed_refit
@@ -90,6 +91,8 @@ __all__ = [
     # model zoo ve arama
     "make_model_zoo", "sweep_count_objectives", "ZooEntry",
     "tune_with_optuna", "TuningResult",
+    # sinir agi (harman cesitliligi)
+    "neural_cross_validate", "NeuralConfig",
     # feature grubu ablasyonu ve dayaniklilik harmani
     "FeatureGroup", "ablation_ensemble", "leave_one_group_out",
     # submission
