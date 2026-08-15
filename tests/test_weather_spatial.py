@@ -317,8 +317,22 @@ class TestOnRealWeatherData:
     """Gercek Open-Meteo verisi uzerinde -- sentetik degil."""
 
     def test_dataset_covers_all_five_provinces(self, real_weather):
-        provinces = {"İzmir", "Manisa", "Aydın", "Denizli", "Muğla"}
-        assert provinces <= set(real_weather["konum"].unique())
+        """Bes ilin de kapsandigini BICIMDEN BAGIMSIZ dogrular.
+
+        Konum adlandirmasi degisti: eskiden il merkezleri ("Izmir") vardi,
+        artik ilce bazinda "Il-Ilce" anahtari kullaniliyor ("Izmir-Konak").
+        Bu, 96 ilcelik panelle birebir eslesmek icin yapildi -- 20 istasyonla
+        30 Izmir ilcesini beslemek cok kabaydi.
+
+        Testin NIYETI degismedi (bes il de kapsanmali), yalnizca bicim
+        varsayimi kaldirildi.
+        """
+        iller = {"İzmir", "Manisa", "Aydın", "Denizli", "Muğla"}
+        konumlar = set(real_weather["konum"].unique())
+
+        for il in iller:
+            eslesme = [k for k in konumlar if k == il or k.startswith(f"{il}-")]
+            assert eslesme, f"'{il}' icin hic konum yok. Mevcut ornekler: {sorted(konumlar)[:5]}"
 
     def test_no_missing_values(self, real_weather):
         assert int(real_weather.isna().sum().sum()) == 0

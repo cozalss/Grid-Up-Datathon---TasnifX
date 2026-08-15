@@ -9,13 +9,13 @@ izlenecek adımları içerir.
 
 | Varlık | Yer | Durum |
 |---|---|---|
-| Hava durumu, 2020–2026 | `data/external/hava_gunluk.parquet` | 20 konum, 48.180 satır, sıfır eksik |
+| Hava durumu, 2020–2026 | `data/external/hava_gunluk.parquet` | **96 ilçe**, 231.648 satır, sıfır eksik |
 | Güneş fiziği, 2020–2026 | `data/external/gunes_gunluk.parquet` | 96 ilçe × 2435 gün, sıfır eksik |
 | 96 ilçe + koordinat + nüfus | `data/reference/ilceler_gdz_adm.parquet` | Komşuluk grafiği doğrulandı |
 | Arıza sebebi taksonomisi | `gridup.features.outage_reason` | 919 metin → 22 aile, %0,88 sınıflanamayan |
 | Uçtan uca betik | `scripts/day_one.py` | Sentetik veride 6 sn'de submission |
 | Kaggle offline paketi | `kaggle.com/datasets/cemzal/gridup-offline-paket` | Yüklendi (özel), dosyalar doğrulandı |
-| Test paketi | `tests/` | 349 test |
+| Test paketi | `tests/` | 544 test |
 
 ---
 

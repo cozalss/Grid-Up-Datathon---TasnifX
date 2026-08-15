@@ -12,13 +12,13 @@ başlamak.
 
 | | |
 |---|---|
-| Testler | **426 test**, tamamı geçiyor (`pytest`) · ruff temiz |
+| Testler | **544 test**, tamamı geçiyor (`pytest`) · ruff temiz |
 | Uçtan uca kanıt | `scripts/smoke_test.py` — sentetik veri üzerinde 14 adım, ~60 sn |
 | Sentetik holdout | RMSLE **1.200** vs medyan baseline **1.653** → **%27,4** kazanç |
 | Bağımsız denetim | 3 + 7 mercekli çekişmeli denetim — bulgular kapatıldı, çürütülenler atıldı |
 | Araştırma | 13 agent'lık derin araştırma → [docs/01-strateji-brifingi.md](docs/01-strateji-brifingi.md) |
 | Önceki yarışma | 2023 GDZ Datathon birincisinin çözümü + 558 satırlık forum dökümü incelendi |
-| Ölçek provası | `scripts/scale_rehearsal.py` — 100k ve 500k satırda süre/bellek ölçüldü |
+| Ölçek provası | `scripts/scale_rehearsal.py` — 100k satırda süre/bellek ölçüldü |
 | Harici veri | Open-Meteo hava durumu çekicisi gerçek veriyle doğrulandı |
 | Yerel ortam | Python 3.11.9 · pandas 3.0.3 · numpy 2.4.6 · sklearn 1.8.0 |
 | **Kaggle ortamı** | Python 3.12 · pandas 3.0.4 · **numpy 2.0.2** · sklearn 1.9.0 — numpy Kaggle'da **daha eski** |
@@ -94,7 +94,7 @@ notebooks/          01_kesif.ipynb · 02_baseline.ipynb
 scripts/            smoke_test.py · full_pipeline.py · day_one.py · scale_rehearsal.py
                     build_kaggle_package.py · fetch_weather.py · build_notebooks.py
 docs/               yarışma brifingi, strateji, runbook
-tests/              426 test — sızıntı korumaları, TR metin, tasarım sözleşmeleri, uçtan uca
+tests/              544 test — sızıntı korumaları, TR metin, tasarım sözleşmeleri, uçtan uca
 ```
 
 ---
