@@ -52,7 +52,13 @@ from .metrics import (
     soften_outliers,
     tune_final_multiplier,
 )
-from .models import COUNT_OBJECTIVES, CVResult, cross_validate, starter_params
+from .models import (
+    COUNT_OBJECTIVES,
+    CVResult,
+    cross_validate,
+    monotone_constraints_for,
+    starter_params,
+)
 from .neural import NeuralConfig, neural_cross_validate
 from .panel import build_panel, panel_coverage
 from .profiling import profile, quick_look
@@ -104,6 +110,7 @@ __all__ = [
     "tune_final_multiplier", "soften_outliers",
     # model
     "cross_validate", "CVResult", "starter_params", "COUNT_OBJECTIVES",
+    "monotone_constraints_for",
     # ornek agirligi
     "recency_activity_weights",
     # tam veri yeniden egitim

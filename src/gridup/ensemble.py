@@ -26,6 +26,10 @@ __all__ = [
     "greedy_forward_selection",
     "stack_oof",
     "prune_by_correlation",
+    "power_mean_blend",
+    "tune_power_mean",
+    "POWER_MEAN_EPSILON",
+    "POWER_MEAN_GRID",
 ]
 
 
@@ -114,6 +118,38 @@ def correlation_matrix(predictions: dict[str, np.ndarray]) -> pd.DataFrame:
     return frame.corr()
 
 
+def _fold_dilimlerini_dogrula(
+    fold_slices: Sequence[np.ndarray] | None, stability_penalty: float, n_rows: int
+) -> list[np.ndarray] | None:
+    """Kararlilik cezasinin girdilerini fit'ten ONCE dogrular.
+
+    Ceza fold-bazli skor ister; dilim verilmeden ceza istemek sessizce eski
+    davranisa dusmek olurdu -- kullanici cezanin uygulandigini sanirdi.
+    """
+    if stability_penalty < 0:
+        raise ValueError(f"stability_penalty >= 0 olmali, verilen: {stability_penalty}")
+    if stability_penalty == 0:
+        return None
+    if fold_slices is None:
+        raise ValueError(
+            "stability_penalty > 0 icin fold_slices ZORUNLU: ceza fold'lar arasi "
+            "std uzerinden tanimli. purged_time_series_split'in valid indekslerini "
+            "(OOF dizisine gore konumsal) liste olarak ver."
+        )
+    dilimler = [np.asarray(dilim, dtype=np.int64).ravel() for dilim in fold_slices]
+    if len(dilimler) < 2:
+        raise ValueError("fold_slices en az 2 dilim icermeli -- tek dilimde std anlamsiz.")
+    for sira, dilim in enumerate(dilimler):
+        if dilim.size == 0:
+            raise ValueError(f"fold_slices[{sira}] bos -- her dilim en az bir satir icermeli.")
+        if dilim.min() < 0 or dilim.max() >= n_rows:
+            raise ValueError(
+                f"fold_slices[{sira}] OOF dizisinin disina tasiyor "
+                f"(uzunluk {n_rows}, gorulen aralik [{dilim.min()}, {dilim.max()}])."
+            )
+    return dilimler
+
+
 def hill_climb_weights(
     oof_predictions: dict[str, np.ndarray],
     y_true: np.ndarray,
@@ -122,6 +158,8 @@ def hill_climb_weights(
     n_iterations: int = 200,
     step: float = 0.01,
     covered: np.ndarray | None = None,
+    stability_penalty: float = 0.0,
+    fold_slices: Sequence[np.ndarray] | None = None,
     verbose: bool = True,
 ) -> dict[str, float]:
     """OOF tahminleri uzerinde harmanlama agirliklarini ogrenir.
@@ -137,8 +175,26 @@ def hill_climb_weights(
     KRITIK: Agirliklar OOF uzerinde ogrenilir, egitim tahminleri uzerinde
     DEGIL. Aksi halde harman da asiri uyum yapar.
 
+    KARARLILIK CEZASI (Home Credit 2024 + M5 1.si, docs/10 bolum 2)
+    ---------------------------------------------------------------
+    ``stability_penalty > 0`` verildiginde tirmanmanin amaci degisir:
+    kucuk-iyi metrikte ``ortalama(fold skorlari) + ceza * std(fold skorlari)``,
+    buyuk-iyi metrikte ``ortalama - ceza * std``. Home Credit 2024'un LB
+    kaymasi dersi ve M5 1.sinin "fold std'yi minimize et" ilkesiyle cifte
+    kaynak: OOF ortalamasini tek fold'un hediyesiyle parlatan agirlik,
+    leaderboard'da geri teper. ``fold_slices`` her fold'un valid satirlarinin
+    OOF dizisine gore KONUMSAL indeks dizileridir.
+
+    Varsayilan ``0.0`` eski davranisin BIREBIR aynisidir (tum-OOF tek skor);
+    ``fold_slices`` verilse bile ceza sifirsa dilimler kullanilmaz -- ortalama
+    fold skoru, tum-OOF skoruyla ayni sey degildir ve sessizce degistirilmez.
+
     Returns:
         ``{model_adi: agirlik}`` -- toplami 1.0.
+
+    Raises:
+        ValueError: ``stability_penalty < 0``; ceza pozitifken ``fold_slices``
+            verilmemis, bos, tek dilimli veya indeksleri dizinin disindaysa.
     """
     _uyar_kapsam_disi(oof_predictions, "hill_climb_weights", covered)
     metric_fn, greater_is_better, _ = get_metric(metric)
@@ -147,15 +203,41 @@ def hill_climb_weights(
     matrix = np.column_stack([oof_predictions[name] for name in names])
     weights = np.zeros(len(names))
 
+    dilimler = _fold_dilimlerini_dogrula(fold_slices, stability_penalty, len(matrix))
+
     def score_of(weight_vector: np.ndarray) -> float:
         total = weight_vector.sum()
         if total == 0:
             return -np.inf if greater_is_better else np.inf
         blended = matrix @ (weight_vector / total)
-        return float(metric_fn(y_true, blended))
+        if dilimler is None:
+            return float(metric_fn(y_true, blended))
+        fold_skorlari = [
+            float(metric_fn(y_true[dilim], blended[dilim])) for dilim in dilimler
+        ]
+        ortalama = float(np.mean(fold_skorlari))
+        sapma = float(np.std(fold_skorlari))
+        # Kucuk-iyi metrikte ceza EKLENIR; buyuk-iyi metrikte CIKARILIR --
+        # iki durumda da "oynak harman" objektifte kotulesir.
+        if greater_is_better:
+            return ortalama - stability_penalty * sapma
+        return ortalama + stability_penalty * sapma
 
-    # Ilk adim: en iyi tekil modelden basla.
-    single_scores = [float(metric_fn(y_true, matrix[:, index])) for index in range(len(names))]
+    # Ilk adim: en iyi tekil modelden basla. Ceza ACIKSA tekil skor da AYNI
+    # cezali objektifle hesaplanir -- baslangic ve tirmanma ayni sayiyi
+    # kovalamazsa ilk secim tirmanmanin amacina yabanci kalir. Ceza kapaliyken
+    # eski hesap BIREBIR korunur (bit-esit geriye uyumluluk).
+    def _tekil(index: int) -> float:
+        birim = np.zeros(len(names))
+        birim[index] = 1.0
+        return score_of(birim)
+
+    if dilimler is None:
+        single_scores = [
+            float(metric_fn(y_true, matrix[:, index])) for index in range(len(names))
+        ]
+    else:
+        single_scores = [_tekil(index) for index in range(len(names))]
     best_index = int(np.argmax(single_scores) if greater_is_better else np.argmin(single_scores))
     weights[best_index] = 1.0
     best_score = single_scores[best_index]
@@ -198,6 +280,160 @@ def hill_climb_weights(
                 print(f"  {name:<28} {weight:.4f}")
 
     return result
+
+
+#: Kuvvet ortalamasinda log/negatif-us korumasi icin taban deger.
+POWER_MEAN_EPSILON = 1e-9
+
+#: ``tune_power_mean`` varsayilan taramasi. ASHRAE 1.-2.sinin araligi bu
+#: civardaydi; 1.0 (aritmetik ortalama) HER ZAMAN izgaraya dahil edilir.
+POWER_MEAN_GRID = (0.5, 1.0, 2.0)
+
+
+def power_mean_blend(
+    predictions: dict[str, np.ndarray],
+    weights: dict[str, float],
+    *,
+    p: float = 1.0,
+) -> np.ndarray:
+    """Agirlikli kuvvet ortalamasi harmani (ASHRAE 1.-2., docs/10 bolum 2).
+
+    Formul::
+
+        harman = (sum_i w_i * x_i^p) ^ (1/p)        (p != 0)
+        harman = exp(sum_i w_i * log(x_i))          (p == 0, geometrik)
+
+    ``p = 1`` agirlikli aritmetik ortalamaya BIREBIR indirgenir (kirpma da
+    yapilmaz -- dogrusal harmanla bit-esit). ``p > 1`` buyuk tahminlere,
+    ``p < 1`` kucuk tahminlere agirlik verir; ASHRAE kazananlari dogrusal
+    yerine kuvvet ortalamasiyla kucuk ama tutarli kazanc olctu.
+
+    NEGATIF VE SIFIR KORUMASI: ``p != 1`` icin kesirli us negatif sayida
+    tanimsizdir; tahminler 0'a kirpilir (sayim/sure hedefinde negatif tahmin
+    zaten anlamsizdir). ``p <= 0`` icin sifirlar ``POWER_MEAN_EPSILON``
+    tabanina cekilir ki log/negatif us patlamasin.
+
+    Args:
+        predictions: ``{model_adi: tahmin dizisi}`` -- hepsi ayni uzunlukta.
+        weights: ``{model_adi: agirlik}`` -- ``hill_climb_weights`` ciktisi.
+            Kume predictions ile AYNI olmali; eksik/fazla ad sessiz gecmez.
+        p: Kuvvet. 1 = aritmetik, 0 = geometrik, 2 = karesel ortalama.
+
+    Returns:
+        Harmanlanmis tahmin dizisi (float64).
+
+    Raises:
+        ValueError: predictions bos; agirlik kumesi uyusmuyor; negatif
+            agirlik; agirlik toplami sifir; dizi uzunluklari farkli.
+    """
+    if not predictions:
+        raise ValueError("Bos tahmin sozlugu.")
+    names = list(predictions)
+    eksik = sorted(set(names) - set(weights))
+    fazla = sorted(set(weights) - set(names))
+    if eksik or fazla:
+        raise ValueError(
+            f"weights ve predictions ayni adlari tasimali. Eksik agirlik: {eksik}, "
+            f"fazla agirlik: {fazla}."
+        )
+    w = np.array([float(weights[name]) for name in names], dtype="float64")
+    if (w < 0).any():
+        raise ValueError("Negatif agirlik: kuvvet ortalamasi negatif agirlikla tanimsiz.")
+    toplam = w.sum()
+    if toplam <= 0:
+        raise ValueError("Agirlik toplami sifir -- en az bir pozitif agirlik gerekli.")
+    w = w / toplam
+
+    boylar = {name: len(np.asarray(predictions[name]).ravel()) for name in names}
+    if len(set(boylar.values())) != 1:
+        raise ValueError(f"Tahmin dizileri ayni uzunlukta degil: {boylar}")
+    matrix = np.column_stack(
+        [np.asarray(predictions[name], dtype="float64").ravel() for name in names]
+    )
+
+    if p == 1.0:
+        # Eleman-eleman birikim (matris carpimi DEGIL): BLAS dot'un ara
+        # yuvarlamasi, elle yazilmis `w1*x1 + w2*x2` harmanindan son bitte
+        # sapabiliyor. Dogrusal harmanla BIT-ESIT indirgeme vaadi bunu ister.
+        toplam_dizi = np.zeros(matrix.shape[0], dtype="float64")
+        for sutun, agirlik in enumerate(w):
+            toplam_dizi = toplam_dizi + agirlik * matrix[:, sutun]
+        return toplam_dizi
+
+    kirpik = np.clip(matrix, 0.0, None)
+    if p == 0.0:
+        loglar = np.log(np.maximum(kirpik, POWER_MEAN_EPSILON))
+        return np.exp(loglar @ w)
+    if p < 0:
+        kirpik = np.maximum(kirpik, POWER_MEAN_EPSILON)
+    return np.power(np.power(kirpik, p) @ w, 1.0 / p)
+
+
+def tune_power_mean(
+    predictions: dict[str, np.ndarray],
+    y_true: np.ndarray,
+    *,
+    weights: dict[str, float],
+    p_grid: Sequence[float] = POWER_MEAN_GRID,
+    metric: str = "mae",
+    covered: np.ndarray | None = None,
+) -> tuple[float, float, pd.DataFrame]:
+    """Kuvvet ortalamasinin ``p`` degerini OOF uzerinde tarar.
+
+    BILINCLI SADELIK: agirliklar SABITTIR (``hill_climb_weights`` ciktisi) ve
+    yalnizca ``p`` taranir. Agirlik ve p'yi birlikte aramak arama uzayini
+    buyutur ve OOF gurultusune asiri uyum riskini artirir -- ASHRAE deseni de
+    "once agirlik, sonra p" idi. ``p = 1.0`` izgarada yoksa OTOMATIK eklenir:
+    "dogrusal harman" secenegi hic denenmezse kazancin kaynagi olculemez.
+
+    Args:
+        predictions: ``{model_adi: OOF tahmin dizisi}``.
+        y_true: Gercek degerler.
+        weights: Sabit harman agirliklari (``hill_climb_weights`` ciktisi).
+        p_grid: Taranacak kuvvetler.
+        metric: ``METRIC_REGISTRY`` icindeki bir ad.
+        covered: OOF kapsam maskesi; verilirse yalnizca kapsanan satirlar
+            skorlanir (purged bolmede ilk donem dolgudur).
+
+    Returns:
+        ``(best_p, best_score, table)`` -- table ``p``/``skor`` kolonlu.
+
+    Raises:
+        ValueError: Uzunluklar uyumsuz veya skorlanacak satir kalmadiysa.
+    """
+    y = np.asarray(y_true, dtype="float64").ravel()
+    n = len(next(iter(predictions.values()))) if predictions else 0
+    if len(y) != n:
+        raise ValueError(f"y_true ({len(y)}) ve tahminler ({n}) uzunluklari farkli.")
+
+    maske = np.ones(len(y), dtype=bool)
+    if covered is not None:
+        maske = np.asarray(covered, dtype=bool).ravel()
+        if len(maske) != len(y):
+            raise ValueError(
+                f"covered ({len(maske)}) ve y_true ({len(y)}) uzunluklari farkli."
+            )
+    if not maske.any():
+        raise ValueError("Skorlanacak satir kalmadi (bos kapsam maskesi).")
+
+    kapsanan = {
+        name: np.asarray(dizi, dtype="float64").ravel()[maske]
+        for name, dizi in predictions.items()
+    }
+    metric_fn, greater_is_better, _ = get_metric(metric)
+
+    # Yuvarlama float artiklarini temizler; 1.0 daima izgaraya girer.
+    kuvvetler = np.unique(
+        np.round(np.concatenate([np.asarray(p_grid, dtype="float64").ravel(), [1.0]]), 6)
+    )
+    skorlar = np.array([
+        float(metric_fn(y[maske], power_mean_blend(kapsanan, weights, p=float(p))))
+        for p in kuvvetler
+    ])
+    tablo = pd.DataFrame({"p": kuvvetler, "skor": skorlar})
+
+    best_index = int(np.argmax(skorlar) if greater_is_better else np.argmin(skorlar))
+    return float(kuvvetler[best_index]), float(skorlar[best_index]), tablo
 
 
 def greedy_forward_selection(

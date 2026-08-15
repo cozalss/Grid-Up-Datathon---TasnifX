@@ -35,6 +35,8 @@ from .spatial import (
 from .temporal import (
     add_calendar_features,
     add_cyclical_features,
+    add_days_since_event_features,
+    add_event_decay_features,
     add_expanding_features,
     add_lag_features,
     add_mass_event_features,
@@ -62,6 +64,8 @@ __all__ = [
     "add_rolling_features",
     "add_expanding_features",
     "add_mass_event_features",
+    "add_event_decay_features",
+    "add_days_since_event_features",
     "add_previous_month_features",
     "add_upcoming_holiday_features",
     "shared_origin",

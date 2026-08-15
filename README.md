@@ -16,7 +16,7 @@ dersler var.
 | | |
 |---|---|
 | Kod | **10.924 satır** · 31 modül |
-| Test | **877 test** geçiyor · ruff temiz |
+| Test | **927 test** geçiyor · ruff temiz |
 | Uçtan uca kanıt | `full_pipeline.py` 20/20 · `smoke_test.py` 42 sn · `day_one.py` submission üretiyor |
 | Harici veri | 96 ilçe hava · 96 ilçe güneş · Türkiye tüketim+üretim · 96 ilçe referans |
 | Kaggle offline | [`cemzal/gridup-offline-paket`](https://www.kaggle.com/datasets/cemzal/gridup-offline-paket) — internet kapalı notebook için |
@@ -35,7 +35,7 @@ python -m venv .venv
 pip install -e ".[full]"
 
 python scripts\ekip_kontrol.py         # kurulum doktoru: 7 kontrol, ~3 sn
-python -m pytest -q                    # 877 test — hepsi geçmeli
+python -m pytest -q                    # 927 test — hepsi geçmeli
 python scripts\smoke_test.py           # uçtan uca kanıt, ~42 sn
 ```
 
@@ -218,7 +218,7 @@ docs/
   06-teknik-tuzaklar.md          bilinen tuzaklar
   07-veri-gunu-kontrol-listesi.md saat saat veri günü planı
 
-tests/    877 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
+tests/    927 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
 ```
 
 ---

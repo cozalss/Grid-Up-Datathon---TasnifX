@@ -148,6 +148,18 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
             f, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
         ),
     ),
+    "add_event_decay_features": (
+        "temporal",
+        lambda m, f: m.add_event_decay_features(
+            f, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
+        ),
+    ),
+    "add_days_since_event_features": (
+        "temporal",
+        lambda m, f: m.add_days_since_event_features(
+            f, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
+        ),
+    ),
     "add_upcoming_holiday_features": (
         "temporal",
         lambda m, f: m.add_upcoming_holiday_features(f, "tarih"),
@@ -429,6 +441,19 @@ FOLDSUZ_GEREKCE: dict[str, str] = {
         "horizon >= 1 ZORUNLU ve yalnizca takvim-kaydirilmis gunluk pay "
         "yayinlanir; ayni-gun payi hedef sizintisi olurdu ve URETILMEZ -- "
         "leak testi test_kazanan_taktikleri'nde"
+    ),
+    "features.temporal.add_event_decay_features": (
+        "horizon >= 1 ZORUNLU; bozunum ham seri uzerinde hesaplanip horizon "
+        "kadar kaydirilarak yayinlanir -- d gunundeki deger yalnizca "
+        "<= d - horizon gozlemlerinden gelir; leak testi test_derin_kazi'da"
+    ),
+    "features.temporal.add_days_since_event_features": (
+        "horizon >= 1 ZORUNLU; son olay ufuk-kaydirilmis seride aranir, ayni "
+        "gunun olayi hicbir satira gorunmez -- leak testi test_derin_kazi'da"
+    ),
+    "ensemble.tune_power_mean": (
+        "girdisi OOF tahmin matrisi -- fold zaten uygulanmis; covered maskesi "
+        "dolgu satirlarini skordan dislamak icin var"
     ),
     "features.spatial.add_neighbour_target_lag": "horizon>=1 zorunlu -- komsunun gecmisi",
     "features.spatial.add_neighbour_feature_mean": (

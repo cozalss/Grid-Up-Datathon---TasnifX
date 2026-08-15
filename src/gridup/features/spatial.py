@@ -46,6 +46,7 @@ __all__ = [
     "add_neighbour_target_lag",
     "add_neighbour_feature_mean",
     "EARTH_RADIUS_KM",
+    "MIN_NEIGHBOUR_DISTANCE_KM",
 ]
 
 EARTH_RADIUS_KM = 6371.0088
@@ -161,6 +162,11 @@ def nearest_neighbours(
 #: ile DEGIL; ikincisi ayni sonucu 69 kat yavas uretir (bkz. _komsu_agrege).
 _ISTATISTIK_DUZELTMESI = frozenset({"sum"})
 
+#: Ters-mesafe agirliginda sifir mesafe korumasi (km). Ayni koordinata dusen
+#: iki ilce (veri hatasi veya ortak merkez) 1/0 = inf agirlik uretirdi;
+#: 1 metre tabani, "cok yakin" komsuya buyuk ama SONLU agirlik verir.
+MIN_NEIGHBOUR_DISTANCE_KM = 1e-3
+
 
 def _hedefi_reddet(value_columns: Sequence[str], target_column: Any) -> None:
     """Hedef kolonu ``value_columns`` icindeyse ACIKCA reddeder.
@@ -199,8 +205,28 @@ def _neighbour_aggregate(
     value_column: str,
     statistics: Sequence[str],
     output_prefix: str,
+    weight_by_distance: bool = False,
 ) -> pd.DataFrame:
-    """Komsu degerlerini varlik-zaman bazinda toplayip geri baglar."""
+    """Komsu degerlerini varlik-zaman bazinda toplayip geri baglar.
+
+    ``weight_by_distance=True`` yalnizca ``mean`` istatistigini degistirir:
+    duz ortalama yerine ters-mesafe agirlikli ortalama (KDD Cup 2018 kazanani
+    deseni, docs/10 bolum 4) -- yakin komsu uzak komsudan cok konusur.
+    ``min``/``max``/``std``/``sum`` agirliktan etkilenmez (agirlikli min
+    diye bir sey yoktur; agirlikli sum ise olcegi sessizce degistirirdi).
+    """
+    if weight_by_distance:
+        if "mesafe_km" not in neighbours.columns:
+            raise ValueError(
+                "weight_by_distance=True icin komsuluk tablosunda 'mesafe_km' "
+                "kolonu gerekli (nearest_neighbours ciktisi onu tasir)."
+            )
+        if "mean" not in statistics:
+            raise ValueError(
+                "weight_by_distance yalnizca 'mean' istatistigini agirliklar; "
+                "statistics icinde 'mean' yok -- bayrak sessizce etkisiz kalirdi."
+            )
+
     source = frame[[key_column, time_column, value_column]].rename(
         columns={key_column: "komsu", value_column: "_komsu_deger"}
     )
@@ -222,7 +248,28 @@ def _neighbour_aggregate(
         parcalar.append(grouped.agg(duz))
     if "sum" in statistics:
         parcalar.append(grouped.sum(min_count=1).rename("sum"))
-    aggregated = pd.concat(parcalar, axis=1)[list(statistics)].reset_index()
+    aggregated = pd.concat(parcalar, axis=1)[list(statistics)]
+
+    if weight_by_distance:
+        deger = expanded["_komsu_deger"].to_numpy(dtype="float64")
+        agirlik = 1.0 / np.maximum(
+            expanded["mesafe_km"].to_numpy(dtype="float64"), MIN_NEIGHBOUR_DISTANCE_KM
+        )
+        # NaN degerli komsu paya da paydaya da girmez -- duz mean'in
+        # skipna semantiginin agirlikli karsiligi.
+        pay_kaynak = expanded.assign(
+            _pay=np.where(np.isnan(deger), np.nan, agirlik * deger),
+            _agirlik=np.where(np.isnan(deger), 0.0, agirlik),
+        ).groupby([key_column, time_column], observed=True)
+        pay = pay_kaynak["_pay"].sum(min_count=1).reindex(aggregated.index)
+        payda = pay_kaynak["_agirlik"].sum().reindex(aggregated.index)
+        payda_np = payda.to_numpy(dtype="float64")
+        guvenli = np.where(payda_np > 0, payda_np, 1.0)
+        aggregated["mean"] = np.where(
+            payda_np > 0, pay.to_numpy(dtype="float64") / guvenli, np.nan
+        )
+
+    aggregated = aggregated.reset_index()
     aggregated.columns = [key_column, time_column] + [
         f"{output_prefix}_{stat}" for stat in statistics
     ]
@@ -268,6 +315,7 @@ def add_neighbour_target_lag(
     target_column: str,
     horizon: int,
     statistics: Sequence[str] = ("mean", "max", "sum"),
+    weight_by_distance: bool = False,
 ) -> pd.DataFrame:
     """Komsu ilcelerin GECMIS hedef degerlerini feature olarak ekler.
 
@@ -276,6 +324,14 @@ def add_neighbour_target_lag(
         horizon: **ZORUNLU.** Komsunun hedefi kac adim geriden alinacak.
             ``add_lag_features`` ile AYNI ufku kullan -- komsunun bugunku
             kesintisini de bilmiyorsun.
+        statistics: Komsu agregat istatistikleri; pandas'in
+            ``mean``/``min``/``max``/``std``/``sum`` adlari gecerlidir.
+        weight_by_distance: ``True`` ise ``mean`` duz ortalama yerine
+            ters-mesafe agirlikli ortalama olur (``1/mesafe_km``, sifir
+            mesafe ``MIN_NEIGHBOUR_DISTANCE_KM`` ile korunur) -- yakin
+            komsunun firtinasi uzak komsudan cok konusur (docs/10 bolum 4:
+            duz kNN yerine mesafe-agirlikli agregat, gun-1 ucuz deneyi).
+            Varsayilan ``False`` eski davranisin birebir aynisidir.
 
     Returns:
         Yeni DataFrame.
@@ -286,6 +342,8 @@ def add_neighbour_target_lag(
         ValueError: ``(key_column, time_column)`` ikilisi tekrarliysa. Kaydirma
             SATIR bazlidir; tekrarli panelde "horizon satir once" ayni gune
             denk gelir ve komsunun bugunku hedefi sizar.
+        ValueError: ``weight_by_distance=True`` iken komsuluk tablosunda
+            ``mesafe_km`` yoksa veya ``statistics`` ``mean`` icermiyorsa.
     """
     if horizon < 1:
         raise ValueError(
@@ -312,6 +370,7 @@ def add_neighbour_target_lag(
         value_column="_kaydirilmis",
         statistics=statistics,
         output_prefix=f"komsu_{target_column}_ufuk{horizon}",
+        weight_by_distance=weight_by_distance,
     )
 
     original = frame.copy()
@@ -330,6 +389,7 @@ def add_neighbour_feature_mean(
     value_columns: Sequence[str],
     target_column: str | None = _ZORUNLU,
     statistics: Sequence[str] = ("mean", "max"),
+    weight_by_distance: bool = False,
 ) -> pd.DataFrame:
     """Komsularin HAVA/FEATURE degerlerini ekler -- kaydirma GEREKMEZ.
 
@@ -345,11 +405,22 @@ def add_neighbour_feature_mean(
             icin kullanilir, hicbir yerde okunmaz. Hedef yoksa acikca ``None``
             ver (bilincli karar). Varsayilani ``None`` yapsaydik "vermedim" ile
             "hedef yok" ayirt edilemezdi ve koruma pratikte hic calismazdi.
+        statistics: Komsu agregat istatistikleri. KDD Cup 2018 kazanani duz
+            ortalamayla yetinmedi: ``("mean", "min", "max", "std")`` genis
+            kumesi bolgesel GRADYANI da yakalar (docs/10 bolum 4) -- std
+            yuksekse hava olayi bolgenin bir kismini tariyor demektir.
+            Varsayilan eski davranisla ayni birakildi.
+        weight_by_distance: ``True`` ise ``mean`` ters-mesafe agirlikli
+            ortalama olur (``1/mesafe_km``; sifir mesafe
+            ``MIN_NEIGHBOUR_DISTANCE_KM`` tabaniyla korunur). Varsayilan
+            ``False`` eski davranisin birebir aynisidir.
 
     Raises:
         TypeError: ``target_column`` verilmediyse.
         ValueError: Hedef ``value_columns`` icindeyse -- uretilen kolon
             komsunun AYNI GUNKU hedefi olurdu (olculdu: corr 0.813099).
+        ValueError: ``weight_by_distance=True`` iken ``mesafe_km`` yoksa veya
+            ``statistics`` ``mean`` icermiyorsa.
         KeyError: ``value_columns`` frame'de yoksa.
     """
     _hedefi_reddet(value_columns, target_column)
@@ -371,6 +442,7 @@ def add_neighbour_feature_mean(
             value_column=column,
             statistics=statistics,
             output_prefix=f"komsu_{column}",
+            weight_by_distance=weight_by_distance,
         )
         result = result.merge(
             aggregated, on=[key_column, time_column], how="left", validate="many_to_one"

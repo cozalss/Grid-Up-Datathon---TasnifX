@@ -42,6 +42,8 @@ __all__ = [
     "add_rolling_features",
     "add_expanding_features",
     "add_mass_event_features",
+    "add_event_decay_features",
+    "add_days_since_event_features",
     "add_previous_month_features",
     "add_upcoming_holiday_features",
     "shared_origin",
@@ -1166,6 +1168,239 @@ def add_mass_event_features(
         f"{prefix}_{etiket}topluolay_pay_lag1": times.map(kaydirilmis).astype("float32"),
         f"{prefix}_{etiket}topluolay_pay_kayan7": times.map(kayan7).astype("float32"),
         f"{prefix}_{etiket}topluolay_bayrak_lag1": times.map(bayrak).astype("float32"),
+    })
+
+
+def _grup_kimlikleri(
+    ordered: pd.DataFrame, group_columns: Sequence[str] | None
+) -> np.ndarray:
+    """Sirali gorunumde satir basina grup kodu (grup yoksa hepsi 0).
+
+    ``_sorted_view`` gruplari bitisik dizer; kodlar gorunum sirasinda artar.
+    """
+    if not group_columns:
+        return np.zeros(len(ordered), dtype=np.int64)
+    anahtar = pd.MultiIndex.from_frame(ordered[list(group_columns)])
+    return pd.factorize(anahtar)[0].astype(np.int64)
+
+
+def _grup_dilimleri(kimlikler: np.ndarray) -> list[tuple[int, int]]:
+    """Bitisik grup kodlarindan ``(baslangic, bitis)`` dilimleri cikarir."""
+    if len(kimlikler) == 0:
+        return []
+    sinirlar = np.flatnonzero(np.diff(kimlikler) != 0) + 1
+    kenarlar = [0, *sinirlar.tolist(), len(kimlikler)]
+    return [(kenarlar[i], kenarlar[i + 1]) for i in range(len(kenarlar) - 1)]
+
+
+def add_event_decay_features(
+    frame: pd.DataFrame,
+    value_column: str,
+    *,
+    time_column: str,
+    horizon: int,
+    group_columns: Sequence[str] | None = None,
+    half_lives: Sequence[float] = (3.0, 14.0),
+    prefix: str | None = None,
+) -> pd.DataFrame:
+    """Hawkes-esinli ustel-bozunumlu gecmis toplami. YENI frame dondurur.
+
+    NEREDEN GELDI (docs/10 bolum 3): art arda ariza KUMELENIR -- dun ariza
+    yasayan sebeke bugun de kirilgandir (agac dallari sarkmis, ekip sahada,
+    gecici onarim). Tam Hawkes sureci kanitsiz; ucuz feature hali su::
+
+        bozunum[d] = toplam_{s <= d - horizon}  2^(-((d - horizon) - s) / yari_omur) * x[s]
+
+    Yani gecmisteki her gozlem, yari omru ``half_life`` gun olan bir agirlikla
+    toplama katilir. Iki seri uretilir: olay GOSTERGESI (deger > 0) ve degerin
+    kendisi -- gosterge "kac gundur ariza kumesi icindeyiz"i, deger "ne kadar
+    siddetli"yi tasir.
+
+    SIZINTI DISIPLINI -- repodaki lag konvansiyonunun AYNISI
+    --------------------------------------------------------
+    ``d`` gunundeki satirin gordugu en taze gozlem ``d - horizon`` gunudur
+    (``add_lag_features``taki lag1 = shift(horizon)). Bozunum once HAM seri
+    uzerinde ozyinelemeli hesaplanir (``D[j] = x[j] + alpha * D[j-1]``),
+    sonra ``horizon`` satir kaydirilarak yayinlanir -- boylece ``d``
+    satirinin degeri yalnizca ``<= d - horizon`` gozlemlerinden gelir.
+    Gecmis hic yokken (grubun ilk ``horizon`` satiri) deger NaN'dir.
+
+    IZGARA VARSAYIMI: ``build_panel`` sonrasi DUZENLI GUNLUK izgara varsayilir
+    (grup basina gunde tek satir, eksik gun yok) -- ``shift(horizon)`` ancak o
+    zaman "horizon gun once" demektir. ``alpha`` yine de ardil satirlar arasi
+    GERCEK takvim-gun farkiyla hesaplanir; izgarada delik varsa bozunum orani
+    dogru kalir ama kaydirma ``horizon`` satir sayar, gun degil.
+
+    Args:
+        frame: Girdi (degistirilmez).
+        value_column: Hedef benzeri kolon; ``> 0`` olan gun "olayli" sayilir.
+        time_column: Zaman kolonu.
+        horizon: Tahmin ufku -- test blogu kadar (bkz. ``add_lag_features``).
+        group_columns: Varsa bozunum her grup icinde AYRI hesaplanir.
+        half_lives: Yari omurler (gun). 3 = "gecen haftanin izleri",
+            14 = "bu ayin rejimi".
+        prefix: Kolon oneki. Varsayilan: ``value_column``.
+
+    Returns:
+        Su kolonlar eklenmis YENI frame (``horizon != 1`` ise ``ufuk{h}_``):
+          * ``{prefix}_bozunum{yari_omur:g}g_olay``  gosterge bozunumu
+          * ``{prefix}_bozunum{yari_omur:g}g_deger`` deger bozunumu
+
+    Raises:
+        KeyError: ``value_column`` frame'de yoksa.
+        ValueError: ``horizon < 1``; ``half_lives`` bos veya pozitif degilse.
+    """
+    if value_column not in frame.columns:
+        raise KeyError(f"Kolon '{value_column}' frame icinde yok.")
+    if horizon < 1:
+        raise ValueError(
+            f"horizon >= 1 olmali, verilen: {horizon}. horizon=0 AYNI GUNUN "
+            "degerini toplama sokar -- dogrudan hedef sizintisi."
+        )
+    if not half_lives:
+        raise ValueError("En az bir yari omur ver, or. half_lives=(3.0, 14.0).")
+    kotu = [h for h in half_lives if not h > 0]
+    if kotu:
+        raise ValueError(f"Yari omurler pozitif olmali, verilen: {kotu}")
+
+    prefix = prefix or value_column
+    sort_keys = list(group_columns or []) + [time_column]
+    ordered, order = _sorted_view(frame, sort_keys, time_column=time_column)
+
+    times = parse_time_series(ordered[time_column], strict=False)
+    gecerli = times.notna().to_numpy()
+    gunler = times.to_numpy(dtype="datetime64[D]").astype("int64")
+    degerler = pd.to_numeric(ordered[value_column], errors="coerce").to_numpy(dtype="float64")
+    olaylar = (degerler > 0).astype("float64")          # NaN > 0 -> False -> 0
+    degerler = np.nan_to_num(degerler, nan=0.0)
+
+    kimlikler = _grup_kimlikleri(ordered, group_columns)
+    etiket = "" if horizon == 1 else f"ufuk{horizon}_"
+    ciktilar = {
+        f"{prefix}_{etiket}bozunum{yari_omur:g}g_{tur}": np.full(len(ordered), np.nan)
+        for yari_omur in half_lives
+        for tur in ("olay", "deger")
+    }
+
+    for bas, son in _grup_dilimleri(kimlikler):
+        # NaT satirlar _sort_key ile grubun SONUNA gider -- gecerli on-ek.
+        n_gecerli = int(gecerli[bas:son].sum())
+        if n_gecerli <= horizon:
+            continue  # gorulebilir gecmis yok; NaN kalir
+        g_gun = gunler[bas:bas + n_gecerli]
+        for yari_omur in half_lives:
+            for tur, seri in (("olay", olaylar), ("deger", degerler)):
+                x = seri[bas:bas + n_gecerli]
+                bozunum = np.empty(n_gecerli, dtype="float64")
+                bozunum[0] = x[0]
+                for j in range(1, n_gecerli):
+                    fark = float(g_gun[j] - g_gun[j - 1])
+                    alpha = 2.0 ** (-fark / yari_omur)
+                    bozunum[j] = x[j] + alpha * bozunum[j - 1]
+                kolon = f"{prefix}_{etiket}bozunum{yari_omur:g}g_{tur}"
+                ciktilar[kolon][bas + horizon: bas + n_gecerli] = bozunum[:-horizon]
+
+    restore = np.empty_like(order)
+    restore[order] = np.arange(len(order))
+    return frame.assign(**{
+        ad: dizi[restore].astype("float32") for ad, dizi in ciktilar.items()
+    })
+
+
+def add_days_since_event_features(
+    frame: pd.DataFrame,
+    value_column: str,
+    *,
+    time_column: str,
+    horizon: int,
+    group_columns: Sequence[str] | None = None,
+    prefix: str | None = None,
+) -> pd.DataFrame:
+    """Son olaydan (deger > 0) gecen gun sayisi. YENI frame dondurur.
+
+    NEREDEN GELDI (docs/10 bolum 1): Sivas tezi (2025, No 972166) gunluk
+    kesinti sayisi tahmininde 3. en onemli feature'i "son bakimdan gecen gun
+    sayisi" olctu. Bakim kaydimiz yok; en yakin vekili "son ariza olayindan
+    gecen gun"dur -- uzun sessizlik ya saglam sebeke ya birikmis bakim acigi
+    demektir, ikisi de duz lag'lerin tasimadigi bir sinyaldir.
+
+    SIZINTI DISIPLINI: son olay, ufuk-kaydirilmis seride aranir -- ``d``
+    gunundeki satir yalnizca ``<= d - horizon`` gunlerinin olaylarini gorur
+    (``add_lag_features`` konvansiyonu). Henuz hic olay gorunmuyorsa deger
+    NaN'dir ve ``_hic_olay_yok`` bayragi 1'dir: "olay yok" ile "0 gun once
+    olay oldu" ayni sey degildir ve ayni sayiya dusurulmez.
+
+    IZGARA VARSAYIMI: ``add_event_decay_features`` ile ayni -- ``build_panel``
+    sonrasi duzenli gunluk izgara; kaydirma satir sayar, mesafe takvim gunuyle
+    olculur.
+
+    Args:
+        frame: Girdi (degistirilmez).
+        value_column: Hedef benzeri kolon; ``> 0`` olan gun "olayli" sayilir.
+        time_column: Zaman kolonu.
+        horizon: Tahmin ufku -- test blogu kadar (bkz. ``add_lag_features``).
+        group_columns: Varsa sayim her grup icinde AYRI tutulur.
+        prefix: Kolon oneki. Varsayilan: ``value_column``.
+
+    Returns:
+        Su kolonlar eklenmis YENI frame (``horizon != 1`` ise ``ufuk{h}_``):
+          * ``{prefix}_son_olaydan_gun``  satirin gunu ile gorulebilir son
+            olay gunu arasindaki takvim-gun farki (float32; olay yoksa NaN)
+          * ``{prefix}_hic_olay_yok``     gorulebilir gecmiste hic olay yoksa
+            1, varsa 0 (int8)
+
+    Raises:
+        KeyError: ``value_column`` frame'de yoksa.
+        ValueError: ``horizon < 1`` ise.
+    """
+    if value_column not in frame.columns:
+        raise KeyError(f"Kolon '{value_column}' frame icinde yok.")
+    if horizon < 1:
+        raise ValueError(
+            f"horizon >= 1 olmali, verilen: {horizon}. horizon=0 satirin KENDI "
+            "gununun olayini gorunur kilar -- dogrudan hedef sizintisi."
+        )
+
+    prefix = prefix or value_column
+    sort_keys = list(group_columns or []) + [time_column]
+    ordered, order = _sorted_view(frame, sort_keys, time_column=time_column)
+
+    times = parse_time_series(ordered[time_column], strict=False)
+    gecerli = times.notna().to_numpy()
+    gunler = times.to_numpy(dtype="datetime64[D]").astype("int64")
+    degerler = pd.to_numeric(ordered[value_column], errors="coerce")
+    olayli = (degerler > 0).to_numpy()
+
+    kimlikler = _grup_kimlikleri(ordered, group_columns)
+    gecen_gun = np.full(len(ordered), np.nan)
+    hic_yok = np.ones(len(ordered), dtype="int64")
+
+    #: "Henuz olay yok" sentineli -- gecerli hicbir takvim gununden buyuk
+    #: olamayacak kadar kucuk.
+    SENTINEL = np.iinfo(np.int64).min // 4
+
+    for bas, son in _grup_dilimleri(kimlikler):
+        n_gecerli = int(gecerli[bas:son].sum())
+        if n_gecerli <= horizon:
+            continue
+        g_gun = gunler[bas:bas + n_gecerli]
+        olay_gunu = np.where(olayli[bas:bas + n_gecerli], g_gun, SENTINEL)
+        son_olay = np.maximum.accumulate(olay_gunu)
+        # Ufuk kaydirmasi: i satiri, i - horizon'a kadarki son olayi gorur.
+        gorunen = son_olay[:-horizon]
+        hedef_gunler = g_gun[horizon:]
+        var = gorunen > SENTINEL
+        dilim = np.full(n_gecerli - horizon, np.nan)
+        dilim[var] = (hedef_gunler[var] - gorunen[var]).astype("float64")
+        gecen_gun[bas + horizon: bas + n_gecerli] = dilim
+        hic_yok[bas + horizon: bas + n_gecerli] = (~var).astype("int64")
+
+    restore = np.empty_like(order)
+    restore[order] = np.arange(len(order))
+    etiket = "" if horizon == 1 else f"ufuk{horizon}_"
+    return frame.assign(**{
+        f"{prefix}_{etiket}son_olaydan_gun": gecen_gun[restore].astype("float32"),
+        f"{prefix}_{etiket}hic_olay_yok": hic_yok[restore].astype("int8"),
     })
 
 

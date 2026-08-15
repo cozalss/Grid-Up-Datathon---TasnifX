@@ -39,8 +39,10 @@ __all__ = [
     "EARLY_STOPPING_BIAS_NOTE",
     "INFRASTRUCTURE_KEYS",
     "MIN_CATEGORY_OVERLAP",
+    "LGB_LOG_LINK_OBJECTIVES",
     "assert_finite_target",
     "merge_infrastructure_params",
+    "monotone_constraints_for",
     "starter_params",
 ]
 
@@ -280,6 +282,67 @@ COUNT_OBJECTIVES: dict[str, dict[str, str]] = {
 }
 
 
+def monotone_constraints_for(
+    feature_columns: Sequence[str],
+    increasing: Sequence[str] = (),
+    decreasing: Sequence[str] = (),
+) -> dict[str, Any]:
+    """Uc kutuphane icin monotonik kisit parametresi uretir -- OTOMATIK UYGULAMAZ.
+
+    NEREDEN GELDI (docs/10 bolum 3): kredi-PD benchmark'i (arXiv 2512.17945)
+    monotonik kisitlarin performans maliyetini ~%0-2.9 olarak olctu --
+    neredeyse bedava bir asiri-uyum sigortasi. Seyrek veride (az gozlemli
+    ilce, uc hava degerleri) agac, fiziksel olarak tek yonlu olmasi gereken
+    iliskiyi (ruzgar arttikca kesinti AZALMAZ) gurultuden ters cevirebilir;
+    kisit bunu yapisal olarak engeller.
+
+    BILINCLI OLARAK hicbir model fonksiyonu bunu kendiliginden uygulamaz:
+    kisit bir alan-bilgisi iddiasidir ve yanlis yonlu bir kisit modele
+    dogrudan zarar verir. Kullanan, yonu kendisi secer ve parametreye koyar::
+
+        kisit = monotone_constraints_for(kolonlar, increasing=["ruzgar_max"])
+        lgb_params["monotone_constraints"] = kisit["lightgbm"]
+        xgb_params["monotone_constraints"] = kisit["xgboost"]
+        cat_params["monotone_constraints"] = kisit["catboost"]
+
+    Args:
+        feature_columns: Modele girecek kolonlar, MODEL SIRASINDA. Sira
+            yanlissa kisit yanlis kolona uygulanir ve hicbir hata firlamaz.
+        increasing: Hedefle artan iliskiye zorlanacak kolonlar (+1).
+        decreasing: Azalan iliskiye zorlanacak kolonlar (-1).
+
+    Returns:
+        ``{"lightgbm": [-1/0/1, ...], "xgboost": "(1,0,-1,...)",
+        "catboost": [-1/0/1, ...]}`` -- LightGBM/CatBoost kolon sirasinda
+        tamsayi listesi, XGBoost ayni bilginin parantezli metin hali.
+
+    Raises:
+        ValueError: Kisit listesinde ``feature_columns``ta olmayan ad varsa
+            (yazim hatasi sessizce "kisit yok" olurdu) veya ayni kolon iki
+            yonde birden istendiyse.
+    """
+    kolonlar = list(feature_columns)
+    artan = set(increasing)
+    azalan = set(decreasing)
+
+    cakisan = sorted(artan & azalan)
+    if cakisan:
+        raise ValueError(f"Ayni kolon iki yonde birden kisitlanamaz: {cakisan}")
+    bilinmeyen = sorted((artan | azalan) - set(kolonlar))
+    if bilinmeyen:
+        raise ValueError(
+            f"Kisit listesindeki su kolonlar feature_columns icinde yok: {bilinmeyen}. "
+            "Yazim hatasi sessizce 'kisit yok' olurdu -- bu yuzden hata."
+        )
+
+    vektor = [1 if kolon in artan else (-1 if kolon in azalan else 0) for kolon in kolonlar]
+    return {
+        "lightgbm": vektor,
+        "xgboost": "(" + ",".join(str(deger) for deger in vektor) + ")",
+        "catboost": list(vektor),
+    }
+
+
 #: ``cross_validate`` erken durdurma ile kosarken skora eklenen bilinen
 #: yanlilik. Sayi tek basina dolasmasin diye ``CVResult.warnings``a yazilir.
 #: Gerekce ve olcum tablosu ``cross_validate`` docstring'inde.
@@ -486,6 +549,130 @@ def _prepare_categoricals(
     return train_out, test_out, categorical
 
 
+#: LightGBM'de LOG-LINK kullanan regresyon objective'leri: ham skor log(mu),
+#: tahmin exp(ham skor). Offset (init_score) bu uzayda eklenir; tahmine geri
+#: eklerken exp uygulanmali. Bkz. ``_predict_with_offset``.
+LGB_LOG_LINK_OBJECTIVES = frozenset({"poisson", "gamma", "tweedie"})
+
+#: LightGBM'de KIMLIK-LINK regresyon objective'leri: tahmin = ham skor.
+_LGB_IDENTITY_LINK_OBJECTIVES = frozenset({
+    "", "regression", "regression_l1", "regression_l2", "l1", "l2", "mae", "mse",
+    "rmse", "mean_absolute_error", "mean_squared_error", "huber", "fair",
+    "quantile", "mape",
+})
+
+
+def _offset_link(kind: ModelKind, params: dict[str, Any]) -> str:
+    """Offset'in tahmine nasil geri eklenecegini belirler.
+
+    Bilinmeyen objective'de TAHMIN ETMEYIZ: yanlis link, tum tahminleri
+    sessizce yanlis olcege tasir (exp'lenmemis poisson tahmini log uzayinda
+    kalir ve MAE makul gorunen ama anlamsiz bir sayi olur).
+    """
+    objective = str(params.get("objective", ""))
+    if kind == "xgboost":
+        if objective.startswith(("binary", "multi", "rank")):
+            raise NotImplementedError(
+                f"init_score simdilik yalnizca regresyon objective'leri icin: '{objective}'."
+            )
+        # XGBoost base_margin'i predict'te KENDISI ekler ve link'i uygular.
+        return "internal"
+    if objective in LGB_LOG_LINK_OBJECTIVES:
+        return "log"
+    if objective in _LGB_IDENTITY_LINK_OBJECTIVES:
+        return "identity"
+    raise NotImplementedError(
+        f"init_score icin '{objective}' objective'inin link'i bilinmiyor. "
+        "Log-link (poisson/gamma/tweedie) veya kimlik-link regresyon kullan -- "
+        "aksi halde offset tahmine YANLIS uzayda eklenir ve hata firlamazdi."
+    )
+
+
+def _validate_init_score(
+    values: np.ndarray | Sequence[float], n_rows: int, name: str
+) -> np.ndarray:
+    """Offset dizisini fit'ten ONCE dogrular (boy + NaN/inf).
+
+    ``sample_weight``in aksine NEGATIF deger MESRUDUR: log(maruziyet) 1'in
+    altindaki maruziyette negatiftir. NaN/inf ise modeli sessizce bozar.
+    """
+    dizi = np.asarray(values, dtype="float64").ravel()
+    if len(dizi) != n_rows:
+        raise ValueError(f"{name} ({len(dizi)}) ve veri ({n_rows}) uzunluklari farkli.")
+    if not np.isfinite(dizi).all():
+        bozuk = int((~np.isfinite(dizi)).sum())
+        raise ValueError(
+            f"{name} icinde {bozuk} adet NaN/sonsuz deger var. log(maruziyet) "
+            "kullaniyorsan sifir maruziyetli satirlari once ele al "
+            "(np.log(np.maximum(maruziyet, 1)) gibi bilincli bir kuralla)."
+        )
+    return dizi
+
+
+def _resolve_offsets(
+    kind: ModelKind,
+    model_params: dict[str, Any],
+    init_score: np.ndarray | Sequence[float] | None,
+    test_init_score: np.ndarray | Sequence[float] | None,
+    n_train: int,
+    test: pd.DataFrame | None,
+) -> tuple[np.ndarray | None, np.ndarray | None]:
+    """``init_score``/``test_init_score`` ciftini dogrular ve dizilere cevirir.
+
+    Offset ya HER dilime (train + valid + test) birden uygulanir ya hic:
+    tek tarafli offset, tahmin olcegini sessizce kaydirir.
+    """
+    if init_score is None:
+        if test_init_score is not None:
+            raise ValueError(
+                "test_init_score verildi ama init_score yok -- offset ya train ve "
+                "test'e birden uygulanir ya hic."
+            )
+        return None, None
+    if kind == "catboost":
+        raise NotImplementedError(
+            "init_score CatBoost'a baglanmadi: baseline yalnizca Pool(baseline=...) "
+            "API'siyle tasinabiliyor ve Poisson'da prediction_type='Exponent' "
+            "carpitmasi gerekiyor -- sessizce yanlis baglamak yerine acikca "
+            "reddediyoruz. Offset icin lightgbm veya xgboost kullan."
+        )
+    _offset_link(kind, model_params)  # bilinmeyen objective linkinde ERKEN hata
+    offsets = _validate_init_score(init_score, n_train, "init_score")
+    if test is None:
+        if test_init_score is not None:
+            raise ValueError("test_init_score verildi ama test frame'i yok.")
+        return offsets, None
+    if test_init_score is None:
+        raise ValueError(
+            "test verildi ama test_init_score yok: offset'siz test tahmini olcegi "
+            "sessizce kaydirir. Test satirlari icin AYNI tanimli offset'i ver."
+        )
+    return offsets, _validate_init_score(test_init_score, len(test), "test_init_score")
+
+
+def _predict_with_offset(
+    kind: ModelKind,
+    model: Any,
+    features: pd.DataFrame,
+    offset: np.ndarray,
+    params: dict[str, Any],
+) -> np.ndarray:
+    """Offset'li (init_score/base_margin) tahmin -- kutuphane farkini kapatir.
+
+    XGBoost ``base_margin``i predict'te kendisi ekler ve link'i uygular.
+    LightGBM ise init_score'u tahmin aninda BILMEZ: ham skoru alip offset'i
+    biz ekleriz ve objective'in link'ini biz uygulariz
+    (poisson/gamma/tweedie -> exp, kimlik-link regresyon -> oldugu gibi).
+    """
+    if kind == "xgboost":
+        return np.asarray(model.predict(features, base_margin=offset)).ravel()
+    raw = np.asarray(model.predict(features, raw_score=True)).ravel()
+    total = raw + np.asarray(offset, dtype="float64").ravel()
+    if _offset_link(kind, params) == "log":
+        return np.exp(total)
+    return total
+
+
 def _fit_one_fold(
     kind: ModelKind,
     params: dict[str, Any],
@@ -496,12 +683,18 @@ def _fit_one_fold(
     categorical: list[str],
     early_stopping_rounds: int,
     sample_weight: np.ndarray | None = None,
+    init_train: np.ndarray | None = None,
+    init_valid: np.ndarray | None = None,
 ) -> Any:
     """Tek bir fold egitir ve modeli dondurur.
 
     ``sample_weight`` yalnizca TRAIN dilimini olcekler; eval_set agirliksiz
     kalir -- erken durdurma ve fold skoru boylece agirlikli/agirliksiz
     kosular arasinda karsilastirilabilir olur (bilincli tercih).
+
+    ``init_train``/``init_valid`` (offset) ise IKI dilime birden gecirilir:
+    erken durdurmanin izledigi valid kaybi da offset'li uzayda olculmeli,
+    yoksa agac sayisi yanlis modele gore secilir.
     """
     if kind == "lightgbm":
         import lightgbm as lgb
@@ -512,7 +705,9 @@ def _fit_one_fold(
         model.fit(
             x_train, y_train,
             sample_weight=sample_weight,
+            init_score=init_train,
             eval_set=[(x_valid, y_valid)],
+            eval_init_score=[init_valid] if init_valid is not None else None,
             eval_metric=params.get("eval_metric"),
             categorical_feature=categorical or "auto",
             callbacks=[
@@ -531,13 +726,18 @@ def _fit_one_fold(
         model.fit(
             x_train, y_train,
             sample_weight=sample_weight,
-            eval_set=[(x_valid, y_valid)], verbose=False,
+            base_margin=init_train,
+            eval_set=[(x_valid, y_valid)],
+            base_margin_eval_set=[init_valid] if init_valid is not None else None,
+            verbose=False,
         )
         return model
 
     if kind == "catboost":
         from catboost import CatBoostClassifier, CatBoostRegressor
 
+        if init_train is not None:  # savunma; asil kapi _resolve_offsets'te
+            raise NotImplementedError("init_score CatBoost'a baglanmadi -- bkz. cross_validate.")
         is_classification = params.get("loss_function") in {"Logloss", "MultiClass"}
         model_class = CatBoostClassifier if is_classification else CatBoostRegressor
         model = model_class(**params)
@@ -716,6 +916,8 @@ def cross_validate(
     params: dict[str, Any] | None = None,
     test: pd.DataFrame | None = None,
     sample_weight: np.ndarray | Sequence[float] | None = None,
+    init_score: np.ndarray | Sequence[float] | None = None,
+    test_init_score: np.ndarray | Sequence[float] | None = None,
     early_stopping_rounds: int = 200,
     verbose: bool = True,
 ) -> CVResult:
@@ -735,6 +937,21 @@ def cross_validate(
             yalnizca TRAIN dilimi (``weight[train_idx]``) fit'e gecirilir;
             valid/eval tarafi agirliksiz kalir ki fold skorlari agirlikli ve
             agirliksiz kosular arasinda karsilastirilabilir olsun.
+        init_score: Satir basina SABIT taban skor (exposure-offset, sigorta
+            pratigi -- docs/10 bolum 3). Log-link'li sayim objective'lerinde
+            (``poisson``/``tweedie``/``gamma``) ``np.log(maruziyet)`` dogal
+            offset'tir: ilce nufusu gibi boyut farkini OGRENILECEK seyden
+            VERILI oncule cevirir. LightGBM'de ``init_score``, XGBoost'ta
+            ``base_margin`` olarak train VE valid dilimlerine TUTARLI
+            gecirilir; tahminde offset geri eklenir (LightGBM: ham skor +
+            offset, log-link'te exp; XGBoost bunu predict'te kendisi yapar).
+            CatBoost icin ``NotImplementedError``: baseline yalnizca
+            ``Pool(baseline=...)`` API'siyle ve Poisson'da
+            ``prediction_type='Exponent'`` carpitmasiyla tasinabiliyor --
+            sessizce yanlis baglamak yerine acikca reddediyoruz.
+        test_init_score: ``test`` ve ``init_score`` birlikte verildiyse
+            ZORUNLU (``len(test)`` boyutlu) -- test tahmini offset'siz
+            uretilirse olcek sessizce kayar.
         early_stopping_rounds: Iyilesme olmadan kac tur beklenecegi.
 
     Returns:
@@ -798,6 +1015,10 @@ def cross_validate(
         else starter_params(kind, task_type)
     )
 
+    offsets, test_offsets = _resolve_offsets(
+        kind, model_params, init_score, test_init_score, len(train), test
+    )
+
     train_ready, test_ready, categorical = _prepare_categoricals(train, test, kind)
     feature_names = list(train_ready.columns)
 
@@ -818,9 +1039,15 @@ def cross_validate(
             kind, model_params, x_train, y[train_idx], x_valid, y[valid_idx],
             categorical, early_stopping_rounds,
             sample_weight=(weights[train_idx] if weights is not None else None),
+            init_train=(offsets[train_idx] if offsets is not None else None),
+            init_valid=(offsets[valid_idx] if offsets is not None else None),
         )
 
-        fold_prediction = _predict(model, x_valid, needs_proba=needs_proba)
+        fold_prediction = (
+            _predict(model, x_valid, needs_proba=needs_proba)
+            if offsets is None
+            else _predict_with_offset(kind, model, x_valid, offsets[valid_idx], model_params)
+        )
         oof[valid_idx] = fold_prediction
         oof_filled[valid_idx] = True
 
@@ -830,7 +1057,11 @@ def cross_validate(
         importance_total += _extract_importance(model, feature_names)
 
         if test_ready is not None and test_predictions is not None:
-            fold_test = _predict(model, test_ready, needs_proba=needs_proba)
+            fold_test = (
+                _predict(model, test_ready, needs_proba=needs_proba)
+                if test_offsets is None
+                else _predict_with_offset(kind, model, test_ready, test_offsets, model_params)
+            )
             test_predictions += fold_test / len(fold_list)
 
         if verbose:
