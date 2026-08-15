@@ -36,6 +36,8 @@ __all__ = [
     "LGB_DEFAULTS",
     "XGB_DEFAULTS",
     "CAT_DEFAULTS",
+    "INFRASTRUCTURE_KEYS",
+    "merge_infrastructure_params",
     "starter_params",
 ]
 
@@ -85,6 +87,50 @@ CAT_DEFAULTS: dict[str, Any] = {
     "verbose": 0,
     "allow_writing_files": False,
 }
+
+
+#: ALTYAPI anahtarlari -- ogrenme hiperparametresi DEGIL, calisma sarti.
+#: Kullanici ``params`` verdiginde bunlar KAYBOLMAMALI:
+#:
+#:   enable_categorical yoksa -> XGBoost kategorik kolonda COKER
+#:   verbose yoksa            -> konsol binlerce satir cikti ile dolar
+#:   allow_writing_files yoksa-> CatBoost her kosuda catboost_info/ klasoru yazar
+#:   tree_method yoksa        -> XGBoost yavas 'exact' moda duser
+#:   n_jobs yoksa             -> tek cekirdek kullanilir
+#:
+#: OLCULDU: params={'n_estimators':200} vermek enable_categorical'i dusuruyor
+#: ve "DataFrame.dtypes for data must be int, float, bool or category" hatasi
+#: aliniyordu. Kullanici sadece agac sayisini degistirmek istemisti.
+#:
+#: Ogrenme hiperparametrelerini (learning_rate, num_leaves, reg_alpha ...)
+#: BILEREK birlestirmiyoruz: kullanici params verdiyse modelin ogrenme
+#: davranisini tam olarak o belirlemeli -- yoksa gizli varsayilanlar
+#: tekrarlanabilirligi bozar.
+INFRASTRUCTURE_KEYS: dict[str, tuple[str, ...]] = {
+    "lightgbm": ("verbose", "n_jobs"),
+    "xgboost": ("tree_method", "enable_categorical", "n_jobs"),
+    "catboost": ("verbose", "allow_writing_files"),
+}
+
+_DEFAULTS_BY_KIND: dict[str, dict[str, Any]] = {
+    "lightgbm": LGB_DEFAULTS,
+    "xgboost": XGB_DEFAULTS,
+    "catboost": CAT_DEFAULTS,
+}
+
+
+def merge_infrastructure_params(kind: str, params: dict[str, Any]) -> dict[str, Any]:
+    """Kullanici parametrelerine eksik ALTYAPI anahtarlarini ekler.
+
+    Kullanicinin acikca verdigi hicbir deger EZILMEZ; yalnizca eksik olan
+    altyapi anahtarlari varsayilandan tamamlanir.
+    """
+    tamamlanmis = dict(params)
+    varsayilan = _DEFAULTS_BY_KIND.get(kind, {})
+    for anahtar in INFRASTRUCTURE_KEYS.get(kind, ()):
+        if anahtar not in tamamlanmis and anahtar in varsayilan:
+            tamamlanmis[anahtar] = varsayilan[anahtar]
+    return tamamlanmis
 
 
 def starter_params(
@@ -490,7 +536,11 @@ def cross_validate(
     assert_folds_align(len(train), fold_list)
 
     metric_fn, _, needs_proba = get_metric(metric)
-    model_params = dict(params) if params else starter_params(kind, task_type)
+    model_params = (
+        merge_infrastructure_params(kind, params)
+        if params
+        else starter_params(kind, task_type)
+    )
 
     train_ready, test_ready, categorical = _prepare_categoricals(train, test, kind)
     feature_names = list(train_ready.columns)
