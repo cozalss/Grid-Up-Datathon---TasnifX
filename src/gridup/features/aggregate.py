@@ -16,6 +16,7 @@ kullan; o fold-disi calisir.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -24,8 +25,14 @@ __all__ = ["add_group_statistics", "add_ratio_features", "add_target_free_aggreg
 
 _DEFAULT_AGGREGATIONS = ("mean", "std", "min", "max", "median")
 
+#: ``target_column``in ACIKCA verilmesini zorunlu kilan nobetci. Varsayilan
+#: ``None`` olsaydi "vermedim" ile "hedef yok" ayirt edilemezdi ve koruma
+#: pratikte hic calismazdi -- nitekim calismiyordu (olculdu: hedefle 0.96
+#: korelasyonlu kolonlar sessizce uretiliyordu).
+_ZORUNLU: Any = object()
 
-def _reject_target(value_columns: Sequence[str], target_column: str | None) -> None:
+
+def _reject_target(value_columns: Sequence[str], target_column: Any) -> None:
     """Hedef kolonu ``value_columns`` icindeyse ACIKCA reddeder.
 
     Bu fonksiyon ailesi hedefi kullanmadigi ICIN fold'a ihtiyac duymaz ve
@@ -34,6 +41,15 @@ def _reject_target(value_columns: Sequence[str], target_column: str | None) -> N
     ``oof_target_encode``in onlemek icin var oldugu sizinti, baska bir kapidan
     geri gelir. CV skoru siser, leaderboard coker.
     """
+    if target_column is _ZORUNLU:
+        raise TypeError(
+            "target_column ACIKCA verilmelidir.\n"
+            "Bu koruma eskiden opt-in'di ve varsayilan None oldugu icin pratikte "
+            "HIC calismiyordu: hedef value_columns'a girince sessizce hedefle "
+            "0.96 korelasyonlu kolonlar uretiliyordu (olculdu).\n"
+            "  hedef varsa   : target_column='HEDEF'\n"
+            "  hedef yoksa   : target_column=None  (bilincli karar)"
+        )
     if target_column and target_column in value_columns:
         raise ValueError(
             f"Hedef kolon '{target_column}' value_columns icinde. Grup istatistikleri "
@@ -50,7 +66,7 @@ def add_group_statistics(
     aggregations: Sequence[str] = _DEFAULT_AGGREGATIONS,
     reference: pd.DataFrame | None = None,
     add_deviation: bool = True,
-    target_column: str | None = None,
+    target_column: str | None = _ZORUNLU,
 ) -> pd.DataFrame:
     """Grup bazli istatistikler ve satirin gruptan sapmasini ekler.
 
@@ -153,7 +169,7 @@ def add_target_free_aggregates(
     value_columns: Sequence[str],
     *,
     aggregations: Sequence[str] = _DEFAULT_AGGREGATIONS,
-    target_column: str | None = None,
+    target_column: str | None = _ZORUNLU,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Train ve test'e AYNI grup istatistiklerini uygular. Iki yeni frame dondurur.
 

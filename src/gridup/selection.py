@@ -85,20 +85,44 @@ class SelectionResult:
             ]
         ).sort_values("feature_sayisi")
 
+    @property
+    def selection_optimism(self) -> float:
+        """``best_score`` ile adim skorlarinin ortalamasi arasindaki fark.
+
+        ``best_score`` AYNI fold'larda kosulan N korele denemenin en iyisidir;
+        yani bagimsiz bir kumede beklenenden IYIMSERDIR. Bu sayi o iyimserligin
+        kaba bir olcusudur -- sifir degilse, kazancin bir kismi secimden gelir.
+        """
+        if len(self.history) < 2:
+            return 0.0
+        ortalama = float(np.mean([step.score for step in self.history]))
+        return abs(self.best_score - ortalama)
+
     def summary(self) -> str:
         if not self.history:
             return "Adim yok."
         first, last = self.history[0], self.history[-1]
         direction = "yukseldi" if self.best_score > first.score else "dusdu"
-        return "\n".join(
-            [
-                f"Baslangic: {first.n_features} feature, skor {first.score:.6f}",
-                f"Bitis:     {last.n_features} feature, skor {last.score:.6f}",
-                f"En iyi:    {len(self.best_features)} feature, skor {self.best_score:.6f}"
-                f"  (skor {direction})",
-                f"Toplam {len(self.history)} adim.",
-            ]
-        )
+        lines = [
+            f"Baslangic: {first.n_features} feature, skor {first.score:.6f}",
+            f"Bitis:     {last.n_features} feature, skor {last.score:.6f}",
+            f"En iyi:    {len(self.best_features)} feature, skor {self.best_score:.6f}"
+            f"  (skor {direction})",
+            f"Toplam {len(self.history)} adim.",
+        ]
+        # SECIM YANLILIGI ACIKCA SOYLENIR.
+        #
+        # best_score, AYNI fold'lar uzerinde kosulan N denemenin minimumudur.
+        # Bunu "modelin skoru" diye raporlamak, 200 noktali bir izgarada esik
+        # secip ayni veride skor bildirmekle ayni hatadir. OLCULDU: 6 adimda
+        # best 0.620982, adim ortalamasi 0.627206 -> ~%1 iyimserlik.
+        if len(self.history) >= 2:
+            lines.append(
+                f"DIKKAT: bu skor {len(self.history)} korele denemenin EN IYISIDIR "
+                f"(adim ortalamasindan {self.selection_optimism:.6f} uzakta). "
+                "Secim yanliligi tasir -- kazanci bagimsiz bir kumede dogrula."
+            )
+        return "\n".join(lines)
 
 
 def mean_absolute_shap(
@@ -224,6 +248,14 @@ def fold_shap_importance(
 #: gercek sinyalin 2/3'u kaybediliyor).
 NULL_IMPORTANCE_TREES = 300
 
+#: Agac sayisi anahtari modele gore farklidir ve kutuphaneler takma adlarin
+#: AYNI ANDA verilmesini reddeder.
+_TREE_COUNT_KEY: dict[str, str] = {
+    "lightgbm": "n_estimators",
+    "xgboost": "n_estimators",
+    "catboost": "iterations",
+}
+
 
 def null_importance_filter(
     train: pd.DataFrame,
@@ -269,8 +301,16 @@ def null_importance_filter(
     # gercek sinyal ile gurultu ayirt edilemez hale geliyor.
     #
     # Kullanici acikca params verirse ona dokunmayiz.
+    #
+    # ANAHTAR MODELE GORE DEGISIR. Onceki surum her modele "n_estimators"
+    # yaziyordu; CatBoost'un baslangic parametrelerinde ise "iterations" var
+    # ve CatBoost ikisini AYNI ANDA kabul etmez:
+    #   CatBoostError: only one of the parameters iterations, n_estimators,
+    #                  num_boost_round, num_trees should be initialized
+    # Yani catboost yolu HER ZAMAN cokuyordu (olculdu) -- ne setdefault'lu
+    # eski surumde ne acik atamali yeni surumde calisiyordu.
     if not params:
-        model_params["n_estimators"] = NULL_IMPORTANCE_TREES
+        model_params[_TREE_COUNT_KEY.get(kind, "n_estimators")] = NULL_IMPORTANCE_TREES
 
     from .models import _extract_importance, _prepare_categoricals
 
@@ -404,6 +444,16 @@ def shap_backward_selection(
             )
 
         if stale >= patience:
+            # SON ADIM DA KAYDEDILIR.
+            #
+            # Onceki surum burada history'ye yazmadan ``break`` ediyordu, yani
+            # BEDELI ODENMIS bir CV kosusunun sonucu kayboluyordu -- ustelik
+            # tam da durma kararini gerekcelendiren adim. OLCULDU: 3 CV kosusu
+            # yapildi, history'de 2 adim vardi ve summary() "Toplam 2 adim"
+            # diyordu. Juriye sunulan eleme egrisinin son noktasi eksikti.
+            history.append(
+                SelectionStep(len(features), result.overall_score, (), elapsed)
+            )
             if progress:
                 progress(f"{patience} adimdir iyilesme yok -- duruluyor.")
             break

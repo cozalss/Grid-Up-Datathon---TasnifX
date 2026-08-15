@@ -193,7 +193,9 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
     # --- aggregate ---
     "add_group_statistics": (
         "aggregate",
-        lambda m, f: m.add_group_statistics(f, group_columns=["yer"], value_columns=["sicaklik"]),
+        lambda m, f: m.add_group_statistics(
+            f, group_columns=["yer"], value_columns=["sicaklik"], target_column=None
+        ),
     ),
     "add_ratio_features": (
         "aggregate",
