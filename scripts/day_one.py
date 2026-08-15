@@ -47,7 +47,13 @@ from gridup.features import (  # noqa: E402
     shared_origin,
 )
 from gridup.models import starter_params  # noqa: E402
-from gridup.validation import build_splitter, purged_time_series_split  # noqa: E402
+from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
+from gridup.turkish import normalize_columns  # noqa: E402
+from gridup.validation import (  # noqa: E402
+    build_splitter,
+    parse_time_series,
+    purged_time_series_split,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -62,6 +68,24 @@ def confirm(question: str, *, auto: bool) -> bool:
         return True
     answer = input(f"  -> {question} [E/h] ").strip().lower()
     return answer in ("", "e", "evet", "y", "yes")
+
+
+def _kolonu_coz(ad: str | None, frame: pd.DataFrame) -> str | None:
+    """Kullanicinin yazdigi ham kolon adini normalize edilmis ada cevirir.
+
+    Kullanici CSV'de ne goruyorsa onu yazar ("TARIH"); ``read_any`` ise
+    kolonlari normalize eder ("tarih"). Ikisini burada baglıyoruz.
+    """
+    if ad is None or ad in frame.columns:
+        return ad
+    aday = normalize_columns([ad]).get(ad)
+    if aday and aday in frame.columns:
+        return aday
+    # Ters yon: kullanici normalize edilmis adi yazdi ama frame ham duruyor.
+    for ham, normal in (frame.attrs.get("original_columns") or {}).items():
+        if ad in (ham, normal):
+            return normal if normal in frame.columns else ham
+    return ad
 
 
 def find_files(data_dir: Path) -> dict[str, Path]:
@@ -123,6 +147,19 @@ def main() -> int:
     train = read_any(files["train"])
     test = read_any(files["test"]) if "test" in files else None
     sample = read_any(files["sample"]) if "sample" in files else None
+
+    # Okuyucu kolon adlarini normalize eder ("TARIH" -> "tarih",
+    # "Dagitilan Enerji (MWh)" -> "dagitilan_enerji_mwh") ama kullanici
+    # dosyada GORDUGU adi yazar. Eskiden bu ikisi eslesmiyordu ve belgelenen
+    # veri gunu komutu ("--time TARIH --group ILCE") ilk adimda hata veriyordu:
+    #     HATA: hedef kolon belirlenemedi. Kolonlar: ['id','ilce','tarih',...]
+    # Yarismanin ilk saatinde kaybedilecek en pahali dakikalar bunlar.
+    for alan in ("target", "id_column", "time_column", "group_column"):
+        ham = getattr(args, alan)
+        cozulen = _kolonu_coz(ham, train)
+        if cozulen != ham:
+            print(f"  --{alan}: '{ham}' -> '{cozulen}' (normalize edilmis ad)")
+        setattr(args, alan, cozulen)
 
     print(f"\n  train {train.shape}" + (f"   test {test.shape}" if test is not None else ""))
     if sample is not None:
@@ -188,13 +225,13 @@ def main() -> int:
 
     horizon = 1
     if time_column and test is not None and time_column in test.columns:
-        test_times = pd.to_datetime(test[time_column], errors="coerce")
+        test_times = parse_time_series(test[time_column])
         horizon = int((test_times.max() - test_times.min()).days) + 1
         print(f"\n  Tahmin ufku (test blok uzunlugu): {horizon} gun")
         print("  -> lag/rolling feature'lari bu ufka gore kaydirilmali")
 
     if time_column:
-        train[time_column] = pd.to_datetime(train[time_column], errors="coerce")
+        train[time_column] = parse_time_series(train[time_column])
         embargo = pd.Timedelta(days=max(horizon, 30))
         # DOGRULAMA PENCERESI = TEST BLOGU UZUNLUGU.
         #
@@ -225,7 +262,7 @@ def main() -> int:
     banner("6/7", "FEATURE + BASELINE")
     origin = None
     if time_column and test is not None:
-        test[time_column] = pd.to_datetime(test[time_column], errors="coerce")
+        test[time_column] = parse_time_series(test[time_column])
         origin = shared_origin(train, test, time_column=time_column)
         print(f"  Ortak zaman baslangici: {origin.date()}")
 
@@ -242,7 +279,11 @@ def main() -> int:
     train_features = build(train)
     test_features = build(test) if test is not None else None
 
-    drop = {args.target, args.id_column, time_column} - {None}
+    # PANEL_FLAG_COLUMN feature OLAMAZ: fill_value=0 iken hedefin sifir
+    # olmasiyla birebir ayni seydir (olculdu: %100 ortusme, Spearman -0.9810).
+    # Test kumesinde yoksa zaten elenirdi, ama test verilmediginde listeye
+    # giriyordu -- adiyla dislamak tek guvenilir yol.
+    drop = {args.target, args.id_column, time_column, PANEL_FLAG_COLUMN} - {None}
     columns = [
         c for c in train_features.columns
         if c not in drop and (test_features is None or c in test_features.columns)
