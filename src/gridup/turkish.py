@@ -40,6 +40,7 @@ __all__ = [
     "has_combining_dot",
     "normalize_columns",
     "diagnose_join",
+    "strip_qualifier",
 ]
 
 # ``.lower()`` cagrilmadan ONCE i-ciftini eslememiz gerekir; birlesik noktayi
@@ -175,6 +176,30 @@ def normalize_columns(columns: Iterable[str]) -> dict[str, str]:
     return mapping
 
 
+def strip_qualifier(name: str) -> str:
+    """``"Koprubasi / Manisa"`` -> ``"Koprubasi"``. Niteleyici ekini atar.
+
+    Ayni ilce adi birden fazla ilde bulunabildigi icin kaynak sistemler ilce
+    adini il ile niteler. Referans tablolari yalin adi tutar; ikisi
+    eslesmez ve join sessizce satir kaybeder (olculdu: 284 satir).
+
+    Ayirici olarak ``/``, ``-`` ve ``(`` kabul edilir. Bos sonuc uretmez --
+    ayirici basta ise ad oldugu gibi doner.
+    """
+    metin = str(name)
+    for ayirici in ("/", "(", " - "):
+        if ayirici in metin:
+            bas = metin.split(ayirici, maxsplit=1)[0].strip()
+            if bas:
+                metin = bas
+    return metin
+
+
+def _niteleyiciyi_at(normalized: str) -> str:
+    """Normalize edilmis anahtardan niteleyici ekini atar."""
+    return join_key(strip_qualifier(normalized))
+
+
 def diagnose_join(
     left_keys: Iterable[str],
     right_keys: Iterable[str],
@@ -202,13 +227,36 @@ def diagnose_join(
 
     dotted = [key for key in left + right if has_combining_dot(key)]
 
+    # NITELEYICI EKI KURTARMA -- gercek GDZ verisinde olculdu.
+    #
+    # Ayni ilce adi Turkiye'de birden fazla ilde bulunabilir (Koprubasi hem
+    # Manisa'da hem Trabzon'da). Kaynak sistemler bunu "Kopr��ba�i / Manisa"
+    # diye niteler; referans tablolari ise yalin "Kopr��ba�i" tutar.
+    #
+    # OLCULDU (68.257 satirlik gercek GDZ kesinti kaydi, 47 ilce):
+    #   normalize eslesme      : 46/47
+    #   eslesmeyen             : 'koprubasi / manisa'
+    #   o ilcedeki kayit sayisi: 284  -> hava/komsu join'inde SESSIZCE duserdi
+    #
+    # Kurtarmayi RAPORLARIZ ama join_key'i degistirmeyiz: kesme islemi
+    # ("/" oncesini al) her veri setinde dogru olmayabilir, karari kullanici
+    # verir. Rapor ona hangi donusumu uygulayacagini soyler.
+    kalan_sol = left_norm - right_norm
+    nitelikli = {
+        anahtar: _niteleyiciyi_at(anahtar)
+        for anahtar in kalan_sol
+        if _niteleyiciyi_at(anahtar) in right_norm
+    }
+
     return {
         "left_unique": len(left_set),
         "right_unique": len(right_set),
         "raw_matched": raw_matched,
         "normalized_matched": normalized_matched,
         "recovered": normalized_matched - raw_matched,
-        "left_only": tr_sorted(left_norm - right_norm)[:max_examples],
+        "left_only": tr_sorted(kalan_sol - set(nitelikli))[:max_examples],
         "right_only": tr_sorted(right_norm - left_norm)[:max_examples],
         "combining_dot_keys": dotted[:max_examples],
+        # "koprubasi / manisa" -> "koprubasi" gibi, ek atilinca eslesenler.
+        "qualifier_recoverable": dict(list(nitelikli.items())[:max_examples]),
     }

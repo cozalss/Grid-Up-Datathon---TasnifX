@@ -69,3 +69,7 @@ secrets.*
 Thumbs.db
 desktop.ini
 kaggle_paket/
+
+# Gercek veri provasinin kaynagi -- Kaggle'dan indirilir, repoya konmaz
+data/prior/ayna/
+data/prior/2023/
