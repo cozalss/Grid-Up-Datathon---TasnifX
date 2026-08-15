@@ -15,7 +15,7 @@ izlenecek adımları içerir.
 | Arıza sebebi taksonomisi | `gridup.features.outage_reason` | 919 metin → 22 aile, %0,88 sınıflanamayan |
 | Uçtan uca betik | `scripts/day_one.py` | Sentetik veride 6 sn'de submission |
 | Kaggle offline paketi | `kaggle.com/datasets/cemzal/gridup-offline-paket` | Yüklendi (özel), dosyalar doğrulandı |
-| Test paketi | `tests/` | 552 test |
+| Test paketi | `tests/` | 557 test |
 
 ---
 

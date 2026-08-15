@@ -448,3 +448,104 @@ def test_null_importance_agac_sayisi_gercekten_uygulaniyor():
         "icin bu OLU KODDUR"
     )
     assert "NULL_IMPORTANCE_TREES" in kaynak
+
+
+# --------------------------------------------------------------------------
+# P0: zaman kolonu tespitinde IKI AYRI KAYNAK vardi ve birbirini tutmuyordu
+# --------------------------------------------------------------------------
+
+
+def test_metin_tarih_kolonu_profilde_gorunuyor():
+    """REGRESYON P0: profiling dtype'a bakiyordu, METIN tarihleri kaciriyordu.
+
+    OLCULDU (ISO bicimli string tarih):
+      profiling.time_columns  = []        <- KACIRIYOR
+      _detect_time_columns()  = ['tarih'] <- BULUYOR
+
+    day_one.py birincisine baktigi icin time_column=None kaliyor ve ekranda
+    "TimeSeriesSplit oneriyorum" yazarken CV RASTGELE boluyordu -- sessiz
+    bir zaman sizintisi.
+    """
+    from gridup.profiling import profile
+    from gridup.validation import _detect_time_columns
+
+    gunler = pd.date_range("2025-01-01", periods=200)
+    frame = pd.DataFrame(
+        {
+            "tarih": np.tile(gunler.astype(str), 5),
+            "ilce": np.repeat([f"i{i}" for i in range(5)], 200),
+            "y": np.arange(1000.0),
+        }
+    )
+    assert frame["tarih"].dtype != "datetime64[ns]", "test kurulumu: tarih METIN olmali"
+
+    rapor = profile(frame, None, target="y")
+    assert "tarih" in rapor.time_columns, "profiling metin tarihi hala kaciriyor"
+    # Iki kaynak artik AYNI cevabi vermeli.
+    assert set(_detect_time_columns(frame)) <= set(rapor.time_columns)
+    assert "ZAMAN KOLONLARI" in rapor.report()
+
+
+def test_datetime_kolonu_da_hala_bulunuyor():
+    """Duzeltme dtype tabanli tespiti BOZMAMALI."""
+    from gridup.profiling import profile
+
+    frame = pd.DataFrame(
+        {"tarih": pd.date_range("2025-01-01", periods=50), "y": np.arange(50.0)}
+    )
+    assert "tarih" in profile(frame, None, target="y").time_columns
+
+
+# --------------------------------------------------------------------------
+# P0: submission basligi NORMALIZE yaziliyordu -- Kaggle reddederdi
+# --------------------------------------------------------------------------
+
+
+def test_submission_basligi_orijinal_adlari_kullaniyor(tmp_path):
+    """REGRESYON P0: 2023'te hedef kolonu tam olarak 'Dağıtılan Enerji (MWh)'
+    olmak zorundaydi. Bizim dosyamiz 'dagitilan_enerji_mwh' yaziyordu ve
+    dogrulama buna 'GECERLI' diyordu -- Kaggle REDDEDERDI.
+    """
+    from gridup import read_any
+    from gridup.submission import write_submission
+
+    ornek = tmp_path / "sample_submission.csv"
+    pd.DataFrame({"ID": range(5), "Dağıtılan Enerji (MWh)": [0.0] * 5}).to_csv(
+        ornek, index=False, sep=";", encoding="cp1254"
+    )
+    okunan = read_any(ornek)
+    assert list(okunan.columns) == ["id", "dagitilan_enerji_mwh"]
+
+    yol = write_submission(
+        np.arange(5), np.arange(5.0), tmp_path / "sub.csv",
+        sample=okunan, id_column="id", target_column="dagitilan_enerji_mwh",
+    )
+    baslik = yol.read_text(encoding="utf-8").splitlines()[0]
+    assert baslik == "ID,Dağıtılan Enerji (MWh)", f"baslik yanlis: {baslik}"
+
+
+def test_submission_orijinal_baslik_kapatilabiliyor(tmp_path):
+    """Ic self-check'ler normalize adla okuyabilsin diye kapatilabilmeli."""
+    from gridup import read_any
+    from gridup.submission import write_submission
+
+    ornek = tmp_path / "s.csv"
+    pd.DataFrame({"ID": range(5), "Hedef Kolon": [0.0] * 5}).to_csv(ornek, index=False)
+    okunan = read_any(ornek)
+
+    yol = write_submission(
+        np.arange(5), np.arange(5.0), tmp_path / "sub.csv", sample=okunan,
+        id_column="id", target_column="hedef_kolon", original_header=False,
+    )
+    assert yol.read_text(encoding="utf-8").splitlines()[0] == "id,hedef_kolon"
+
+
+def test_ornek_verilmezse_baslik_degismiyor(tmp_path):
+    """sample yoksa cevirecek bir esleme de yoktur -- patlamamali."""
+    from gridup.submission import write_submission
+
+    yol = write_submission(
+        np.arange(5), np.arange(5.0), tmp_path / "sub.csv",
+        id_column="ID", target_column="hedef",
+    )
+    assert yol.read_text(encoding="utf-8").splitlines()[0] == "ID,hedef"

@@ -196,8 +196,18 @@ def main() -> int:
     if time_column:
         train[time_column] = pd.to_datetime(train[time_column], errors="coerce")
         embargo = pd.Timedelta(days=max(horizon, 30))
+        # DOGRULAMA PENCERESI = TEST BLOGU UZUNLUGU.
+        #
+        # 2023 GDZ birincisi TimeSeriesSplit(n_splits=3, test_size=744)
+        # kullandi -- 744 saat, yani test blogunun TAM boyu. CV, tahmin
+        # edilecek ufku birebir taklit etmelidir.
+        #
+        # Satir sayisina gore esit bolme PANEL veride yanlis pencere uretir:
+        # 20 ilcelik bir "ay" 620 satirdir ve fold uzunlugu veri yogunluguna
+        # gore kayar. test_span zamana gore boler, satira gore degil.
+        test_span = pd.Timedelta(days=horizon) if horizon else None
         folds = purged_time_series_split(
-            train[time_column], n_splits=5, embargo=embargo
+            train[time_column], n_splits=5, embargo=embargo, test_span=test_span
         )
     elif args.group_column:
         splitter = build_splitter("GroupKFold", n_splits=5)

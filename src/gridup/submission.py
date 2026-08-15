@@ -149,6 +149,37 @@ def validate_submission(
     )
 
 
+def _orijinal_basliklar(
+    sample: pd.DataFrame | None, id_column: str, target_column: str
+) -> tuple[str, str]:
+    """Ornek submission'daki HAM kolon adlarini geri getirir.
+
+    NEDEN KRITIK
+    ------------
+    ``read_any`` kolon adlarini normalize eder: ``"Dagitilan Enerji (MWh)"``
+    -> ``"dagitilan_enerji_mwh"``. Bu ic isleyis icin dogrudur (Turkce
+    karakter ve bosluk her katmanda risk tasir) ama **submission dosyasi
+    Kaggle'a gider ve orada kolon adi BIREBIR eslesmek zorundadir.**
+
+    2023 GDZ yarismasinda hedef kolonu tam olarak ``Dagitilan Enerji (MWh)``
+    olmak zorundaydi. OLCULDU: bu koruma olmadan yazilan dosyanin basligi
+    ``id,dagitilan_enerji_mwh`` cikiyordu -- Kaggle REDDEDER, ama bizim
+    dogrulamamiz "GECERLI" diyordu.
+
+    ``read_any`` esleme sozlugunu ``frame.attrs["original_columns"]`` icinde
+    saklar; buradan tersine cevirip kullaniyoruz. Ornek verilmemisse veya
+    esleme yoksa adlar OLDUGU GIBI kalir.
+    """
+    if sample is None:
+        return id_column, target_column
+    esleme = sample.attrs.get("original_columns")
+    if not isinstance(esleme, dict) or not esleme:
+        return id_column, target_column
+    # {ham: normalize} -> {normalize: ham}
+    ters = {normalize: ham for ham, normalize in esleme.items()}
+    return ters.get(id_column, id_column), ters.get(target_column, target_column)
+
+
 def write_submission(
     ids: np.ndarray | pd.Series,
     predictions: np.ndarray,
@@ -160,6 +191,7 @@ def write_submission(
     clip_negative: bool = True,
     float_format: str = "%.6f",
     validate: bool = True,
+    original_header: bool = True,
 ) -> Path:
     """Submission dosyasini dogrulayarak yazar ve yolunu dondurur.
 
@@ -212,6 +244,16 @@ def write_submission(
         values = np.clip(raw_values, 0, None)
 
     submission = pd.DataFrame({id_column: identifiers, target_column: values})
+
+    # Baslik YALNIZCA yazma aninda orijinale cevrilir -- tum dogrulama ve
+    # hesaplama normalize adlarla yapildi, degistirmiyoruz.
+    if original_header:
+        ham_id, ham_hedef = _orijinal_basliklar(sample, id_column, target_column)
+        if (ham_id, ham_hedef) != (id_column, target_column):
+            submission = submission.rename(
+                columns={id_column: ham_id, target_column: ham_hedef}
+            )
+            print(f"  Baslik orijinale cevrildi: {ham_id!r}, {ham_hedef!r}")
 
     submission.to_csv(path, index=False, float_format=float_format, encoding="utf-8")
     print(f"Yazildi: {path}  ({len(submission)} satir)")

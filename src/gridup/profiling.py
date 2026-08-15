@@ -23,6 +23,7 @@ import pandas as pd
 
 from .compat import is_categorical_like
 from .turkish import has_combining_dot
+from .validation import _detect_time_columns
 
 __all__ = ["ColumnProfile", "DatasetProfile", "profile_columns", "profile", "quick_look"]
 
@@ -293,7 +294,27 @@ def profile(
             "test_only": [c for c in test.columns if c not in train.columns],
         }
 
-    time_columns = [column.name for column in columns if column.kind == "tarih"]
+    # ZAMAN KOLONU TESPITI TEK KAYNAKTAN.
+    #
+    # Onceki surum yalnizca dtype siniflandirmasina bakiyordu
+    # (``column.kind == "tarih"``) ve METIN olarak saklanmis tarihleri
+    # KACIRIYORDU. validation._detect_time_columns ise onlari buluyordu --
+    # yani iki ayri "hangi kolon zamandir" cevabi vardi ve birbirini
+    # tutmuyordu.
+    #
+    # OLCULDU: ISO bicimli string tarih kolonunda
+    #   profiling.time_columns       = []
+    #   _detect_time_columns()       = ['tarih']
+    # day_one.py:151 birincisine baktigi icin time_column=None kaliyor,
+    # ekranda "TimeSeriesSplit oneriyorum" yazarken CV rastgele boluyor --
+    # sessiz bir ZAMAN SIZINTISI.
+    #
+    # Not: dtype siniflandirmasina (column.kind) DOKUNMUYORUZ; onu
+    # degistirmek frekans kodlama aday listesini de degistirirdi.
+    dtype_tabanli = [column.name for column in columns if column.kind == "tarih"]
+    tespit = _detect_time_columns(train)
+    # Sirayi koru, tekrarlari at.
+    time_columns = list(dict.fromkeys(dtype_tabanli + tespit))
 
     target_summary: dict[str, Any] = {}
     if target:
