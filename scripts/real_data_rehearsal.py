@@ -180,12 +180,26 @@ def main() -> int:
             print(f"  hava join eslesme orani: %{oran * 100:.1f}")
     ozellik = add_frequency_encoding(ozellik, [GRUP])
 
-    dus = {HEDEF, ZAMAN, GRUP, PANEL_FLAG_COLUMN, "tarih", "ilce_key"}
+    # SIZINTI DUVARI (cekismeli denetim yakaladi): ham olay kaydinin TUM
+    # kolonlari ayni gunun bilgisidir ve feature olamaz. Ilk surum id,
+    # effectedsubscribers ve hourlyloadavg'i feature aliyordu:
+    #   * effectedsubscribers/hourlyloadavg -> AYNI GUNUN kesinti bilgisi
+    #   * id -> build_panel'in 'first' tasidigi kolon; NaN deseni _dolduruldu
+    #     bayraginin birebir kopyasi (benchmark'ta olculdu: uyum 1.000000)
+    # O yuzden ilk provanin MAE=266.60 sayisi IYIMSERDI; duzeltilmis sayi
+    # asagida her kosuda yeniden olculur ve yalnizca kendi baseline'iyla
+    # kiyaslanir.
+    ham_kolonlar = {
+        "id", "il", "ilce", "date", "starttime", "endtime", "reason",
+        "effectedsubscribers", "hourlyloadavg", "effectedneighbourhoods",
+        "distributioncompanyname",
+    }
+    dus = {HEDEF, ZAMAN, GRUP, PANEL_FLAG_COLUMN, "tarih", "ilce_key", *ham_kolonlar}
     kolonlar = [
         c for c in ozellik.columns
         if c not in dus and pd.api.types.is_numeric_dtype(ozellik[c])
     ]
-    print(f"  {len(kolonlar)} sayisal feature")
+    print(f"  {len(kolonlar)} sayisal feature (ham olay kolonlari sizinti duvarinin arkasinda)")
 
     # ---------------------------------------------------------------- 7
     basamak("7/7", "MODEL")

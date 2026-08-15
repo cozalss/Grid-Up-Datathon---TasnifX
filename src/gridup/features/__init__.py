@@ -25,6 +25,7 @@ from .categorical import (
     reduce_rare_categories,
 )
 from .outage_reason import add_reason_features, classify_reason, reason_family_report
+from .school import add_school_calendar_features, school_calendar
 from .spatial import (
     add_neighbour_feature_mean,
     add_neighbour_target_lag,
@@ -68,6 +69,9 @@ __all__ = [
     "classify_reason",
     "add_reason_features",
     "reason_family_report",
+    # okul takvimi
+    "school_calendar",
+    "add_school_calendar_features",
     # mekansal
     "nearest_neighbours",
     "add_neighbour_target_lag",

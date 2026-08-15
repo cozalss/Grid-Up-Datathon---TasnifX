@@ -4,6 +4,11 @@ Neden elle .ipynb yazmak yerine bir uretec: JSON'u elle yazmak hataya acik ve
 diff'i okunamaz. Bu betik notebook'lari kaynak koddan uretir, boylece sablonlar
 sürüm kontrolünde okunabilir kalir.
 
+Anlati kalibi: her markdown hucresi bir SEBEP anlatir ve her sayi olculmus bir
+kosunun ciktisidir -- kaynak betik sayinin yaninda yazar. Kod hucreleri yarisma
+verisi icin GENELDIR (yollar/kolon adlari parametrik); prova sayilari yalnizca
+markdown'da "gercek GDZ verisinde olculdu" diye gecer.
+
 Calistirma::
 
     python scripts/build_notebooks.py
@@ -50,25 +55,8 @@ def write_notebook(cells: list[dict], path: Path) -> None:
     print(f"Yazildi: {path}  ({len(stamped)} hucre)")
 
 
-# ============================================================================
-# 01 - KESIF (EDA)
-# ============================================================================
-
-EDA_CELLS = [
-    markdown("""
-# Grid Up Datathon — 01 · Veri Keşfi
-
-**Takım:** _(takım adını yaz)_ · **Tarih:** _(gün)_
-
-Bu notebook, veri setinin ilk saatinde çalıştırılır. Amacı üç soruyu cevaplamak:
-
-1. **Elimizde ne var?** — kolonlar, tipler, eksikler, boyut
-2. **Hangi doğrulama şeması doğru?** — zaman var mı, tekrarlayan varlık var mı
-3. **Sızıntı var mı?** — modeli eğitmeden önce bilmemiz gereken tek şey
-
-> Bu üç çıktı, sonraki 12 günün her kararını belirler.
-"""),
-    code("""
+# Kaggle onyukleme blogu iki notebook'ta da birebir ayni olmali -- tek kaynak.
+_KAGGLE_BOOTSTRAP = """
 import sys
 from pathlib import Path
 
@@ -93,29 +81,66 @@ if IS_KAGGLE:
             sys.path.insert(0, _src)
 else:
     sys.path.insert(0, str(Path.cwd().parent / "src"))
+"""
 
+
+# ============================================================================
+# 01 - KESIF (EDA)
+# ============================================================================
+
+EDA_CELLS = [
+    markdown("""
+# Grid Up Datathon — 01 · Keşif
+
+**Takım:** _(takım adını yaz)_ · **Tarih:** _(gün)_
+
+## Problem neden zor?
+
+Elektrik kesintisi tahmininin üç yapısal zorluğunu tahmin etmedik, **ölçtük**:
+yarışmadan önce hattın tamamını 68.257 gerçek GDZ kesinti kaydında prova ettik
+(İzmir + Manisa, 47 ilçe, 2021-05 → 2022-08, saat damgalı olay kaydı). Bu
+notebook'taki her sayı o provanın çıktısıdır; yanında hangi betikle ölçüldüğü yazar.
+
+1. **Sıfır-şişkin hedef.** Gerçek ilçe × gün panelinde günlerin %35.0'ında hiç
+   kesinti yok (`scripts/benchmark_gercek.py`). Ortalamayı optimize eden model hem
+   sıfırları hem kesintileri ıskalar; metrik, kayıp ve model buna göre seçilmeli.
+2. **Gürültü.** Aynı modelin fold skorları 150.8 → 461.4 dk arasında salınıyor
+   (`scripts/real_data_rehearsal.py`). Tek fold'a — veya tek skora — bakan her
+   karar yanıltıcıdır.
+3. **Mekânsal yapı.** Fırtına ilçe sınırı tanımaz; komşu ilçeler aynı gün arızalanır.
+   Coğrafya sinyal kaynağıdır ama aynı zamanda sızıntı riskidir: komşu ilçenin
+   geçmişi de ancak tahmin ufku kadar kaydırılarak kullanılabilir.
+
+Bu notebook üç karar üretir: **hedef + panel tanımı**, **doğrulama şeması** ve
+**sızıntı duvarı**. Sonraki 12 günün her deneyi bu üç karara yaslanır.
+"""),
+    code(_KAGGLE_BOOTSTRAP + """
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from gridup import environment_report, profile, read_any, set_global_seed
+from gridup import (
+    build_panel, environment_report, panel_coverage, profile, read_any, set_global_seed,
+)
 from gridup.compat import categorical_columns
 from gridup.profiling import quick_look
-from gridup.turkish import codepoints, has_combining_dot, join_key
-from gridup.validation import leakage_report, suggest_scheme
+from gridup.turkish import codepoints, has_combining_dot, join_key, strip_qualifier
+from gridup.validation import leakage_report, purged_time_series_split, suggest_scheme
 
 set_global_seed(42)
 
-# Ortamı yazdır — jüri tekrarlanabilirliğe bakıyor, bu ucuz bir puan.
+# Ortami yazdir -- juri tekrarlanabilirlige bakiyor, bu ucuz bir puan.
 for key, value in environment_report().items():
     print(f"{key:<26} {value}")
 """),
     markdown("""
-## 1 · Veriyi oku
+## 1 · Veriyi oku — neden `read_any`
 
-`read_any` kodlamayı, ayırıcıyı ve ondalık işaretini **otomatik tespit eder**.
-Türk kurumlarından gelen dosyalar `cp1254` + `;` + ondalık `,` olabilir; düz
-`pd.read_csv` bunları sessizce bozar.
+Türk kurum dosyaları `cp1254` kodlama, `;` ayırıcı ve ondalık `,` ile gelebilir;
+düz `pd.read_csv` bunları sessizce bozar. `read_any` kodlamayı ve ayırıcıyı
+**kanıtlayarak** seçer. Gerçek GDZ dosyasında ölçülen: kodlama `utf-8-sig` çıktı
+ve `İL → il` dahil 8 kolon adı normalize edildi (`scripts/real_data_rehearsal.py`).
+Yani bu bir varsayım değil, ilk gerçek dosyada karşılaştığımız davranış.
 """),
     code("""
 DATA_DIR = Path("/kaggle/input/GRID-UP-YARISMA-SLUG") if IS_KAGGLE else Path("../data/raw")
@@ -137,55 +162,34 @@ train.head()
     markdown("""
 ## 2 · Otomatik profil
 
-Tek çağrı; elle 2 saat sürecek keşfin yerini alır. Özellikle şunları işaretler:
-çarpıklık, sıfır yığılması, ID-benzeri kolonlar, yüksek kardinalite, şema farkı
-(= sızıntı adayları) ve **birleşik nokta (U+0307)** taşıyan Türkçe kolonlar.
+Tek çağrı, elle iki saat sürecek keşfin yerine geçer: çarpıklık, sıfır yığılması,
+ID-benzeri kolonlar, train/test şema farkı (= sızıntı adayı) ve birleşik nokta
+(U+0307) taşıyan Türkçe kolonlar işaretlenir. Amaç grafik biriktirmek değil,
+**karar listesi** çıkarmaktır.
 """),
     code("""
-# TODO: hedef kolon adını veri geldiğinde doldur
+# TODO: hedef kolon adini veri geldiginde doldur
 TARGET = "HEDEF_KOLON"
 
 dataset_profile = profile(train, test, target=TARGET)
 print(dataset_profile.report())
 """),
     code("""
-# Kolon bazlı kompakt tablo — hızlı gözden geçirme için
+# Kolon bazli kompakt tablo -- hizli gozden gecirme icin
 quick_look(train)
 """),
     markdown("""
-## 3 · Doğrulama şeması — **yarışmanın kazanıldığı karar**
+## 3 · Hedef dağılımı
 
-Yanlış şema iki şekilde öldürür:
-- **İyimser CV:** lokal skor yüksek, leaderboard'da çakılıyorsun → sızıntı var
-- **Gürültülü CV:** hangi değişikliğin işe yaradığını göremiyorsun → public LB'ye
-  göre karar vermeye başlıyorsun → private LB'de çöküyorsun (shakeup)
-"""),
-    code("""
-suggestion = suggest_scheme(train, target=TARGET)
-print(suggestion)
-"""),
-    markdown("""
-## 4 · Sızıntı taraması
+Hedefin şekli üç kararı belirler: metrik, dönüşüm, model ailesi. Gerçek GDZ
+verisinde hedefi `kesinti_dk = endtime − starttime` olarak kurduk; medyan 104 dk
+ama maksimum 17.359 dk = 12.1 gün (`scripts/real_data_rehearsal.py`). Ağır sağ
+kuyruk + sıfır yığılması birlikte görülür ve MAE-ailesi kayıpları ile iki aşamalı
+(hurdle) adayları öne çıkarır — hangisinin kazandığı 02 numaralı notebook'ta
+**ölçülmüş** olarak duruyor.
 
-Modeli eğitmeden **önce** çalıştır. `critical` bulgular varsa dur ve çöz.
-"""),
-    code("""
-TIME_COLUMN = None   # TODO: varsa zaman kolonu adı
-
-findings = leakage_report(train, TARGET, test=test, time_column=TIME_COLUMN)
-print(findings["summary"], "\\n")
-
-for severity in ("critical", "warning", "info"):
-    for message in findings[severity]:
-        print(f"[{severity.upper()}] {message}")
-"""),
-    markdown("""
-## 5 · Hedef dağılımı
-
-Hedefin şekli metrik seçimini ve dönüşüm kararını belirler:
-- **Çarpıklık > 2** → `log1p` dönüşümü dene
-- **Sıfır yığılması > %40** → iki aşamalı model düşün (önce sıfır mı, sonra miktar)
-- **Sınıf dengesizliği** → eşik optimizasyonu şart, 0.5 varsayılanı yanlış
+- Çarpıklık > 2 → `log1p` dönüşümünü dene
+- Sıfır yığılması büyükse → iki aşamalı model adayı; kararı sezgi değil ölçüm versin
 """),
     code("""
 target_values = train[TARGET].dropna()
@@ -215,11 +219,12 @@ print(f"sıfır oranı = {(target_values == 0).mean():.3%}")
 print(target_values.describe())
 """),
     markdown("""
-## 6 · Eksik veri haritası
+## 4 · Eksik veri haritası
 
 Eksikliğin **rastgele olup olmadığı** önemlidir. Bir kolon yalnızca belirli bir
-dönemde veya belirli bir varlıkta eksikse, bu bir sinyaldir — doldurmadan önce
-`_eksikti` bayrağı ekle.
+dönemde veya belirli bir ilçede eksikse bu bir sinyaldir — doldurmadan önce
+`_eksikti` bayrağı ekle. Doldurma bayrağının kendisi ise asla feature olmaz
+(aşağıda, panel bölümünde neden).
 """),
     code("""
 missing = (train.isna().mean() * 100).sort_values(ascending=False)
@@ -237,11 +242,21 @@ else:
     print("Eksik değer yok.")
 """),
     markdown("""
-## 7 · Türkçe metin sağlığı
+## 5 · Türkçe tuzaklar — sessiz satır kaybı
 
-`İ` harfinin `.lower()` sonucu **iki kod noktasıdır** (U+0069 U+0307), dolayısıyla
-`'İ'.lower() != 'i'`. İl/ilçe adıyla yapılan bir join **sessizce 0 satır** döner.
-Harici veri (hava, nüfus) eklemeden önce bunu kontrol et.
+İki tuzak da provada **gerçekten başımıza geldi**; ikisi de hata fırlatmaz,
+sadece satır kaybettirir:
+
+- `'İ'.lower()` iki kod noktası üretir (U+0069 U+0307), dolayısıyla
+  `'İ'.lower() != 'i'`. İl/ilçe adıyla yapılan join sessizce 0 satır döner.
+- Gerçek veride ilçe adı **nitelenmiş** geldi: `Köprübaşı / Manisa` (Köprübaşı
+  hem Manisa'da hem Trabzon'da var). Referans tablomuz yalın `Köprübaşı` tutuyor;
+  47 ilçenin 46'sı normalize eşleşti, bu tek ilçenin **284 kaydı** sessizce
+  düşecekti. `strip_qualifier` + `join_key` sonrası eşleşme 68.257/68.257 = %100.0
+  (`scripts/real_data_rehearsal.py`).
+
+Ders: her join'den sonra satır sayısı ve eşleşme oranı **doğrulanır**; harici veri
+(hava, nüfus) eklemeden önce bu hücre koşulur.
 """),
     code("""
 text_columns = categorical_columns(train)
@@ -253,49 +268,137 @@ for column in text_columns[:10]:
     else:
         print(f"  {column}: temiz ({train[column].nunique()} benzersiz)")
 
-# Kanıt: naif yaklaşım başarısız, join_key başarılı
+# Kanit 1: naif yaklasim basarisiz, join_key basarili
 print("\\n'İ'.lower() =", codepoints("İ".lower()), "->", "İ".lower() == "i")
 print("join_key('İZMİR') == join_key('Izmir') ->", join_key("İZMİR") == join_key("Izmir"))
+
+# Kanit 2: niteleyici eki ayri bir adimdir -- join_key kesmez, strip_qualifier keser
+print("strip_qualifier('Köprübaşı / Manisa') ->", strip_qualifier("Köprübaşı / Manisa"))
 """),
     markdown("""
-## 8 · Zaman ekseni (varsa)
+## 6 · Panel kararı — olay kaydından ilçe × gün ızgarasına
 
-Train ve test'in zaman aralıkları ayrık mı? Ayrıksa **rastgele KFold geleceği
-sızdırır** ve CV'yi yapay olarak yükseltir.
+Kesinti verisi **olay kaydıdır**: her satır bir arıza, saat damgalı (`14:23` gibi),
+kesintisiz gün için satır yok. Model ise düzenli bir ilçe × gün paneli ister.
+Bu dönüşümün iki ölçülmüş tuzağı var:
+
+1. **Saat damgası ızgaraya oturtulmazsa hedef sessizce buharlaşır.** Günlük ızgara
+   gece yarılarından oluşur; `14:23` damgalı kayıt merge'de hiçbir güne eşleşmez.
+   Kontrollü ölçümde hedef kütlesinin **%90.4'ü** yok oldu; günde ~3 olaylı veride
+   kayıp %99.8 (`src/gridup/panel.py`, `tests/test_panel_uydurma.py`). Hata yok,
+   uyarı yok — model hep sıfır öğrenir. `build_panel` damgayı ızgaraya oturtur ve
+   hedef kütlesini doğrular.
+2. **Dolgu değeri hedefin türüne bağlıdır.** "Kayıt yok", sayım/süre hedefinde
+   gerçek 0'dır; ölçüm hedefinde (tüketim, gerilim) bilinmeyendir → NaN. Gerçek GDZ
+   panelinde 7.710 satır (%34.8) sıfır dolgu aldı ve `_dolduruldu` bayrağı **asla
+   feature olmaz** — modelin "bu satır dolgu" bilgisini öğrenmesi sızıntıdır.
+
+Gerçek veride sonuç: 68.257 kayıt → 47 ilçe × 472 gün = 22.184 satır, doluluk
+%65.2, hedef kütlesi %100.00 korundu (`scripts/real_data_rehearsal.py`).
 """),
     code("""
+# Olay kaydi -> panel donusumu. Yarisma verisi HAZIR panelse bu adim atlanir.
+ENTITY_COLUMN = "ILCE_KOLONU"      # TODO: varlik anahtari (join_key'den gecmis olmali)
+RAW_TIME_COLUMN = "TARIH_KOLONU"   # TODO: ham zaman damgasi kolonu
+
+# Once OLC: doluluk %100'u asiyorsa ayni gunde birden cok olay var demektir.
+# (Eski olcum bunu maskeliyordu ve %304.8 doluluk raporlamisti -- duzeltildi.)
+kapsam = panel_coverage(train, entity_columns=[ENTITY_COLUMN], time_column=RAW_TIME_COLUMN)
+print(f"beklenen {kapsam['expected_rows']:,.0f}  gercek {kapsam['actual_rows']:,.0f}"
+      f"  doluluk %{kapsam['coverage'] * 100:.1f}")
+
+panel = build_panel(
+    train, entity_columns=[ENTITY_COLUMN], time_column=RAW_TIME_COLUMN,
+    value_columns=[TARGET],
+)
+# Hedef kutlesi korunmali -- korunmadiysa izgaraya oturtma bozuk demektir.
+# Gercek GDZ verisinde %100.00 olculdu; sapma varsa devam etmeden DUR.
+korunan = panel[TARGET].sum() / train[TARGET].sum()
+print(f"panel {panel.shape}   hedef kutlesi %{korunan * 100:.2f} (100 olmali)")
+"""),
+    markdown("""
+## 7 · Doğrulama şeması — yarışmanın kazanıldığı karar
+
+Yanlış şema iki yönden öldürür: **iyimser CV** (sızıntı → leaderboard'da çöküş)
+veya **gürültülü CV** (hangi değişikliğin işe yaradığı görünmez → public LB'ye
+göre karar → shakeup). Zaman + panel verisinde seçimimiz
+`purged_time_series_split` ve gerekçeleri ölçülü:
+
+- **`test_span` = tahmin ufku.** 2023 GDZ Datathon birincisi
+  `TimeSeriesSplit(n_splits=3, test_size=744)` kullandı; 744 saat = 31 gün =
+  test bloğunun tam boyu (`src/gridup/validation.py`). CV, tahmin edilecek ufku
+  birebir taklit etmelidir. Panelde satır sayısına göre eşit bölme, zaman
+  uzunlukları eşit olmayan fold'lar üretir ve skorlar karşılaştırılamaz olur.
+- **`embargo` bilinçli seçilir ve ufuktan küçük olmaz.** Kayan pencereli feature'lar
+  fold sınırını aşarsa son train satırları ilk valid satırlarıyla aynı ham veriyi
+  görür — sessiz bir iyimserlik. Kütüphane bu yüzden embargo'yu zorunlu parametre
+  yapar; sessiz küçük varsayılan (~2 gün) tam da önlemeye çalıştığı sızıntıya izin
+  veriyordu.
+- Provadaki kurulum: embargo 31 gün, 4 fold × 31 gün; her fold'un valid'i
+  47 ilçe × 31 gün = 1.457 satır (`scripts/real_data_rehearsal.py`).
+"""),
+    code("""
+TIME_COLUMN = None   # TODO: zaman kolonu (panel kurduysan panelin gun kolonu)
+
+suggestion = suggest_scheme(train, target=TARGET)
+print(suggestion)
+
 if TIME_COLUMN:
     train_times = pd.to_datetime(train[TIME_COLUMN])
     test_times = pd.to_datetime(test[TIME_COLUMN])
+    print(f"train: {train_times.min()} -> {train_times.max()}")
+    print(f"test:  {test_times.min()} -> {test_times.max()}")
+    print(f"bosluk: {test_times.min() - train_times.max()}")
 
-    print(f"train: {train_times.min()} → {train_times.max()}")
-    print(f"test:  {test_times.min()} → {test_times.max()}")
-    print(f"boşluk: {test_times.min() - train_times.max()}")
-
-    fig, ax = plt.subplots(figsize=(12, 3))
-    ax.hist(train_times, bins=80, alpha=0.75, label="train", color="#4C6EF5")
-    ax.hist(test_times, bins=40, alpha=0.75, label="test", color="#FA5252")
-    ax.legend()
-    ax.set_title("Zaman dağılımı")
-    ax.spines[["top", "right"]].set_visible(False)
-    plt.tight_layout()
-    plt.show()
+    # Tahmin ufku = test blogunun boyu. CV bunu birebir taklit etmeli
+    # (2023 birincisinin test_size=744 saat = 31 gun secmesinin sebebi).
+    HORIZON = int((test_times.max() - test_times.min()).days) + 1
+    folds = purged_time_series_split(
+        train_times, n_splits=4,
+        embargo=pd.Timedelta(days=max(HORIZON, 30)),
+        test_span=pd.Timedelta(days=HORIZON),
+    )
+    for i, (tr, va) in enumerate(folds, 1):
+        print(f"fold {i}: train={len(tr):>8,}  valid={len(va):>6,}")
 """),
     markdown("""
-## 9 · Bulgular
+## 8 · Sızıntı duvarı
 
-> **Bu hücreyi doldur.** Jüri notebook'u okuyacak; burası "veriyi anladık"
-> demenin yeri.
+Kesinti verisinde en tehlikeli kolonlar **aynı günün bilgisini** taşıyanlardır:
+arıza sebebi, etkilenen abone sayısı, o günkü yük. Tahmin anında bunlar bilinmez.
+Provada bunu bilerek ölçtük: aynı-gün kolonları feature bırakıldığında gain
+tablosunun tepesine oturuyorlar — `effectedsubscribers` tek başına en iyi meşru
+feature'ın (`sicaklik_max`) yaklaşık **24 katı** gain topladı; ID kolonu bile ~8
+katıyla ikinci sıradaydı (`scripts/real_data_rehearsal.py`). Böyle bir model CV'de
+parlar, gerçek tahmin gününde o kolonlar olmadığı için çöker.
 
-| # | Bulgu | Sonuç / aksiyon |
-|---|-------|-----------------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
+Duvarın üç kuralı:
 
-**Seçilen CV şeması:** …
-**Tespit edilen sızıntı riskleri:** …
-**İlk feature hipotezleri:** …
+1. Aynı günün bilgisi feature olamaz; yalnızca ufuk kadar kaydırılmış geçmiş
+   agregatları (lag/rolling) meşrudur.
+2. Hedeften türetilen hiçbir şey aynı satırın feature'ı olamaz.
+3. `leakage_report` model eğitilmeden **önce** koşulur; `critical` bulgu varsa
+   çözülmeden devam edilmez.
+"""),
+    code("""
+findings = leakage_report(train, TARGET, test=test, time_column=TIME_COLUMN)
+print(findings["summary"], "\\n")
+
+for severity in ("critical", "warning", "info"):
+    for message in findings[severity]:
+        print(f"[{severity.upper()}] {message}")
+"""),
+    markdown("""
+## Çıktı: üç karar
+
+> Bu tablo veri gününde doldurulur — jüri "veriyi anladık" iddiasının kanıtını
+> burada görür. Prova satırı, doldurulmuş bir örnek olarak bırakıldı.
+
+| Karar | Prova (gerçek GDZ, ölçüldü) | Yarışma verisi (doldur) |
+|---|---|---|
+| Hedef + panel | `kesinti_dk`; 47 ilçe × 472 gün; kütle %100.00 | … |
+| CV şeması | purged, embargo 31 g, 4 fold × 31 g `test_span` | … |
+| Sızıntı duvarı | sebep / abone / yük → yalnız ufuk-kaydırmalı lag | … |
 """),
 ]
 
@@ -307,36 +410,17 @@ BASELINE_CELLS = [
     markdown("""
 # Grid Up Datathon — 02 · Baseline
 
-Amaç: **en hızlı geçerli submission**. Optimize etmeden önce çalışan bir uçtan
-uca hattın olsun. İlk gün hedefi tek bir sayı: leaderboard'da bir skor.
+Amaç: **en hızlı geçerli submission** — ama rastgele değil, ölçülmüş bir planla.
+Yarışmadan önce, 68.257 gerçek GDZ kesinti kaydında (47 ilçe, 2021-05 → 2022-08)
+hangi feature ailesinin katkı verdiğini ve hangi model reçetesinin kazandığını
+**aynı purged fold'larda** ölçtük (`scripts/ablation_gercek.py`,
+`scripts/benchmark_gercek.py`). Veri gününde deney değil **icra** yapacağız:
+plan sabittir, sayılar yarışma verisinde yeniden ölçülür.
 
-Sıra: fold'lar → feature → eğit → doğrula → yaz.
+Sıra: fold'lar → feature'lar (ölçülen öncelikle) → model (ölçülen reçete) →
+harman → submission.
 """),
-    code("""
-import sys
-from pathlib import Path
-
-IS_KAGGLE = Path("/kaggle/input").exists()
-if IS_KAGGLE:
-    # DIKKAT: gridup Kaggle imajinda KURULU DEGILDIR. Onceki surumde sys.path
-    # yalnizca YERELDE ayarlaniyordu; Kaggle'da 'import gridup' ModuleNotFound
-    # veriyordu. Once offline paket dataset'indeki wheel'i kur, o yoksa ham
-    # kaynagi sys.path'e ekle.
-    import glob
-    import subprocess
-
-    _whl = glob.glob("/kaggle/input/*/gridup-*.whl")
-    if _whl:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--no-index", "--no-deps", _whl[0], "-q"],
-            check=False,
-        )
-    else:
-        for _src in glob.glob("/kaggle/input/*/src"):
-            sys.path.insert(0, _src)
-else:
-    sys.path.insert(0, str(Path.cwd().parent / "src"))
-
+    code(_KAGGLE_BOOTSTRAP + """
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -374,7 +458,7 @@ TASK = "regression"        # regression | binary | multiclass
 LOG_TARGET = False         # metrik RMSLE ise veya hedef çok çarpıksa True
 
 # TAHMİN UFKU — en pahalı sessiz hatanın kaynağı.
-# Test ileriideki bir BLOK ise (ör. bir sonraki ay), o bloğun son gününü
+# Test ilerideki bir BLOK ise (ör. bir sonraki ay), o bloğun son gününü
 # tahmin ederken elindeki en taze veri blok uzunluğu kadar eskidir.
 # shift(1) ile hesaplanan lag'ler CV'de harika görünür, private LB'de çöker.
 # Veri geldiğinde: HORIZON = (test.tarih.max() - test.tarih.min()).days + 1
@@ -386,20 +470,27 @@ test  = read_any(DATA_DIR / "test.csv")
 print(train.shape, test.shape)
 """),
     markdown("""
-## 1 · Fold'lar — feature üretmeden ÖNCE
+## 1 · Fold'lar — feature üretmeden önce
 
-Sıra önemli: hedef kodlama fold'lara ihtiyaç duyar. Fold'ları önce sabitle ki
-tüm deneyler **aynı bölmeler** üzerinde karşılaştırılabilir olsun.
+Hedef kodlama ve lag'ler fold'lara ihtiyaç duyar; fold'lar önce sabitlenir ki
+bugünün ve yarının **bütün** deneyleri aynı bölmeler üzerinde karşılaştırılabilsin.
+Şemanın gerekçesi 01 numaralı notebook'ta; özeti: `test_span` = tahmin ufku
+(2023 birincisinin `test_size=744` paraleli), `embargo` bilinçli ve ufuktan küçük
+değil.
 """),
     code("""
 if TIME_COLUMN:
     train[TIME_COLUMN] = pd.to_datetime(train[TIME_COLUMN])
     test[TIME_COLUMN] = pd.to_datetime(test[TIME_COLUMN])
     HORIZON = int((test[TIME_COLUMN].max() - test[TIME_COLUMN].min()).days) + 1
-    print(f"Tahmin ufku (test blok uzunluğu): {HORIZON} gün")
-    # Ambargo: en uzun kayan pencerenden BÜYÜK olmalı (zorunlu parametre)
-    folds = purged_time_series_split(train[TIME_COLUMN], n_splits=5,
-                                     embargo=pd.Timedelta(days=30))
+    print(f"Tahmin ufku (test blok uzunlugu): {HORIZON} gun")
+    # test_span = ufuk: fold'lar zaman uzunlugu esit pencereler olsun.
+    # embargo >= ufuk: kayan pencereler fold sinirini asmasin.
+    folds = purged_time_series_split(
+        train[TIME_COLUMN], n_splits=4,
+        embargo=pd.Timedelta(days=max(HORIZON, 30)),
+        test_span=pd.Timedelta(days=HORIZON),
+    )
 elif GROUP_COLUMN:
     splitter = build_splitter("GroupKFold", n_splits=5)
     folds = list(splitter.split(train, groups=train[GROUP_COLUMN]))
@@ -412,24 +503,44 @@ for i, (tr, va) in enumerate(folds, 1):
     print(f"fold {i}: train={len(tr):>8,}  valid={len(va):>8,}")
 """),
     markdown("""
-## 2 · Feature'lar
+## 2 · Feature aileleri — önceliği tahmin değil ölçüm belirledi
 
-**Kural:** train ve test'e *aynı* fonksiyon uygulanır. Ayrı kod yolları,
-eğitim/servis uyumsuzluğunun bir numaralı kaynağıdır.
+Feature önemi (gain) aile önceliğini **söyleyemez**: korele kolonlar tek tek
+"önemli" görünür ama biri silinince diğeri işi devralır. Bu yüzden ölçü
+leave-one-group-out'tur: aile tümüyle silinir, aynı purged fold'larla MAE yeniden
+ölçülür. Gerçek GDZ verisinde, 76 feature'lı tam model MAE 313.64 / hep-sıfır
+366.97 iken (`scripts/ablation_gercek.py` → `experiments/ablasyon_gercek.json`):
+
+| Aile | Δ MAE (silinince kayıp) | Kolon | Veri günü kararı |
+|---|---|---|---|
+| lag / rolling | **+22.34** | 11 | İlk kurulacak — kalanların toplamından büyük |
+| hava | +2.47 | 24 | İkinci; ortalama değil `max`/quantile agregatları |
+| komşu lag | +0.18 | 3 | Marjinal; ucuz, ufuk şartıyla kalır |
+| frekans | 0.00 | 1 | Tam ızgara panelde sabit 1/47 → sıfır bilgi |
+| takvim | −0.19 | 15 | Gürültü bandında |
+| tatil | −4.66 | 15 | Silinince MAE düşüyor → ilk elenecek aday |
+| güneş | −5.03 | 7 | İlk elenecek aday |
+
+Tam modelin en yüksek gain'li kolonu da aynı hikâyeyi anlatıyor: 93 günlük,
+ufuk-kaydırmalı kayan ortalama (`kesinti_dk_ufuk31_kayan93_mean`). Geçmiş kesinti
+davranışı en güçlü sinyaldir — ama ancak ufuk kadar kaydırılmışsa meşrudur.
+
+Ablasyonun fold_std'si 94.31, skorun ~%30'u: küçük deltalar kesin hüküm değildir.
+Sıralamanın ucu ise (lag ≫ diğerleri) gürültünün çok üstünde.
 """),
     code("""
-# ORTAK zaman başlangıcı: train ve test için ayrı ayrı hesaplanırsa test'in
-# gün sayacı yeniden 0'dan başlar ve model test'i train'in geçmişi sanır.
-# Bu hata lokal CV'de GÖRÜNMEZ — sadece leaderboard çöker.
+# ORTAK zaman baslangici: train ve test icin ayri ayri hesaplanirsa test'in
+# gun sayaci yeniden 0'dan baslar ve model test'i train'in gecmisi sanir.
+# Bu hata lokal CV'de GORUNMEZ -- sadece leaderboard coker.
 ORIGIN = shared_origin(train, test, time_column=TIME_COLUMN) if TIME_COLUMN else None
 
 def build_features(frame: pd.DataFrame) -> pd.DataFrame:
-    \"\"\"Train ve test'e aynı dönüşümleri uygular. Girdiyi değiştirmez.\"\"\"
+    \"\"\"Train ve test'e ayni donusumleri uygular. Girdiyi degistirmez.\"\"\"
     out = frame.copy()
     if TIME_COLUMN:
         out = add_calendar_features(out, TIME_COLUMN, include_year=False, origin=ORIGIN)
-    # categorical_columns: pandas 2.x ve 3.x'te de doğru çalışır.
-    # Düz `dtype == object` kontrolü pandas 3.0'da metin kolonlarını KAÇIRIR.
+    # categorical_columns: pandas 2.x ve 3.x'te de dogru calisir.
+    # Duz `dtype == object` kontrolu pandas 3.0'da metin kolonlarini KACIRIR.
     categorical = categorical_columns(out)
     if categorical:
         out = add_frequency_encoding(out, categorical[:12])
@@ -438,18 +549,65 @@ def build_features(frame: pd.DataFrame) -> pd.DataFrame:
 train_features = build_features(train)
 test_features = build_features(test)
 
+# LAG AILESI -- ablasyonda tek basina en buyuk katki (+22.34 MAE).
+# Train + test BIRLIKTE kurulur: test satirlarinin lag'i train'in son
+# gunlerinden gelir. horizon=HORIZON kaydirma sayesinde hicbir satir kendi
+# gununun (veya daha yakinin) bilgisini goremez -- sizinti duvari korunur.
+if TIME_COLUMN and GROUP_COLUMN:
+    n_train = len(train_features)
+    butun = pd.concat([train_features, test_features], ignore_index=True, sort=False)
+    butun = add_lag_features(
+        butun, TARGET, [HORIZON, 2 * HORIZON, 3 * HORIZON],
+        time_column=TIME_COLUMN, group_columns=[GROUP_COLUMN], horizon=HORIZON,
+    )
+    train_features = butun.iloc[:n_train].reset_index(drop=True)
+    test_features = butun.iloc[n_train:].reset_index(drop=True)
+
 drop = {TARGET, ID_COLUMN, TIME_COLUMN} - {None}
 FEATURES = [c for c in train_features.columns
             if c not in drop and c in test_features.columns]
 print(f"{len(FEATURES)} feature")
 """),
-    markdown("## 3 · Eğit"),
+    markdown("""
+## 3 · Model reçetesi — altı aday, aynı fold'lar, aynı bütçe
+
+2023 GDZ birincisi CatBoost'u MAE kaybıyla kullandı; ama o seçim o yılın
+verisinde yapıldı. Altı reçeteyi gerçek GDZ verisinde aynı fold, aynı feature
+seti ve aynı ağaç bütçesiyle yarıştırdık
+(`scripts/benchmark_gercek.py` → `experiments/benchmark_gercek.json`):
+
+| Reçete | MAE (dk) | Süre | Not |
+|---|---|---|---|
+| **iki_asama (hurdle)** | **317.23** | 3 sn | Kazanan tekil reçete (eşik 0.606) |
+| catboost_mae | 322.04 | 4 sn | 2023 birincisinin reçetesi — iyi ama tek başına kazanmıyor |
+| lgb_mae | 323.13 | 4 sn | |
+| lgb_tweedie | 325.54 | 2 sn | Sıfır-şişkin hedefe uygun, hızlı aday |
+| lgb_l2 | 357.06 | 2 sn | Metrik MAE iken L2 kaybı ~34 dk kaybettiriyor |
+| xgb | 364.21 | 1 sn | Baseline'ı zar zor geçiyor |
+| hep-sıfır | 366.97 | — | Alt çizgi; bunu geçemeyen model rafa kalkar |
+
+Üç ölçülmüş ders:
+
+- **Kayıp fonksiyonu model seçiminden önce gelir.** Aynı LightGBM, kayıp
+  `l2 → mae` değişince ~34 dk kazanıyor. Yarışma metriği neyse kayıp odur.
+- **Hurdle mimarisi gerçekten çalışıyor.** Sıfır oranı %35.0 ve optimum eşik
+  0.606: sınıflandırıcı aktif olarak "bugün kesinti olmayacak" diyor ve bu
+  karar tek başına en iyi düz modelden ~5 dk kazandırıyor.
+- **Bu tablonun ilk sürümü sızıntılıydı ve bunu çekişmeli denetim yakaladı.**
+  Ham kaydın `id` kolonu panel dolgusunun birebir kopyası çıktı (y==0 ile uyum
+  0.9975) ve tüm skorları ~60 dk iyimser gösterdi (harman 251 → gerçek 308).
+  Yukarıdaki sayılar, `id` dahil ham olay kolonlarının tamamı sızıntı duvarının
+  arkasına alındıktan sonraki dürüst ölçümdür.
+"""),
     code("""
 y = train_features[TARGET].to_numpy()
 if LOG_TARGET:
     y = log_transform_target(y)
 
-params = starter_params("lightgbm", TASK)
+# Kayip = yarisma metrigi. Gercek GDZ olcumu: ayni LightGBM'de l2 -> mae
+# gecisi 38 dk kazandirdi (experiments/benchmark_gercek.json).
+params = (starter_params("lightgbm", TASK, objective="mae") if METRIC == "mae"
+          else starter_params("lightgbm", TASK))
 
 result = cross_validate(
     train_features[FEATURES], y, folds,
@@ -460,10 +618,47 @@ result = cross_validate(
 print(result.summary())
 """),
     markdown("""
-## 4 · Submission
+## 4 · Harman — ve kapsam maskesi neden şart
+
+Gerçek GDZ ölçümünde en iyi tekil model 317.23; en iyi üçün hill-climb harmanı
+**308.27** (üyeler: iki_asama + catboost_mae + lgb_mae) —
+`scripts/benchmark_gercek.py`. Ridge stacking ise 385.12 ile rekabet dışı kaldı:
+purged şemada ilk dönem hiçbir fold'un valid tarafına düşmediği için meta-modelin
+eğitim kapsamı daralıyor. Fark küçükken tercihimiz hill climbing — ağırlıklar
+jüriye tek satırda açıklanabilir.
+
+**Kapsam maskesi:** purged bölme ilk dönemi hiçbir valid'e koymaz; o satırların
+OOF değeri tahmin değil **dolgudur** (0.0). Maskesiz harman kurmak skoru ölçülü
+biçimde şişirir: rmse 2.213 → 2.755, **%24.5 sapma** (`src/gridup/ensemble.py`,
+`tests/test_harman_kapsami.py`). Bu yüzden harman/stack her zaman `covered`
+maskesi üzerinde kurulur.
+"""),
+    code("""
+zoo = make_model_zoo(train_features[FEATURES], y, folds, metric=METRIC,
+                     test=test_features[FEATURES])
+
+# KAPSAM MASKESI SART: purged ilk donemi hicbir fold'un valid tarafina koymaz;
+# o satirlarda OOF degeri dolgudur ve harman skorunu %24.5'e kadar sisirir
+# (olculdu, ensemble.py). covered_oof_matrix maskeyi otomatik uygular.
+kapsanan, oof = zoo.covered_oof_matrix()
+y_kapsanan = y[kapsanan]
+print(f"OOF kapsami: %{zoo.coverage * 100:.1f}")
+
+secilen = prune_by_correlation(oof, y_kapsanan, max_members=5)
+agirliklar = hill_climb_weights({k: oof[k] for k in secilen}, y_kapsanan, metric=METRIC)
+print("harman agirliklari:", agirliklar)
+
+# Stacking'i ancak fold kapsami genisse dene -- gercek GDZ'de purged semada
+# 385.12 ile rekabet disiydi (benchmark_gercek.json):
+# stack = stack_oof(zoo.oof_matrix, y, folds, test_predictions=zoo.test_matrix,
+#                   base_covered=zoo.oof_covered)
+"""),
+    markdown("""
+## 5 · Submission
 
 `write_submission` yazmadan önce doğrular: NaN, sonsuz, eksik ID, sabit tahmin,
-negatif değer. Kaggle'ın "Submission Scoring Error" mesajı sana hiçbir şey söylemez.
+negatif değer. Kaggle'ın "Submission Scoring Error" mesajı hiçbir şey söylemez;
+hatayı gönderMEDEN yakalamak bir submission hakkı kurtarır.
 """),
     code("""
 predictions = result.test_predictions
@@ -479,7 +674,7 @@ path = write_submission(
 )
 """),
     markdown("""
-## 5 · Deney defterine yaz
+## 6 · Deney defteri
 
 Submission gönderdikten **sonra** leaderboard skorunu geri yaz:
 
@@ -501,101 +696,81 @@ log.add(ExperimentRecord(
     model_kind="lightgbm",
     n_features=len(FEATURES),
     fold_scores=result.fold_scores,
-    notes="baseline: takvim + frekans kodlama",
+    notes="baseline: takvim + frekans + ufuk-kaydirmali lag",
     submission_path=str(path),
 ))
 
 log.leaderboard()
 """),
     markdown("""
-## Sonraki adımlar
+## 7 · Dürüst sınırlar — bu sayıların söylemediği şeyler
 
-Sıra önemli — her adımdan sonra CV'yi ölçüp deftere yazın.
+- **CV gürültülü.** Provada tek modelin fold skorları 150.8 → 461.4 dk salındı
+  (std 122.35, `scripts/real_data_rehearsal.py`); ablasyonda fold_std 94.31,
+  benchmark'ta 69.1–116.3. İki reçete arasındaki 2–3 dakikalık fark hüküm
+  değildir; kararlar aile düzeyindeki büyük farklara yaslanır.
+- **Seçim yanlılıkları aynı yönde birikir.** Erken durdurma, skorun ölçüldüğü
+  fold'da ağaç sayısı seçer (ölçülen sapma %0.16); Optuna araması ~%0.3; SHAP
+  geri eleme +0.0137 — üçü de iyimser yönde (`src/gridup` içindeki ölçümler).
+  Nihai model kararı ayrılmış bir holdout veya LB doğrulaması ister.
+- **İki sızıntıyı kendi denetimimiz yakaladı.** İlk prova aynı günün
+  `effectedsubscribers` kolonunu feature almıştı; benchmark'ın ilk sürümünde ise
+  ham kaydın `id` kolonu panel dolgusunun birebir kopyası çıktı (y==0 ile uyum
+  0.9975) ve tüm skorları ~60 dk iyimser gösterdi. İkisi de çekişmeli denetimle
+  bulundu, düzeltildi ve bu sayfadaki sayılar düzeltilmiş ölçümlerdir
+  (prova 334.29, harman 308.27). Sızıntı "bizde olmaz" denen şey değil,
+  sistematik aranan şeydir.
+- **Public LB bir fold değildir.** LB rastgele bölmeyse zaman-temelli CV ile
+  uyuşmayabilir; CV–LB korelasyonu düşükken LB'ye göre model seçmek shakeup'ta
+  kaybettirir. Önce şema, sonra karar.
+"""),
+    markdown("""
+## 8 · Veri günü planı
 
-**1 · Kayma kontrolü**
-```python
-sonuc = adversarial_validation(train[FEATURES], test[FEATURES])
-print(sonuc["auc"], sonuc["verdict"])   # AUC > 0.8 ise ayrıştıran feature'ı çıkar
-```
+Sıra ölçümden geliyor (`experiments/benchmark_gercek.json` → `gun1_recetesi`):
 
-**2 · Ufuk-farkındalıklı lag/rolling** — en güçlü aile
-```python
-out = add_lag_features(out, TARGET, [1, 7, 28], time_column=TIME_COLUMN,
-                       group_columns=[GROUP_COLUMN], horizon=HORIZON)
-```
+1. **Saat 0–2 · Keşif:** 01 notebook'u — panel, fold'lar, sızıntı duvarı.
+   İlk iki saatin sonunda üç karar da verilmiş olmalı.
+2. **İlk submission:** iki aşamalı model (gerçek GDZ'de MAE 317.23; hep-sıfır
+   366.97). Optimize etmeden önce LB'de bir sayı:
+   ```python
+   print(zero_baseline_score(y, metric="mae"))   # once bunu gectigini gor
+   sonuc = fit_two_stage(train_features[FEATURES], y, folds, metric=METRIC)
+   ```
+   Metrik MAE ise `q* = 1 − 0.5/p` kantil çözücüsü — `expected` ve `thresholded`
+   modlarının ikisi de MAE altında suboptimaldir:
+   ```python
+   merdiven = fit_quantile_ladder(train_features[FEATURES], y, folds)
+   tahmin = conditional_quantile_from_hurdle(
+       sonuc.oof_probability, {q: r.oof_predictions for q, r in merdiven.items()})
+   ```
+3. **Feature'lar ablasyon sırasıyla:** önce lag (+22.34), sonra hava (+2.47;
+   `add_regional_aggregates` + `add_physical_derivatives`, ortalama değil
+   `max`/quantile), komşu lag ucuzsa (`nearest_neighbours` +
+   `add_neighbour_target_lag`, ufuk şart). Tatil/güneş en sona — gerçek veride
+   negatif ölçüldüler. Her adımda kayma kontrolü:
+   ```python
+   sonuc = adversarial_validation(train_features[FEATURES], test_features[FEATURES])
+   print(sonuc["auc"], sonuc["verdict"])   # AUC > 0.8 ise ayristiran feature'i cikar
+   ```
+4. **Aynı fold'larda** `catboost_mae` ve `lgb_mae` eklenir
+   (`sweep_count_objectives` ile) → kapsam maskeli hill-climb harmanı
+   (gerçek GDZ'de 308.27).
+5. **Hiperparametre araması** ancak harman oturduktan sonra — objective de arama
+   uzayına girer: `tune_with_optuna(..., search_objective=True)`.
+6. **Son gün:** çok tohumlu tam veri refit + jüri çıktıları:
+   ```python
+   tur = estimate_full_data_rounds(
+       extract_best_iterations(result.models), n_folds=len(folds),
+       mean_train_fraction=fold_train_fraction(folds, len(train)))
+   final = multi_seed_refit(train_features[FEATURES], y, test_features[FEATURES],
+                            params=params, n_estimators=tur, seeds=range(15))
+   ```
+   Feature elemesi gerekirse: `null_importance_filter` (dakikalar) →
+   `shap_backward_selection` (saatler).
 
-**3 · Hazır harici veri** (indirilmiş, `data/` altında)
-```python
-hava = pd.read_parquet("../data/external/hava_gunluk.parquet")
-ilceler = pd.read_parquet("../data/reference/ilceler_gdz_adm.parquet")
-komsu = nearest_neighbours(ilceler, key_column="ilce_key",
-                           latitude_column="lat", longitude_column="lon", k=3)
-out = add_neighbour_target_lag(out, komsu, key_column="ilce_key",
-                               time_column=TIME_COLUMN, target_column=TARGET,
-                               horizon=HORIZON)
-```
-Havada **ortalama değil `max` ve quantile** kullanın — hasarı rüzgârın ortalaması
-değil tepesi yapar: `add_regional_aggregates`, `add_physical_derivatives`.
-
-**4 · Sayım hedefiyse objective süpürmesi**
-```python
-zoo = sweep_count_objectives(train[FEATURES], y, folds, metric=METRIC)
-print(zoo.leaderboard())   # poisson / tweedie / mae / l2 aynı fold'larda
-```
-
-**5 · Sıfır oranı > %40 ise iki aşamalı model**
-```python
-print(zero_baseline_score(y, metric="mae"))   # önce bunu geçtiğini gör
-sonuc = fit_two_stage(train[FEATURES], y, folds, metric=METRIC)
-```
-Metrik MAE ise `q* = 1 − 0.5/p` çözücüsünü kullanın — `expected` ve
-`thresholded` modlarının **ikisi de** MAE altında suboptimaldir:
-```python
-merdiven = fit_quantile_ladder(train[FEATURES], y, folds)
-tahmin = conditional_quantile_from_hurdle(sonuc.oof_probability,
-                                          {q: r.oof_predictions for q, r in merdiven.items()})
-```
-
-**6 · Hiperparametre araması** — objective'i de arama uzayına koyun
-```python
-tuned = tune_with_optuna(train[FEATURES], y, folds, metric=METRIC,
-                         timeout=3600, search_objective=True)
-print(tuned.objective_comparison())
-```
-
-**7 · Model zoo + harman**
-```python
-zoo = make_model_zoo(train[FEATURES], y, folds, metric=METRIC, test=test[FEATURES])
-
-# KAPSAM MASKESI SART. purged/TimeSeriesSplit ilk donemi hicbir fold'un valid
-# tarafina koymaz; o satirlarda OOF degeri tahmin degil DOLGUDUR (0.0) ve
-# harman skorunu sisirir -- olculdu: rmse 2.213196 -> 2.754756 (%24.5 sapma).
-kapsanan, oof = zoo.covered_oof_matrix()
-y_kapsanan = y[kapsanan]
-print(f"OOF kapsami: %{zoo.coverage * 100:.1f}")
-
-secilen = prune_by_correlation(oof, y_kapsanan, max_members=5)
-agirliklar = hill_climb_weights({k: oof[k] for k in secilen}, y_kapsanan, metric=METRIC)
-stack = stack_oof(zoo.oof_matrix, y, folds, test_predictions=zoo.test_matrix,
-                  base_covered=zoo.oof_covered)
-```
-`stack_oof` hem stacking hem hill climbing skorunu raporlar. Fark küçükse
-**hill climbing'i tercih edin** — jüri notebook'u okuyacak, açıklanabilirlik değerli.
-
-**8 · Feature eleme**
-```python
-temiz = null_importance_filter(train[FEATURES], y)          # dakikalar
-secim = shap_backward_selection(train[temiz["keep"]], y, folds)  # saatler
-```
-
-**9 · Son gün: çok tohumlu tam veri refit**
-```python
-# (k-1)/k varsayimi purged_time_series_split icin YANLIS -- orani olcerek ver
-tur = estimate_full_data_rounds(extract_best_iterations(result.models), n_folds=len(folds),
-                                mean_train_fraction=fold_train_fraction(folds, len(train)))
-final = multi_seed_refit(train[FINAL], y, test[FINAL], params=tuned.best_params,
-                         n_estimators=tur, seeds=range(15))
-```
+Bu sayılar gerçek GDZ provasında ölçüldü; yarışma verisinde **yeniden ölçülür**.
+Plan sabit, sayılar değişebilir — değişirse karar da değişir.
 """),
     markdown("""
 ## Jüri çıktıları
@@ -610,22 +785,29 @@ from gridup.reporting import (
     plot_error_by_segment, plot_fold_scores, plot_prediction_timeline,
 )
 
-# 1 · Fold tablosu — kararlılığı gösterir
+# Juri ciktilari OOF uzerinden hesaplanir: y_true = kapsanan satirlarin gercek
+# degeri, y_pred = ayni satirlarin fold-disi tahmini. Kapsanmayan satirlar
+# (purged semada ilk donem) DOLGU tasir, skora girmez.
+kapsanan, y_pred = result.covered_predictions()
+y_true = y[kapsanan]
+grup_dilimi = train_features.loc[kapsanan, GROUP_COLUMN]
+
+# 1 · Fold tablosu -- kararliligi gosterir
 display(cv_fold_table(result))
 plot_fold_scores(result); plt.show()
 
-# 2 · Model NEREDE yanılıyor — sunumun en ikna edici bölümü
-segment_hatasi = error_by_segment(y_true, y_pred, test[GROUP_COLUMN], metric=METRIC)
+# 2 · Model NEREDE yaniliyor -- sunumun en ikna edici bolumu
+segment_hatasi = error_by_segment(y_true, y_pred, grup_dilimi, metric=METRIC)
 plot_error_by_segment(segment_hatasi, metric=METRIC); plt.show()
 
-# 3 · Sinyal nereden geliyor — 400 satırlık önem listesi yerine aile dağılımı
+# 3 · Sinyal nereden geliyor -- 400 satirlik onem listesi yerine aile dagilimi
 display(feature_importance_table(result, group_prefixes=(
     "tarih_", "tatil_", "komsu_", "bolge_", "sebep_")))
 
-# 4 · Operasyonel maliyet — jüri bunu soruyor, modeli gerçekten çalıştıracak
+# 4 · Operasyonel maliyet -- juri bunu soruyor, modeli gercekten calistiracak
 print(model_footprint(result.models, elapsed_seconds=result.elapsed_seconds))
 
-# 5 · İş dili — "MAE 2.95" değil, "ortalama 3 kesinti hatayla tahmin ediyoruz"
+# 5 · Is dili -- "MAE 2.95" degil, "ortalama 3 kesinti hatayla tahmin ediyoruz"
 print(business_impact(y_true, y_pred, unit_label="kesinti")["ozet"])
 """),
     markdown("""

@@ -15,7 +15,10 @@ izlenecek adımları içerir.
 | Arıza sebebi taksonomisi | `gridup.features.outage_reason` | 919 metin → 22 aile, %0,88 sınıflanamayan |
 | Uçtan uca betik | `scripts/day_one.py` | Sentetik veride 6 sn'de submission |
 | Kaggle offline paketi | `kaggle.com/datasets/cemzal/gridup-offline-paket` | Yüklendi (özel), dosyalar doğrulandı |
-| Test paketi | `tests/` | 732 test |
+| Okul takvimi 2021–2026 (MEB, doğrulanmış) | `gridup.features.school` | 6 ders yılı, ara/yarıyıl/yaz |
+| Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
+| Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
+| Test paketi | `tests/` | 808 test |
 
 ---
 
@@ -159,33 +162,47 @@ log.record_lb("gun1_baseline", <LB_SKORU>)
 
 ---
 
-## Saat 4+ — Sırayla ekleyin
+## Saat 4+ — Sırayla ekleyin (sıra ÖLÇÜLDÜ, tahmin değil)
 
-Her adımdan sonra CV'yi ölçün ve deftere yazın. **Aynı anda birden fazla şey
+Sıra, 68.257 gerçek GDZ kaydında leave-one-group-out ablasyonla ölçüldü
+(`scripts/ablation_gercek.py` → `experiments/ablasyon_gercek.json`). Her
+adımdan sonra CV'yi ölçün ve deftere yazın. **Aynı anda birden fazla şey
 değiştirmeyin** — hangisinin işe yaradığını bilemezsiniz.
 
 1. **Adversarial validation** — `adversarial_validation(train, test)`.
    AUC > 0,8 ise ciddi kayma var, ayrıştıran feature'ları inceleyin.
 
-2. **Ufuk-farkındalıklı lag/rolling** — en güçlü aile:
+2. **Ufuk-farkındalıklı lag/rolling** — ölçülen katkı **+22,3 dk**, diğer tüm
+   ailelerin toplamından büyük. İlk kurulacak aile budur:
    ```python
-   out = add_lag_features(out, TARGET, [1,7,28], time_column=TIME,
+   out = add_lag_features(out, TARGET, [31,62,93], time_column=TIME,
                           group_columns=[GROUP], horizon=HORIZON)
    ```
    `horizon` **zorunlu**. Test bloğu bir aylıksa 1 günlük lag yoktur.
 
-3. **Hava** — ortalama değil `max` ve quantile. Bölge geneli agregat da ekleyin:
-   `add_regional_aggregates`, `add_physical_derivatives`.
+3. **Hava** — ölçülen katkı +2,5 dk. Ortalama değil `max` ve quantile; bölge
+   geneli agregat da ekleyin: `add_regional_aggregates`, `add_physical_derivatives`.
 
-4. **Komşu ilçe** — `nearest_neighbours` + `add_neighbour_target_lag(horizon=H)`.
+4. **Komşu ilçe** — ölçülen katkı +0,2 dk (marjinal ama ucuz):
+   `nearest_neighbours` + `add_neighbour_target_lag(horizon=H)`.
 
-5. **Model çeşitliliği** — LightGBM + CatBoost + XGBoost, aynı fold'lar.
-   Sayım hedefiyse `COUNT_OBJECTIVES` ile poisson/tweedie/mae süpürün.
+   > **UYARI — tatil ve güneş aileleri gerçek veride NEGATİF ölçüldü**
+   > (−4,7 ve −5,0 dk: çıkarılınca skor İYİLEŞTİ). Fold gürültüsü büyük
+   > olduğu için kesin hüküm değil; ama bu ikisini ancak CV kazancı
+   > ölçerek ekleyin, asla varsayılan olarak değil. Okul takvimi ailesi de
+   > (`add_school_calendar_features`) aynı kurala tabi: hazır, ama ölçmeden girmez.
+
+5. **Model çeşitliliği** — sıra gerçek veride ölçüldü
+   (`experiments/benchmark_gercek.json`): önce **iki aşamalı** (MAE 317,2,
+   eşik 0,606), sonra `catboost_mae` (322,0 — 2023 birincisinin reçetesi),
+   sonra `lgb_mae`. Sayım hedefiyse `COUNT_OBJECTIVES` ile süpürün.
 
 6. **Feature seçimi** — önce `null_importance_filter` (dakikalar), sonra
    `shap_backward_selection` (saatler).
 
-7. **Harmanlama** — `hill_climb_weights` OOF üzerinde.
+7. **Harmanlama** — `hill_climb_weights` OOF üzerinde, **kapsam maskesiyle**
+   (gerçek veride harman 308,3 ile tekil şampiyonu geçti). Stacking'e zaman
+   ayırmayın: aynı ölçümde 385,1 ile baseline'ın bile altında kaldı.
 
 8. **Son gün** — `multi_seed_refit` + `postprocess_predictions`.
 

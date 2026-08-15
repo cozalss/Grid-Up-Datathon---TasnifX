@@ -40,6 +40,7 @@ FEATURE_MODULLERI = (
     "aggregate",
     "categorical",
     "outage_reason",
+    "school",
 )
 
 
@@ -200,6 +201,11 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
     "add_ratio_features": (
         "aggregate",
         lambda m, f: m.add_ratio_features(f, [("sicaklik", "nem")]),
+    ),
+    # --- school ---
+    "add_school_calendar_features": (
+        "school",
+        lambda m, f: m.add_school_calendar_features(f, "tarih"),
     ),
     # --- categorical ---
     "add_frequency_encoding": (

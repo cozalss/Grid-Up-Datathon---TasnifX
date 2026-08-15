@@ -1,0 +1,118 @@
+{
+  "tam_mae": 313.6376,
+  "sifir_baseline": 366.9741,
+  "fold_std": 94.305,
+  "aileler": {
+    "lag": {
+      "mae_ailesiz": 335.9808,
+      "delta": 22.3431,
+      "kolon_sayisi": 11
+    },
+    "hava": {
+      "mae_ailesiz": 316.1055,
+      "delta": 2.4679,
+      "kolon_sayisi": 24
+    },
+    "komsu": {
+      "mae_ailesiz": 313.8216,
+      "delta": 0.184,
+      "kolon_sayisi": 3
+    },
+    "frekans": {
+      "mae_ailesiz": 313.6376,
+      "delta": 0.0,
+      "kolon_sayisi": 1
+    },
+    "takvim": {
+      "mae_ailesiz": 313.4501,
+      "delta": -0.1876,
+      "kolon_sayisi": 15
+    },
+    "tatil": {
+      "mae_ailesiz": 308.9774,
+      "delta": -4.6602,
+      "kolon_sayisi": 15
+    },
+    "gunes": {
+      "mae_ailesiz": 308.6053,
+      "delta": -5.0323,
+      "kolon_sayisi": 7
+    }
+  },
+  "siralama": [
+    "lag",
+    "hava",
+    "komsu",
+    "frekans",
+    "takvim",
+    "tatil",
+    "gunes"
+  ],
+  "gain_top15": [
+    [
+      "kesinti_dk_ufuk31_kayan93_mean",
+      31583.6
+    ],
+    [
+      "gun_yilin_gunu_sin",
+      30114.4
+    ],
+    [
+      "kesinti_dk_ufuk31_kayan93_std",
+      9857.9
+    ],
+    [
+      "tatil_mesafe",
+      9759.1
+    ],
+    [
+      "kesinti_dk_ufuk31_kayan31_std",
+      7922.2
+    ],
+    [
+      "kesinti_dk_ufuk31_kayan31_mean",
+      6290.0
+    ],
+    [
+      "gun_yilin_gunu",
+      4936.4
+    ],
+    [
+      "gun_gun",
+      3170.2
+    ],
+    [
+      "islak_ruzgar",
+      2761.7
+    ],
+    [
+      "kesinti_dk_ufuk31_kayan31_max",
+      2696.0
+    ],
+    [
+      "gunes_radyasyon",
+      2475.6
+    ],
+    [
+      "sicaklik_ort",
+      2296.3
+    ],
+    [
+      "hissedilen_max",
+      2148.8
+    ],
+    [
+      "gun_yilin_gunu_cos",
+      2104.0
+    ],
+    [
+      "ramazan_gunu",
+      1957.0
+    ]
+  ],
+  "panel": {
+    "satir": 22184,
+    "ilce": 47,
+    "gun": 472
+  }
+}

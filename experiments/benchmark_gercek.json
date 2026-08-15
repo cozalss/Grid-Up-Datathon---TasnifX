@@ -1,0 +1,103 @@
+{
+  "modeller": {
+    "lgb_l2": {
+      "mae": 357.0623051656368,
+      "fold_std": 86.49195441504534,
+      "sure_sn": 1.5156425999957719
+    },
+    "lgb_mae": {
+      "mae": 323.13279920563974,
+      "fold_std": 116.33463189658859,
+      "sure_sn": 3.668348599996534
+    },
+    "lgb_tweedie": {
+      "mae": 325.5420340532212,
+      "fold_std": 98.71051307010849,
+      "sure_sn": 2.0251027999984217
+    },
+    "catboost_mae": {
+      "mae": 322.03545216049116,
+      "fold_std": 110.13283951110228,
+      "sure_sn": 4.251877399998193
+    },
+    "xgb": {
+      "mae": 364.20896515096797,
+      "fold_std": 69.0583150945291,
+      "sure_sn": 1.2462938999960897
+    },
+    "iki_asama": {
+      "mae": 317.2260391697545,
+      "fold_std": 100.93053836137496,
+      "sure_sn": 3.311444799997844
+    }
+  },
+  "harman": {
+    "mae": 308.2700308765738,
+    "uyeler": [
+      "iki_asama",
+      "catboost_mae",
+      "lgb_mae"
+    ],
+    "agirliklar": {
+      "iki_asama": 0.5525,
+      "catboost_mae": 0.4475,
+      "lgb_mae": 0.0
+    }
+  },
+  "stack_mae": 385.12333846312885,
+  "kazanan": "harman",
+  "sifir_baseline": 366.97409059711737,
+  "sifir_orani": 0.35002704652001443,
+  "feature_kolonlari": [
+    "kesinti_dk_ufuk31_lag31",
+    "kesinti_dk_ufuk31_lag62",
+    "kesinti_dk_ufuk31_lag93",
+    "effectedsubscribers_ufuk31_lag31",
+    "effectedsubscribers_ufuk31_lag62",
+    "effectedsubscribers_ufuk31_lag93",
+    "hourlyloadavg_ufuk31_lag31",
+    "hourlyloadavg_ufuk31_lag62",
+    "hourlyloadavg_ufuk31_lag93",
+    "gun_ay",
+    "gun_gun",
+    "gun_haftanin_gunu",
+    "gun_yilin_gunu",
+    "gun_hafta",
+    "gun_ceyrek",
+    "gun_ayin_ilk_gunu",
+    "gun_ayin_son_gunu",
+    "gun_hafta_sonu",
+    "tatil_mi",
+    "tatil_yarim_gun",
+    "tatil_agirligi",
+    "tatil_kod",
+    "tatil_cakisma",
+    "tatil_mesafe",
+    "tatil_yakininda",
+    "tatil_veya_haftasonu",
+    "tatil_idari_izin",
+    "tatil_isgucu_kaybi",
+    "sicaklik_max",
+    "sicaklik_min",
+    "sicaklik_ort",
+    "hissedilen_max",
+    "yagis_toplam",
+    "yagmur_toplam",
+    "kar_toplam",
+    "yagis_saati",
+    "ruzgar_max",
+    "firtina_max",
+    "gunes_radyasyon",
+    "isitma_derece_gun",
+    "sogutma_derece_gun",
+    "asiri_sicak",
+    "asiri_soguk",
+    "firtina_gunu",
+    "siddetli_hava",
+    "gun_uzunlugu_saat",
+    "gunes_ogle_yuksekligi",
+    "gunes_deklinasyon",
+    "ilce_key_frekans"
+  ],
+  "gun1_recetesi": "Veri gununde ilk kosulacak tek model iki_asama (MAE 317.23; hep-sifir baseline 366.97, sifir orani %35.0). 2023 birincisinin recetesi catboost_mae bu veride MAE 322.04 ile 2. sirada -- recete iyi bir baslangic ama tek basina kazanmiyor, kor kopyalanmamali. Iki asamali model (MAE 317.23) duz modellerin en iyisini (catboost_mae 322.04) geciyor -- dokumanin %40-alti-sifir beklentisinin aksine (optimum esik 0.61). En iyi 3'un hill-climb harmani MAE 308.27, ridge stacking 385.12 (purged semada ilk fold'lar meta-egitim kapsami disinda kaliyor); genel kazanan 'harman'. Oneri: gun-1'de iki_asama ile basla, ayni fold'larda catboost_mae ve lgb_tweedie'yi ekleyip hill-climb harmanini kur; stacking'e fold kapsami genislemeden donme."
+}

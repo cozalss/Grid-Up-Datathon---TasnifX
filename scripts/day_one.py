@@ -396,8 +396,11 @@ def main() -> int:
         # 20 ilcelik bir "ay" 620 satirdir ve fold uzunlugu veri yogunluguna
         # gore kayar. test_span zamana gore boler, satira gore degil.
         test_span = pd.Timedelta(days=horizon) if horizon else None
+        # n_splits=4: ablasyon, benchmark ve notebook'lar ayni veride 4 ile
+        # olculdu -- fold sayisi farkli olursa skorlar KARSILASTIRILAMAZ
+        # (denetim bulgusu). Sema degisecekse her yerde birden degisir.
         folds = purged_time_series_split(
-            train[time_column], n_splits=5, embargo=embargo, test_span=test_span
+            train[time_column], n_splits=4, embargo=embargo, test_span=test_span
         )
     elif args.group_column:
         splitter = build_splitter("GroupKFold", n_splits=5)
