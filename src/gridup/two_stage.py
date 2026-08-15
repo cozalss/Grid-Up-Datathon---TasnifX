@@ -95,7 +95,13 @@ def mae_optimal_quantile(positive_probability: np.ndarray) -> np.ndarray:
     her zaman 0.5'in ALTINDADIR. Ikisi de MAE altinda suboptimaldir.
     """
     probability = np.asarray(positive_probability, dtype="float64")
-    with np.errstate(divide="ignore", invalid="ignore"):
+    # divide : p == 0        -> 0.5/0 = inf
+    # over   : p ~ 1e-320    -> 0.5/p float64 araligini asar (hypothesis buldu)
+    # invalid: inf - inf     -> NaN
+    # Ucu de BEKLENEN durumlardir ve asagidaki ``quantile > 0`` kontrolu
+    # hepsini NaN'a cevirir. Uyariyi susturmazsak kullaniciya bir sey
+    # bozulmus gibi gorunur -- sifir-siskin veride p=0 son derece olagandir.
+    with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
         quantile = 1.0 - 0.5 / probability
     return np.where(quantile > 0, quantile, np.nan)
 
