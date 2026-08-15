@@ -346,6 +346,11 @@ HEDEF_MODULLERI = (
 #: Bu sozluk bir muafiyet listesi degil, bir GEREKCE kaydidir: her satir
 #: "bu fonksiyon neden sizinti yapmiyor" sorusunu cevaplar.
 FOLDSUZ_GEREKCE: dict[str, str] = {
+    # Yalnizca REDDEDER -- hedeften hicbir sey turetmez, hicbir sey dondurmez.
+    "models.assert_finite_target": (
+        "hedefte NaN/inf varsa hata firlatir; deger okumaz, istatistik "
+        "cikarmaz, cikti uretmez -- fold kavrami uygulanamaz"
+    ),
     # Saf skorlama -- model egitmez, hicbir sey ogrenmez.
     "metrics.rmse": "saf skorlama, fit yok",
     "metrics.rmsle": "saf skorlama, fit yok",

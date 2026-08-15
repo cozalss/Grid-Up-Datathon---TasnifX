@@ -48,7 +48,12 @@ from .models import COUNT_OBJECTIVES, CVResult, cross_validate, starter_params
 from .neural import NeuralConfig, neural_cross_validate
 from .panel import build_panel, panel_coverage
 from .profiling import profile, quick_look
-from .refit import estimate_full_data_rounds, extract_best_iterations, multi_seed_refit
+from .refit import (
+    estimate_full_data_rounds,
+    extract_best_iterations,
+    fold_train_fraction,
+    multi_seed_refit,
+)
 from .submission import validate_submission, write_submission
 from .tuning import TuningResult, tune_with_optuna
 from .turkish import diagnose_join, join_key, tr_lower, tr_sorted, tr_upper
@@ -89,6 +94,7 @@ __all__ = [
     "cross_validate", "CVResult", "starter_params", "COUNT_OBJECTIVES",
     # tam veri yeniden egitim
     "multi_seed_refit", "estimate_full_data_rounds", "extract_best_iterations",
+    "fold_train_fraction",
     # iki asamali (sifir-siskin)
     "fit_two_stage", "tune_threshold", "zero_baseline_score",
     "mae_optimal_quantile", "fit_quantile_ladder", "conditional_quantile_from_hurdle",

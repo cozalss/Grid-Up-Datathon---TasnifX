@@ -37,6 +37,7 @@ __all__ = [
     "XGB_DEFAULTS",
     "CAT_DEFAULTS",
     "INFRASTRUCTURE_KEYS",
+    "assert_finite_target",
     "merge_infrastructure_params",
     "starter_params",
 ]
@@ -130,6 +131,38 @@ _DEFAULTS_BY_KIND: dict[str, dict[str, Any]] = {
     "xgboost": XGB_DEFAULTS,
     "catboost": CAT_DEFAULTS,
 }
+
+
+def assert_finite_target(target: np.ndarray) -> None:
+    """Hedefte NaN/sonsuz varsa hata firlatir.
+
+    Hedefte NaN/inf SESSIZCE GECIYORDU ve bu en tehlikeli hata bicimidir:
+    LightGBM bu satirlari egitimde yok sayar, skor MAKUL GORUNEN bir sayi
+    cikar ve neyin yanlis oldugu anlasilmaz.
+
+    OLCULDU: 400 satirin BIRINDE NaN olan bir hedefte skor 0.527 dondu --
+    tamamen inandirici. inf durumunda 4.1e+35 dondu; absurt ama yine
+    HATASIZ. Ikisi de sessizce yanlis CV skoru uretir.
+
+    Siniflandirmada olasilik metrikleri icin de gecerli: NaN etiketle
+    egitilen model, hicbir zaman ogrenmedigi bir sinifi tahmin eder.
+
+    Raises:
+        ValueError: Sayisal hedefte NaN veya sonsuz deger varsa.
+    """
+    y = np.asarray(target).ravel()
+    if len(y) == 0 or not np.issubdtype(y.dtype, np.number):
+        return
+    if np.isfinite(y).all():
+        return
+    bozuk = int((~np.isfinite(y)).sum())
+    raise ValueError(
+        f"Hedefte {bozuk} adet NaN/sonsuz deger var (%{bozuk / len(y) * 100:.1f}). "
+        "Model bunlari sessizce yok sayar ve skor MAKUL GORUNEN ama "
+        "YANLIS bir sayi olur.\n"
+        "Temizle: maske = np.isfinite(y); train=train[maske]; y=y[maske]\n"
+        "SONRA fold'lari YENIDEN uret -- konumsal indeksler kaydi."
+    )
 
 
 def merge_infrastructure_params(kind: str, params: dict[str, Any]) -> dict[str, Any]:
@@ -555,15 +588,7 @@ def cross_validate(
     #
     # Siniflandirmada olasilik metrikleri icin de gecerli: NaN etiketle
     # egitilen model, hicbir zaman ogrenmedigi bir sinifi tahmin eder.
-    if np.issubdtype(y.dtype, np.number) and not np.isfinite(y).all():
-        bozuk = int((~np.isfinite(y)).sum())
-        raise ValueError(
-            f"Hedefte {bozuk} adet NaN/sonsuz deger var (%{bozuk / len(y) * 100:.1f}). "
-            "Model bunlari sessizce yok sayar ve CV skoru MAKUL GORUNEN ama "
-            "YANLIS bir sayi olur.\n"
-            "Temizle: maske = np.isfinite(y); train=train[maske]; y=y[maske]\n"
-            "SONRA fold'lari YENIDEN uret -- konumsal indeksler kaydi."
-        )
+    assert_finite_target(y)
 
     # Fold'lar bu frame icin mi uretildi? Kontrol etmezsek yanlis satirlar
     # sessizce train/valid olarak eslesir -- bkz. assert_folds_align.

@@ -56,6 +56,7 @@ from gridup.models import starter_params  # noqa: E402
 from gridup.refit import (  # noqa: E402
     estimate_full_data_rounds,
     extract_best_iterations,
+    fold_train_fraction,
     multi_seed_refit,
 )
 from gridup.reporting import (  # noqa: E402
@@ -305,9 +306,13 @@ def main() -> int:
     check("cross_validate", np.isfinite(result.overall_score),
           f"CV rmse(log1p)={result.overall_score:.5f}")
 
+    # mean_train_fraction OLCULEREK veriliyor: purged_time_series_split
+    # genisleyen pencere kullanir, yani (k-1)/k varsayimi bu repoda YANLIS
+    # (olculdu: gercek ortalama 0.550, varsayim 0.800 -> %52 eksik agac).
     rounds = estimate_full_data_rounds(
         extract_best_iterations(result.models) or [params["n_estimators"]],
         n_folds=len(folds),
+        mean_train_fraction=fold_train_fraction(folds, len(train_encoded)),
     )
     refit = multi_seed_refit(
         train_encoded[final_columns], y_log, test_encoded[final_columns],

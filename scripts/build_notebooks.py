@@ -355,7 +355,8 @@ from gridup.features import (
 )
 from gridup.metrics import inverse_log_transform, log_transform_target
 from gridup.models import starter_params
-from gridup.refit import estimate_full_data_rounds, extract_best_iterations, multi_seed_refit
+from gridup.refit import (estimate_full_data_rounds, extract_best_iterations,
+                          fold_train_fraction, multi_seed_refit)
 from gridup.selection import null_importance_filter, shap_backward_selection
 from gridup.validation import adversarial_validation, build_splitter, purged_time_series_split
 
@@ -580,7 +581,9 @@ secim = shap_backward_selection(train[temiz["keep"]], y, folds)  # saatler
 
 **9 · Son gün: çok tohumlu tam veri refit**
 ```python
-tur = estimate_full_data_rounds(extract_best_iterations(result.models), n_folds=len(folds))
+# (k-1)/k varsayimi purged_time_series_split icin YANLIS -- orani olcerek ver
+tur = estimate_full_data_rounds(extract_best_iterations(result.models), n_folds=len(folds),
+                                mean_train_fraction=fold_train_fraction(folds, len(train)))
 final = multi_seed_refit(train[FINAL], y, test[FINAL], params=tuned.best_params,
                          n_estimators=tur, seeds=range(15))
 ```
