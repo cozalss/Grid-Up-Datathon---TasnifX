@@ -380,7 +380,7 @@ def test_takvim_feature_girdiyi_degistirmiyor(frame: pd.DataFrame):
 def test_lag_satir_sayisini_ve_sirasini_koruyor(frame: pd.DataFrame):
     """OZELLIK: lag ekleme satir SAYISINI ve SIRASINI korur."""
     cikti = add_lag_features(
-        frame, "hedef", [1], time_column="tarih", group_columns=["yer"]
+        frame, "hedef", [1], time_column="tarih", horizon=1, group_columns=["yer"]
     )
     assert len(cikti) == len(frame)
     assert list(cikti["yer"]) == list(frame["yer"])
@@ -398,7 +398,7 @@ def test_kayan_pencere_dogru_gruptan_hesapliyor(frame: pd.DataFrame):
     """
     assume(len(frame) > 0)
     cikti = add_rolling_features(
-        frame, "hedef", [2], time_column="tarih", group_columns=["yer"]
+        frame, "hedef", [2], time_column="tarih", horizon=1, group_columns=["yer"]
     )
 
     for yer in frame["yer"].unique():

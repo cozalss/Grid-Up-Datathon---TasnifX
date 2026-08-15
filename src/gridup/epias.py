@@ -300,6 +300,99 @@ class EpiasClient:
         """
         return self.to_frame(self.post("consumption/data/distribution-region"))
 
+
+    def realtime_consumption(self, *, start: str, end: str) -> pd.DataFrame:
+        """Turkiye geneli SAATLIK gerceklesen tuketim.
+
+        2023 GDZ Datathon **birincisinin** iki model asamasindan birinin
+        temeli buydu. Kendi ifadesiyle::
+
+            "EPIAS Seffaflik Platformundan alinan butun veriler minimum
+             lag(24) yani bir gun gecikmeli olarak kullanildi."
+
+        NEDEN GUCLU: ulke capindaki tuketim, yerel yukun ACIKLANAMAYAN
+        kismini tasir -- ekonomik aktivite, genel hava dalgasi, tatil
+        davranisi. Tek bir ilcenin verisinde gorunmeyen ortak sinyal budur.
+
+        NEDEN TEHLIKELI: bu bir GECMIS gozlemdir, tahmin degil. Tahmin
+        aninda mevcut OLAN en yeni degeri kullanmak zorundasin. Ufuk bir ay
+        ise lag(24) YETMEZ -- lag, tahmin ufkundan BUYUK olmalidir.
+        ``features.temporal.add_lag_features(horizon=...)`` bunu zorlar.
+
+        Args:
+            start: ``"YYYY-MM-DDTHH:MM:SS+03:00"`` bicimi.
+            end: Ayni bicim.
+
+        Returns:
+            Saatlik tuketim frame'i.
+        """
+        return self.to_frame(
+            self.post(
+                "consumption/data/realtime-consumption",
+                {"startDate": start, "endDate": end},
+            )
+        )
+
+    def realtime_generation(self, *, start: str, end: str) -> pd.DataFrame:
+        """Turkiye geneli SAATLIK gerceklesen uretim -- yakit bazinda kirilim.
+
+        Birincinin fiilen kullandigi blok buydu (``production_features=True``,
+        ``consumption_features=False``). Yakit kirilimi ham toplamdan daha
+        bilgilendiricidir::
+
+            ruzgar + gunes payi yuksek  -> hava acik ve ruzgarli
+            dogalgaz + ithal komur payi -> tepe yuk karsilaniyor
+            barajli hidro payi          -> kuraklik/su rejimi sinyali
+
+        Ayni lag disiplini gecerlidir: bu da GECMIS gozlemdir.
+
+        Args:
+            start: ``"YYYY-MM-DDTHH:MM:SS+03:00"`` bicimi.
+            end: Ayni bicim.
+
+        Returns:
+            Saatlik uretim frame'i; kolonlar yakit tipleridir.
+        """
+        return self.to_frame(
+            self.post(
+                "generation/data/realtime-generation",
+                {"startDate": start, "endDate": end},
+            )
+        )
+
+    def load_estimation_plan(self, *, start: str, end: str) -> pd.DataFrame:
+        """Yuk tahmin plani (LEP) -- sistem isletmecisinin ileri donuk plani.
+
+        BU SERI YALNIZCA BIR GUN ILERIYI KAPSIYOR (bu makinede olculdu)::
+
+            bugun    -> 47 saat  (dun kalanlar + bugun)
+            +1 gun   -> 24 saat
+            +2 gun   ->  0 saat
+            +5 gun   ->  0 saat
+
+        Ilk yazdigim docstring bunu "gelecege bakan tek EPIAS serisi" diye
+        tanitiyordu ve **YANLISTI**. Bir aylik bir tahmin ufkunda pratikte
+        gecmis bir gozlemden farksizdir: test doneminin buyuk kismi icin
+        veri YOKTUR.
+
+        Dolayisiyla digerleriyle AYNI lag disiplinini uygula. Yalnizca ufku
+        1-2 gun olan bir problemde gercek bir avantaj saglar.
+
+        2023 birincisi bunu CFG'de tanimlamis ama nihai cozumde KAPALI
+        birakmis (``yuk_tahmin_plani_features = False``) -- muhtemelen ayni
+        sebeple.
+        """
+        # DIKKAT: yol ``consumption/`` altindadir, ``generation/`` altinda
+        # DEGIL -- adi uretim tarafini cagristirsa da. Olculdu:
+        #   generation/data/load-estimation-plan  -> HTTP 404
+        #   consumption/data/load-estimation-plan -> OK, kolonlar (date, time, lep)
+        return self.to_frame(
+            self.post(
+                "consumption/data/load-estimation-plan",
+                {"startDate": start, "endDate": end},
+            )
+        )
+
     def unplanned_outages(
         self, *, period: str, distribution_company_id: int | None = None
     ) -> pd.DataFrame:

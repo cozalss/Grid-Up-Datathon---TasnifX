@@ -120,19 +120,19 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
     "add_lag_features": (
         "temporal",
         lambda m, f: m.add_lag_features(
-            f, "hedef", [1, 7], time_column="tarih", group_columns=["yer"]
+            f, "hedef", [1, 7], time_column="tarih", horizon=1, group_columns=["yer"]
         ),
     ),
     "add_rolling_features": (
         "temporal",
         lambda m, f: m.add_rolling_features(
-            f, "hedef", [7], time_column="tarih", group_columns=["yer"]
+            f, "hedef", [7], time_column="tarih", horizon=1, group_columns=["yer"]
         ),
     ),
     "add_expanding_features": (
         "temporal",
         lambda m, f: m.add_expanding_features(
-            f, "hedef", time_column="tarih", group_columns=["yer"]
+            f, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
         ),
     ),
     # --- weather ---
@@ -524,11 +524,11 @@ def test_kayan_pencere_dogru_gruptan_okuyor(fonksiyon, kolon, beklenen):
     panel = _kayma_paneli()
     if beklenen == "rolling":
         cikti = temporal.add_rolling_features(
-            panel, "y", [3], time_column="tarih", group_columns=["ilce"]
+            panel, "y", [3], time_column="tarih", horizon=1, group_columns=["ilce"]
         )
     else:
         cikti = temporal.add_expanding_features(
-            panel, "y", time_column="tarih", group_columns=["ilce"]
+            panel, "y", time_column="tarih", horizon=1, group_columns=["ilce"]
         )
 
     for il in panel["ilce"].unique():

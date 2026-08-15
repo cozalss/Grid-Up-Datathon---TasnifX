@@ -192,7 +192,7 @@ class TestDirtyDataSurvival:
         )
 
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", group_columns=["trafo_id"]
+            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
 
         assert len(result) == 4
@@ -210,7 +210,7 @@ class TestDirtyDataSurvival:
         )
 
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", group_columns=["trafo_id"]
+            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
 
         # 2024-1-3 (deger 1.5) satirinin lag1'i 2024-1-2'nin degeri = 1.0 olmali

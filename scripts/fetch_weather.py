@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -123,6 +124,73 @@ DAILY_RENAME = {
     "wind_gusts_10m_max": "firtina_max",
     "shortwave_radiation_sum": "gunes_radyasyon",
 }
+
+
+#: 96 ilcenin dogrulanmis koordinatlari burada durur (scripts/fetch_districts.py
+#: uretir, sinir kutusu kontrolunden gecmistir).
+REFERENCE_PATH = "data/reference/ilceler_gdz_adm.parquet"
+
+
+def load_reference_locations(path: str = REFERENCE_PATH) -> dict[str, tuple[float, float]]:
+    """96 ilcenin tamamini referans tablosundan okur.
+
+    NEDEN ELLE LISTE YETMIYOR
+    -------------------------
+    Elle yazilmis 20 konum (5 il + 15 ilce), 96 ilcelik bir panel icin cok
+    kabadir: Izmir'in 30 ilcesi 4 noktaya dusuyordu. Cesme'nin denizel
+    iklimi ile Kiraz'in karasal iklimi ayni satira yaziliyordu -- oysa yaz
+    tepe yuku ve firtina maruziyeti arasindaki fark tam da orada.
+
+    Referanstan okumak ayrica listenin PANELDEN SAPMASINI da engeller:
+    yeni bir ilce eklenirse hava verisi de otomatik olarak onu kapsar.
+    """
+    import pandas as pd
+
+    frame = pd.read_parquet(path)
+    eksik = frame[["lat", "lon"]].isna().any(axis=1)
+    if eksik.any():
+        raise ValueError(
+            f"{int(eksik.sum())} ilcenin koordinati eksik. "
+            "Once scripts/fetch_districts.py calistir."
+        )
+    # Anahtar olarak "Il-Ilce" kullaniyoruz: ayni ilce adi iki ilde olabilir
+    # (or. Merkez). Duz ilce adi kullanmak sessizce satir kaybettirirdi.
+    return {
+        f"{satir.il}-{satir.ilce}": (float(satir.lat), float(satir.lon))
+        for satir in frame.itertuples()
+    }
+
+
+#: Open-Meteo ARSIV API'si gunumuze kadar degil, birkac gun GERIYE kadar
+#: veri sunar (isleme gecikmesi). Bu kadar gun geri cekiyoruz.
+ARCHIVE_LAG_DAYS = 6
+
+
+def cap_end_date(end: str, *, today: date | None = None) -> tuple[str, str | None]:
+    """Bitis tarihini arsivin gercekten sundugu en son gune kirpar.
+
+    NEDEN: arsiv API'si GELECEK bir ``end_date`` icin **HTTP 400** doner --
+    hem de neyin yanlis oldugunu soylemeden. Olculdu: ``end=2026-09-01``
+    (bugun 2026-08-15) 96 konumun 96'sinda da 400 verdi ve indirme tamamen
+    basarisiz oldu.
+
+    Yarisma gunu "bitisi yarismanin sonuna ayarlayayim" demek son derece
+    dogal bir reflekstir -- ve tam orada patlardi. Sessizce kirpip
+    NEDENINI SOYLUYORUZ.
+
+    Returns:
+        ``(kirpilmis_tarih, uyari_metni)``. Kirpma olmadiysa uyari ``None``.
+    """
+    bugun = today or date.today()
+    en_son = bugun - timedelta(days=ARCHIVE_LAG_DAYS)
+    istenen = date.fromisoformat(end)
+    if istenen <= en_son:
+        return end, None
+    return en_son.isoformat(), (
+        f"Bitis {end} arsivin otesinde (bugun {bugun}, arsiv ~{ARCHIVE_LAG_DAYS} "
+        f"gun geriden gelir). {en_son} olarak kirpildi -- aksi halde API "
+        "her konum icin HTTP 400 doner."
+    )
 
 
 def fetch_location(
@@ -244,7 +312,10 @@ def main() -> int:
     parser.add_argument("--start", default="2022-01-01", help="Baslangic tarihi (YYYY-AA-GG)")
     parser.add_argument("--end", default="2026-09-01", help="Bitis tarihi (YYYY-AA-GG)")
     parser.add_argument("--hourly", action="store_true", help="Saatlik cozunurluk (buyuk dosya)")
-    parser.add_argument("--districts", action="store_true", help="Ilce merkezlerini de cek")
+    parser.add_argument("--districts", action="store_true",
+                        help="Elle yazilmis 15 ilce merkezini de cek (eski, kaba)")
+    parser.add_argument("--all-districts", action="store_true",
+                        help="96 ilcenin TAMAMINI referans tablosundan cek (ONERILEN)")
     parser.add_argument(
         "--out", default="data/external", help="Cikti dizini (varsayilan: data/external)"
     )
@@ -258,9 +329,18 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    locations = dict(PROVINCE_COORDINATES)
-    if args.districts:
-        locations.update(DISTRICT_COORDINATES)
+    kirpilmis, uyari = cap_end_date(args.end)
+    if uyari:
+        print(f"UYARI: {uyari}")
+        args.end = kirpilmis
+
+    if args.all_districts:
+        locations = load_reference_locations()
+        print(f"Referans tablosundan {len(locations)} ilce yuklendi (panelle birebir).")
+    else:
+        locations = dict(PROVINCE_COORDINATES)
+        if args.districts:
+            locations.update(DISTRICT_COORDINATES)
 
     output_dir = Path(args.out)
     suffix = "saatlik" if args.hourly else "gunluk"

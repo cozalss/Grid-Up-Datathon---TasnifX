@@ -673,8 +673,8 @@ def add_lag_features(
     lags: Sequence[int],
     *,
     time_column: str,
+    horizon: int,
     group_columns: Sequence[str] | None = None,
-    horizon: int = 1,
     prefix: str | None = None,
 ) -> pd.DataFrame:
     """Gecikmeli (lag) feature'lar ekler. YENI frame dondurur, sirayi korur.
@@ -746,8 +746,8 @@ def add_rolling_features(
     windows: Sequence[int],
     *,
     time_column: str,
+    horizon: int,
     group_columns: Sequence[str] | None = None,
-    horizon: int = 1,
     aggregations: Sequence[str] = ("mean", "std", "min", "max"),
     prefix: str | None = None,
 ) -> pd.DataFrame:
@@ -815,27 +815,50 @@ def add_expanding_features(
     value_column: str,
     *,
     time_column: str,
+    horizon: int,
     group_columns: Sequence[str] | None = None,
     aggregations: Sequence[str] = ("mean", "std"),
     prefix: str | None = None,
 ) -> pd.DataFrame:
     """Genisleyen pencere (tum gecmis) istatistikleri. YENI frame dondurur.
 
-    Kayan pencerenin aksine tum gecmisi kullanir; bir varligin "genel seviyesini"
-    yakalar. Yine ``shift(1)`` ile mevcut satir haric tutulur.
+    Kayan pencerenin aksine tum gecmisi kullanir; bir varligin "genel
+    seviyesini" yakalar. Mevcut satir ve tahmin ufku icindeki satirlar
+    ``shift(horizon)`` ile DISLANIR.
+
+    ``horizon`` ZORUNLUDUR -- NEDEN
+    -------------------------------
+    Onceki surum ``shift(1)`` SABIT KODLUYDU ve ufuk parametresi hic yoktu.
+    Bu, bir gunden uzun her tahmin ufkunda dogrudan sizintiydi.
+
+    OLCULDU (60 gunluk seri, hedef = 0..59, ufuk 30 gun)::
+
+        genisleyen_max son satirda      = 58.0
+        tahmin aninda gorulebilir EN BUYUK = 29.0
+        -> 29 GUNLUK SIZINTI
+
+    CV skoru mukemmel gorunur, leaderboard coker. Bu yuzden artik deger
+    VERILMEK ZORUNDA: ``embargo``da oldugu gibi, sessiz bir varsayilan
+    uretmektense bilincli bir karar istiyoruz.
     """
     prefix = prefix or value_column
     sort_keys = list(group_columns or []) + [time_column]
     ordered, order = _sorted_view(frame, sort_keys, time_column=time_column)
 
+    if horizon < 1:
+        raise ValueError(
+            f"horizon en az 1 olmali, {horizon} verildi. horizon=0 mevcut satirin "
+            "KENDI degerini pencereye sokar -- dogrudan hedef sizintisi."
+        )
+
     if group_columns:
-        shifted = ordered.groupby(list(group_columns), observed=True)[value_column].shift(1)
+        shifted = ordered.groupby(list(group_columns), observed=True)[value_column].shift(horizon)
         # sort=False ZORUNLU -- ayni sebep: bkz. add_rolling_features.
         source = shifted.groupby(
             [ordered[column].to_numpy() for column in group_columns], sort=False
         )
     else:
-        source = ordered[value_column].shift(1)
+        source = ordered[value_column].shift(horizon)
 
     expander = source.expanding(min_periods=1)
     computed = {

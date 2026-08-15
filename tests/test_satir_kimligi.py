@@ -75,13 +75,13 @@ def _zincir(frame: pd.DataFrame) -> pd.DataFrame:
     """Gercek bir feature boru hatti -- yarisma gunu kurulacak sirayla."""
     cikti = add_calendar_features(frame, "tarih")
     cikti = add_lag_features(
-        cikti, "hedef", [1, 7], time_column="tarih", group_columns=["yer"]
+        cikti, "hedef", [1, 7], time_column="tarih", horizon=1, group_columns=["yer"]
     )
     cikti = add_rolling_features(
-        cikti, "hedef", [3, 7], time_column="tarih", group_columns=["yer"]
+        cikti, "hedef", [3, 7], time_column="tarih", horizon=1, group_columns=["yer"]
     )
     cikti = add_expanding_features(
-        cikti, "hedef", time_column="tarih", group_columns=["yer"]
+        cikti, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
     )
     cikti = add_weather_accumulators(
         cikti, group_columns=["yer"], time_column="tarih", value_columns=["yagis_toplam"]
@@ -173,3 +173,79 @@ def test_okuma_dosya_taniticisini_kapatiyor(tmp_path):
     yol.write_text("id,deger\n3,30\n", encoding="utf-8")
     assert len(read_any(yol)) == 1
     assert len(okunan) == 2
+
+
+# --------------------------------------------------------------------------
+# SIZINTI: tahmin ufku ihlali
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("ufuk", [1, 7, 30])
+def test_lag_ufkun_otesini_gormuyor(ufuk: int):
+    """SOZLESME: horizon=H iken en yeni gorulebilir deger t-H'dir.
+
+    OLCULDU (60 gunluk seri, hedef=0..59, ufuk 30):
+      varsayilan horizon=1 -> 58.0  (gorulebilir en buyuk 29.0) = 29 GUN SIZINTI
+    Bu yuzden horizon artik ZORUNLU -- embargo'da oldugu gibi.
+    """
+    n = 60
+    frame = pd.DataFrame(
+        {"tarih": pd.date_range("2025-01-01", periods=n), "yer": "a",
+         "hedef": np.arange(float(n))}
+    )
+    cikti = add_lag_features(
+        frame, "hedef", [1], time_column="tarih", group_columns=["yer"], horizon=ufuk
+    )
+    kolon = [c for c in cikti.columns if "lag1" in c][0]
+    assert float(cikti[kolon].iloc[-1]) == float(n - 1 - ufuk)
+
+
+@pytest.mark.parametrize("ufuk", [1, 7, 30])
+def test_genisleyen_pencere_ufkun_otesini_gormuyor(ufuk: int):
+    """REGRESYON: add_expanding_features shift(1) SABIT KODLUYDU.
+
+    Fonksiyonun horizon parametresi HIC YOKTU; bir gunden uzun her ufukta
+    dogrudan sizintiydi. Olculdu: ufuk 30 iken genisleyen_max = 58.0,
+    gorulebilir en buyuk 29.0.
+    """
+    n = 60
+    frame = pd.DataFrame(
+        {"tarih": pd.date_range("2025-01-01", periods=n), "yer": "a",
+         "hedef": np.arange(float(n))}
+    )
+    cikti = add_expanding_features(
+        frame, "hedef", time_column="tarih", group_columns=["yer"],
+        horizon=ufuk, aggregations=("max",),
+    )
+    assert float(cikti["hedef_genisleyen_max"].iloc[-1]) == float(n - 1 - ufuk)
+
+
+@pytest.mark.parametrize(
+    "fonksiyon",
+    ["add_lag_features", "add_rolling_features", "add_expanding_features"],
+)
+def test_horizon_zorunlu(fonksiyon: str):
+    """SOZLESME: horizon verilmeden cagrilamaz.
+
+    Sessiz bir varsayilan, tam olarak onlemek istedigimiz sizintiyi uretir.
+    """
+    import inspect
+
+    from gridup.features import temporal
+
+    parametre = inspect.signature(getattr(temporal, fonksiyon)).parameters["horizon"]
+    assert parametre.default is inspect.Parameter.empty, (
+        f"{fonksiyon}.horizon'un varsayilani var -- sessizce sizinti uretebilir"
+    )
+
+
+def test_sifir_horizon_reddediliyor():
+    """horizon=0 mevcut satirin KENDI degerini pencereye sokar."""
+    frame = pd.DataFrame(
+        {"tarih": pd.date_range("2025-01-01", periods=10), "yer": "a",
+         "hedef": np.arange(10.0)}
+    )
+    with pytest.raises(ValueError, match="en az 1"):
+        add_expanding_features(
+            frame, "hedef", time_column="tarih", group_columns=["yer"], horizon=0
+        )

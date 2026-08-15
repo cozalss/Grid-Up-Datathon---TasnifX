@@ -120,7 +120,7 @@ class TestRollingWindowLeakage:
 
         # Act
         result = add_rolling_features(
-            frame, "deger", [2], time_column="tarih",
+            frame, "deger", [2], time_column="tarih", horizon=1,
             group_columns=["trafo_id"], aggregations=("mean",),
         )
         rolled = result["deger_kayan2_mean"].to_numpy()
@@ -140,7 +140,7 @@ class TestRollingWindowLeakage:
         )
 
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", group_columns=["trafo_id"]
+            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
         lagged = result["deger_lag1"].to_numpy()
 
@@ -152,7 +152,7 @@ class TestRollingWindowLeakage:
         """Bir varligin ilk satiri, ONCEKI VARLIGIN son degerini almamali."""
         result = add_lag_features(
             time_series_frame, "tuketim", [1],
-            time_column="tarih", group_columns=["trafo_id"],
+            time_column="tarih", horizon=1, group_columns=["trafo_id"],
         )
         first_rows = result.groupby("trafo_id", observed=True).head(1)
         assert first_rows["tuketim_lag1"].isna().all()
@@ -161,7 +161,7 @@ class TestRollingWindowLeakage:
         before = time_series_frame.copy()
         add_lag_features(
             time_series_frame, "tuketim", [1, 7],
-            time_column="tarih", group_columns=["trafo_id"],
+            time_column="tarih", horizon=1, group_columns=["trafo_id"],
         )
         pd.testing.assert_frame_equal(time_series_frame, before)
 
@@ -175,7 +175,7 @@ class TestRollingWindowLeakage:
             }
         )
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", group_columns=["trafo_id"]
+            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
         # Girdi sirasi korunmus: 0. satir hala 2024-01-03
         assert result.loc[0, "tarih"] == pd.Timestamp("2024-01-03")
@@ -349,7 +349,7 @@ class TestHorizonAwareFeatures:
             }
         )
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", group_columns=["trafo_id"]
+            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
         assert result["deger_lag1"].iloc[1] == pytest.approx(1.0)
 
