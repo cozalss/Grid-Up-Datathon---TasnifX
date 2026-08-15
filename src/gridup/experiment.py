@@ -22,7 +22,23 @@ from typing import Any
 
 import pandas as pd
 
-__all__ = ["ExperimentRecord", "ExperimentLog", "current_git_sha"]
+__all__ = [
+    "COMPETITION_DAYS",
+    "DAILY_SUBMISSION_LIMIT",
+    "ExperimentLog",
+    "ExperimentRecord",
+    "current_git_sha",
+]
+
+
+#: Gunluk submission siniri. 2023 GDZ Elektrik Datathon'unda 3'tu ve GDZ'nin
+#: UC yarismasinda da (2022 case-1, case-2, 2023) istisnasiz 3 olarak olculdu
+#: -- Kaggle API max_daily_submissions alanindan dogrulandi. Yarisma gunu
+#: acilis yayininda TEYIT ETTIR; degisirse tek satir burada degisir.
+DAILY_SUBMISSION_LIMIT = 3
+
+#: Yarisma suresi: 21 Agustos - 1 Eylul 2026.
+COMPETITION_DAYS = 12
 
 
 def current_git_sha() -> str | None:
@@ -56,6 +72,10 @@ class ExperimentRecord:
     notes: str = ""
     lb_score: float | None = None
     submission_path: str | None = None
+    #: Gonderimin YAPILDIGI an. Deneyin olusturulma aninden (``timestamp``)
+    #: farklidir: bir deneyi bugun kurup yarin gonderebilirsin ve gunluk
+    #: submission butcesi gonderim gunune gore sayilir.
+    submitted_at: str | None = None
     timestamp: str = ""
     git_sha: str | None = None
     environment: dict[str, str] = field(default_factory=dict)
@@ -130,16 +150,25 @@ class ExperimentLog:
                     print(f"UYARI: {self.path}:{line_number} bozuk JSON, atlandi.")
         return records
 
-    def record_lb(self, name: str, lb_score: float) -> bool:
+    def record_lb(self, name: str, lb_score: float, *, submitted_at: str | None = None) -> bool:
         """Bir deneye leaderboard skorunu ekler. Bulunursa ``True``.
 
         En son ayni isimli kaydi gunceller (ayni deneyi tekrar calistirmis
         olabilirsin).
+
+        Args:
+            submitted_at: ISO tarih/saat. Verilmezse SIMDI kaydedilir.
+                ``submission_budget`` gunluk sayimi bu alandan yapar --
+                deneyin OLUSTURULMA zamanindan degil, cunku bir deneyi bugun
+                kurup yarin gondermis olabilirsin.
         """
         records = self.load()
         for record in reversed(records):
             if record.get("name") == name:
                 record["lb_score"] = lb_score
+                record["submitted_at"] = submitted_at or datetime.now(
+                    timezone.utc
+                ).isoformat(timespec="seconds")
                 break
         else:
             # Notebook'ta donus degeri kolayca gozden kacar. Sessizce False
@@ -155,6 +184,86 @@ class ExperimentLog:
             for record in records:
                 handle.write(json.dumps(record, ensure_ascii=False) + "\n")
         return True
+
+    def submission_budget(
+        self,
+        *,
+        daily_limit: int = DAILY_SUBMISSION_LIMIT,
+        total_days: int = COMPETITION_DAYS,
+        today: str | None = None,
+    ) -> dict[str, Any]:
+        """Gunluk ve toplam submission butcesini raporlar.
+
+        NEDEN GEREKLI: Submission **en kit kaynaktir**. 2023 GDZ Elektrik
+        Datathon'unda gunluk limit **3'tu** (GDZ'nin uc yarismasinda da ayni)
+        ve 12 gunde toplam ~36 deneme demektir. Uc denemeyi ogleden once
+        harcayip aksam daha iyi bir fikir bulmak, o gunu kaybetmektir.
+
+        Ayrica **rastgele %50/%50 public/private bolmesinde** LB'ye bakarak
+        secim yapmak asiri uyumdur. Butce, LB'yi ne kadar "yokladigini"
+        gorunur kilar.
+
+        Args:
+            daily_limit: Gunluk submission siniri.
+            total_days: Yarisma gun sayisi.
+            today: ``YYYY-AA-GG``. Verilmezse bugunun UTC tarihi.
+
+        Returns:
+            ``bugun_kullanilan``, ``bugun_kalan``, ``toplam_kullanilan``,
+            ``toplam_kalan``, ``gunluk_dagilim`` ve ``uyari`` anahtarlari.
+        """
+        today = today or datetime.now(timezone.utc).date().isoformat()
+        gunluk: dict[str, int] = {}
+        for record in self.load():
+            if record.get("lb_score") is None:
+                continue
+            # Eski kayitlarda submitted_at yok -- deneyin timestamp'ine dus.
+            damga = record.get("submitted_at") or record.get("timestamp") or ""
+            gun = damga[:10]
+            if gun:
+                gunluk[gun] = gunluk.get(gun, 0) + 1
+
+        bugun = gunluk.get(today, 0)
+        toplam = sum(gunluk.values())
+        toplam_hak = daily_limit * total_days
+
+        uyari = ""
+        if bugun >= daily_limit:
+            uyari = (
+                f"BUGUNKU {daily_limit} SUBMISSION BITTI. Kalan fikirleri CV'de "
+                "dogrula, yarina sakla."
+            )
+        elif bugun == daily_limit - 1:
+            uyari = "Bugun TEK submission kaldi -- en iyi adayina sakla."
+
+        return {
+            "tarih": today,
+            "bugun_kullanilan": bugun,
+            "bugun_kalan": max(0, daily_limit - bugun),
+            "toplam_kullanilan": toplam,
+            "toplam_kalan": max(0, toplam_hak - toplam),
+            "gunluk_dagilim": dict(sorted(gunluk.items())),
+            "uyari": uyari,
+        }
+
+    def budget_report(self, **kwargs: Any) -> str:
+        """``submission_budget`` ciktisinin okunabilir hali."""
+        butce = self.submission_budget(**kwargs)
+        satirlar = [
+            f"SUBMISSION BUTCESI ({butce['tarih']})",
+            "-" * 42,
+            f"  bugun  : {butce['bugun_kullanilan']} kullanildi, "
+            f"{butce['bugun_kalan']} kaldi",
+            f"  toplam : {butce['toplam_kullanilan']} kullanildi, "
+            f"{butce['toplam_kalan']} kaldi",
+        ]
+        if butce["gunluk_dagilim"]:
+            satirlar.append("  gunluk dagilim:")
+            for gun, adet in butce["gunluk_dagilim"].items():
+                satirlar.append(f"    {gun}  {'#' * adet} ({adet})")
+        if butce["uyari"]:
+            satirlar += ["", f"  {butce['uyari']}"]
+        return "\n".join(satirlar)
 
     def leaderboard(self, *, greater_is_better: bool = False, top: int = 25) -> pd.DataFrame:
         """Deneyleri CV skoruna gore siralar."""

@@ -10,10 +10,53 @@ izlenecek adımları içerir.
 | Varlık | Yer | Durum |
 |---|---|---|
 | Hava durumu, 2020–2026 | `data/external/hava_gunluk.parquet` | 20 konum, 48.180 satır, sıfır eksik |
+| Güneş fiziği, 2020–2026 | `data/external/gunes_gunluk.parquet` | 96 ilçe × 2435 gün, sıfır eksik |
 | 96 ilçe + koordinat + nüfus | `data/reference/ilceler_gdz_adm.parquet` | Komşuluk grafiği doğrulandı |
 | Arıza sebebi taksonomisi | `gridup.features.outage_reason` | 919 metin → 22 aile, %0,88 sınıflanamayan |
 | Uçtan uca betik | `scripts/day_one.py` | Sentetik veride 6 sn'de submission |
-| Test paketi | `tests/` | 264 test |
+| Kaggle offline paketi | `kaggle.com/datasets/cemzal/gridup-offline-paket` | Yüklendi (özel), dosyalar doğrulandı |
+| Test paketi | `tests/` | 349 test |
+
+---
+
+## 2023 yarışmasından doğrulanan kurallar
+
+Bunlar tahmin değil; 2023 GDZ Elektrik Datathon'unun forum kayıtlarından ve
+Kaggle API'sinden **doğrulandı**. 2026 için garanti değil ama en olası
+varsayımlar bunlar — açılış yayınında teyit ettirin.
+
+| Kural | 2023'teki hali | Sonucu |
+|---|---|---|
+| Public/Private ayrımı | **Rastgele %50/%50 satır**, zamansal değil | Public LB **güvenilir sinyal**; shakeup riski düşük |
+| Günlük submission | **3** (GDZ'nin üç yarışmasında da) | Toplam ~36 deneme |
+| Metrik | MAPE | Hedefte sıfır varsa `mape()` uyaracak |
+| Harici veri | Serbest | Hava + güneş verimiz hazır |
+| Test bloğu | İleri zamanlı pencere (1 ay) | `test_span=` ile birebir taklit edilir |
+
+> Public LB rastgele bölmeyse **overfit etmek kolaydır**: 36 denemenin
+> hepsini LB'ye bakarak seçerseniz private'ta düşersiniz. Seçimi **CV'ye**
+> yaptırın, LB'yi yalnızca doğrulama olarak kullanın.
+
+---
+
+## Zaman bütçesi (ölçüldü, `scripts/scale_rehearsal.py`)
+
+100 bin satırlık panelde, bu makinede:
+
+| İşlem | Süre |
+|---|---|
+| LightGBM tam CV (3 fold, 500 ağaç) | 6 sn |
+| CatBoost tam CV (500 iter) | 43 sn — LightGBM'in **7 katı** |
+| Sinir ağı CV (60 epok) | 15 sn, **+1 GB bellek** |
+| Model zoo (3 model × 3 fold) | 103 sn ← en yavaş |
+| Optuna tek deneme | 23 sn |
+| SHAP önem | 3 sn |
+
+**Bağlayan kısıt hesaplama değil, sizin dikkatiniz.** 60 saatlik yarışmada
+makine binlerce koşu çıkarabilir ama insan ~140 hipotez kurup yorumlayabilir.
+Sonuç: Optuna'yı gece boyu çalıştırın, gündüzü hipotez seçmeye ayırın.
+
+Araştırmayı **LightGBM ile** yapın; CatBoost'u yalnızca final harmana katın.
 
 ---
 

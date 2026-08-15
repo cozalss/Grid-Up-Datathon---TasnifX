@@ -519,3 +519,85 @@ def test_mape_sifirsiz_veride_uyarmiyor():
         _w.simplefilter("always")
         mape(np.array([10.0, 20.0, 30.0]), np.array([11.0, 19.0, 31.0]))
     assert not yakalanan
+
+
+# --------------------------------------------------------------------------
+# Submission butcesi -- en kit kaynak
+# --------------------------------------------------------------------------
+
+
+def _gecici_log(tmp_path):
+    from gridup.experiment import ExperimentLog, ExperimentRecord
+
+    log = ExperimentLog(tmp_path / "d.jsonl")
+    for i in range(5):
+        log.add(
+            ExperimentRecord(
+                name=f"deney{i}", cv_score=1.0 + i, metric="mape",
+                model_kind="lightgbm", n_features=10,
+            )
+        )
+    return log
+
+
+def test_submission_butcesi_gunluk_sayiyor(tmp_path):
+    log = _gecici_log(tmp_path)
+    log.record_lb("deney0", 1.5, submitted_at="2026-08-22T10:00:00+00:00")
+    log.record_lb("deney1", 1.4, submitted_at="2026-08-22T14:00:00+00:00")
+    log.record_lb("deney2", 1.3, submitted_at="2026-08-23T09:00:00+00:00")
+
+    butce = log.submission_budget(today="2026-08-22")
+
+    assert butce["bugun_kullanilan"] == 2
+    assert butce["bugun_kalan"] == 1
+    assert butce["toplam_kullanilan"] == 3
+    assert butce["gunluk_dagilim"] == {"2026-08-22": 2, "2026-08-23": 1}
+
+
+def test_gunluk_limit_dolunca_uyariyor(tmp_path):
+    from gridup.experiment import DAILY_SUBMISSION_LIMIT
+
+    log = _gecici_log(tmp_path)
+    for i in range(DAILY_SUBMISSION_LIMIT):
+        log.record_lb(f"deney{i}", 1.0, submitted_at=f"2026-08-22T{10 + i:02d}:00:00+00:00")
+
+    butce = log.submission_budget(today="2026-08-22")
+
+    assert butce["bugun_kalan"] == 0
+    assert "BITTI" in butce["uyari"]
+
+
+def test_gonderilmemis_deney_butceden_sayilmiyor(tmp_path):
+    """lb_score yoksa submission yapilmamis demektir -- butceyi yakmamali."""
+    log = _gecici_log(tmp_path)
+    butce = log.submission_budget(today="2026-08-22")
+    assert butce["toplam_kullanilan"] == 0
+    assert butce["bugun_kalan"] == 3
+
+
+def test_eski_kayit_timestamp_e_dusuyor(tmp_path):
+    """submitted_at alani olmayan ESKI kayitlar timestamp'ten sayilmali."""
+    import json
+
+    from gridup.experiment import ExperimentLog
+
+    yol = tmp_path / "eski.jsonl"
+    yol.write_text(
+        json.dumps(
+            {"name": "eski", "cv_score": 1.0, "metric": "mape", "model_kind": "lightgbm",
+             "n_features": 5, "lb_score": 1.2, "timestamp": "2026-08-22T12:00:00+00:00"},
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    butce = ExperimentLog(yol).submission_budget(today="2026-08-22")
+    assert butce["bugun_kullanilan"] == 1
+
+
+def test_butce_raporu_okunabilir(tmp_path):
+    log = _gecici_log(tmp_path)
+    log.record_lb("deney0", 1.5, submitted_at="2026-08-22T10:00:00+00:00")
+    rapor = log.budget_report(today="2026-08-22")
+    assert "SUBMISSION BUTCESI" in rapor
+    assert "2026-08-22" in rapor
