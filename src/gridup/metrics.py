@@ -237,7 +237,7 @@ def postprocess_predictions(
        Kirpma tek basina skor kazandirir.
 
     2. **Yuvarlama (sayim hedefi + MAE).** Hedef tam sayiysa ve metrik MAE ise,
-       ``2.4`` yerine ``2`` tahmin etmek hatayi dogrudan azaltir. 2024 GDZ
+       ``2.4`` yerine ``2`` tahmin etmek hatayi dogrudan azaltir. 2023 GDZ
        birincisinin final mimarisi: 25 seed full-data + mean blend +
        **round** + **clip**.
        DIKKAT: metrik RMSE ise yuvarlama genellikle ZARAR verir -- RMSE'de

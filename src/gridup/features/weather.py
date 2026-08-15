@@ -2,7 +2,7 @@
 
 NEDEN AYRI BIR MODUL
 --------------------
-Ham hava degerlerini modele vermek sinyalin cogunu kaybettirir. 2024 GDZ Datathon
+Ham hava degerlerini modele vermek sinyalin cogunu kaybettirir. 2023 GDZ Datathon
 birincisinin en yuksek onemli feature listesi ham degerlerle DEGIL, su turevlerle
 doluydu::
 

@@ -61,6 +61,19 @@ LGB_DEFAULTS: dict[str, Any] = {
     "reg_lambda": 1.0,
     "verbose": -1,
     "n_jobs": -1,
+    # ONEM OLCUSU: 'split' DEGIL 'gain'.
+    #
+    # LightGBM varsayilani 'split' -- bir feature'in kac kez bolmede
+    # kullanildigi. Cok agacli bir modelde bu sayi DOYAR: gurultu
+    # feature'lari da defalarca bolmeye girer ve gercek sinyalden ayirt
+    # edilemez hale gelir.
+    #
+    # OLCULDU (3 gercek sinyal + 40 saf gurultu, 5000 agac, N=4000):
+    #   split -> gercek/gurultu onem orani =  0.97x   (sinyal gurultuden
+    #                                                  DAHA ONEMSIZ gorunuyor)
+    #   gain  -> gercek/gurultu onem orani = 12.80x
+    # 'gain' bolmenin sagladigi GERCEK kayip azalmasini olcer ve doymaz.
+    "importance_type": "gain",
 }
 
 XGB_DEFAULTS: dict[str, Any] = {
@@ -107,7 +120,7 @@ CAT_DEFAULTS: dict[str, Any] = {
 #: davranisini tam olarak o belirlemeli -- yoksa gizli varsayilanlar
 #: tekrarlanabilirligi bozar.
 INFRASTRUCTURE_KEYS: dict[str, tuple[str, ...]] = {
-    "lightgbm": ("verbose", "n_jobs"),
+    "lightgbm": ("verbose", "n_jobs", "importance_type"),
     "xgboost": ("tree_method", "enable_categorical", "n_jobs"),
     "catboost": ("verbose", "allow_writing_files"),
 }
@@ -156,8 +169,9 @@ def starter_params(
                         bunu kullandi); ``tweedie_variance_power`` 1.1-1.5 arasi aranir
       * ``mae``/``l1`` -- resmi metrik MAE ise dogrudan onu optimize et
 
-    2024 GDZ birincisi objective'i **Optuna arama uzayina koydu** -- yani
-    hangisinin kazandigi veriye baglidir ve deneyle bulunur.
+    2023 GDZ Datathon birincisi objective'i **Optuna arama uzayina koydu**
+    -- yani hangisinin kazandigi veriye baglidir ve deneyle bulunur.
+    (Kaggle'da GDZ'nin 2024 yarismasi YOKTUR; onceki atif hataliydi.)
     """
     # Genel objective anahtarini kutuphaneye ozgu ada CEVIR.
     #

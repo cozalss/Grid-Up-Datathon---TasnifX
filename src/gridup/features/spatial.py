@@ -6,7 +6,8 @@ Firtina, sicak hava dalgasi ve yildirim **ilce siniri tanimaz**. Komsu ilcede
 dun yasanan kesinti, bugun bu ilcede olacak kesinti icin guclu bir sinyaldir --
 cunku ayni hava olayi bolgeyi tarar.
 
-2024 GDZ Datathon birincisinin cozumunde bu feature ailesi acikca vardi ve
+2023 GDZ Datathon birincisinin cozumunde komsuluk/bolgesel sinyal fikri
+vardi ve
 arastirma bunu "ucuz ve yuksek getirili" diye isaretledi.
 
 MEKANSAL SIZINTI UYARISI

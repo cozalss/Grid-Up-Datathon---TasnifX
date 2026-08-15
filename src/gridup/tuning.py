@@ -2,8 +2,16 @@
 
 TASARIM KARARI: OBJECTIVE DE ARAMA UZAYINDA
 -------------------------------------------
-2024 GDZ Datathon birincisi ``objective``i **arama uzayina koydu**. Bu ilk
-bakista tuhaf gorunur -- objective bir "model ayari" degil, problem tanimidir.
+UYARI -- DOGRULANMAMIS ATIF KALDIRILDI
+Onceki surumde burada "2024 GDZ Datathon birincisi objective'i arama uzayina
+koydu" yaziyordu. Bu **DOGRULANAMADI ve yanlistir**: Kaggle'da GDZ'nin 2024
+yarismasi yoktur, ve gercek olan 2023 birincisinin notebook'unda Optuna HIC
+kullanilmamis; parametreler elle sabitlenmis (objective='MAE',
+eval_metric='MAPE', lr=0.03, depth=6).
+
+Karar yine de savunulabilir, ama gerekcesi bir yarisma anekdotu DEGIL,
+asagidaki teknik akil yurutmedir. Objective ilk bakista tuhaf bir arama
+boyutu gorunur -- "model ayari" degil, problem tanimidir.
 
 Ama sayim hedeflerinde degildir. ``poisson``, ``tweedie``, ``mae`` ve ``l2``
 arasindaki secim VERIYE BAGLIDIR ve teoriden okunamaz:

@@ -11,6 +11,7 @@ modelden daha kotu harmanlanir.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -229,12 +230,60 @@ def prune_by_correlation(
     return kept
 
 
+#: Meta-model bu kadar satirdan az ile egitilirse degenere kabul edilir.
+MIN_META_TRAIN_ROWS = 20
+
+
+def _resolve_base_coverage(
+    oof_predictions: dict[str, np.ndarray],
+    base_covered: np.ndarray | None,
+    *,
+    verbose: bool,
+) -> np.ndarray:
+    """Temel modellerin GERCEK tahmin urettigi satirlarin maskesi.
+
+    ``base_covered`` verilmezse tespit ederiz: **tum uyelerde ayni anda tam
+    sifir** olan satirlar dolgudur. Bu kalip tesadufen olusmaz -- gercek
+    tahminlerin hepsinin ayni satirda bit-birebir 0.0 olmasi pratikte
+    imkansizdir.
+
+    Tespit YETERLI DEGILDIR, sadece son savunmadir: dogrusu
+    ``CVResult.oof_covered`` maskelerinin kesisimini VERMEKTIR.
+    """
+    diziler = [np.asarray(v, dtype="float64") for v in oof_predictions.values()]
+    n = len(diziler[0])
+
+    if base_covered is not None:
+        maske = np.asarray(base_covered, dtype=bool).ravel()
+        if len(maske) != n:
+            raise ValueError(
+                f"base_covered uzunlugu ({len(maske)}) OOF uzunluguyla ({n}) uyusmuyor."
+            )
+        return maske
+
+    dolgu = np.ones(n, dtype=bool)
+    for dizi in diziler:
+        dolgu &= dizi == 0.0
+    maske = ~dolgu
+
+    oran = float(dolgu.mean())
+    if oran > 0 and verbose:
+        print(
+            f"  NOT: {int(dolgu.sum()):,} satirda ({oran:.1%}) TUM uyeler tam sifir -- "
+            "temel OOF kapsami disi sayildi ve meta-egitimden cikarildi.\n"
+            "  Daha guvenlisi: base_covered=... ile CVResult.oof_covered maskelerinin "
+            "kesisimini ver."
+        )
+    return maske
+
+
 def stack_oof(
     oof_predictions: dict[str, np.ndarray],
     y_true: np.ndarray,
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     *,
     test_predictions: dict[str, np.ndarray] | None = None,
+    base_covered: np.ndarray | None = None,
     meta: str = "ridge",
     metric: str = "rmse",
     seed: int = 42,
@@ -268,19 +317,64 @@ def stack_oof(
     features = pd.DataFrame(oof_predictions)
     y = np.asarray(y_true, dtype="float64")
 
+    # TEMEL MODELLERIN KAPSAMI -- bu blogun varlik sebebi
+    # ---------------------------------------------------
+    # Birinci seviye OOF dizilerinde, hicbir fold'un valid tarafinda olmayan
+    # satirlar SIFIRDIR (gercek tahmin degil, dolgu). Meta-modeli o satirlarla
+    # egitmek, sifir feature'lari GERCEK hedefle eslestirmek demektir.
+    #
+    # TimeSeriesSplit'te bu felakete donusur: ilk fold'un egitim kumesi en
+    # ESKI bloktur ve o blok hicbir temel fold'un valid tarafinda degildir --
+    # yani meta-egitim verisinin %100'u sifirdir.
+    #
+    # OLCULDU (3 uye, TimeSeriesSplit(4), N=3000):
+    #   fold-1 meta katsayilari : [0. 0. 0.]   (hepsi TAM sifir)
+    #   fold-1 test tahmin std  : 5.55e-17     (TAM SABIT model)
+    #   test RMSE (maskesiz)    : 1.0791
+    #   test RMSE (maskeli)     : 0.5352       <- IKI KATI fark
+    # Sabit model test harmanina girdigi icin harman 3/4 oraninda BUZUSUYOR.
+    base_mask = _resolve_base_coverage(oof_predictions, base_covered, verbose=verbose)
+
     meta_oof = np.zeros(len(y), dtype="float64")
     covered = np.zeros(len(y), dtype=bool)
     coefficient_rows: list[np.ndarray] = []
     fold_models: list[object] = []
+    atlanan: list[int] = []
 
-    for train_idx, valid_idx in folds:
+    for fold_index, (train_idx, valid_idx) in enumerate(folds, start=1):
+        egitim = train_idx[base_mask[train_idx]]
+        if len(egitim) < MIN_META_TRAIN_ROWS:
+            # Bu fold'un meta-modeli DEGENERE olurdu. Modeli listeye
+            # EKLEMIYORUZ: sabit bir model test harmanini buzusturur.
+            atlanan.append(fold_index)
+            continue
         model = _build_meta(meta, seed)
-        model.fit(features.iloc[train_idx], y[train_idx])
-        meta_oof[valid_idx] = model.predict(features.iloc[valid_idx])
-        covered[valid_idx] = True
+        model.fit(features.iloc[egitim], y[egitim])
+        uygula = valid_idx[base_mask[valid_idx]]
+        if len(uygula) == 0:
+            atlanan.append(fold_index)
+            continue
+        meta_oof[uygula] = model.predict(features.iloc[uygula])
+        covered[uygula] = True
         fold_models.append(model)
         if hasattr(model, "coef_"):
             coefficient_rows.append(np.asarray(model.coef_, dtype="float64").ravel())
+
+    if atlanan:
+        warnings.warn(
+            f"Stacking: {len(atlanan)} fold ATLANDI (fold {atlanan}) -- temel "
+            f"modellerin OOF kapsami disinda kaldiklari icin meta-modelleri "
+            "degenere olurdu. Kalan fold'larla devam ediliyor.\n"
+            "Bu normaldir: TimeSeriesSplit'te ilk donem hicbir fold'un valid "
+            "tarafinda olmaz.",
+            UserWarning,
+            stacklevel=2,
+        )
+    if not fold_models:
+        raise ValueError(
+            "Stacking icin kullanilabilir fold kalmadi: temel modellerin OOF "
+            "kapsami cok dar. Daha az fold veya daha kucuk test_span dene."
+        )
 
     score = float(metric_fn(y[covered], meta_oof[covered])) if covered.any() else float("nan")
 

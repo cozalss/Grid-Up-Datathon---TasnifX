@@ -10,8 +10,15 @@ komsu). Hepsini modele vermek uc sorun yaratir:
   * **Asiri uyum.** Ozellikle yuksek kardinaliteli kodlamalar.
   * **Aciklanabilirlik.** 400 feature'lik bir modeli juriye anlatamazsin.
 
-2024 GDZ Datathon birincisi **490 -> 97 feature** indirdi ve skoru iyilestirdi.
-Feature sayisi-skor egrisi ayrica sunumda guclu bir slayt olur.
+UYARI -- DOGRULANMAMIS ATIF KALDIRILDI
+Onceki surumde burada "2024 GDZ Datathon birincisi 490 -> 97 feature indirdi"
+yaziyordu. Bu iddia **DOGRULANAMADI ve muhtemelen YANLISTIR**:
+  * Kaggle'da GDZ'nin 2024 yarismasi YOKTUR
+  * Gercek olan 2023 birincisinin notebook'u okundu: ``stage_one_exclude = []``
+    -- yani HIC feature secimi yapmamis, 490->97 diye bir sey olmamis
+Feature secimi yine de mesru bir tekniktir; ama bu modulun gerekcesi bir
+yarisma anekdotu DEGIL, yukaridaki uc somut sebeptir.
+Feature sayisi-skor egrisi sunumda guclu bir slayt olur.
 
 IKI YONTEM, FARKLI SORULAR
 --------------------------
@@ -211,6 +218,13 @@ def fold_shap_importance(
     )
 
 
+#: Null-importance icin agac sayisi. Bilerek DUSUK: bu adim bir SIRALAMA
+#: adimidir, en iyi modeli kurmak degil. Cok agac split sayisini doyurur ve
+#: gercek sinyali gurultuden ayirt edilemez kilar (olculdu: 5000 agacta
+#: gercek sinyalin 2/3'u kaybediliyor).
+NULL_IMPORTANCE_TREES = 300
+
+
 def null_importance_filter(
     train: pd.DataFrame,
     target: np.ndarray | pd.Series,
@@ -242,7 +256,21 @@ def null_importance_filter(
     """
     y = np.asarray(target).ravel()
     model_params = dict(params) if params else starter_params(kind, task_type)
-    model_params.setdefault("n_estimators", 300)
+    # ACIK ATAMA -- setdefault DEGIL.
+    #
+    # Onceki surum ``setdefault("n_estimators", 300)`` yaziyordu ve bu OLU
+    # KODDU: ``starter_params`` zaten 5000 doner, dolayisiyla 300 hicbir
+    # zaman uygulanmazdi. Niyet edilen 300 yerine 5000 agac egitiliyordu.
+    #
+    # OLCULDU (3 gercek sinyal + 40 saf gurultu, N=4000):
+    #   5000 agac : 23.6 sn, tutulan gercek 1/3   <- sinyalin 2/3'u KAYIP
+    #    300 agac :  1.1 sn, tutulan gercek 3/3
+    # 21 KAT hizli VE dogru. Cok agacli modelde split sayisi doyuyor ve
+    # gercek sinyal ile gurultu ayirt edilemez hale geliyor.
+    #
+    # Kullanici acikca params verirse ona dokunmayiz.
+    if not params:
+        model_params["n_estimators"] = NULL_IMPORTANCE_TREES
 
     from .models import _extract_importance, _prepare_categoricals
 
@@ -317,7 +345,8 @@ def shap_backward_selection(
 ) -> SelectionResult:
     """SHAP tabanli geri eleme. Her adimda en zayif feature'lari atar.
 
-    2024 GDZ Datathon birincisinin birebir proseduru (490 -> 97 feature).
+    NOT: onceki surum bu proseduru "2024 GDZ birincisinin birebir yontemi"
+    diye tanitiyordu -- DOGRULANMADI, bkz. modul docstring'i.
 
     Args:
         drop_per_step: Her adimda kac feature atilacak.

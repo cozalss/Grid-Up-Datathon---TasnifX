@@ -264,3 +264,187 @@ def test_dolduruldu_bayragi_sentetik_satirlari_isaretliyor():
     # Bayrak DOGRU satiri isaretlemeli (2 Ocak eksikti).
     eksik = panel.loc[panel["_dolduruldu"] == 1, "tarih"].iloc[0]
     assert eksik == pd.Timestamp("2025-01-02")
+
+
+# --------------------------------------------------------------------------
+# P0: stacking meta-modeli OOF kapsami DISINDAKI sifir dolgusuyla egitiliyordu
+# --------------------------------------------------------------------------
+
+
+def _kapsamsiz_kurulum(n: int = 3000, m: int = 2000, tohum: int = 3):
+    """TimeSeriesSplit benzeri: ilk blok hicbir fold'un valid tarafinda DEGIL."""
+    rng = np.random.default_rng(tohum)
+    blok = n // 5
+    folds = [
+        (np.arange(0, i * blok), np.arange(i * blok, (i + 1) * blok)) for i in range(1, 5)
+    ]
+    kapsam = np.zeros(n, dtype=bool)
+    for _, valid in folds:
+        kapsam[valid] = True
+
+    y = rng.normal(0, 3, n)
+    gercek_test = rng.normal(0, 3, m)
+    uyeler, test = {}, {}
+    for ad, guc in (("a", 0.8), ("b", 0.9), ("c", 0.6)):
+        dizi = np.zeros(n)
+        dizi[kapsam] = y[kapsam] * guc + rng.normal(0, 1, int(kapsam.sum()))
+        uyeler[ad] = dizi
+        test[ad] = gercek_test * guc + rng.normal(0, 1, m)
+    return uyeler, test, y, gercek_test, folds, kapsam
+
+
+def test_stacking_kapsamsiz_foldu_atliyor():
+    """REGRESYON P0: fold-1'in meta-egitim kumesinin %100'u SIFIR dolgusuydu.
+
+    Sonuc: Ridge tum katsayilari 0 yapiyor, model SABIT tahmin uretiyor ve
+    test harmanina girdigi icin harman buzusuyor.
+    OLCULDU: fold-1 katsayilari [0,0,0], test tahmin std 5.55e-17.
+    """
+    from gridup.ensemble import stack_oof
+
+    uyeler, test, y, _, folds, kapsam = _kapsamsiz_kurulum()
+    assert kapsam[folds[0][0]].sum() == 0, "kurulum bozuk: fold-1 zaten kapsanmis"
+
+    with warnings.catch_warnings(record=True) as yakalanan:
+        warnings.simplefilter("always")
+        sonuc = stack_oof(uyeler, y, folds, test_predictions=test, metric="rmse", verbose=False)
+
+    assert yakalanan, "kapsamsiz fold atlandi ama UYARI verilmedi"
+    assert "ATLANDI" in str(yakalanan[0].message)
+    # Katsayilar dejenere OLMAMALI.
+    katsayilar = np.array(list(sonuc["coefficients"].values()))
+    assert np.any(np.abs(katsayilar) > 0.05), f"katsayilar hala dejenere: {katsayilar}"
+
+
+def test_stacking_duzeltmesi_test_harmanini_buzusturmuyor():
+    """Sabit bir fold modeli test harmanina girerse harman 1/k oraninda kucular.
+
+    OLCULDU: eski yolda test std 2.19, duzeltilmis yolda 2.92; test RMSE
+    1.0330 -> 0.7095.
+    """
+    from sklearn.linear_model import Ridge
+
+    from gridup.ensemble import stack_oof
+    from gridup.metrics import rmse
+
+    uyeler, test, y, gercek_test, folds, _ = _kapsamsiz_kurulum()
+
+    # ESKI davranisi elle yeniden uret: maskesiz egitim, tum modeller harmanda.
+    ozellikler, test_ozellikleri = pd.DataFrame(uyeler), pd.DataFrame(test)
+    eski_modeller = []
+    for train_idx, _ in folds:
+        model = Ridge(alpha=1.0)
+        model.fit(ozellikler.iloc[train_idx], y[train_idx])
+        eski_modeller.append(model)
+    eski_test = np.mean([m.predict(test_ozellikleri) for m in eski_modeller], axis=0)
+
+    # Eski yolun bozuklugu: ilk modelin TUM katsayilari sifir.
+    assert np.allclose(eski_modeller[0].coef_, 0.0)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        yeni = stack_oof(uyeler, y, folds, test_predictions=test, metric="rmse", verbose=False)
+
+    assert rmse(gercek_test, yeni["test"]) < rmse(gercek_test, eski_test)
+    assert np.std(yeni["test"]) > np.std(eski_test), "harman hala buzusuyor"
+
+
+def test_stacking_base_covered_maskesini_kabul_ediyor():
+    """Acik maske vermek tespit sezgisinden daha guvenlidir."""
+    from gridup.ensemble import stack_oof
+
+    uyeler, test, y, _, folds, kapsam = _kapsamsiz_kurulum()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        sonuc = stack_oof(
+            uyeler, y, folds, test_predictions=test, base_covered=kapsam,
+            metric="rmse", verbose=False,
+        )
+    assert np.isfinite(sonuc["score"])
+
+
+def test_stacking_yanlis_uzunlukta_maske_reddediliyor():
+    from gridup.ensemble import stack_oof
+
+    uyeler, _, y, _, folds, _ = _kapsamsiz_kurulum(n=1000, m=10)
+    with pytest.raises(ValueError, match="uyusmuyor"):
+        stack_oof(uyeler, y, folds, base_covered=np.ones(50, dtype=bool), verbose=False)
+
+
+def test_stacking_hic_kapsam_yoksa_acik_hata():
+    from gridup.ensemble import stack_oof
+
+    n = 400
+    folds = [(np.arange(0, 200), np.arange(200, 400))]
+    uyeler = {ad: np.zeros(n) for ad in ("a", "b")}
+    with pytest.raises(ValueError, match="kullanilabilir fold kalmadi"), \
+            warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        stack_oof(uyeler, np.arange(float(n)), folds, verbose=False)
+
+
+# --------------------------------------------------------------------------
+# Feature onemi: olcunun kendisi yaniltici olabilir
+# --------------------------------------------------------------------------
+
+
+def test_lightgbm_onem_olcusu_gain():
+    """REGRESYON: 'split' onemi cok agacli modelde DOYUYOR.
+
+    OLCULDU (3 gercek sinyal + 40 saf gurultu, 5000 agac, N=4000):
+      split -> gercek/gurultu onem orani =  0.97x  (sinyal DAHA ONEMSIZ gorunuyor)
+      gain  -> gercek/gurultu onem orani = 12.80x
+    """
+    from gridup.models import INFRASTRUCTURE_KEYS, LGB_DEFAULTS, merge_infrastructure_params
+
+    assert LGB_DEFAULTS["importance_type"] == "gain"
+    assert "importance_type" in INFRASTRUCTURE_KEYS["lightgbm"], (
+        "params verilince onem olcusu kaybolur"
+    )
+    assert merge_infrastructure_params("lightgbm", {"n_estimators": 100})[
+        "importance_type"
+    ] == "gain"
+
+
+@pytest.mark.slow
+def test_onem_tablosu_gercek_sinyali_ustte_gosteriyor():
+    from gridup.models import cross_validate
+    from gridup.validation import purged_time_series_split
+
+    rng = np.random.default_rng(11)
+    n = 2000
+    zaman = pd.Series(np.tile(pd.date_range("2025-01-01", periods=500), 4))
+    X = pd.DataFrame({f"g_{i}": rng.normal(0, 1, n) for i in range(20)})
+    for i in range(3):
+        X[f"gercek_{i}"] = rng.normal(0, 1, n)
+    y = (sum(0.5 * X[f"gercek_{i}"] for i in range(3)) + rng.normal(0, 1, n)).to_numpy()
+
+    folds = purged_time_series_split(
+        zaman, embargo=pd.Timedelta(days=5), n_splits=2,
+        test_span=pd.Timedelta(days=40), verbose=False,
+    )
+    sonuc = cross_validate(X, y, folds, kind="lightgbm", metric="rmse", verbose=False)
+    ilk_uc = set(sonuc.feature_importance.head(3)["feature"])
+    assert ilk_uc == {"gercek_0", "gercek_1", "gercek_2"}
+
+
+def test_null_importance_agac_sayisi_gercekten_uygulaniyor():
+    """REGRESYON: setdefault OLU KODDU -- starter_params zaten 5000 veriyordu.
+
+    OLCULDU (3 gercek + 40 gurultu, N=4000):
+      5000 agac : 23.6 sn, tutulan gercek 1/3
+       300 agac :  2.3 sn, tutulan gercek 3/3
+    """
+    import inspect
+
+    from gridup.models import starter_params
+    from gridup.selection import NULL_IMPORTANCE_TREES, null_importance_filter
+
+    assert starter_params("lightgbm", "regression")["n_estimators"] > NULL_IMPORTANCE_TREES
+    kaynak = inspect.getsource(null_importance_filter)
+    # "setdefault" kelimesi aciklama yorumunda gecebilir; CAGRI kalibini ariyoruz.
+    assert ".setdefault(" not in kaynak, (
+        "setdefault CAGRISI geri geldi -- starter_params zaten deger verdigi "
+        "icin bu OLU KODDUR"
+    )
+    assert "NULL_IMPORTANCE_TREES" in kaynak

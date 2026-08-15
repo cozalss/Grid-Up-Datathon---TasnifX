@@ -2,7 +2,7 @@
 
 NEDEN BU MODUL VAR
 ------------------
-2024 GDZ Datathon birincisinin final mimarisi soyleydi::
+2023 GDZ Datathon birincisinin final mimarisi soyleydi::
 
     25 seed x full-data refit  ->  mean blend  ->  round  ->  clip
 
