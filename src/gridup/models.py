@@ -113,6 +113,16 @@ def starter_params(
     2024 GDZ birincisi objective'i **Optuna arama uzayina koydu** -- yani
     hangisinin kazandigi veriye baglidir ve deneyle bulunur.
     """
+    # Genel objective anahtarini kutuphaneye ozgu ada CEVIR.
+    #
+    # Docstring "COUNT_OBJECTIVES anahtarlarindan birini kullan: poisson,
+    # tweedie, mae" diyor -- ama onceki surum degeri OLDUGU GIBI geciriyordu.
+    # Sonuc: objective="mae" LightGBM'de calisiyor, XGBoost'ta
+    # "Unknown objective function", CatBoost'ta "mae loss is not supported"
+    # ile cokuyordu. fit_two_stage bu yolu sabit kodladigi icin iki
+    # kutuphanede de tamamen kullanilamazdi (olculdu).
+    objective = _resolve_objective(kind, objective)
+
     if kind == "lightgbm":
         params = dict(LGB_DEFAULTS)
         params["objective"] = objective or {
@@ -141,6 +151,21 @@ def starter_params(
         return params
 
     raise ValueError(f"Bilinmeyen model tipi '{kind}'.")
+
+
+
+def _resolve_objective(kind: ModelKind, objective: str | None) -> str | None:
+    """Genel objective anahtarini kutuphaneye ozgu ada cevirir.
+
+    ``poisson``/``tweedie``/``mae``/``l2`` gibi genel anahtarlar
+    ``COUNT_OBJECTIVES`` uzerinden cevrilir. Zaten kutuphaneye ozgu bir ad
+    verilmisse (``reg:tweedie``, ``MAE``, ``count:poisson``) oldugu gibi
+    birakilir -- kullanicinin acik tercihini ezmeyiz.
+    """
+    if objective is None:
+        return None
+    esleme = COUNT_OBJECTIVES.get(kind, {})
+    return esleme.get(objective, objective)
 
 
 # Sayim hedefi icin denenmesi gereken objective'ler, kutuphane bazinda.

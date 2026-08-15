@@ -646,3 +646,34 @@ def test_maskesiz_cvresult_geriye_uyumlu():
     assert len(indeks) == 5
     assert eski.coverage == 1.0
     assert np.array_equal(tahminler, eski.oof_predictions)
+
+
+@pytest.mark.parametrize("kind", ["lightgbm", "xgboost", "catboost"])
+def test_genel_objective_anahtari_her_kutuphanede_cevriliyor(kind):
+    """REGRESYON P1: objective='mae' XGBoost/CatBoost'ta cokuyordu.
+
+    starter_params docstring'i 'COUNT_OBJECTIVES anahtarlarindan birini
+    kullan' diyor ama kod degeri oldugu gibi geciriyordu:
+      XGBoost  -> "Unknown objective function"
+      CatBoost -> "mae loss is not supported"
+    fit_two_stage bu yolu sabit kodladigi icin iki kutuphanede de tamamen
+    kullanilamazdi.
+    """
+    from gridup.models import COUNT_OBJECTIVES, starter_params
+
+    anahtar = "loss_function" if kind == "catboost" else "objective"
+    for genel in ("mae", "poisson", "tweedie", "l2"):
+        params = starter_params(kind, "regression", objective=genel)
+        assert params[anahtar] == COUNT_OBJECTIVES[kind][genel]
+
+
+def test_kutuphaneye_ozgu_objective_ezilmiyor():
+    """Kullanici acikca kutuphane adi verdiyse cevirmeye kalkmayiz."""
+    from gridup.models import starter_params
+
+    assert starter_params("xgboost", "regression", objective="reg:tweedie")[
+        "objective"
+    ] == "reg:tweedie"
+    assert starter_params("catboost", "regression", objective="Huber:delta=1")[
+        "loss_function"
+    ] == "Huber:delta=1"
