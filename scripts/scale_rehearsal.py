@@ -100,23 +100,49 @@ def _bellek_mb() -> float:
     return psutil.Process().memory_info().rss / 1024 / 1024
 
 
-class _Kronometre:
-    """Sure ve bellek artisini olcer."""
+#: Tekrarli olcumde kac kez kosulacagi. 1 hizlidir ama GURULTULUDUR:
+#: bu makinede ayni is yuku iki ayri kosuda 6.2 sn ve 12.1 sn olculdu
+#: (2x fark). Termal durum, bellek baskisi ve arka plan sureçleri etkiler.
+#: Guvenilir us (scaling exponent) cikarmak icin en az 3 tekrar gerekir.
+VARSAYILAN_TEKRAR = 1
 
-    def __init__(self, ad: str, sonuc: OlcekSonucu, not_: str = "") -> None:
-        self.ad, self.sonuc, self.not_ = ad, sonuc, not_
 
-    def __enter__(self):
+def olc(
+    ad: str,
+    islem,
+    sonuc: OlcekSonucu,
+    *,
+    tekrar: int = 1,
+    not_: str = "",
+):
+    """``islem``i ``tekrar`` kez kosar, EN KISA sureyi kaydeder, sonucu dondurur.
+
+    Neden minimum, ortalama degil: gurultu sureyi her zaman UZATIR (arka plan
+    sureci, termal kisma, takas), asla kisaltmaz. Minimum bu yuzden "engelsiz
+    kosuldugunda ne kadar surer" sorusunun en iyi tahminidir.
+
+    Neden tekrar gerekli: bu makinede AYNI is yuku iki ayri kosuda 6.2 sn ve
+    12.1 sn olculdu -- 2x fark. Tek olcumden cikarilan olcekleme ussu bu
+    gurultuyle anlamsizlasir.
+    """
+    sureler: list[float] = []
+    artis = 0.0
+    cikti = None
+    for _ in range(max(1, tekrar)):
         gc.collect()
-        self.baslangic_bellek = _bellek_mb()
-        self.baslangic = time.perf_counter()
-        return self
+        bellek_once = _bellek_mb()
+        baslangic = time.perf_counter()
+        cikti = islem()
+        sureler.append(time.perf_counter() - baslangic)
+        artis = max(artis, _bellek_mb() - bellek_once)
 
-    def __exit__(self, *args) -> None:
-        sure = time.perf_counter() - self.baslangic
-        artis = max(0.0, _bellek_mb() - self.baslangic_bellek)
-        self.sonuc.olcumler.append(Olcum(self.ad, sure, artis, self.not_))
-        print(f"    {self.ad:<34} {sure:7.1f} sn   (+{artis:5.0f} MB)")
+    etiket = not_
+    if tekrar > 1:
+        yayilim = (max(sureler) - min(sureler)) / min(sureler) * 100
+        etiket = (etiket + " " if etiket else "") + f"{tekrar} tekrar, yayilim %{yayilim:.0f}"
+    sonuc.olcumler.append(Olcum(ad, min(sureler), max(0.0, artis), etiket))
+    print(f"    {ad:<34} {min(sureler):7.1f} sn   (+{max(0.0, artis):5.0f} MB)")
+    return cikti
 
 
 def panel_uret(n_satir: int, seed: int = 42) -> tuple[pd.DataFrame, np.ndarray, pd.Series]:
@@ -169,7 +195,7 @@ def panel_uret(n_satir: int, seed: int = 42) -> tuple[pd.DataFrame, np.ndarray, 
     return frame, hedef, tarih
 
 
-def olcek_kos(n_satir: int, *, tam: bool) -> OlcekSonucu:
+def olcek_kos(n_satir: int, *, tam: bool, tekrar: int = 1) -> OlcekSonucu:
     """Tek bir olcek icin tum islemleri olcer."""
     from gridup.ensemble import hill_climb_weights, stack_oof
     from gridup.models import cross_validate
@@ -194,23 +220,21 @@ def olcek_kos(n_satir: int, *, tam: bool) -> OlcekSonucu:
 
     hizli = {"n_estimators": 500, "learning_rate": 0.05, "verbose": -1}
 
-    with _Kronometre("LightGBM tek CV (500 agac)", sonuc):
-        lgbm = cross_validate(X, y, folds, kind="lightgbm", metric="mape",
-                              params=hizli, verbose=False)
+    lgbm = olc("LightGBM tek CV (500 agac)", sonuc=sonuc, tekrar=tekrar,
+               islem=lambda: cross_validate(X, y, folds, kind="lightgbm", metric="mape",
+                                            params=hizli, verbose=False))
 
-    with _Kronometre("CatBoost tek CV (500 iter)", sonuc):
-        cat = cross_validate(
-            X, y, folds, kind="catboost", metric="mape",
-            params={"iterations": 500, "learning_rate": 0.05, "verbose": 0,
-                    "allow_writing_files": False},
-            verbose=False,
-        )
+    cat = olc("CatBoost tek CV (500 iter)", sonuc=sonuc, tekrar=tekrar,
+              islem=lambda: cross_validate(
+                  X, y, folds, kind="catboost", metric="mape",
+                  params={"iterations": 500, "learning_rate": 0.05, "verbose": 0,
+                          "allow_writing_files": False},
+                  verbose=False))
 
-    with _Kronometre("Sinir agi CV (60 epok)", sonuc):
-        nn = neural_cross_validate(
-            X, y, folds, cat_columns=["ilce"], metric="mape",
-            config=NeuralConfig(max_epochs=60, patience=8), verbose=False,
-        )
+    nn = olc("Sinir agi CV (60 epok)", sonuc=sonuc, tekrar=tekrar,
+             islem=lambda: neural_cross_validate(
+                 X, y, folds, cat_columns=["ilce"], metric="mape",
+                 config=NeuralConfig(max_epochs=60, patience=8), verbose=False))
 
     # Harman icin IKI ayri gorunum gerekiyor:
     #   * hill_climb yalnizca OOF kapsamindaki satirlari ister (skor orada olculur)
@@ -225,26 +249,26 @@ def olcek_kos(n_satir: int, *, tam: bool) -> OlcekSonucu:
     }
     kapsamli = {ad: dizi[kapsam] for ad, dizi in tam.items()}
 
-    with _Kronometre("hill_climb_weights (3 uye)", sonuc):
-        hill_climb_weights(kapsamli, y[kapsam], metric="mape", verbose=False)
+    olc("hill_climb_weights (3 uye)", sonuc=sonuc, tekrar=tekrar,
+        islem=lambda: hill_climb_weights(kapsamli, y[kapsam], metric="mape", verbose=False))
 
-    with _Kronometre("stack_oof (meta model)", sonuc):
-        stack_oof(tam, y, folds, metric="mape", verbose=False)
+    olc("stack_oof (meta model)", sonuc=sonuc, tekrar=tekrar,
+        islem=lambda: stack_oof(tam, y, folds, metric="mape", verbose=False))
 
-    with _Kronometre("SHAP onem (fold basi 2000)", sonuc):
-        fold_shap_importance(lgbm.models, X, folds, sample_per_fold=2000)
+    olc("SHAP onem (fold basi 2000)", sonuc=sonuc, tekrar=tekrar,
+        islem=lambda: fold_shap_importance(lgbm.models, X, folds, sample_per_fold=2000))
 
     if tam:
-        with _Kronometre("model zoo (3 model x 3 fold)", sonuc,
-                         "zoo = lgbm + xgb + cat, ayni fold'lar"):
-            make_model_zoo(X, y, folds, metric="mape", verbose=False)
+        olc("model zoo (3 model x 3 fold)", sonuc=sonuc, tekrar=tekrar,
+            not_="zoo = lgbm + xgb + cat, ayni fold'lar",
+            islem=lambda: make_model_zoo(X, y, folds, metric="mape", verbose=False))
 
     # Optuna: TEK deneme olculur, kullanici deneme sayisiyla carpar.
-    with _Kronometre("Optuna TEK deneme", sonuc, "n_trials ile carp"):
-        from gridup.tuning import tune_with_optuna
+    from gridup.tuning import tune_with_optuna
 
-        tune_with_optuna(X, y, folds, kind="lightgbm", metric="mape",
-                         n_trials=1, verbose=False)
+    olc("Optuna TEK deneme", sonuc=sonuc, tekrar=tekrar, not_="n_trials ile carp",
+        islem=lambda: tune_with_optuna(X, y, folds, kind="lightgbm", metric="mape",
+                                       n_trials=1, verbose=False))
 
     return sonuc
 
@@ -345,10 +369,64 @@ def butce_raporu(sonuclar: dict[int, OlcekSonucu], hedef_olcek: int) -> str:
     return "\n".join(satirlar)
 
 
+def _us_ile_kestir(
+    kucuk: OlcekSonucu, buyuk: OlcekSonucu, hedef_satir: int
+) -> OlcekSonucu:
+    """Iki olculen noktadan guc yasasi cikarip ucuncuyu kestirir.
+
+    ``t(n) = t0 * (n/n0)^k``. Us ``k`` her islem icin AYRI hesaplanir cunku
+    olceklenmeleri farklidir (olculdu: LightGBM ~0.98, CatBoost ~0.72,
+    sinir agi ~1.19).
+
+    Cok kucuk sureler (<0.5 sn) olcum gurultusu tasir; onlarda us hesabi
+    guvenilmezdir, dogrusal kabul edilir.
+    """
+    oran_veri = buyuk.satir / kucuk.satir
+    kestirim = OlcekSonucu(satir=hedef_satir, kolon=buyuk.kolon)
+    kucuk_map = {o.ad: o for o in kucuk.olcumler}
+
+    for olcum in buyuk.olcumler:
+        onceki = kucuk_map.get(olcum.ad)
+        buyume = hedef_satir / buyuk.satir
+
+        if onceki is None or onceki.saniye < 0.5 or olcum.saniye < 0.5:
+            us = 1.0  # olculemeyecek kadar kisa -> dogrusal kabul
+            gerekce = "us=1.0 (sure cok kisa)"
+        else:
+            ham_us = float(np.log(olcum.saniye / onceki.saniye) / np.log(oran_veri))
+            # Agac ve sinir agi egitiminin gercek karmasikligi bu araligin
+            # DISINDA olamaz: alt-dogrusal 0.5'in altina, ust-dogrusal 1.5'in
+            # ustune cikmaz. Disari dusen bir us, is yukunun degil OLCUM
+            # GURULTUSUNUN isaretidir -- bu makinede ayni is yuku iki kosuda
+            # 2x farkli olculdu. O durumda kestirimi dogrusala sabitleyip
+            # gerekcesini YAZIYORUZ; sessizce sacma bir sayi uretmiyoruz.
+            if 0.5 <= ham_us <= 1.5:
+                us, gerekce = ham_us, f"us={ham_us:.2f}"
+            else:
+                us = 1.0
+                gerekce = f"us={ham_us:.2f} GUVENILMEZ -> dogrusal kullanildi"
+
+        kestirim.olcumler.append(
+            Olcum(
+                olcum.ad,
+                olcum.saniye * buyume**us,
+                olcum.bellek_mb * buyume,  # bellek dogrusal kabul edilir
+                gerekce,
+                tahmin=True,
+            )
+        )
+    return kestirim
+
+
 def main() -> int:
     ayristirici = argparse.ArgumentParser(description=__doc__)
     ayristirici.add_argument("--hizli", action="store_true", help="sadece 100k olc")
     ayristirici.add_argument("--agir", action="store_true", help="2.5M'i da gercekten olc")
+    ayristirici.add_argument(
+        "--tekrar", type=int, default=VARSAYILAN_TEKRAR,
+        help="her islemi kac kez kos (en kisasi alinir). 1 hizli ama gurultulu; "
+             "guvenilir us icin >=3.",
+    )
     args = ayristirici.parse_args()
 
     olcekler = [100_000]
@@ -370,7 +448,7 @@ def main() -> int:
 
     sonuclar: dict[int, OlcekSonucu] = {}
     for olcek in olcekler:
-        sonuclar[olcek] = olcek_kos(olcek, tam=(olcek <= 500_000))
+        sonuclar[olcek] = olcek_kos(olcek, tam=(olcek <= 500_000), tekrar=args.tekrar)
         gc.collect()
 
     print("\n" + "=" * 68)
@@ -380,20 +458,21 @@ def main() -> int:
         print(f"\n--- {olcek:,} satir ---")
         print(sonuc.tablo().to_string(index=False))
 
-    # Olculmemis olcegi dogrusal kestir (agac modelleri ~O(n log n), pratikte
-    # bu araliklarda dogrusala yakin). ACIKCA TAHMIN olarak isaretlenir.
+    # Olculmemis olcegi OLCULEN USSE gore kestir -- dogrusal VARSAYMA.
+    #
+    # Ilk surum dogrusal kabul ediyordu ve yaniltiyordu: bu makinede 5 kat
+    # veride LightGBM 4.8x, CatBoost 3.2x (alt-dogrusal), sinir agi ise 6.8x
+    # (UST-dogrusal) yavasladi. Dogrusal kestirim sinir agini %30 iyimser,
+    # CatBoost'u %55 kotumser gosteriyordu.
+    #
+    # Bunun yerine iki olculen noktadan gercek us cikarilir:
+    #     t(n) = t0 * (n/n0)^k   =>   k = log(t1/t0) / log(n1/n0)
     if 2_500_000 not in sonuclar and len(sonuclar) >= 2:
         kucuk, buyuk = sorted(sonuclar)[:2]
-        oran = 2_500_000 / buyuk
-        kestirim = OlcekSonucu(satir=2_500_000, kolon=sonuclar[buyuk].kolon)
-        for olcum in sonuclar[buyuk].olcumler:
-            kestirim.olcumler.append(
-                Olcum(olcum.ad, olcum.saniye * oran, olcum.bellek_mb * oran,
-                      "dogrusal kestirim", tahmin=True)
-            )
-        sonuclar[2_500_000] = kestirim
-        print(f"\n--- 2,500,000 satir (KESTIRIM, {buyuk:,}'den dogrusal) ---")
-        print(kestirim.tablo().to_string(index=False))
+        sonuclar[2_500_000] = _us_ile_kestir(sonuclar[kucuk], sonuclar[buyuk], 2_500_000)
+        print(f"\n--- 2,500,000 satir (KESTIRIM, {kucuk:,}->{buyuk:,} ussuyle) ---")
+        print(sonuclar[2_500_000].tablo().to_string(index=False))
+        print("  NOT: us 1.0'dan buyukse islem olcekle KOTULESIYOR demektir.")
 
     hedef = 500_000 if 500_000 in sonuclar else min(sonuclar)
     print(butce_raporu(sonuclar, hedef))

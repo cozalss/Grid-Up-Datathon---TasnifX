@@ -5,50 +5,50 @@
   "olcumler": [
    {
     "ad": "LightGBM tek CV (500 agac)",
-    "saniye": 6.147126699999717,
-    "bellek_mb": 19.5390625,
+    "saniye": 12.132963000000018,
+    "bellek_mb": 20.7265625,
     "tahmin": false
    },
    {
     "ad": "CatBoost tek CV (500 iter)",
-    "saniye": 43.23044260000097,
-    "bellek_mb": 207.20703125,
+    "saniye": 60.07653310000023,
+    "bellek_mb": 230.921875,
     "tahmin": false
    },
    {
     "ad": "Sinir agi CV (60 epok)",
-    "saniye": 16.9531207,
-    "bellek_mb": 1029.46484375,
+    "saniye": 18.489082600000984,
+    "bellek_mb": 1004.6953125,
     "tahmin": false
    },
    {
     "ad": "hill_climb_weights (3 uye)",
-    "saniye": 0.01908049999838113,
-    "bellek_mb": 0.03125,
+    "saniye": 0.021036399999502464,
+    "bellek_mb": 0.03515625,
     "tahmin": false
    },
    {
     "ad": "stack_oof (meta model)",
-    "saniye": 0.06970949999958975,
-    "bellek_mb": 1.49609375,
+    "saniye": 0.07820650000030582,
+    "bellek_mb": 1.44140625,
     "tahmin": false
    },
    {
     "ad": "SHAP onem (fold basi 2000)",
-    "saniye": 1.6967052999989392,
-    "bellek_mb": 64.21484375,
+    "saniye": 1.8333433000007062,
+    "bellek_mb": 64.44140625,
     "tahmin": false
    },
    {
     "ad": "model zoo (3 model x 3 fold)",
-    "saniye": 125.12485950000155,
-    "bellek_mb": 57.5390625,
+    "saniye": 152.67710799999986,
+    "bellek_mb": 53.78515625,
     "tahmin": false
    },
    {
     "ad": "Optuna TEK deneme",
-    "saniye": 51.292808300000615,
-    "bellek_mb": 22.5859375,
+    "saniye": 58.09694540000055,
+    "bellek_mb": 20.203125,
     "tahmin": false
    }
   ]
@@ -59,50 +59,50 @@
   "olcumler": [
    {
     "ad": "LightGBM tek CV (500 agac)",
-    "saniye": 26.49860600000102,
-    "bellek_mb": 41.71484375,
+    "saniye": 29.842119799999637,
+    "bellek_mb": 43.1953125,
     "tahmin": false
    },
    {
     "ad": "CatBoost tek CV (500 iter)",
-    "saniye": 137.35362669999995,
-    "bellek_mb": 736.64453125,
+    "saniye": 135.1984811000002,
+    "bellek_mb": 743.3046875,
     "tahmin": false
    },
    {
     "ad": "Sinir agi CV (60 epok)",
-    "saniye": 110.33161890000156,
+    "saniye": 105.17293960000097,
     "bellek_mb": 0.0,
     "tahmin": false
    },
    {
     "ad": "hill_climb_weights (3 uye)",
-    "saniye": 0.0557862000005116,
-    "bellek_mb": 0.2265625,
+    "saniye": 0.04747689999931026,
+    "bellek_mb": 0.1953125,
     "tahmin": false
    },
    {
     "ad": "stack_oof (meta model)",
-    "saniye": 0.14283919999979844,
-    "bellek_mb": 10.33984375,
+    "saniye": 0.13855340000009164,
+    "bellek_mb": 10.33203125,
     "tahmin": false
    },
    {
     "ad": "SHAP onem (fold basi 2000)",
-    "saniye": 1.1169018000000506,
-    "bellek_mb": 4.3203125,
+    "saniye": 1.153709500000332,
+    "bellek_mb": 2.0625,
     "tahmin": false
    },
    {
     "ad": "model zoo (3 model x 3 fold)",
-    "saniye": 417.0809786000009,
+    "saniye": 464.8830489000011,
     "bellek_mb": 0.0,
     "tahmin": false
    },
    {
     "ad": "Optuna TEK deneme",
-    "saniye": 193.55966549999903,
-    "bellek_mb": 181.203125,
+    "saniye": 56.720925499999794,
+    "bellek_mb": 186.796875,
     "tahmin": false
    }
   ]
@@ -113,50 +113,50 @@
   "olcumler": [
    {
     "ad": "LightGBM tek CV (500 agac)",
-    "saniye": 132.4930300000051,
-    "bellek_mb": 208.57421875,
+    "saniye": 149.21059899999818,
+    "bellek_mb": 215.9765625,
     "tahmin": true
    },
    {
     "ad": "CatBoost tek CV (500 iter)",
-    "saniye": 686.7681334999997,
-    "bellek_mb": 3683.22265625,
+    "saniye": 675.992405500001,
+    "bellek_mb": 3716.5234375,
     "tahmin": true
    },
    {
     "ad": "Sinir agi CV (60 epok)",
-    "saniye": 551.6580945000078,
+    "saniye": 525.8646980000049,
     "bellek_mb": 0.0,
     "tahmin": true
    },
    {
     "ad": "hill_climb_weights (3 uye)",
-    "saniye": 0.278931000002558,
-    "bellek_mb": 1.1328125,
+    "saniye": 0.2373844999965513,
+    "bellek_mb": 0.9765625,
     "tahmin": true
    },
    {
     "ad": "stack_oof (meta model)",
-    "saniye": 0.7141959999989922,
-    "bellek_mb": 51.69921875,
+    "saniye": 0.6927670000004582,
+    "bellek_mb": 51.66015625,
     "tahmin": true
    },
    {
     "ad": "SHAP onem (fold basi 2000)",
-    "saniye": 5.584509000000253,
-    "bellek_mb": 21.6015625,
+    "saniye": 5.7685475000016595,
+    "bellek_mb": 10.3125,
     "tahmin": true
    },
    {
     "ad": "model zoo (3 model x 3 fold)",
-    "saniye": 2085.4048930000044,
+    "saniye": 2324.4152445000054,
     "bellek_mb": 0.0,
     "tahmin": true
    },
    {
     "ad": "Optuna TEK deneme",
-    "saniye": 967.7983274999951,
-    "bellek_mb": 906.015625,
+    "saniye": 283.60462749999897,
+    "bellek_mb": 933.984375,
     "tahmin": true
    }
   ]

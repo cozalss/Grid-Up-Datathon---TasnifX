@@ -12,11 +12,13 @@ başlamak.
 
 | | |
 |---|---|
-| Testler | **129 test**, tamamı geçiyor (`pytest`) · ruff temiz |
+| Testler | **426 test**, tamamı geçiyor (`pytest`) · ruff temiz |
 | Uçtan uca kanıt | `scripts/smoke_test.py` — sentetik veri üzerinde 14 adım, ~60 sn |
 | Sentetik holdout | RMSLE **1.200** vs medyan baseline **1.653** → **%27,4** kazanç |
-| Bağımsız denetim | 3 review agent'ı (sızıntı · Python doğruluğu · sessiz hata) — 22 bulgu kapatıldı |
+| Bağımsız denetim | 3 + 7 mercekli çekişmeli denetim — bulgular kapatıldı, çürütülenler atıldı |
 | Araştırma | 13 agent'lık derin araştırma → [docs/01-strateji-brifingi.md](docs/01-strateji-brifingi.md) |
+| Önceki yarışma | 2023 GDZ Datathon birincisinin çözümü + 558 satırlık forum dökümü incelendi |
+| Ölçek provası | `scripts/scale_rehearsal.py` — 100k ve 500k satırda süre/bellek ölçüldü |
 | Harici veri | Open-Meteo hava durumu çekicisi gerçek veriyle doğrulandı |
 | Yerel ortam | Python 3.11.9 · pandas 3.0.3 · numpy 2.4.6 · sklearn 1.8.0 |
 | **Kaggle ortamı** | Python 3.12 · pandas 3.0.4 · **numpy 2.0.2** · sklearn 1.9.0 — numpy Kaggle'da **daha eski** |
@@ -52,7 +54,7 @@ train = read_any("data/raw/train.csv")     # kodlama/ayırıcı/ondalık otomati
 test  = read_any("data/raw/test.csv")
 
 print(profile(train, test, target="HEDEF").report())   # 1 · elimizde ne var
-print(suggest_scheme(train, target="HEDEF"))           # 2 · hangi CV şeması
+print(suggest_scheme(train, target="HEDEF", test=test))# 2 · hangi CV şeması
 print(leakage_report(train, "HEDEF", test=test))       # 3 · sızıntı var mı
 ```
 
@@ -78,17 +80,21 @@ src/gridup/
     temporal.py     takvim, döngüsel kodlama, TR tatil, ufuk-farkındalıklı lag ve kayan pencere
     categorical.py  frekans, sayım, fold-dışı hedef kodlama, nadir kategori birleştirme
     aggregate.py    grup istatistikleri, sapma/oran/z-skor, oran feature'ları
+    solar.py        güneş geometrisi + açık-hava ışınımı (pvlib) — sızıntısız, deterministik
   metrics.py        RMSE/RMSLE/MAE/MAPE/SMAPE/AUC/F1 + eşik optimizasyonu + log dönüşümü
   models.py         LightGBM/XGBoost/CatBoost tek arayüz, OOF + test tahmini + feature önemi
   ensemble.py       tepe tırmanma ağırlıkları, açgözlü seçim, sıra ortalaması, korelasyon
   submission.py     yazmadan önce doğrulama (NaN, ∞, eksik ID, sabit tahmin, negatif)
   experiment.py     JSONL deney defteri + CV↔LB korelasyon takibi
   synthetic.py      sentetik dağıtım şebekesi verisi (pipeline'ı veriden önce kanıtlar)
+  ablation.py       feature grubu ablasyonu + dayanıklılık harmanı (2023 birincisinin mimarisi)
+  neural.py         varlık gömülü sinir ağı — harmana çeşitlilik üyesi
 
 notebooks/          01_kesif.ipynb · 02_baseline.ipynb
-scripts/            smoke_test.py · fetch_weather.py · build_notebooks.py
+scripts/            smoke_test.py · full_pipeline.py · day_one.py · scale_rehearsal.py
+                    build_kaggle_package.py · fetch_weather.py · build_notebooks.py
 docs/               yarışma brifingi, strateji, runbook
-tests/              89 test — sızıntı korumaları, TR metin, uçtan uca
+tests/              426 test — sızıntı korumaları, TR metin, tasarım sözleşmeleri, uçtan uca
 ```
 
 ---
