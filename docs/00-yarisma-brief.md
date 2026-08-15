@@ -50,7 +50,8 @@ eşleştirme iste. **Bunu 21 Ağustos'a bırakma.**
 - En fazla **4 kişi**
 - Her üye **ayrı ayrı** başvuru formunu doldurmalı
 - Herkes **aynı takım ismini** girmeli
-- Kaggle'da takım kurma penceresi sınırlıdır — açılış buluşmasında net tarihi sor
+- Takım oluşturma son tarihi: **24 Ağustos 2026, 23:59** (coderspace.io etkinlik
+  sayfasından doğrulandı — yarışmanın 4. günü; yine de açılışta teyit et)
 
 ### Kaggle'da takım kurma — adım adım
 

@@ -426,7 +426,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from gridup import (
-    conditional_quantile_from_hurdle, cross_validate, fit_quantile_ladder,
+    conditional_quantile_from_hurdle, cross_validate, fit_conditional_quantile_ladder,
     fit_two_stage, make_model_zoo, read_any, set_global_seed,
     sweep_count_objectives, tune_with_optuna, write_submission, zero_baseline_score,
 )
@@ -570,35 +570,41 @@ FEATURES = [c for c in train_features.columns
 print(f"{len(FEATURES)} feature")
 """),
     markdown("""
-## 3 · Model reçetesi — altı aday, aynı fold'lar, aynı bütçe
+## 3 · Model reçetesi — dokuz aday, aynı fold'lar, aynı bütçe
 
-2023 GDZ birincisi CatBoost'u MAE kaybıyla kullandı; ama o seçim o yılın
-verisinde yapıldı. Altı reçeteyi gerçek GDZ verisinde aynı fold, aynı feature
-seti ve aynı ağaç bütçesiyle yarıştırdık
-(`scripts/benchmark_gercek.py` → `experiments/benchmark_gercek.json`):
+2023 GDZ birincisi CatBoost'u MAE kaybıyla, 2024 birincisi (Pikachow) LightGBM'i
+Optuna ile kullandı; ama o seçimler o yılların verisinde yapıldı. Dokuz reçeteyi
+gerçek GDZ verisinde aynı fold, aynı feature seti ve aynı ağaç bütçesiyle
+yarıştırdık (`scripts/benchmark_gercek.py` → `experiments/benchmark_gercek.json`):
 
-| Reçete | MAE (dk) | Süre | Not |
-|---|---|---|---|
-| **iki_asama (hurdle)** | **317.23** | 3 sn | Kazanan tekil reçete (eşik 0.606) |
-| catboost_mae | 322.04 | 4 sn | 2023 birincisinin reçetesi — iyi ama tek başına kazanmıyor |
-| lgb_mae | 323.13 | 4 sn | |
-| lgb_tweedie | 325.54 | 2 sn | Sıfır-şişkin hedefe uygun, hızlı aday |
-| lgb_l2 | 357.06 | 2 sn | Metrik MAE iken L2 kaybı ~34 dk kaybettiriyor |
-| xgb | 364.21 | 1 sn | Baseline'ı zar zor geçiyor |
-| hep-sıfır | 366.97 | — | Alt çizgi; bunu geçemeyen model rafa kalkar |
+| Reçete | MAE (dk) | Not |
+|---|---|---|
+| **iki_asama_medyan** | **312.74** | Kazanan tekil: koşullu merdiven + q\\*=1−0.5/p kuralı |
+| lgb_sqrt | 315.51 | Rohlik reçetesi: sqrt(y)+L2, geri-kare — en iyi düz model |
+| iki_asama_medyan_kalibre | 317.00 | İzotonik kalibrasyon BOZDU (Brier 0.205→0.212) |
+| iki_asama (eşikli) | 317.23 | Eşik 0.606; medyan kuralı bunu 4.5 dk geçti |
+| catboost_mae | 322.04 | 2023 birincisinin reçetesi — iyi ama tek başına kazanmıyor |
+| lgb_mae | 323.13 | |
+| lgb_tweedie | 325.54 | Sıfır-şişkin hedefe uygun, hızlı aday |
+| lgb_l2 | 357.06 | Metrik MAE iken L2 kaybı ~34 dk kaybettiriyor |
+| xgb | 364.21 | Baseline'ı zar zor geçiyor |
+| hep-sıfır | 366.97 | Alt çizgi; bunu geçemeyen model rafa kalkar |
 
-Üç ölçülmüş ders:
+Dört ölçülmüş ders:
 
 - **Kayıp fonksiyonu model seçiminden önce gelir.** Aynı LightGBM, kayıp
   `l2 → mae` değişince ~34 dk kazanıyor. Yarışma metriği neyse kayıp odur.
-- **Hurdle mimarisi gerçekten çalışıyor.** Sıfır oranı %35.0 ve optimum eşik
-  0.606: sınıflandırıcı aktif olarak "bugün kesinti olmayacak" diyor ve bu
-  karar tek başına en iyi düz modelden ~5 dk kazandırıyor.
+- **MAE'nin optimali medyandır ve bu satır satır uygulanabilir.** Karışımın
+  medyanı: p≤0.5 ise tam 0, değilse koşullu dağılımın q\\*=1−0.5/p kantili.
+  Bu kural eşikli hurdle'ı 317.23→312.74 taşıdı (`conditional_quantile_from_hurdle`).
+- **Kalibrasyonu varsaymadık, ölçtük.** "Eşik 0.606, sınıflandırıcı kalibresiz
+  olduğu için 0.5'ten sapmış olabilir" hipotezini izotonik kalibrasyonla test
+  ettik: Brier kötüleşti, MAE kötüleşti. Eşik sapması verinin gerçeği.
 - **Bu tablonun ilk sürümü sızıntılıydı ve bunu çekişmeli denetim yakaladı.**
   Ham kaydın `id` kolonu panel dolgusunun birebir kopyası çıktı (y==0 ile uyum
-  0.9975) ve tüm skorları ~60 dk iyimser gösterdi (harman 251 → gerçek 308).
-  Yukarıdaki sayılar, `id` dahil ham olay kolonlarının tamamı sızıntı duvarının
-  arkasına alındıktan sonraki dürüst ölçümdür.
+  0.9975) ve tüm skorları ~60 dk iyimser gösterdi. Yukarıdaki sayılar, `id`
+  dahil ham olay kolonlarının tamamı sızıntı duvarının arkasına alındıktan
+  sonraki dürüst ölçümdür.
 """),
     code("""
 y = train_features[TARGET].to_numpy()
@@ -621,12 +627,15 @@ print(result.summary())
     markdown("""
 ## 4 · Harman — ve kapsam maskesi neden şart
 
-Gerçek GDZ ölçümünde en iyi tekil model 317.23; en iyi üçün hill-climb harmanı
-**308.27** (üyeler: iki_asama + catboost_mae + lgb_mae) —
-`scripts/benchmark_gercek.py`. Ridge stacking ise 385.12 ile rekabet dışı kaldı:
-purged şemada ilk dönem hiçbir fold'un valid tarafına düşmediği için meta-modelin
-eğitim kapsamı daralıyor. Fark küçükken tercihimiz hill climbing — ağırlıklar
-jüriye tek satırda açıklanabilir.
+Gerçek GDZ ölçümünde en iyi tekil model 312.74; TÜM üyeler üzerinde hill-climb
+harmanı **305.78** (ağırlık alanlar: iki_asama_medyan + lgb_tweedie + iki_asama +
+catboost_mae + lgb_l2) — `scripts/benchmark_gercek.py`. Bir ölçülmüş ders daha:
+"en iyi 3 üyeyi harmanla" kısayolu 311.83 verdi, çünkü en iyi üçü birbirinin
+kopyası çıktı — harmanı üye kalitesi değil **hata çeşitliliği** taşır; hill-climb
+tüm adayları görünce işe yaramayana zaten 0 ağırlık veriyor. Ridge stacking ise
+rekabet dışı: purged şemada ilk dönem hiçbir fold'un valid tarafına düşmediği
+için meta-modelin eğitim kapsamı daralıyor. Tercihimiz hill climbing —
+ağırlıklar jüriye tek satırda açıklanabilir.
 
 **Kapsam maskesi:** purged bölme ilk dönemi hiçbir valid'e koymaz; o satırların
 OOF değeri tahmin değil **dolgudur** (0.0). Maskesiz harman kurmak skoru ölçülü
@@ -719,7 +728,7 @@ log.leaderboard()
   ham kaydın `id` kolonu panel dolgusunun birebir kopyası çıktı (y==0 ile uyum
   0.9975) ve tüm skorları ~60 dk iyimser gösterdi. İkisi de çekişmeli denetimle
   bulundu, düzeltildi ve bu sayfadaki sayılar düzeltilmiş ölçümlerdir
-  (prova 334.29, harman 308.27). Sızıntı "bizde olmaz" denen şey değil,
+  (prova 334.29, harman 305.78). Sızıntı "bizde olmaz" denen şey değil,
   sistematik aranan şeydir.
 - **Bu ölçümlerin kapsamı 2021–22 verisidir.** Ablasyon ve benchmark sayıları
   2021-05→2022-08 GDZ kaydında, `kesinti_dk` hedefi ve 47 ilçeyle ölçüldü.
@@ -737,19 +746,22 @@ Sıra ölçümden geliyor (`experiments/benchmark_gercek.json` → `gun1_recetes
 
 1. **Saat 0–2 · Keşif:** 01 notebook'u — panel, fold'lar, sızıntı duvarı.
    İlk iki saatin sonunda üç karar da verilmiş olmalı.
-2. **İlk submission:** iki aşamalı model (gerçek GDZ'de MAE 317.23; hep-sıfır
-   366.97). Optimize etmeden önce LB'de bir sayı:
+2. **İlk submission:** iki aşamalı model + medyan kuralı (gerçek GDZ'de MAE
+   312.74, eşikli 317.23, hep-sıfır 366.97). Optimize etmeden önce LB'de bir sayı:
    ```python
    print(zero_baseline_score(y, metric="mae"))   # once bunu gectigini gor
    sonuc = fit_two_stage(train_features[FEATURES], y, folds, metric=METRIC)
    ```
    Metrik MAE ise `q* = 1 − 0.5/p` kantil çözücüsü — `expected` ve `thresholded`
-   modlarının ikisi de MAE altında suboptimaldir:
+   modlarının ikisi de MAE altında suboptimaldir (ölçüldü: medyan kuralı eşikliyi
+   4.5 dk geçti). Merdiven **koşullu** olmalı — marjinal `fit_quantile_ladder`
+   burada ölçülmüş şekilde yanlış sonuç verir:
    ```python
-   merdiven = fit_quantile_ladder(train_features[FEATURES], y, folds)
-   tahmin = conditional_quantile_from_hurdle(
-       sonuc.oof_probability, {q: r.oof_predictions for q, r in merdiven.items()})
+   merdiven = fit_conditional_quantile_ladder(train_features[FEATURES], y, folds)
+   tahmin = conditional_quantile_from_hurdle(sonuc.oof_probability, merdiven)
    ```
+   Kalibrasyonu deneme — gerçek GDZ'de izotonik kalibrasyon Brier'i de MAE'yi de
+   kötüleştirdi (`calibrate_positive_probability` ölçüp söyler).
 3. **Feature'lar ablasyon sırasıyla:** önce lag (+22.34), sonra hava (+2.47;
    `add_regional_aggregates` + `add_physical_derivatives`, ortalama değil
    `max`/quantile), komşu lag ucuzsa (`nearest_neighbours` +
@@ -759,9 +771,10 @@ Sıra ölçümden geliyor (`experiments/benchmark_gercek.json` → `gun1_recetes
    sonuc = adversarial_validation(train_features[FEATURES], test_features[FEATURES])
    print(sonuc["auc"], sonuc["verdict"])   # AUC > 0.8 ise ayristiran feature'i cikar
    ```
-4. **Aynı fold'larda** `catboost_mae` ve `lgb_mae` eklenir
-   (`sweep_count_objectives` ile) → kapsam maskeli hill-climb harmanı
-   (gerçek GDZ'de 308.27).
+4. **Aynı fold'larda** `catboost_mae`, `lgb_tweedie` ve `lgb_sqrt` eklenir
+   (`sweep_count_objectives` ile) → TÜM üyeler üzerinde kapsam maskeli
+   hill-climb harmanı (gerçek GDZ'de 305.78; "en iyi 3" kısayolu 311.83
+   verdi — çeşitlilik kaliteden değerli).
 5. **Hiperparametre araması** ancak harman oturduktan sonra — objective de arama
    uzayına girer: `tune_with_optuna(..., search_objective=True)`.
 6. **Son gün:** çok tohumlu tam veri refit + jüri çıktıları:

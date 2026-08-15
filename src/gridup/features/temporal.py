@@ -41,6 +41,8 @@ __all__ = [
     "add_lag_features",
     "add_rolling_features",
     "add_expanding_features",
+    "add_previous_month_features",
+    "add_upcoming_holiday_features",
     "shared_origin",
     "TURKISH_SEASONS",
 ]
@@ -935,3 +937,210 @@ def add_expanding_features(
     restore = np.empty_like(order)
     restore[order] = np.arange(len(order))
     return frame.assign(**{name: values[restore] for name, values in computed.items()})
+
+
+def add_previous_month_features(
+    frame: pd.DataFrame,
+    value_column: str,
+    *,
+    time_column: str,
+    horizon: int,
+    group_columns: Sequence[str] | None = None,
+    prefix: str | None = None,
+) -> pd.DataFrame:
+    """Son TAM gozlemlenmis takvim ayinin istatistikleri. YENI frame dondurur.
+
+    NEREDEN GELDI (2024 GDZ birincisi Pikachow, final sunumu s.18 + s.26)
+    --------------------------------------------------------------------
+    Kazanan cozumun feature listesinde uc kalip vardi ve bu fonksiyon ucunu
+    de uretir:
+
+      * "Gecen aya ait toplam bildirimsiz kesinti sayisi"
+      * "Ilce bazinda son ay kesintili ve kesintisiz gun sayisi"
+      * ``bildirimsiz_sum_last_month_same_day_max/skew`` -- feature importance
+        listesinde EN USTLERDEYDI (s.26): gecen ayin AYNI GUNUNUN degeri.
+
+    Kayan pencereden (``add_rolling_features``) farki: pencere satirla
+    birlikte kaymaz, TAKVIM AYINA sabitlenir. "Subat'in her gunu icin Ocak
+    toplami AYNI degerdir" -- model bunu ay-seviyesi bir rejim sinyali olarak
+    okur; kayan pencere ise her gun degisir. Ikisi farkli bilgidir.
+
+    SIZINTI DISIPLINI -- "gecen ay" DEGIL "son tam gozlemlenmis ay"
+    ---------------------------------------------------------------
+    2024'te test TAM BIR AYDI (Subat); tahmin aninda Ocak'in tamami
+    gorulmustu, "gecen ay" guvenliydi. Ama test blogu ay SINIRINI ASARSA
+    (or. 21 Agustos - 1 Eylul), Eylul satirlari icin "gecen ay" Agustos'tur
+    ve Agustos'un 21-31'i TEST ICINDEDIR -- dogrudan sizinti, CV'de gorunmez.
+
+    Bu yuzden kural repodaki lag konvansiyonunun aynisidir: ``d`` gunundeki
+    satir icin kullanilabilir en taze gozlem ``d - horizon`` gunudur; feature,
+    SONU ``d - horizon``'u gecmeyen son takvim ayindan hesaplanir.
+    ``horizon=1`` bunu Pikachow'un "gecen ay"ina indirger. Test blogu ay
+    basinda basliyorsa ``horizon=1`` guvenlidir; degilse ufku ver.
+
+    NOT: ``olaysiz_gun`` sayimi yogun panel ister -- once ``build_panel``
+    calistir; seyrek olay kaydinda sifir gunler SATIR OLARAK YOKTUR ve
+    sayim yaniltici cikar.
+
+    Uretilen kolonlar (``horizon=1`` icin; degilse ``ufuk{h}_`` on eki):
+        ``{prefix}_sontamay_toplam``      ay toplami
+        ``{prefix}_sontamay_ortalama``    gunluk ortalama
+        ``{prefix}_sontamay_max``         ayin tepe gunu
+        ``{prefix}_sontamay_olayli_gun``  deger > 0 olan gun sayisi
+        ``{prefix}_sontamay_olaysiz_gun`` deger == 0 olan gun sayisi
+        ``{prefix}_sontamay_ayni_gun``    ayni ay-gununun degeri (31 -> Subat
+                                          gibi olmayan gunlerde NaN)
+    """
+    if value_column not in frame.columns:
+        raise KeyError(f"Kolon '{value_column}' frame icinde yok.")
+    if horizon < 1:
+        raise ValueError(f"horizon >= 1 olmali, verilen: {horizon}")
+
+    prefix = prefix or value_column
+    label = "sontamay" if horizon == 1 else f"ufuk{horizon}_sontamay"
+    groups = list(group_columns or [])
+
+    times = parse_time_series(frame[time_column], strict=False)
+    degerler = pd.to_numeric(frame[value_column], errors="coerce")
+
+    # Ay-seviyesi ozet tablosu: her (grup, ay) icin bir satir.
+    kaynak = pd.DataFrame({
+        "_ay": times.dt.to_period("M"),
+        "_gun_no": times.dt.day,
+        "_deger": degerler,
+        "_olayli": (degerler > 0).astype("float64"),
+        "_olaysiz": (degerler == 0).astype("float64"),
+    })
+    for column in groups:
+        kaynak[column] = frame[column].to_numpy()
+
+    aylik = (
+        kaynak.dropna(subset=["_ay"])
+        .groupby([*groups, "_ay"], observed=True)
+        .agg(
+            toplam=("_deger", "sum"),
+            ortalama=("_deger", "mean"),
+            max=("_deger", "max"),
+            olayli_gun=("_olayli", "sum"),
+            olaysiz_gun=("_olaysiz", "sum"),
+        )
+        .reset_index()
+    )
+
+    # Ayni ay-gunu tablosu: (grup, ay, gun_no) -> gunun toplami. Panel gunde
+    # tek satir garanti eder; yine de sum kullaniyoruz ki olasi cift kayit
+    # sessizce ilkini secmek yerine gunluk toplama katlansin.
+    gunluk = (
+        kaynak.dropna(subset=["_ay"])
+        .groupby([*groups, "_ay", "_gun_no"], observed=True)["_deger"]
+        .sum(min_count=1)
+        .rename("ayni_gun")
+        .reset_index()
+    )
+
+    # Satir basina kullanilabilir ay: sonu (d - horizon)'u gecmeyen SON ay.
+    # (d - horizon + 1 gun)'un ayindan bir onceki ay tam olarak budur:
+    # d - horizon ayin son gunuyse o ayin kendisi, degilse bir oncesi.
+    cutoff = times - pd.to_timedelta(horizon - 1, unit="D")
+    kullanilabilir_ay = cutoff.dt.to_period("M") - 1
+
+    anahtar = pd.DataFrame({"_ay": kullanilabilir_ay, "_gun_no": times.dt.day})
+    for column in groups:
+        anahtar[column] = frame[column].to_numpy()
+
+    ozet = anahtar.merge(aylik, on=[*groups, "_ay"], how="left")
+    ozet = ozet.merge(gunluk, on=[*groups, "_ay", "_gun_no"], how="left")
+
+    yeni = {
+        f"{prefix}_{label}_toplam": ozet["toplam"].to_numpy(dtype="float32"),
+        f"{prefix}_{label}_ortalama": ozet["ortalama"].to_numpy(dtype="float32"),
+        f"{prefix}_{label}_max": ozet["max"].to_numpy(dtype="float32"),
+        f"{prefix}_{label}_olayli_gun": ozet["olayli_gun"].to_numpy(dtype="float32"),
+        f"{prefix}_{label}_olaysiz_gun": ozet["olaysiz_gun"].to_numpy(dtype="float32"),
+        f"{prefix}_{label}_ayni_gun": ozet["ayni_gun"].to_numpy(dtype="float32"),
+    }
+    return frame.assign(**yeni)
+
+
+def add_upcoming_holiday_features(
+    frame: pd.DataFrame,
+    time_column: str,
+    *,
+    windows: Sequence[int] = (3, 7, 15),
+    prefix: str = "tatil",
+    include_half_days: bool = True,
+) -> pd.DataFrame:
+    """ILERI bakisli tatil feature'lari: "onumuzdeki N gun icinde bayram var mi".
+
+    NEREDEN GELDI
+    -------------
+    2024 GDZ birincisi Pikachow (final sunumu s.18): "ileriki 3-7-15 gun
+    icerisinde bayram olma durumu". Rohlik Orders 8.'si de "days-to-next-
+    holiday" kullandi. Mekanizma gercek: bayram ONCESI davranis degisir --
+    seyahat baslar, sanayi vardiya kapatir, planli kesintiler bayram oncesine
+    cekilir. ``add_turkish_holiday_features``in ``{prefix}_mesafe``si EN YAKIN
+    tatile mutlak mesafedir; "dun bayramdi" ile "yarin bayram" ayni gorunur.
+    Bu fonksiyon yalnizca ILERIYE bakar ve o ayrimi modele verir.
+
+    SIZINTI YOK -- NEDEN GUVENLI
+    ----------------------------
+    Takvim BILINEN-GELECEK kovaryattir: 2026'nin butun resmi tatilleri bugun
+    bellidir. Ileri bakmak burada sizinti degildir; hedef turevli kolonlarda
+    olurdu.
+
+    Uretilen kolonlar:
+        ``{prefix}_sonraki_mesafe``      bir SONRAKI tatile gun (bugun haric;
+                                         tatil bulunamazsa MISSING_HOLIDAY_DISTANCE)
+        ``{prefix}_onumuzdeki_{w}g``     sonraki_mesafe <= w (her pencere icin)
+    """
+    try:
+        import holidays as holidays_lib
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError(
+            "TR tatil feature'lari icin 'holidays' paketi gerekli: pip install holidays"
+        ) from exc
+
+    if not windows:
+        raise ValueError("En az bir pencere ver, or. windows=(3, 7, 15).")
+
+    times = parse_time_series(frame[time_column], strict=False)
+    valid_years = times.dt.year.dropna()
+    if valid_years.empty:
+        sentinel = np.full(len(frame), MISSING_HOLIDAY_DISTANCE, dtype="int16")
+        yeni = {f"{prefix}_sonraki_mesafe": sentinel}
+        for window in windows:
+            yeni[f"{prefix}_onumuzdeki_{window}g"] = np.zeros(len(frame), dtype="int8")
+        return frame.assign(**yeni)
+
+    # +2 yil ileri: serinin son gunlerinde bile "sonraki tatil" bulunsun.
+    years = list(range(int(valid_years.min()) - 1, int(valid_years.max()) + 2))
+    categories = ("public", "half_day") if include_half_days else ("public",)
+    calendar = holidays_lib.TR(years=years, categories=categories)
+    holiday_dates = np.array(sorted(calendar.keys()), dtype="datetime64[D]")
+
+    # NaT maskesi CAST'TEN ONCE -- gerekce add_turkish_holiday_features'taki
+    # sentinel tasmasi notuyla ayni.
+    valid_mask = times.notna().to_numpy()
+    distances = np.full(len(frame), MISSING_HOLIDAY_DISTANCE, dtype="int16")
+
+    if holiday_dates.size and valid_mask.any():
+        valid_days = times[valid_mask].dt.normalize().to_numpy(dtype="datetime64[D]")
+        unique_days, inverse = np.unique(valid_days, return_inverse=True)
+        # side="right": bugun tatilse bile bir SONRAKI tatili isaret et --
+        # "bugun bayram" bilgisini {prefix}_mi zaten tasiyor.
+        konum = np.searchsorted(holiday_dates, unique_days, side="right")
+        ileri = np.full(len(unique_days), MISSING_HOLIDAY_DISTANCE, dtype="int64")
+        bulunan = konum < len(holiday_dates)
+        ileri[bulunan] = (
+            holiday_dates[konum[bulunan]] - unique_days[bulunan]
+        ).astype("timedelta64[D]").astype("int64")
+        distances[valid_mask] = np.clip(
+            ileri[inverse], 0, MISSING_HOLIDAY_DISTANCE
+        ).astype("int16")
+
+    yeni = {f"{prefix}_sonraki_mesafe": distances}
+    for window in windows:
+        yeni[f"{prefix}_onumuzdeki_{window}g"] = (
+            (distances <= window) & valid_mask
+        ).astype("int8")
+    return frame.assign(**yeni)

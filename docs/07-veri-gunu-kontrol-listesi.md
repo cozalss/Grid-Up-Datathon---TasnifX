@@ -1,4 +1,4 @@
-# Veri Günü Kontrol Listesi
+﻿# Veri Günü Kontrol Listesi
 
 21 Ağustos, saat 15:00. Kaggle linki geldi. Bu dosya o andan itibaren
 izlenecek adımları içerir.
@@ -18,7 +18,7 @@ izlenecek adımları içerir.
 | Okul takvimi 2021–2026 (MEB, doğrulanmış) | `gridup.features.school` | 6 ders yılı, ara/yarıyıl/yaz |
 | Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
 | Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
-| Test paketi | `tests/` | 808 test |
+| Test paketi | `tests/` | 836 test |
 
 ---
 
@@ -199,16 +199,23 @@ değiştirmeyin** — hangisinin işe yaradığını bilemezsiniz.
    > (`add_school_calendar_features`) aynı kurala tabi: hazır, ama ölçmeden girmez.
 
 5. **Model çeşitliliği** — sıra gerçek veride ölçüldü
-   (`experiments/benchmark_gercek.json`): önce **iki aşamalı** (MAE 317,2,
-   eşik 0,606), sonra `catboost_mae` (322,0 — 2023 birincisinin reçetesi),
-   sonra `lgb_mae`. Sayım hedefiyse `COUNT_OBJECTIVES` ile süpürün.
+   (`experiments/benchmark_gercek.json`): önce **iki aşamalı + medyan kuralı**
+   (`fit_conditional_quantile_ladder` + `conditional_quantile_from_hurdle`,
+   MAE 312,7 — eşikli 317,2'yi geçti), sonra `lgb_sqrt` (315,5 — Rohlik
+   reçetesi: sqrt+L2, geri-kare), sonra `catboost_mae` (322,0 — 2023
+   birincisinin reçetesi), sonra `lgb_tweedie`. Sayım hedefiyse
+   `COUNT_OBJECTIVES` ile süpürün. Kalibrasyonu varsaymayın:
+   `calibrate_positive_probability` ölçer — gerçek veride İYİLEŞTİRMEDİ
+   (Brier 0,205→0,212), eşik 0,606 verinin gerçeğiydi.
 
 6. **Feature seçimi** — önce `null_importance_filter` (dakikalar), sonra
-   `shap_backward_selection` (saatler).
+   `shap_backward_selection` (saatler; 2024 birincisi Pikachow da aynısını
+   yaptı: SHAP ile 490→97 feature).
 
 7. **Harmanlama** — `hill_climb_weights` OOF üzerinde, **kapsam maskesiyle**
-   (gerçek veride harman 308,3 ile tekil şampiyonu geçti). Stacking'e zaman
-   ayırmayın: aynı ölçümde 385,1 ile baseline'ın bile altında kaldı.
+   ve **TÜM üyelerle** (gerçek veride 305,8; "en iyi 3" kısayolu 311,8'e
+   geriletti — harmanı üye kalitesi değil hata çeşitliliği taşır). Stacking'e
+   zaman ayırmayın: aynı ölçümde baseline'ın bile altında kaldı.
 
 8. **Son gün** — `multi_seed_refit` + `postprocess_predictions`.
 

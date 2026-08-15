@@ -3,48 +3,67 @@
     "lgb_l2": {
       "mae": 357.0623051656368,
       "fold_std": 86.49195441504534,
-      "sure_sn": 1.5156425999957719
+      "sure_sn": 1.3006753999943612
     },
     "lgb_mae": {
       "mae": 323.13279920563974,
       "fold_std": 116.33463189658859,
-      "sure_sn": 3.668348599996534
+      "sure_sn": 3.25328620000073
     },
     "lgb_tweedie": {
       "mae": 325.5420340532212,
       "fold_std": 98.71051307010849,
-      "sure_sn": 2.0251027999984217
+      "sure_sn": 1.8022366000004695
     },
     "catboost_mae": {
       "mae": 322.03545216049116,
       "fold_std": 110.13283951110228,
-      "sure_sn": 4.251877399998193
+      "sure_sn": 4.168330100001185
     },
     "xgb": {
       "mae": 364.20896515096797,
       "fold_std": 69.0583150945291,
-      "sure_sn": 1.2462938999960897
+      "sure_sn": 1.377117800002452
+    },
+    "lgb_sqrt": {
+      "mae": 315.5107988820485,
+      "fold_std": 105.34253779831042,
+      "sure_sn": 1.7804935999956797
     },
     "iki_asama": {
       "mae": 317.2260391697545,
       "fold_std": 100.93053836137496,
-      "sure_sn": 3.311444799997844
+      "sure_sn": 3.433359200003906
+    },
+    "iki_asama_medyan": {
+      "mae": 312.73557904944823,
+      "fold_std": 113.36484594024795,
+      "sure_sn": 25.35613359999843
+    },
+    "iki_asama_medyan_kalibre": {
+      "mae": 317.0018485451922,
+      "fold_std": 110.23263731296365,
+      "sure_sn": 25.35613359999843
     }
   },
   "harman": {
-    "mae": 308.2700308765738,
+    "mae": 305.7759460549394,
     "uyeler": [
+      "iki_asama_medyan",
+      "lgb_tweedie",
       "iki_asama",
       "catboost_mae",
-      "lgb_mae"
+      "lgb_l2"
     ],
     "agirliklar": {
-      "iki_asama": 0.5525,
-      "catboost_mae": 0.4475,
-      "lgb_mae": 0.0
+      "iki_asama_medyan": 0.51,
+      "iki_asama": 0.1433,
+      "catboost_mae": 0.0867,
+      "lgb_tweedie": 0.2467,
+      "lgb_l2": 0.0133
     }
   },
-  "stack_mae": 385.12333846312885,
+  "stack_mae": 469.48741157756734,
   "kazanan": "harman",
   "sifir_baseline": 366.97409059711737,
   "sifir_orani": 0.35002704652001443,
@@ -99,5 +118,10 @@
     "gunes_deklinasyon",
     "ilce_key_frekans"
   ],
-  "gun1_recetesi": "Veri gununde ilk kosulacak tek model iki_asama (MAE 317.23; hep-sifir baseline 366.97, sifir orani %35.0). 2023 birincisinin recetesi catboost_mae bu veride MAE 322.04 ile 2. sirada -- recete iyi bir baslangic ama tek basina kazanmiyor, kor kopyalanmamali. Iki asamali model (MAE 317.23) duz modellerin en iyisini (catboost_mae 322.04) geciyor -- dokumanin %40-alti-sifir beklentisinin aksine (optimum esik 0.61). En iyi 3'un hill-climb harmani MAE 308.27, ridge stacking 385.12 (purged semada ilk fold'lar meta-egitim kapsami disinda kaliyor); genel kazanan 'harman'. Oneri: gun-1'de iki_asama ile basla, ayni fold'larda catboost_mae ve lgb_tweedie'yi ekleyip hill-climb harmanini kur; stacking'e fold kapsami genislemeden donme."
+  "kalibrasyon": {
+    "brier_once": 0.20468400517701638,
+    "brier_sonra": 0.21215821977523505,
+    "iyilesti": false
+  },
+  "gun1_recetesi": "Veri gununde ilk kosulacak tek model iki_asama_medyan (MAE 312.74; hep-sifir baseline 366.97, sifir orani %35.0). 2023 birincisinin recetesi catboost_mae bu veride MAE 322.04 ile 5. sirada -- recete iyi bir baslangic ama tek basina kazanmiyor, kor kopyalanmamali. Iki asamali model (MAE 317.23) duz modellerin en iyisini (lgb_sqrt 315.51) gecmiyor; dokumanin %40-alti-sifir uyarisiyla tutarli (optimum esik 0.61). MAE-optimal medyan kurali 312.74, kalibre olasilikla 317.00; sqrt donusumu (Rohlik recetesi) 315.51. Tum uyeler uzerinde hill-climb harmani MAE 305.78 (agirlik alan uyeler: iki_asama_medyan, lgb_tweedie, iki_asama, catboost_mae, lgb_l2), ridge stacking 469.49 (purged semada ilk fold'lar meta-egitim kapsami disinda kaliyor); genel kazanan 'harman'. Oneri: gun-1'de iki_asama_medyan ile basla, ayni fold'larda catboost_mae ve lgb_tweedie'yi ekleyip hill-climb harmanini kur; stacking'e fold kapsami genislemeden donme."
 }

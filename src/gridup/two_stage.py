@@ -57,6 +57,8 @@ __all__ = [
     "conditional_quantile_from_hurdle",
     "tune_threshold",
     "zero_baseline_score",
+    "CalibrationResult",
+    "calibrate_positive_probability",
 ]
 
 #: ``_combine``in GERCEKTEN destekledigi modlar.
@@ -125,6 +127,146 @@ def zero_baseline_score(y_true: np.ndarray, *, metric: str = "mae") -> float:
     """
     metric_fn, _, _ = get_metric(metric)
     return float(metric_fn(y_true, np.zeros_like(np.asarray(y_true, dtype="float64"))))
+
+
+@dataclass(frozen=True)
+class CalibrationResult:
+    """Olasilik kalibrasyonunun ciktisi -- kazanip kazanmadigi OLCULMUS halde."""
+
+    #: Capraz-uydurulmus (cross-fitted) kalibre OOF olasiliklari.
+    calibrated: np.ndarray
+    #: Kalibrasyon oncesi Brier skoru (dusuk = iyi).
+    brier_before: float
+    #: Kalibrasyon sonrasi Brier skoru.
+    brier_after: float
+    #: Kalibrasyon Brier'i iyilestirdi mi? False ise HAM olasiliklari kullan.
+    improved: bool
+    #: TUM kapsanan satirlarla fit edilmis kalibrator -- test-zamani
+    #: olasiliklarina ``.predict(p)`` ile uygulanir.
+    calibrator: Any
+    notes: tuple[str, ...] = ()
+
+
+def calibrate_positive_probability(
+    probability: np.ndarray,
+    target: np.ndarray | pd.Series,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]] | None = None,
+    *,
+    covered: np.ndarray | None = None,
+    verbose: bool = True,
+) -> CalibrationResult:
+    """1. asama olasiliklarini izotonik regresyonla kalibre eder.
+
+    NEDEN (2024-2026 arastirma taramasindan)
+    ----------------------------------------
+    ``q* = 1 - 0.5/p`` kurali ve esik ayari, ``p``nin GERCEK olasilik olmasini
+    varsayar. GBDT siniflandiricilar siralamada iyi, kalibrasyonda kotudur --
+    AUC yuksek olsa bile ``p=0.6`` dedigi satirlarin gercek pozitif orani 0.45
+    olabilir. O zaman esik ayari kalibrasyon hatasini telafi etmeye calisir:
+    OOF-ayarli esigin 0.5'ten belirgin sapmasi (bizde 0.606 olculdu) tam da bu
+    kokunun belirtisi olabilir. Kalibrasyondan SONRA esik 0.5'e yaklasiyorsa
+    sapma kalibrasyon hatasiydi; yaklasmiyorsa veri gercekten oyle diyordu.
+    Ikisi de ogretici -- bu yuzden VARSAYMAK yerine OLCUYORUZ.
+
+    SIZINTI DISIPLINI
+    -----------------
+    Kalibratoru tum OOF ile fit edip AYNI OOF'a uygulamak kendine referansli
+    bir iyimserlik uretir. ``folds`` verilirse capraz-uydurma yapilir: fold
+    ``k``nin kalibre degerleri, YALNIZCA diger fold'larin (olasilik, etiket)
+    ciftleriyle fit edilmis izotonikten gelir. ``folds`` verilmezse tek fit
+    yapilir ve notlara uyari dusulur.
+
+    Test-zamani icin ``calibrator`` alani tum kapsanan satirlarla fit edilir;
+    test olasiliklarina ``calibrator.predict(p_test)`` uygulanir (test etiketi
+    kullanilmadigi icin orada capraz-uydurma gerekmez).
+
+    Args:
+        probability: 1. asamanin OOF olasiliklari (``TwoStageResult.oof_probability``).
+        target: Ham hedef; ``target > 0`` ikili etikettir.
+        folds: CV fold'lari -- verilirse capraz-uydurma (onerilen).
+        covered: Hangi satirlarin OOF'u gercek (``TwoStageResult.covered()``).
+            Kapsanmayan satirlar ham degerini korur ve skora girmez.
+    """
+    try:
+        from sklearn.isotonic import IsotonicRegression
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError(
+            "Kalibrasyon icin scikit-learn gerekli: pip install scikit-learn"
+        ) from exc
+
+    prob = np.asarray(probability, dtype="float64")
+    y_bin = (np.asarray(target).ravel() > 0).astype("float64")
+    if len(prob) != len(y_bin):
+        raise ValueError(
+            f"Olasilik ({len(prob)}) ve hedef ({len(y_bin)}) uzunluklari farkli."
+        )
+    mask = np.ones(len(prob), dtype=bool) if covered is None else np.asarray(covered, dtype=bool)
+
+    notes: list[str] = []
+    if y_bin[mask].min() == y_bin[mask].max():
+        # Tek sinif: izotonik sabit fonksiyon ogrenir, kalibrasyon anlamsiz.
+        notes.append("Kapsanan satirlarda tek sinif var; kalibrasyon atlandi.")
+        brier = float(np.mean((prob[mask] - y_bin[mask]) ** 2)) if mask.any() else float("nan")
+        return CalibrationResult(
+            calibrated=prob.copy(), brier_before=brier, brier_after=brier,
+            improved=False, calibrator=None, notes=tuple(notes),
+        )
+
+    def _yeni_izotonik() -> Any:
+        # out_of_bounds="clip": OOF araligi disindaki test olasiliklari kirpilir.
+        return IsotonicRegression(y_min=0.0, y_max=1.0, out_of_bounds="clip")
+
+    calibrated = prob.copy()
+    if folds is not None:
+        # Capraz-uydurma: fold k'ye, DIGER fold'larla fit edilmis harita uygulanir.
+        fold_list = list(folds)
+        for konum, (_, valid_idx) in enumerate(fold_list):
+            digerleri = [
+                idx for baska, (_, idx) in enumerate(fold_list) if baska != konum
+            ]
+            if not digerleri:
+                continue
+            egitim = np.concatenate(digerleri)
+            egitim = egitim[mask[egitim]]
+            hedef_satirlar = valid_idx[mask[valid_idx]]
+            if egitim.size == 0 or hedef_satirlar.size == 0:
+                continue
+            if y_bin[egitim].min() == y_bin[egitim].max():
+                continue  # tek sinifla fit anlamsiz; ham deger kalir
+            izo = _yeni_izotonik()
+            izo.fit(prob[egitim], y_bin[egitim])
+            calibrated[hedef_satirlar] = izo.predict(prob[hedef_satirlar])
+    else:
+        notes.append(
+            "folds verilmedi: kalibrator tum OOF ile fit edilip ayni OOF'a "
+            "uygulandi -- iyilesme olcumu iyimser olabilir."
+        )
+        izo = _yeni_izotonik()
+        izo.fit(prob[mask], y_bin[mask])
+        calibrated[mask] = izo.predict(prob[mask])
+
+    brier_before = float(np.mean((prob[mask] - y_bin[mask]) ** 2))
+    brier_after = float(np.mean((calibrated[mask] - y_bin[mask]) ** 2))
+    improved = brier_after < brier_before
+    if not improved:
+        notes.append(
+            f"Kalibrasyon Brier'i iyilestirmedi ({brier_before:.6f} -> "
+            f"{brier_after:.6f}); ham olasiliklari kullan."
+        )
+
+    final = _yeni_izotonik()
+    final.fit(prob[mask], y_bin[mask])
+
+    if verbose:
+        print(f"[kalibrasyon] Brier {brier_before:.6f} -> {brier_after:.6f}"
+              f"  ({'iyilesti' if improved else 'IYILESMEDI'})")
+        for not_satiri in notes:
+            print(f"[kalibrasyon] {not_satiri}")
+
+    return CalibrationResult(
+        calibrated=calibrated, brier_before=brier_before, brier_after=brier_after,
+        improved=improved, calibrator=final, notes=tuple(notes),
+    )
 
 
 @dataclass

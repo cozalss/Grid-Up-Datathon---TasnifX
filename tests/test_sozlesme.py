@@ -136,6 +136,16 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
             f, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
         ),
     ),
+    "add_previous_month_features": (
+        "temporal",
+        lambda m, f: m.add_previous_month_features(
+            f, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
+        ),
+    ),
+    "add_upcoming_holiday_features": (
+        "temporal",
+        lambda m, f: m.add_upcoming_holiday_features(f, "tarih"),
+    ),
     # --- weather ---
     "aggregate_hourly_to_daily": (
         "weather",
@@ -366,6 +376,7 @@ FOLDSUZ_GEREKCE: dict[str, str] = {
     "metrics.mape_coverage": "saf tanisal olcum, fit yok",
     "metrics.smape": "saf skorlama, fit yok",
     "metrics.log_transform_target": "geri cevrilebilir donusum, istatistik ogrenmez",
+    "metrics.sqrt_transform_target": "geri cevrilebilir donusum, istatistik ogrenmez",
     # OOF tahminler UZERINDE calisir -- girdisi zaten fold-disidir.
     "metrics.optimize_threshold": "OOF tahminler uzerinde calisir (docstring'de zorunlu kilinmis)",
     "ensemble.hill_climb_weights": "girdisi OOF tahmin matrisi -- fold zaten uygulanmis",
@@ -377,6 +388,11 @@ FOLDSUZ_GEREKCE: dict[str, str] = {
     "features.temporal.add_lag_features": "shift(horizon) -- yalnizca gecmis, ileri bakmaz",
     "features.temporal.add_rolling_features": "closed='left' -- mevcut satiri DISLAR",
     "features.temporal.add_expanding_features": "shift(1) -- mevcut satiri DISLAR",
+    "features.temporal.add_previous_month_features": (
+        "sonu (satir - horizon)'u gecmeyen SON TAM takvim ayindan hesaplar -- "
+        "yalnizca gecmis; ay siniri asan test blogu icin ufuk disiplini "
+        "testle kanitli (test_2024_birinci_taktikleri)"
+    ),
     "features.spatial.add_neighbour_target_lag": "horizon>=1 zorunlu -- komsunun gecmisi",
     "features.spatial.add_neighbour_feature_mean": (
         "target_column YALNIZCA reddetme icin; bu fonksiyon KAYDIRMA YAPMAZ, "

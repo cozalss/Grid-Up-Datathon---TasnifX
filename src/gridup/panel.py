@@ -17,21 +17,25 @@ Bu, iki sekilde oldurur:
 Cozum: tam kartezyen carpim (her varlik x her tarih) uzerinde yeniden indeksle
 ve eksik gunleri sifirla doldur.
 
-DOGRULANMIS ONCEKI YARISMA
---------------------------
-Onceki surumde burada "2024 GDZ Datathon'unda hedef ``bildirimsiz_sum``"
-yaziyordu. Bu atif **DOGRULANAMADI ve iki yonden yanlisti**: Kaggle'da
-GDZ'nin 2024 yarismasi YOKTUR (bkz. ``kaggle competitions list -s gdz``),
-ve gercek olan 2023 yarismasinin hedefi ``Dagitilan Enerji (MWh)`` idi --
-bir SAYIM degil, bir OLCUM.
+DOGRULANMIS ONCEKI YARISMA (atif iki kez duzeltildi -- ders: 404 != yok)
+------------------------------------------------------------------------
+2024 GDZ Datathon'unun hedefi gercekten bir SAYIM idi: ilce basina gunluk
+``bildirimsiz`` (plansiz) kesinti ADEDI, metrik MAE. Kaynak: birincinin
+(Pikachow) final sunumu, s.4 -- anilozturk.net'te halka acik; ayrica
+coderspace.io/etkinlikler/gdz-elektrik-datathon-2024 etkinlik sayfasi.
+Bir onceki denetim ``kaggle competitions list -s gdz`` ciktisinda 2024'u
+goremedigi icin bu atifi "yarisma yok" diye silmisti -- in-class yarismalar
+o aramada gorunmuyor; 404/bos arama, yokluk kaniti DEGILDIR.
+2023 yarismasinin hedefi ise ``Dagitilan Enerji (MWh)`` idi -- bir OLCUM.
 
 Bu ayrim tam da bu modulun konusudur:
 
     olcum hedefi (MWh)      -> kayit yoksa deger BILINMIYOR  -> np.nan
     sayim hedefi (kesinti)  -> kayit yoksa olay OLMAMIS      -> 0.0
 
-2026 Grid Up'in hangisi oldugu HENUZ BILINMIYOR. Veri geldiginde ilk
-kararlardan biri budur; yanlis secim veriyi sessizce bozar.
+2026 Grid Up'in hangisi oldugu HENUZ BILINMIYOR (2024'un devami olarak
+sayim olmasi muhtemel). Veri geldiginde ilk kararlardan biri budur; yanlis
+secim veriyi sessizce bozar.
 """
 
 from __future__ import annotations

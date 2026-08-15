@@ -1,4 +1,4 @@
-# Grid Up Datathon — TasnifX
+﻿# Grid Up Datathon — TasnifX
 
 **Coderspace × GDZ Elektrik × ADM Elektrik** · 21 Ağustos – 1 Eylül 2026 · Kaggle In-Class
 
@@ -16,11 +16,11 @@ dersler var.
 | | |
 |---|---|
 | Kod | **10.924 satır** · 31 modül |
-| Test | **808 test** geçiyor · ruff temiz |
+| Test | **836 test** geçiyor · ruff temiz |
 | Uçtan uca kanıt | `full_pipeline.py` 20/20 · `smoke_test.py` 42 sn · `day_one.py` submission üretiyor |
 | Harici veri | 96 ilçe hava · 96 ilçe güneş · Türkiye tüketim+üretim · 96 ilçe referans |
 | Kaggle offline | [`cemzal/gridup-offline-paket`](https://www.kaggle.com/datasets/cemzal/gridup-offline-paket) — internet kapalı notebook için |
-| İstihbarat | 2023 birincisinin çözümü + 558 satır forum dökümü incelendi |
+| İstihbarat | 2023 birincisinin çözümü, 558 satır forum dökümü, **2024 birincisi Pikachow'un final sunumu** (29 slayt) + 2024–26 Kaggle meta taraması ([docs/08](docs/08-gdz-2024-birincisi-ve-2026-meta.md)) |
 
 ---
 
@@ -35,7 +35,7 @@ python -m venv .venv
 pip install -e ".[full]"
 
 python scripts\ekip_kontrol.py         # kurulum doktoru: 7 kontrol, ~3 sn
-python -m pytest -q                    # 808 test — hepsi geçmeli
+python -m pytest -q                    # 836 test — hepsi geçmeli
 python scripts\smoke_test.py           # uçtan uca kanıt, ~42 sn
 ```
 
@@ -218,7 +218,7 @@ docs/
   06-teknik-tuzaklar.md          bilinen tuzaklar
   07-veri-gunu-kontrol-listesi.md saat saat veri günü planı
 
-tests/    808 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
+tests/    836 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
 ```
 
 ---

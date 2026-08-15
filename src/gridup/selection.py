@@ -10,14 +10,14 @@ komsu). Hepsini modele vermek uc sorun yaratir:
   * **Asiri uyum.** Ozellikle yuksek kardinaliteli kodlamalar.
   * **Aciklanabilirlik.** 400 feature'lik bir modeli juriye anlatamazsin.
 
-UYARI -- DOGRULANMAMIS ATIF KALDIRILDI
-Onceki surumde burada "2024 GDZ Datathon birincisi 490 -> 97 feature indirdi"
-yaziyordu. Bu iddia **DOGRULANAMADI ve muhtemelen YANLISTIR**:
-  * Kaggle'da GDZ'nin 2024 yarismasi YOKTUR
-  * Gercek olan 2023 birincisinin notebook'u okundu: ``stage_one_exclude = []``
-    -- yani HIC feature secimi yapmamis, 490->97 diye bir sey olmamis
-Feature secimi yine de mesru bir tekniktir; ama bu modulun gerekcesi bir
-yarisma anekdotu DEGIL, yukaridaki uc somut sebeptir.
+ATIF TARIHI (iki kez duzeltildi -- ders: 404 != yok)
+2024 GDZ Datathon birincisi (Pikachow) GERCEKTEN 490 -> 97 feature indirdi.
+Final sunumu s.22: basit bir CatBoost, kistas SHAP value, 7 fold, 15 adimda
+25'er feature elenerek. Bir onceki denetim Kaggle sayfasi login'siz 404
+verdigi icin "2024 yarismasi yok" diyip bu atifi silmisti; sunum PDF'i
+(anilozturk.net) + coderspace.io etkinlik sayfasiyla yeniden dogrulandi.
+2023 birincisi ise HIC secim yapmamisti (``stage_one_exclude = []``) --
+iki yil iki farkli yol; 2024'un yolu bu modulun yaptiginin aynisidir.
 Feature sayisi-skor egrisi sunumda guclu bir slayt olur.
 
 IKI YONTEM, FARKLI SORULAR

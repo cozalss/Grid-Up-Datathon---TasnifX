@@ -204,9 +204,11 @@ def starter_params(
                         bunu kullandi); ``tweedie_variance_power`` 1.1-1.5 arasi aranir
       * ``mae``/``l1`` -- resmi metrik MAE ise dogrudan onu optimize et
 
-    2023 GDZ Datathon birincisi objective'i **Optuna arama uzayina koydu**
-    -- yani hangisinin kazandigi veriye baglidir ve deneyle bulunur.
-    (Kaggle'da GDZ'nin 2024 yarismasi YOKTUR; onceki atif hataliydi.)
+    2024 GDZ Datathon birincisi (Pikachow) objective'i **Optuna arama
+    uzayina koydu** (final sunumu s.23: TPESampler, parametre listesinin
+    basinda ``objective``) -- yani hangisinin kazandigi veriye baglidir ve
+    deneyle bulunur. 2023 birincisi ise parametreleri elle sabitlemisti;
+    iki yil iki farkli yol, aramak guvenli olandir.
     """
     # Genel objective anahtarini kutuphaneye ozgu ada CEVIR.
     #

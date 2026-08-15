@@ -26,12 +26,13 @@ import pytest
 SONUC_YOLU = Path(__file__).resolve().parents[1] / "experiments" / "benchmark_gercek.json"
 
 BEKLENEN_MODELLER = {
-    "lgb_l2", "lgb_mae", "lgb_tweedie", "catboost_mae", "xgb", "iki_asama",
+    "lgb_l2", "lgb_mae", "lgb_tweedie", "lgb_sqrt", "catboost_mae", "xgb",
+    "iki_asama", "iki_asama_medyan", "iki_asama_medyan_kalibre",
 }
 BEKLENEN_ALANLAR = {
     "modeller", "harman", "stack_mae", "kazanan",
     "sifir_baseline", "sifir_orani", "gun1_recetesi",
-    "feature_kolonlari",
+    "feature_kolonlari", "kalibrasyon",
 }
 
 
@@ -94,7 +95,9 @@ def test_harman_ic_tutarli(sonuc: dict) -> None:
     kotu bir harman matematiksel olarak mumkun degildir. Agirliklar toplami 1."""
     harman = sonuc["harman"]
     assert set(harman) == {"mae", "uyeler", "agirliklar"}
-    assert len(harman["uyeler"]) == 3
+    # Harman artik TUM uyeler uzerinde hill-climb yapar; agirligi 0 cikanlar
+    # raporda yer almaz. En az 1, en fazla uye sayisi kadar olabilir.
+    assert 1 <= len(harman["uyeler"]) <= len(BEKLENEN_MODELLER)
     assert set(harman["uyeler"]) <= BEKLENEN_MODELLER
     assert set(harman["agirliklar"]) == set(harman["uyeler"])
     assert all(agirlik >= 0.0 for agirlik in harman["agirliklar"].values())

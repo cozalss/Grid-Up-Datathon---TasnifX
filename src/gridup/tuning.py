@@ -2,16 +2,18 @@
 
 TASARIM KARARI: OBJECTIVE DE ARAMA UZAYINDA
 -------------------------------------------
-UYARI -- DOGRULANMAMIS ATIF KALDIRILDI
-Onceki surumde burada "2024 GDZ Datathon birincisi objective'i arama uzayina
-koydu" yaziyordu. Bu **DOGRULANAMADI ve yanlistir**: Kaggle'da GDZ'nin 2024
-yarismasi yoktur, ve gercek olan 2023 birincisinin notebook'unda Optuna HIC
-kullanilmamis; parametreler elle sabitlenmis (objective='MAE',
-eval_metric='MAPE', lr=0.03, depth=6).
+ATIF TARIHI (iki kez duzeltildi -- ders: 404 != yok)
+2024 GDZ Datathon birincisi (Pikachow) objective'i GERCEKTEN Optuna arama
+uzayina koydu -- final sunumu s.23: TPESampler; aranan parametre listesi
+``objective`` ile basliyor. Bir onceki denetim, Kaggle sayfasi login'siz
+404 verdigi icin "2024 yarismasi yok" diyip bu atifi silmisti; sunum PDF'i
+(anilozturk.net) + coderspace.io etkinlik sayfasiyla yeniden dogrulandi.
+2023 birincisinin notebook'unda ise Optuna HIC yok; parametreler elle
+sabitlenmis (objective='MAE', eval_metric='MAPE', lr=0.03, depth=6).
+Iki yil iki farkli yol -- aramak guvenli olandir.
 
-Karar yine de savunulabilir, ama gerekcesi bir yarisma anekdotu DEGIL,
-asagidaki teknik akil yurutmedir. Objective ilk bakista tuhaf bir arama
-boyutu gorunur -- "model ayari" degil, problem tanimidir.
+Objective ilk bakista tuhaf bir arama boyutu gorunur -- "model ayari"
+degil, problem tanimidir.
 
 Ama sayim hedeflerinde degildir. ``poisson``, ``tweedie``, ``mae`` ve ``l2``
 arasindaki secim VERIYE BAGLIDIR ve teoriden okunamaz:

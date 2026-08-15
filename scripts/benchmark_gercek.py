@@ -62,10 +62,19 @@ from gridup.features import (  # noqa: E402
     add_turkish_holiday_features,
 )
 from gridup.features.solar import add_solar_features  # noqa: E402
-from gridup.metrics import get_metric  # noqa: E402
+from gridup.metrics import (  # noqa: E402
+    get_metric,
+    inverse_sqrt_transform,
+    sqrt_transform_target,
+)
 from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
 from gridup.turkish import join_key, strip_qualifier  # noqa: E402
+from gridup.two_stage import (  # noqa: E402
+    calibrate_positive_probability,
+    conditional_quantile_from_hurdle,
+    fit_conditional_quantile_ladder,
+)
 from gridup.validation import purged_time_series_split  # noqa: E402
 
 KOK = Path(__file__).resolve().parents[1]
@@ -94,7 +103,6 @@ UFUK = 31           # test bloğu 31 gun -> lag'ler en az 31 gun geriden gelmeli
 LAGLAR = (31, 62, 93)
 ORTAK_BUTCE = 2000  # agac/iterasyon -- TUM modellere ayni; adil karsilastirma sarti
 ERKEN_DURDURMA = 100
-HARMAN_UYE_SAYISI = 3
 
 
 def panel_kur() -> pd.DataFrame:
@@ -235,12 +243,41 @@ def tek_modelleri_kos(
         kapsam[ad] = sonuc.oof_covered
         print(f"    mae={sonuc.overall_score:.2f}  fold_std={sonuc.fold_std:.2f}  "
               f"sure={sonuc.elapsed_seconds:.0f} sn")
+
+    # sqrt recetesi -- Rohlik Sales v2'nin 2. ve 3.'sunden BAGIMSIZ cifte kanit:
+    # sqrt(y) uzayinda L2, ham MAE'yi VE yerli Tweedie'yi gecti. Karsi kanit da
+    # var (Rohlik Orders 3.: log1p CV'yi bozdu) -- yani donusum teoriden
+    # okunamaz, burada OLCULUR. Skor HAM uzayda: once geri-kare, sonra MAE.
+    print("  lgb_sqrt kosuyor...")
+    sonuc = cross_validate(
+        x, sqrt_transform_target(y), folds, kind="lightgbm", metric="mae",
+        params=_butceli("lightgbm", starter_params("lightgbm", "regression")),
+        early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
+    )
+    geri = inverse_sqrt_transform(sonuc.oof_predictions)
+    maske = sonuc.oof_covered
+    mae_fn, _, _ = get_metric("mae")
+    sqrt_mae = float(mae_fn(y[maske], geri[maske]))
+    fold_skorlari = []
+    for _, valid_idx in folds:
+        gecerli = valid_idx[maske[valid_idx]]
+        if gecerli.size:
+            fold_skorlari.append(float(mae_fn(y[gecerli], geri[gecerli])))
+    skorlar["lgb_sqrt"] = {
+        "mae": sqrt_mae,
+        "fold_std": float(np.std(fold_skorlari)) if fold_skorlari else 0.0,
+        "sure_sn": float(sonuc.elapsed_seconds),
+    }
+    oof["lgb_sqrt"] = geri
+    kapsam["lgb_sqrt"] = maske
+    print(f"    mae={sqrt_mae:.2f}  fold_std={skorlar['lgb_sqrt']['fold_std']:.2f}  "
+          f"sure={sonuc.elapsed_seconds:.0f} sn")
     return skorlar, oof, kapsam
 
 
 def iki_asama_kos(
     x: pd.DataFrame, y: np.ndarray, folds: list[tuple[np.ndarray, np.ndarray]],
-) -> tuple[dict[str, float], np.ndarray, np.ndarray, float, float]:
+) -> tuple[dict[str, float], np.ndarray, np.ndarray, float, float, np.ndarray]:
     """Iki asamali (hurdle) modeli kosturur; birlesik OOF ve sifir oranini dondurur.
 
     Sifir orani ~%35 -- fit_two_stage'in kendi dokumani %40 altinda duz
@@ -275,7 +312,75 @@ def iki_asama_kos(
     print(f"    mae={mae:.2f}  fold_std={fold_std:.2f}  sure={sure:.0f} sn  "
           f"(esik={esik:.3f})")
     skor = {"mae": mae, "fold_std": fold_std, "sure_sn": float(sure)}
-    return skor, birlesik, maske, float((y == 0).mean()), esik
+    return skor, birlesik, maske, float((y == 0).mean()), esik, sonuc.oof_probability
+
+
+def medyan_kurali_kos(
+    x: pd.DataFrame,
+    y: np.ndarray,
+    folds: list[tuple[np.ndarray, np.ndarray]],
+    olasilik: np.ndarray,
+    maske: np.ndarray,
+) -> tuple[dict[str, dict[str, float]], dict[str, np.ndarray], dict[str, Any]]:
+    """MAE-optimal medyan kurali: kosullu kuantil merdiveni + q* = 1 - 0.5/p.
+
+    NEDEN (2024-2026 arastirma taramasi, #1 oneri)
+    ----------------------------------------------
+    MAE'nin optimal nokta tahmini kosullu MEDYANDIR; iki asamanin 'expected'
+    modu (p*mu) RMSE'nin optimalidir, 'thresholded' modu ise sabit esikli bir
+    yaklasiklamadir. Kural kutuphanede zaten vardi
+    (``conditional_quantile_from_hurdle``); burada GERCEK veride, ayni fold ve
+    butceyle OLCULUYOR.
+
+    Kalibre varyantin sorusu ayri ve net: OOF-ayarli esigin 0.5'ten sapmasi
+    (0.606 olculmustu) siniflandiricinin kalibrasyon hatasi mi? Izotonik
+    kalibrasyon sonrasi ayni kural daha iyiyse cevap evettir.
+    """
+    print("  kosullu kuantil merdiveni egitiliyor (11 seviye x 4 fold)...")
+    basla = time.perf_counter()
+    merdiven = fit_conditional_quantile_ladder(
+        x, y, folds,
+        params=_butceli("lightgbm", starter_params("lightgbm", "regression")),
+        early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
+    )
+    kalibrasyon = calibrate_positive_probability(
+        olasilik, y, folds, covered=maske, verbose=False
+    )
+    mae_fn, _, _ = get_metric("mae")
+
+    skorlar: dict[str, dict[str, float]] = {}
+    ooflar: dict[str, np.ndarray] = {}
+    secenekler = {
+        "iki_asama_medyan": olasilik,
+        "iki_asama_medyan_kalibre": kalibrasyon.calibrated,
+    }
+    sure = time.perf_counter() - basla
+    for ad, p in secenekler.items():
+        tahmin = conditional_quantile_from_hurdle(p, merdiven, verbose=False)
+        mae = float(mae_fn(y[maske], tahmin[maske]))
+        fold_skorlari = []
+        for _, valid_idx in folds:
+            gecerli = valid_idx[maske[valid_idx]]
+            if gecerli.size:
+                fold_skorlari.append(float(mae_fn(y[gecerli], tahmin[gecerli])))
+        # Merdiven iki varyantin ORTAK maliyetidir; sure ikisine de yazilir.
+        skorlar[ad] = {
+            "mae": mae,
+            "fold_std": float(np.std(fold_skorlari)) if fold_skorlari else 0.0,
+            "sure_sn": float(sure),
+        }
+        ooflar[ad] = tahmin
+        print(f"    {ad}: mae={mae:.2f}  fold_std={skorlar[ad]['fold_std']:.2f}")
+
+    kalibrasyon_ozeti = {
+        "brier_once": kalibrasyon.brier_before,
+        "brier_sonra": kalibrasyon.brier_after,
+        "iyilesti": bool(kalibrasyon.improved),
+    }
+    print(f"    kalibrasyon: Brier {kalibrasyon.brier_before:.4f} -> "
+          f"{kalibrasyon.brier_after:.4f} "
+          f"({'iyilesti' if kalibrasyon.improved else 'IYILESMEDI'})")
+    return skorlar, ooflar, kalibrasyon_ozeti
 
 
 def harman_ve_stack(
@@ -285,12 +390,22 @@ def harman_ve_stack(
     y: np.ndarray,
     folds: list[tuple[np.ndarray, np.ndarray]],
 ) -> tuple[dict[str, Any], float]:
-    """En iyi 3 modelin hill-climb harmani + ridge stacking.
+    """TUM uyelerin hill-climb harmani + ridge stacking.
 
     Iki adim da ORTAK kapsam maskesiyle calisir (zoo.oof_covered deseni):
     kapsanmayan satirlarin OOF'u dolgudur, skora girerse sayiyi bozar.
+
+    NEDEN "EN IYI 3" DEGIL DE HEPSI (olculdu, 2026-08-15)
+    -----------------------------------------------------
+    Onceki surum en dusuk MAE'li 3 uyeyi secip harmanliyordu. Medyan-kurali
+    varyantlari eklenince "en iyi 3", birbirinin kopyasi iki medyan cikti
+    (ayni merdiven, neredeyse ayni olasilik) + lgb_sqrt oldu ve harman
+    311.83'e GERILEDI -- eski cesitli uclu (iki_asama + catboost_mae +
+    lgb_mae) 308.27 veriyordu. Ders: harmani uye KALITESI degil hata
+    CESITLILIGI tasir. Simdi tum uyeler hill-climb'e girer; ise yaramayanlara
+    zaten ~0 agirlik verir, agirligi 0 cikanlar rapordan dusulur.
     """
-    uyeler = sorted(modeller, key=lambda ad: modeller[ad]["mae"])[:HARMAN_UYE_SAYISI]
+    uyeler = sorted(modeller, key=lambda ad: modeller[ad]["mae"])
 
     ortak_maske = np.ones(len(y), dtype=bool)
     for ad in uyeler:
@@ -307,12 +422,14 @@ def harman_ve_stack(
     harman_tahmin = np.zeros(indeks.size)
     for ad, agirlik in agirliklar.items():
         harman_tahmin += agirlik * maskeli[ad]
+    # Agirligi 0 cikanlar harmana katki vermiyor -- raporda yer almasinlar.
+    secilen = {ad: w for ad, w in agirliklar.items() if w > 0}
     harman = {
         "mae": float(mae_fn(y[indeks], harman_tahmin)),
-        "uyeler": uyeler,
-        "agirliklar": {ad: round(float(w), 4) for ad, w in agirliklar.items()},
+        "uyeler": sorted(secilen, key=lambda ad: -secilen[ad]),
+        "agirliklar": {ad: round(float(w), 4) for ad, w in secilen.items()},
     }
-    print(f"  harman: mae={harman['mae']:.2f}  uyeler={uyeler}")
+    print(f"  harman: mae={harman['mae']:.2f}  uyeler={harman['uyeler']}")
 
     stack = stack_oof(
         {ad: oof[ad] for ad in uyeler}, y, folds,
@@ -340,7 +457,11 @@ def recete_yaz(
     """
     tek = min(modeller, key=lambda ad: modeller[ad]["mae"])
     tek_mae = modeller[tek]["mae"]
-    duzler = {ad: bilgi["mae"] for ad, bilgi in modeller.items() if ad != "iki_asama"}
+    # "duz" = hurdle olmayan tek modeller; iki_asama TUM varyantlariyla haric.
+    duzler = {
+        ad: bilgi["mae"] for ad, bilgi in modeller.items()
+        if not ad.startswith("iki_asama")
+    }
     duz_ad = min(duzler, key=lambda ad: duzler[ad])
     sira = sorted(modeller, key=lambda ad: modeller[ad]["mae"])
     cat_sira = sira.index("catboost_mae") + 1
@@ -361,13 +482,19 @@ def recete_yaz(
         "disi, kazanc MAE ile egitilmis buyukluk modelinden geliyor)"
         if esik <= 0.02 else f" (optimum esik {esik:.2f})"
     )
+    medyan_mae = modeller["iki_asama_medyan"]["mae"]
+    kalibre_mae = modeller["iki_asama_medyan_kalibre"]["mae"]
+    sqrt_mae = modeller["lgb_sqrt"]["mae"]
     return (
         f"Veri gununde ilk kosulacak tek model {tek} (MAE {tek_mae:.2f}; hep-sifir "
         f"baseline {sifir_baseline:.2f}, sifir orani %{sifir_orani * 100:.1f}). "
         f"2023 birincisinin recetesi catboost_mae bu veride MAE {cat_mae:.2f} ile "
         f"{cat_sira}. sirada -- {cat_hukmu}. Iki asamali model (MAE {iki_mae:.2f}) "
-        f"{iki_hukmu}{esik_notu}. En iyi 3'un hill-climb harmani MAE "
-        f"{harman['mae']:.2f}, ridge stacking {stack_mae:.2f} (purged semada ilk "
+        f"{iki_hukmu}{esik_notu}. MAE-optimal medyan kurali {medyan_mae:.2f}, "
+        f"kalibre olasilikla {kalibre_mae:.2f}; sqrt donusumu (Rohlik recetesi) "
+        f"{sqrt_mae:.2f}. Tum uyeler uzerinde hill-climb harmani MAE "
+        f"{harman['mae']:.2f} (agirlik alan uyeler: {', '.join(harman['uyeler'])}), "
+        f"ridge stacking {stack_mae:.2f} (purged semada ilk "
         f"fold'lar meta-egitim kapsami disinda kaliyor); genel kazanan '{kazanan}'. "
         f"Oneri: gun-1'de {tek} ile basla, ayni fold'larda catboost_mae ve "
         f"lgb_tweedie'yi ekleyip hill-climb harmanini kur; stacking'e fold kapsami "
@@ -400,12 +527,21 @@ def main() -> int:
     modeller, oof, kapsam = tek_modelleri_kos(ozellik[kolonlar], y, folds)
 
     print("3/4 iki asamali model...")
-    iki_skor, iki_oof, iki_maske, sifir_orani, esik = iki_asama_kos(
+    iki_skor, iki_oof, iki_maske, sifir_orani, esik, olasilik = iki_asama_kos(
         ozellik[kolonlar], y, folds
     )
     modeller["iki_asama"] = iki_skor
     oof["iki_asama"] = iki_oof
     kapsam["iki_asama"] = iki_maske
+
+    print("3b/4 MAE-optimal medyan kurali (ham + kalibre olasilik)...")
+    medyan_skorlar, medyan_oof, kalibrasyon_ozeti = medyan_kurali_kos(
+        ozellik[kolonlar], y, folds, olasilik, iki_maske
+    )
+    modeller.update(medyan_skorlar)
+    for ad, tahminler in medyan_oof.items():
+        oof[ad] = tahminler
+        kapsam[ad] = iki_maske
 
     print("4/4 harman + stacking...")
     harman, stack_mae = harman_ve_stack(modeller, oof, kapsam, y, folds)
@@ -429,6 +565,7 @@ def main() -> int:
         # sorusunu MAKINE ile sorabilsin -- denetim, MAE esigine bakan
         # testin id sizintisini ayirt edemedigini gosterdi.
         "feature_kolonlari": list(kolonlar),
+        "kalibrasyon": kalibrasyon_ozeti,
         "gun1_recetesi": recete_yaz(
             modeller, harman, stack_mae, kazanan, sifir_baseline, sifir_orani, esik
         ),

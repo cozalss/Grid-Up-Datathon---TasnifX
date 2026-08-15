@@ -43,6 +43,8 @@ __all__ = [
     "METRIC_REGISTRY",
     "optimize_threshold",
     "log_transform_target",
+    "sqrt_transform_target",
+    "inverse_sqrt_transform",
     "inverse_log_transform",
     "postprocess_predictions",
 ]
@@ -300,9 +302,9 @@ def postprocess_predictions(
        Kirpma tek basina skor kazandirir.
 
     2. **Yuvarlama (sayim hedefi + MAE).** Hedef tam sayiysa ve metrik MAE ise,
-       ``2.4`` yerine ``2`` tahmin etmek hatayi dogrudan azaltir. 2023 GDZ
-       birincisinin final mimarisi: 25 seed full-data + mean blend +
-       **round** + **clip**.
+       ``2.4`` yerine ``2`` tahmin etmek hatayi dogrudan azaltir. 2024 GDZ
+       birincisinin (Pikachow) final mimarisi: 25 seed full-data +
+       mean blend + **round** + **clip** (final sunumu s.24).
        DIKKAT: metrik RMSE ise yuvarlama genellikle ZARAR verir -- RMSE'de
        optimal tahmin kosullu ORTALAMADIR ve o tam sayi olmak zorunda degildir.
 
@@ -362,3 +364,41 @@ def inverse_log_transform(y_log: np.ndarray, *, clip_negative: bool = True) -> n
     """
     result = np.expm1(np.asarray(y_log, dtype="float64"))
     return np.clip(result, 0, None) if clip_negative else result
+
+
+def sqrt_transform_target(y: np.ndarray) -> np.ndarray:
+    """``sqrt`` donusumu -- carpik sayim hedefleri icin log1p'den yumusak alternatif.
+
+    NEREDEN GELDI (2024-2025 yarisma kaniti)
+    ----------------------------------------
+    Rohlik Sales v2'de hem 2. hem 3. BIRBIRINDEN BAGIMSIZ olarak ayni sonucu
+    raporladi: carpik, sifir agirlikli satis hedefinde ``sqrt(y)`` + L2
+    objective, hem ham MAE objective'ini hem LightGBM'in yerli Tweedie'sini
+    gecti. Ikincinin gerekcesi: "hedef Tweedie dagilimli; sqrt onu MSE'nin
+    sevdigi sekle sokar." Karsi ornek de kayitli: Rohlik Orders 3.'sunde
+    ``log1p`` CV'yi KOTULESTIRDI (ayni yarismada 2. log1p'den kazanc
+    raporlarken). Yani donusum secimi TEORIDEN OKUNAMAZ -- log1p, sqrt ve
+    ham hedef ayni benchmark'ta yan yana OLCULUR, kazanan veriye gore secilir.
+
+    log1p ile fark: sqrt buyuk degerleri log kadar sert ezmez (sqrt(100)=10,
+    log1p(100)=4.6) -- uzun ama COK uzun olmayan kuyruklarda log fazla
+    baskilar, sqrt dengeyi korur.
+    """
+    y = np.asarray(y, dtype="float64")
+    if np.any(y < 0):
+        raise ValueError("sqrt negatif degerde tanimsiz. Hedefi kontrol et.")
+    return np.sqrt(y)
+
+
+def inverse_sqrt_transform(y_sqrt: np.ndarray, *, clip_negative: bool = True) -> np.ndarray:
+    """``sqrt`` donusumunu geri alir (kare).
+
+    ``clip_negative`` KRITIKTIR ve kareden ONCE uygulanir: model sqrt
+    uzayinda ``-0.5`` tahmin edebilir; dogrudan kare almak onu ``+0.25``e
+    cevirir -- isaret hatasi sessizce pozitif tahmine donusur. Once 0'a
+    kirpip sonra kare aliyoruz.
+    """
+    values = np.asarray(y_sqrt, dtype="float64")
+    if clip_negative:
+        values = np.clip(values, 0, None)
+    return np.square(values)
