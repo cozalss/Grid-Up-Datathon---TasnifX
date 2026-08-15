@@ -52,6 +52,12 @@ VERI_DOSYALARI = (
     "data/external/gunes_gunluk.parquet",
     "data/reference/ilceler_gdz_adm.parquet",
     "data/reference/ilceler_gdz_adm.csv",
+    # Harici veri 2. dalga (kaynaklar docs/10 bolum 5'te; fetch betikleri
+    # scripts/fetch_hourly_weather.py, fetch_deprem.py, fetch_turizm.py):
+    "data/external/hava_saatlik_turev.parquet",   # basinc + esik-ustu ruzgar saatleri
+    "data/external/depremler.parquet",            # AFAD M>=4 Ege katalogu
+    "data/external/yanginlar.parquet",            # NASA FIRMS sicak-nokta tespitleri
+    "data/external/turizm_geceleme.parquet",      # KTB ilce konaklama 2023-25
 )
 
 #: Kaggle imajinda OLMAYAN, bizim kullandigimiz paketler. Bunlarin wheel'ini

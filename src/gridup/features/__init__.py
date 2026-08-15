@@ -24,6 +24,7 @@ from .categorical import (
     oof_target_encode,
     reduce_rare_categories,
 )
+from .demografi import epdk_bolge_sinifi
 from .outage_reason import add_reason_features, classify_reason, reason_family_report
 from .school import add_school_calendar_features, school_calendar
 from .spatial import (
@@ -84,6 +85,8 @@ __all__ = [
     # okul takvimi
     "school_calendar",
     "add_school_calendar_features",
+    # demografi
+    "epdk_bolge_sinifi",
     # mekansal
     "nearest_neighbours",
     "add_neighbour_target_lag",
