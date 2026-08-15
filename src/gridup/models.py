@@ -495,8 +495,14 @@ def _fit_one_fold(
     y_valid: np.ndarray,
     categorical: list[str],
     early_stopping_rounds: int,
+    sample_weight: np.ndarray | None = None,
 ) -> Any:
-    """Tek bir fold egitir ve modeli dondurur."""
+    """Tek bir fold egitir ve modeli dondurur.
+
+    ``sample_weight`` yalnizca TRAIN dilimini olcekler; eval_set agirliksiz
+    kalir -- erken durdurma ve fold skoru boylece agirlikli/agirliksiz
+    kosular arasinda karsilastirilabilir olur (bilincli tercih).
+    """
     if kind == "lightgbm":
         import lightgbm as lgb
 
@@ -505,6 +511,7 @@ def _fit_one_fold(
         model = model_class(**params)
         model.fit(
             x_train, y_train,
+            sample_weight=sample_weight,
             eval_set=[(x_valid, y_valid)],
             eval_metric=params.get("eval_metric"),
             categorical_feature=categorical or "auto",
@@ -521,7 +528,11 @@ def _fit_one_fold(
         is_classification = params.get("objective", "").startswith(("binary", "multi"))
         model_class = xgb.XGBClassifier if is_classification else xgb.XGBRegressor
         model = model_class(**params, early_stopping_rounds=early_stopping_rounds)
-        model.fit(x_train, y_train, eval_set=[(x_valid, y_valid)], verbose=False)
+        model.fit(
+            x_train, y_train,
+            sample_weight=sample_weight,
+            eval_set=[(x_valid, y_valid)], verbose=False,
+        )
         return model
 
     if kind == "catboost":
@@ -532,6 +543,7 @@ def _fit_one_fold(
         model = model_class(**params)
         model.fit(
             x_train, y_train,
+            sample_weight=sample_weight,
             eval_set=(x_valid, y_valid),
             cat_features=categorical or None,
             early_stopping_rounds=early_stopping_rounds,
@@ -669,6 +681,30 @@ def _extract_importance(model: Any, feature_names: Sequence[str]) -> np.ndarray:
     return np.zeros(len(feature_names))
 
 
+def _validate_sample_weight(
+    sample_weight: np.ndarray | Sequence[float] | None, n_rows: int
+) -> np.ndarray | None:
+    """Ornek agirliklarini fit'ten ONCE dogrular.
+
+    LightGBM boy uyusmazliginda anlasilmaz bir hata verir; negatif/NaN
+    agirlik ise hicbir hata vermeden sacma bir modele yol acar. Ikisini de
+    egitim baslamadan yakaliyoruz.
+    """
+    if sample_weight is None:
+        return None
+    weights = np.asarray(sample_weight, dtype="float64").ravel()
+    if len(weights) != n_rows:
+        raise ValueError(
+            f"sample_weight ({len(weights)}) ve train ({n_rows}) uzunluklari farkli."
+        )
+    if not np.isfinite(weights).all() or (weights < 0).any():
+        raise ValueError(
+            "sample_weight negatif/NaN/sonsuz deger iceriyor -- "
+            "agirliklar sonlu ve >= 0 olmali."
+        )
+    return weights
+
+
 def cross_validate(
     train: pd.DataFrame,
     target: np.ndarray | pd.Series,
@@ -679,6 +715,7 @@ def cross_validate(
     metric: str = "rmse",
     params: dict[str, Any] | None = None,
     test: pd.DataFrame | None = None,
+    sample_weight: np.ndarray | Sequence[float] | None = None,
     early_stopping_rounds: int = 200,
     verbose: bool = True,
 ) -> CVResult:
@@ -693,6 +730,11 @@ def cross_validate(
         metric: ``metrics.METRIC_REGISTRY`` icindeki bir ad.
         params: Model parametreleri. ``None`` ise ``starter_params``.
         test: Verilirse fold ortalamasiyla test tahmini de uretilir.
+        sample_weight: Satir basina egitim agirligi (``len(train)`` boyutlu;
+            or. ``weighting.recency_activity_weights`` ciktisi). Her fold'da
+            yalnizca TRAIN dilimi (``weight[train_idx]``) fit'e gecirilir;
+            valid/eval tarafi agirliksiz kalir ki fold skorlari agirlikli ve
+            agirliksiz kosular arasinda karsilastirilabilir olsun.
         early_stopping_rounds: Iyilesme olmadan kac tur beklenecegi.
 
     Returns:
@@ -747,6 +789,8 @@ def cross_validate(
     # sessizce train/valid olarak eslesir -- bkz. assert_folds_align.
     assert_folds_align(len(train), fold_list)
 
+    weights = _validate_sample_weight(sample_weight, len(train))
+
     metric_fn, _, needs_proba = get_metric(metric)
     model_params = (
         merge_infrastructure_params(kind, params)
@@ -773,6 +817,7 @@ def cross_validate(
         model = _fit_one_fold(
             kind, model_params, x_train, y[train_idx], x_valid, y[valid_idx],
             categorical, early_stopping_rounds,
+            sample_weight=(weights[train_idx] if weights is not None else None),
         )
 
         fold_prediction = _predict(model, x_valid, needs_proba=needs_proba)

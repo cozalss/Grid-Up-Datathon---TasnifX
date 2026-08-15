@@ -39,6 +39,8 @@ __all__ = [
     "add_regional_aggregates",
     "add_physical_derivatives",
     "add_weather_accumulators",
+    "add_consecutive_extreme_days",
+    "add_precip_anomaly",
     "DEFAULT_QUANTILES",
     "NEUTRAL_TEMPERATURE_C",
 ]
@@ -362,6 +364,135 @@ def add_physical_derivatives(
             ).astype("float32")
 
     return _orijinal_siraya_don(frame, daily.index)
+
+
+def add_consecutive_extreme_days(
+    frame: pd.DataFrame,
+    value_column: str,
+    *,
+    time_column: str,
+    group_columns: Sequence[str],
+    threshold: float,
+    above: bool = True,
+    prefix: str | None = None,
+) -> pd.DataFrame:
+    """Ardisik esik-otesi gun sayaci (grup ici). YENI frame dondurur.
+
+    NEREDEN GELDI (docs/09 bolum 3.3): ardisik sicak GECE sayisi -- trafo
+    gece sogumazsa yaglanma sicakligi birikir ve yalitim yaslanir. Tipik
+    kullanim: ``value_column="sicaklik_min", threshold=22.0, above=True``.
+    ``add_physical_derivatives``taki ``ardisik_sicak_gece`` sabit 22 C ile
+    ayni mekanizmadir; bu fonksiyon esigi ve yonu SERBEST birakir (soguk
+    dalgasi icin ``above=False`` da mesru).
+
+    NEDEN AYNI GUN DAHIL -- SIZINTI DEGIL
+    -------------------------------------
+    Hava EKZOJEN bir kovaryattir: hedeften turetilmez ve yarisma test
+    setinde verilir (2024'te verildi; ``add_weather_accumulators``
+    docstring'indeki ufuk tartismasinin aynisi). Ayni gunun sicakligini
+    kullanmak, ayni gunun HEDEFINI kullanmak gibi bir gelecek bilgisi
+    tasimaz. Test setinde hava YOKSA once o varsayimi kontrol et.
+
+    Args:
+        threshold: Esik. ``above=True`` ise ``deger > threshold`` sayilir,
+            ``above=False`` ise ``deger < threshold``.
+        prefix: Kolon oneki; varsayilan ``value_column``. Ayni kolona iki
+            farkli esik uygulanacaksa cakismayi onlemek icin prefix ver.
+
+    Returns:
+        ``{prefix}_ardisik_{ustu|alti}_gun`` kolonu eklenmis yeni frame.
+        NaN deger kosulu bozar (sayac sifirlanir) -- eksik olcum "esik
+        asildi" sayilmaz.
+    """
+    if value_column not in frame.columns:
+        raise KeyError(f"Kolon '{value_column}' frame icinde yok.")
+    if not group_columns:
+        raise ValueError("group_columns bos olamaz: sayac grup ici kronolojiyle tanimli.")
+
+    prefix = prefix or value_column
+    kolon = f"{prefix}_ardisik_{'ustu' if above else 'alti'}_gun"
+
+    result = frame.copy()
+    result[time_column] = pd.to_datetime(result[time_column], errors="coerce")
+    # SIRA KORUMA -- gerekce add_physical_derivatives'taki notla ayni:
+    # fold'lar konumsaldir, girdi sirasi bozulamaz.
+    result = result.assign(_gridup_sira=np.arange(len(result)))
+    result = result.sort_values(list(group_columns) + [time_column])
+
+    grouped = result.groupby(list(group_columns), observed=True, sort=False)
+
+    def _say(series: pd.Series) -> pd.Series:
+        values = series.astype("float64").to_numpy()
+        condition = values > threshold if above else values < threshold
+        return pd.Series(_consecutive_run(condition), index=series.index)
+
+    result[kolon] = grouped[value_column].transform(_say).astype("int16")
+    return _orijinal_siraya_don(result, frame.index)
+
+
+def add_precip_anomaly(
+    frame: pd.DataFrame,
+    precip_column: str,
+    *,
+    time_column: str,
+    group_columns: Sequence[str],
+    windows: Sequence[int] = (7, 30, 90),
+) -> pd.DataFrame:
+    """Cok pencereli yagis anomalisi (kuraklik indeksi). YENI frame dondurur.
+
+    NEREDEN GELDI (docs/09 bolum 3.4): mevcut ikili "kuraklik" bayraginin
+    surekli hali. Her pencere icin::
+
+        anomali_w(d) = son w gunun yagis toplami
+                       - o toplamin GENISLEYEN (tum gecmis) ortalamasi
+
+    FARK secildi, oran DEGIL: kurak bolge/pencerede genisleyen ortalama
+    sifira yaklasir ve oran patlar; fark mm cinsinden sinirli ve okunur
+    kalir (negatif = normalden kurak, pozitif = normalden islak).
+
+    Genisleyen referans grup icidir: "bu ilcenin kendi iklimine gore" --
+    Izmir sahili ile Manisa ici ayni mm'de farkli anomali tasir.
+
+    NEDEN AYNI GUN DAHIL -- SIZINTI DEGIL
+    -------------------------------------
+    Yagis EKZOJEN kovaryattir; hedeften turetilmez ve test doneminde de
+    bilinir (bkz. ``add_consecutive_extreme_days`` ve
+    ``add_weather_accumulators`` docstring'leri). Genisleyen ortalama da
+    yalnizca gecmis yagisi kullanir -- hedefe hic dokunulmaz.
+
+    Returns:
+        Her pencere icin ``{precip_column}_anomali{w}g`` eklenmis yeni frame.
+    """
+    if precip_column not in frame.columns:
+        raise KeyError(f"Kolon '{precip_column}' frame icinde yok.")
+    if not windows:
+        raise ValueError("En az bir pencere ver, or. windows=(7, 30, 90).")
+    if not group_columns:
+        raise ValueError("group_columns bos olamaz: iklim referansi grup ici tanimli.")
+
+    result = frame.copy()
+    result[time_column] = pd.to_datetime(result[time_column], errors="coerce")
+    # SIRA KORUMA -- gerekce add_physical_derivatives'taki notla ayni.
+    result = result.assign(_gridup_sira=np.arange(len(result)))
+    result = result.sort_values(list(group_columns) + [time_column])
+
+    grouped = result.groupby(list(group_columns), observed=True, sort=False)
+    anahtarlar = [result[column] for column in group_columns]
+
+    yeni: dict[str, np.ndarray] = {}
+    for window in windows:
+        toplam = grouped[precip_column].transform(
+            lambda s, w=window: s.rolling(w, min_periods=1).sum()
+        )
+        # transform indeksle hizalanir: ikinci groupby'da sira sorunu yok.
+        referans = toplam.groupby(anahtarlar, observed=True).transform(
+            lambda s: s.expanding(min_periods=1).mean()
+        )
+        yeni[f"{precip_column}_anomali{window}g"] = np.asarray(
+            toplam - referans, dtype="float32"
+        )
+
+    return _orijinal_siraya_don(result.assign(**yeni), frame.index)
 
 
 def add_weather_accumulators(

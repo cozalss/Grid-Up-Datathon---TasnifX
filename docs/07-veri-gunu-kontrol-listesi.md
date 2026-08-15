@@ -18,7 +18,7 @@ izlenecek adımları içerir.
 | Okul takvimi 2021–2026 (MEB, doğrulanmış) | `gridup.features.school` | 6 ders yılı, ara/yarıyıl/yaz |
 | Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
 | Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
-| Test paketi | `tests/` | 836 test |
+| Test paketi | `tests/` | 877 test |
 
 ---
 

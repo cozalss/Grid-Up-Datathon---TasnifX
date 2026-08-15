@@ -49,6 +49,8 @@ from .metrics import (
     postprocess_predictions,
     rmse,
     rmsle,
+    soften_outliers,
+    tune_final_multiplier,
 )
 from .models import COUNT_OBJECTIVES, CVResult, cross_validate, starter_params
 from .neural import NeuralConfig, neural_cross_validate
@@ -79,6 +81,7 @@ from .validation import (
     purged_time_series_split,
     suggest_scheme,
 )
+from .weighting import recency_activity_weights
 from .zoo import ZooEntry, make_model_zoo, sweep_count_objectives
 
 __all__ = [
@@ -98,8 +101,11 @@ __all__ = [
     "build_panel", "panel_coverage",
     # metrik
     "rmse", "rmsle", "get_metric", "optimize_threshold", "postprocess_predictions",
+    "tune_final_multiplier", "soften_outliers",
     # model
     "cross_validate", "CVResult", "starter_params", "COUNT_OBJECTIVES",
+    # ornek agirligi
+    "recency_activity_weights",
     # tam veri yeniden egitim
     "multi_seed_refit", "estimate_full_data_rounds", "extract_best_iterations",
     "fold_train_fraction",

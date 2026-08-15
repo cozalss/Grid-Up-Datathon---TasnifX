@@ -37,6 +37,7 @@ from .temporal import (
     add_cyclical_features,
     add_expanding_features,
     add_lag_features,
+    add_mass_event_features,
     add_previous_month_features,
     add_rolling_features,
     add_turkish_holiday_features,
@@ -44,7 +45,9 @@ from .temporal import (
     shared_origin,
 )
 from .weather import (
+    add_consecutive_extreme_days,
     add_physical_derivatives,
+    add_precip_anomaly,
     add_regional_aggregates,
     add_weather_accumulators,
     aggregate_hourly_to_daily,
@@ -58,6 +61,7 @@ __all__ = [
     "add_lag_features",
     "add_rolling_features",
     "add_expanding_features",
+    "add_mass_event_features",
     "add_previous_month_features",
     "add_upcoming_holiday_features",
     "shared_origin",
@@ -86,5 +90,7 @@ __all__ = [
     "add_regional_aggregates",
     "add_physical_derivatives",
     "add_weather_accumulators",
+    "add_consecutive_extreme_days",
+    "add_precip_anomaly",
     "circular_mean",
 ]

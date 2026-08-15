@@ -142,6 +142,12 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
             f, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
         ),
     ),
+    "add_mass_event_features": (
+        "temporal",
+        lambda m, f: m.add_mass_event_features(
+            f, "hedef", time_column="tarih", horizon=1, group_columns=["yer"]
+        ),
+    ),
     "add_upcoming_holiday_features": (
         "temporal",
         lambda m, f: m.add_upcoming_holiday_features(f, "tarih"),
@@ -172,6 +178,18 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
         "weather",
         lambda m, f: m.add_weather_accumulators(
             f, group_columns=["yer"], time_column="tarih", value_columns=["yagis_mm"]
+        ),
+    ),
+    "add_consecutive_extreme_days": (
+        "weather",
+        lambda m, f: m.add_consecutive_extreme_days(
+            f, "sicaklik", time_column="tarih", group_columns=["yer"], threshold=20.0
+        ),
+    ),
+    "add_precip_anomaly": (
+        "weather",
+        lambda m, f: m.add_precip_anomaly(
+            f, "yagis_mm", time_column="tarih", group_columns=["yer"], windows=(7,)
         ),
     ),
     # --- spatial ---
@@ -357,7 +375,7 @@ _FOLD_PARAMS = frozenset({"folds", "fold", "fold_list", "cv"})
 HEDEF_MODULLERI = (
     "features.categorical", "features.aggregate", "features.spatial",
     "features.temporal", "selection", "two_stage", "ensemble", "models",
-    "refit", "zoo", "tuning", "ablation", "neural", "metrics",
+    "refit", "zoo", "tuning", "ablation", "neural", "metrics", "weighting",
 )
 
 #: Hedefe dokunan ama fold ALMAYAN fonksiyonlar ve bunun NEDEN guvenli oldugu.
@@ -379,6 +397,20 @@ FOLDSUZ_GEREKCE: dict[str, str] = {
     "metrics.sqrt_transform_target": "geri cevrilebilir donusum, istatistik ogrenmez",
     # OOF tahminler UZERINDE calisir -- girdisi zaten fold-disidir.
     "metrics.optimize_threshold": "OOF tahminler uzerinde calisir (docstring'de zorunlu kilinmis)",
+    "metrics.tune_final_multiplier": (
+        "OOF tahminler uzerinde carpan tarar (docstring'de zorunlu kilinmis; "
+        "covered maskesi de bunun icin var); fit yok"
+    ),
+    "metrics.soften_outliers": (
+        "hedef TANIMINI degistiren egitim-oncesi donusum; yalnizca TRAIN "
+        "hedefine uygulanir, tahminlere asla (docstring); CV icinde train-fold "
+        "dilimine uygulanmasi da docstring'de sart kosulmus -- fit/skor uretmez"
+    ),
+    "weighting.recency_activity_weights": (
+        "agirlik uretir, feature degil: modele deger olarak girmez, yalnizca "
+        "train satirlarinin kaybini olcekler; aktiflik orani geriye-donuk "
+        "penceredir ve cross_validate agirligi train-fold dilimiyle kullanir"
+    ),
     "ensemble.hill_climb_weights": "girdisi OOF tahmin matrisi -- fold zaten uygulanmis",
     "ensemble.greedy_forward_selection": "girdisi OOF tahmin matrisi",
     "ensemble.prune_by_correlation": "girdisi OOF tahmin matrisi",
@@ -392,6 +424,11 @@ FOLDSUZ_GEREKCE: dict[str, str] = {
         "sonu (satir - horizon)'u gecmeyen SON TAM takvim ayindan hesaplar -- "
         "yalnizca gecmis; ay siniri asan test blogu icin ufuk disiplini "
         "testle kanitli (test_2024_birinci_taktikleri)"
+    ),
+    "features.temporal.add_mass_event_features": (
+        "horizon >= 1 ZORUNLU ve yalnizca takvim-kaydirilmis gunluk pay "
+        "yayinlanir; ayni-gun payi hedef sizintisi olurdu ve URETILMEZ -- "
+        "leak testi test_kazanan_taktikleri'nde"
     ),
     "features.spatial.add_neighbour_target_lag": "horizon>=1 zorunlu -- komsunun gecmisi",
     "features.spatial.add_neighbour_feature_mean": (

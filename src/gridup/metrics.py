@@ -22,6 +22,7 @@ import warnings
 from collections.abc import Callable
 
 import numpy as np
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -47,6 +48,9 @@ __all__ = [
     "inverse_sqrt_transform",
     "inverse_log_transform",
     "postprocess_predictions",
+    "tune_final_multiplier",
+    "FINAL_MULTIPLIER_GRID",
+    "soften_outliers",
 ]
 
 
@@ -340,6 +344,152 @@ def postprocess_predictions(
         print("[postprocess] " + " · ".join(report))
 
     return values
+
+
+#: ``tune_final_multiplier`` varsayilan taramasi. M5 2.sinin araligi
+#: {0.90..0.99} idi; ust tarafi 1.05'e uzatiyoruz ki "buyutmek mi kucultmek
+#: mi" sorusu da veriye sorulsun. 1.0 HER ZAMAN izgaraya dahil edilir.
+FINAL_MULTIPLIER_GRID = np.arange(0.90, 1.051, 0.01)
+
+
+def tune_final_multiplier(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    *,
+    grid: np.ndarray | None = None,
+    covered: np.ndarray | None = None,
+    metric: str = "mae",
+) -> tuple[float, float, pd.DataFrame]:
+    """Nihai tahmin carpanini OOF uzerinde tarar ("sihirli carpan", M5 2.si).
+
+    NEREDEN GELDI VE UYARISI (docs/09 bolum 2.4)
+    --------------------------------------------
+    M5 2.si round+clip'ten ONCE dar bir aralikta ({0.90..0.99}) carpan
+    taradi ve kazandi. AMA **M5 1.si HIC CARPAN KULLANMADI** ve model
+    secimini fold'lar arasi std minimizasyonuyla yapti -- saglamlik >
+    parlaklik. Carpan, sistematik yanlilik (or. Tweedie'nin sifir kutlesini
+    az tartmasi) VARSA ise yarar; yoksa OOF gurultusune asiri uyum yapar
+    ve leaderboard'da geri teper.
+
+    KARAR KURALI: carpani ancak su UC kosul birden saglaniyorsa uygula:
+      1. ``best_multiplier`` 1.0'dan belirgin sapmis (izgara ucuna
+         DAYANMAMIS -- dayandiysa izgara yanlis, sonuca guvenme),
+      2. kazanc fold'lar ARASINDA tutarli (tek fold'un hediyesi degil),
+      3. girdiler GERCEKTEN fold-disi (egitim tahmini verirsen carpan da
+         asiri uyum yapar -- ``CVResult.covered_predictions()`` kullan).
+
+    Args:
+        y_true: Gercek degerler.
+        y_pred: FOLD-DISI (OOF) tahminler.
+        grid: Taranacak carpanlar. ``None`` = ``FINAL_MULTIPLIER_GRID``.
+            1.0 izgarada yoksa OTOMATIK eklenir -- "carpansiz" secenegi
+            hic denememek, bu fonksiyonun uyarisini anlamsiz kilardi.
+        covered: OOF kapsam maskesi; verilirse yalnizca kapsanan satirlar
+            skorlanir (purged bolmede ilk donem dolgudur).
+        metric: ``METRIC_REGISTRY`` icindeki bir ad.
+
+    Returns:
+        ``(best_multiplier, best_score, table)`` -- table ``carpan``/``skor``
+        kolonlu, izgara sirasinda bir DataFrame.
+    """
+    y_true = np.asarray(y_true, dtype="float64").ravel()
+    y_pred = np.asarray(y_pred, dtype="float64").ravel()
+    if len(y_true) != len(y_pred):
+        raise ValueError(
+            f"y_true ({len(y_true)}) ve y_pred ({len(y_pred)}) uzunluklari farkli."
+        )
+    if covered is not None:
+        maske = np.asarray(covered, dtype=bool).ravel()
+        if len(maske) != len(y_true):
+            raise ValueError(
+                f"covered ({len(maske)}) ve y_true ({len(y_true)}) uzunluklari farkli."
+            )
+        y_true, y_pred = y_true[maske], y_pred[maske]
+    if y_true.size == 0:
+        raise ValueError("Skorlanacak satir kalmadi (bos girdi veya bos kapsam maskesi).")
+
+    kaynak = FINAL_MULTIPLIER_GRID if grid is None else np.asarray(grid, dtype="float64")
+    # Yuvarlama float artiklarini temizler (0.9000000001 gibi); 1.0 daima girer.
+    carpanlar = np.unique(np.round(np.concatenate([kaynak.ravel(), [1.0]]), 6))
+
+    metric_fn, greater_is_better, _ = get_metric(metric)
+    skorlar = np.array(
+        [float(metric_fn(y_true, carpan * y_pred)) for carpan in carpanlar]
+    )
+    tablo = pd.DataFrame({"carpan": carpanlar, "skor": skorlar})
+
+    best_index = int(np.argmax(skorlar) if greater_is_better else np.argmin(skorlar))
+    return float(carpanlar[best_index]), float(skorlar[best_index]), tablo
+
+
+def soften_outliers(
+    y: np.ndarray,
+    groups: np.ndarray | pd.Series | None = None,
+    *,
+    blend: float = 0.62,
+    iqr_factor: float = 1.5,
+) -> np.ndarray:
+    """Yumusak IQR aykiri harmani -- TRAIN HEDEFI on isleme (Izmir Bombasi).
+
+    Formul (grup ici Q1/Q3 ile)::
+
+        tavan = Q3 + iqr_factor * (Q3 - Q1)
+        yeni  = (1 - blend) * ham + blend * min(ham, tavan)
+
+    NEREDEN GELDI (docs/09 bolum 1): GDZ 2024 3.su (Izmir Bombasi) hedefi
+    sert kirpmak yerine 0.38 x ham + 0.62 x kirpilmis harmanladi -- uc
+    firtina gunleri sinyalini tamamen silmeden gradyani ehlilestirir.
+
+    ASLA TAHMINLERE UYGULAMA -- YALNIZCA TRAIN HEDEFINE
+    ---------------------------------------------------
+    Bu donusum HEDEFIN TANIMINI degistirir: model artik "yumusatilmis
+    kesinti"yi ogrenir, ham kesintiyi degil. Tahminlere uygulamak anlamsiz
+    ve zararlidir (tahmin zaten modelin ciktisidir). Skorlama HER ZAMAN
+    HAM hedefe karsi yapilir; kazanci varsaymak yerine ayni fold'larda
+    ham-hedefli kosuya karsi OLC (benchmark deseni), sonra karar ver.
+
+    CV NOTU: Q3/IQR verilen dizinin TAMAMINDAN hesaplanir. CV icinde
+    kullanirken donusumu yalnizca train-fold dilimine uygula ki valid
+    satirlarinin hedef istatistigi egitime karismasin.
+
+    Args:
+        y: Hedef degerler (DEGISTIRILMEZ, yeni dizi doner).
+        groups: Satir basina grup etiketi (or. ilce anahtari). ``None`` =
+            tek grup, kuantiller tum diziden.
+        blend: Kirpilmis degerin payi (0..1). 0 = ham, 1 = sert kirpma.
+        iqr_factor: Tavan katsayisi: ``Q3 + iqr_factor * IQR``.
+
+    Returns:
+        ``len(y)`` boyutlu YENI float64 dizi, girdi sirasinda.
+    """
+    values = np.asarray(y, dtype="float64").ravel().copy()
+    if not 0.0 <= blend <= 1.0:
+        raise ValueError(f"blend [0, 1] araliginda olmali, verilen: {blend}")
+    if iqr_factor < 0:
+        raise ValueError(f"iqr_factor >= 0 olmali, verilen: {iqr_factor}")
+    if values.size == 0:
+        return values
+
+    def _tavan(parca: np.ndarray) -> float:
+        q1, q3 = np.nanquantile(parca, [0.25, 0.75])
+        return float(q3 + iqr_factor * (q3 - q1))
+
+    if groups is None:
+        tavanlar = np.full(values.shape, _tavan(values))
+    else:
+        etiketler = np.asarray(groups).ravel()
+        if len(etiketler) != len(values):
+            raise ValueError(
+                f"groups ({len(etiketler)}) ve y ({len(values)}) uzunluklari farkli."
+            )
+        kodlar, _ = pd.factorize(etiketler, use_na_sentinel=False)
+        tavanlar = np.empty_like(values)
+        for kod in np.unique(kodlar):
+            secim = kodlar == kod
+            tavanlar[secim] = _tavan(values[secim])
+
+    kirpik = np.minimum(values, tavanlar)
+    return (1.0 - blend) * values + blend * kirpik
 
 
 def log_transform_target(y: np.ndarray) -> np.ndarray:

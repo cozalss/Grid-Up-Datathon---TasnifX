@@ -41,6 +41,7 @@ __all__ = [
     "add_lag_features",
     "add_rolling_features",
     "add_expanding_features",
+    "add_mass_event_features",
     "add_previous_month_features",
     "add_upcoming_holiday_features",
     "shared_origin",
@@ -1060,6 +1061,112 @@ def add_previous_month_features(
         f"{prefix}_{label}_ayni_gun": ozet["ayni_gun"].to_numpy(dtype="float32"),
     }
     return frame.assign(**yeni)
+
+
+def add_mass_event_features(
+    frame: pd.DataFrame,
+    value_column: str,
+    *,
+    time_column: str,
+    horizon: int,
+    group_columns: Sequence[str],
+    threshold: float = 0.5,
+    prefix: str | None = None,
+) -> pd.DataFrame:
+    """Toplu-olay (bolge geneli) gun feature'lari -- YALNIZCA ufuk-kaydirilmis.
+
+    NEREDEN GELDI (M5 out-of-stock analogu, docs/09 bolum 2.1)
+    ----------------------------------------------------------
+    M5'te "magazalarin cogunda ayni gun satis sifir" gunleri ayri isaretlemek
+    hurdle modellerin p(0) asamasini keskinlestirdi. Bizim analogumuz: bir
+    firtina gununde ilcelerin buyuk kismi AYNI GUN kesintilidir. Gun bazinda
+    "kesintili grup payi" bu bolgesel rejimi tek sayida ozetler.
+
+    SIZINTI DISIPLINI -- AYNI GUNUN PAYI ASLA YAYINLANMAZ
+    -----------------------------------------------------
+    Gunun payi HEDEFTEN turetilir: satirin kendi hedefi o gunun payina
+    katilir. Ayni-gun payi feature olursa dogrudan hedef sizintisidir ve
+    CV'de gorunmez. Bu yuzden ``horizon >= 1`` ZORUNLUDUR ve yalnizca
+    kaydirilmis degerler uretilir: ``d`` gunundeki satirin gordugu en taze
+    pay ``d - horizon`` gununun payidir -- ``add_lag_features``taki lag1
+    konvansiyonunun aynisi (lag1 = shift(horizon)).
+
+    Kaydirma TAKVIM gunu uzerinden yapilir (satir uzerinden degil): pay gunun
+    ozelligidir, gun eksikse feature NaN kalir -- yanlis gunden okunmaz.
+
+    Args:
+        frame: Girdi (degistirilmez).
+        value_column: Hedef benzeri kolon; ``> 0`` olan gun "olayli" sayilir.
+        time_column: Zaman kolonu.
+        horizon: Tahmin ufku -- test blogu kadar (bkz. ``add_lag_features``).
+        group_columns: Payin paydasini olusturan varlik kolonlari (or. ilce).
+        threshold: Gunun "toplu olay" bayragi icin pay esigi (0..1].
+        prefix: Kolon oneki. Varsayilan: ``value_column``.
+
+    Returns:
+        Su kolonlar eklenmis YENI frame (``horizon != 1`` ise ``ufuk{h}_`` ile):
+          * ``{prefix}_topluolay_pay_lag1``    ``d - horizon`` gununun payi
+          * ``{prefix}_topluolay_pay_kayan7``  payin 7 gunluk ortalamasi
+            (sonu ``d - horizon`` olan pencere)
+          * ``{prefix}_topluolay_bayrak_lag1`` pay >= threshold (0/1; pay
+            bilinmiyorsa NaN -- "olay yok" demek degildir)
+    """
+    if value_column not in frame.columns:
+        raise KeyError(f"Kolon '{value_column}' frame icinde yok.")
+    if horizon < 1:
+        raise ValueError(
+            f"horizon >= 1 olmali, verilen: {horizon}. horizon=0 AYNI GUNUN "
+            "payini yayinlar -- satirin kendi hedefi paya katildigi icin "
+            "dogrudan hedef sizintisidir."
+        )
+    if not group_columns:
+        raise ValueError("group_columns bos olamaz: pay, gruplarin orani uzerinden tanimli.")
+    if not 0.0 < threshold <= 1.0:
+        raise ValueError(f"threshold (0, 1] araliginda olmali, verilen: {threshold}")
+
+    prefix = prefix or value_column
+    groups = list(group_columns)
+    times = parse_time_series(frame[time_column], strict=False).dt.normalize()
+    degerler = pd.to_numeric(frame[value_column], errors="coerce")
+
+    kaynak = pd.DataFrame({"_gun": times, "_olayli": (degerler > 0).astype("float64")})
+    for column in groups:
+        kaynak[column] = frame[column].to_numpy()
+
+    # Once (gun, grup) -> "o gun o grupta olay var mi", sonra gun -> olayli
+    # grup payi. Cift kayitli/gevrek panellerde ayni grubun ayni gununu iki
+    # kez saymamak icin iki adimli.
+    gecerli = kaynak.dropna(subset=["_gun"])
+    if gecerli.empty:
+        bos = np.full(len(frame), np.nan, dtype="float32")
+        etiket = "" if horizon == 1 else f"ufuk{horizon}_"
+        return frame.assign(**{
+            f"{prefix}_{etiket}topluolay_pay_lag1": bos,
+            f"{prefix}_{etiket}topluolay_pay_kayan7": bos,
+            f"{prefix}_{etiket}topluolay_bayrak_lag1": bos,
+        })
+
+    grup_gun = gecerli.groupby(["_gun", *groups], observed=True)["_olayli"].max()
+    pay = grup_gun.groupby(level=0).mean()
+
+    # Tam takvim araligina yay: eksik gunler NaN kalir ve kaydirma yanlis
+    # gunden OKUMAZ (satir bazli shift eksik gunu sessizce atlardi).
+    tum_gunler = pd.date_range(pay.index.min(), pay.index.max(), freq="D")
+    gunluk = pay.reindex(tum_gunler)
+    kaydirilmis = gunluk.shift(horizon)
+    kayan7 = kaydirilmis.rolling(7, min_periods=1).mean()
+    # Bayrakta NaN korunur: "pay bilinmiyor" ile "toplu olay yok" ayni sey degil.
+    bayrak = pd.Series(
+        np.where(kaydirilmis.isna(), np.nan, (kaydirilmis >= threshold).astype("float64")),
+        index=tum_gunler,
+    )
+
+    etiket = "" if horizon == 1 else f"ufuk{horizon}_"
+    return frame.assign(**{
+        f"{prefix}_{etiket}topluolay_pay_lag1": times.map(kaydirilmis).astype("float32"),
+        f"{prefix}_{etiket}topluolay_pay_kayan7": times.map(kayan7).astype("float32"),
+        f"{prefix}_{etiket}topluolay_bayrak_lag1": times.map(bayrak).astype("float32"),
+    })
 
 
 def add_upcoming_holiday_features(
