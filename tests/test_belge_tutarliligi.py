@@ -31,18 +31,29 @@ VERI_GUNU = KOK / "docs" / "07-veri-gunu-kontrol-listesi.md"
 
 
 def _toplanan_test_sayisi() -> int:
-    """pytest'in TOPLADIGI test sayisi -- kosmadan, hizli."""
+    """pytest'in TOPLADIGI test sayisi -- kosmadan, hizli.
+
+    ``--collect-only -q`` bu surumde dosya basina "yol: N" satirlari basiyor,
+    tek bir "N tests collected" ozeti DEGIL. Ilk surumde ozet satirini
+    ariyordum ve bulamayinca test SESSIZCE ATLANIYORDU -- yani koruma hic
+    calismiyordu. Artik dosya basina sayilari topluyoruz.
+    """
     sonuc = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q"],
         capture_output=True, text=True, cwd=KOK, timeout=300, check=False,
     )
-    eslesme = re.search(r"(\d+)\s+tests? collected", sonuc.stdout)
-    if not eslesme:
-        eslesme = re.search(r"(\d+)/(\d+) tests collected", sonuc.stdout)
-        if eslesme:
-            return int(eslesme.group(2))
-        pytest.skip(f"test sayisi cikarilamadi: {sonuc.stdout[-200:]}")
-    return int(eslesme.group(1))
+    # Once ozet satirini dene (baska pytest surumleri onu basar).
+    ozet = re.search(r"(\d+)\s+tests? collected", sonuc.stdout)
+    if ozet:
+        return int(ozet.group(1))
+
+    satirlar = re.findall(r"^\S+\.py:\s*(\d+)\s*$", sonuc.stdout, re.MULTILINE)
+    if not satirlar:
+        pytest.fail(
+            "test sayisi cikarilamadi -- koruma calismiyor demektir.\n"
+            f"pytest ciktisi: {sonuc.stdout[-300:]}"
+        )
+    return sum(int(n) for n in satirlar)
 
 
 @pytest.mark.slow
@@ -79,11 +90,17 @@ def test_readme_olcek_provasi_iddiasi_dosyayla_ortusuyor():
         if not (v.get("olcumler") and v["olcumler"][0].get("tahmin"))
     }
     metin = README.read_text(encoding="utf-8")
-    satir = next((s for s in metin.splitlines() if "Ölçek provası" in s), "")
-    if not satir:
-        pytest.skip("README'de olcek provasi satiri yok")
+    # README'de olcek iddiasi nerede gecerse gecsin yakala (tablo satiri,
+    # baslik veya duz cumle). Ilk surum yalnizca "Ölçek provası" iceren
+    # satira bakiyordu ve README yeniden yazilinca SESSIZCE atlandi.
+    ilgili = [
+        s for s in metin.splitlines()
+        if re.search(r"\d+k\s+satır", s) and ("ölç" in s.lower() or "prova" in s.lower())
+    ]
+    if not ilgili:
+        pytest.skip("README'de olcek iddiasi yok")
 
-    for iddia_k in re.findall(r"(\d+)k\s+satır", satir):
+    for iddia_k in re.findall(r"(\d+)k\s+satır", " ".join(ilgili)):
         iddia = int(iddia_k) * 1000
         assert any(abs(iddia - o) / o < 0.1 for o in olculen), (
             f"README '{iddia_k}k satır' iddia ediyor ama olculen olcekler: "
@@ -120,3 +137,29 @@ def test_readme_bahsettigi_betikler_var():
     betikler = set(re.findall(r"`?(scripts/[a-z_]+\.py)`?", metin))
     eksik = [b for b in betikler if not (KOK / b).exists()]
     assert not eksik, f"README var olmayan betiklere atif yapiyor: {eksik}"
+
+
+# --------------------------------------------------------------------------
+# Hava verisi: iki granulariteyi de desteklemeli
+# --------------------------------------------------------------------------
+
+
+def test_hava_verisi_il_ve_ilce_anahtari_iceriyor():
+    """Yarisma verisinin hangi seviyede gelecegini BILMIYORUZ.
+
+    Konum adi "Il-Ilce" bicimine gecince il bazli join'in eslesme orani
+    %0.0'a dustu (full_pipeline'da olculdu). Iki anahtari da yazmak, veri
+    gunu hangi granularite gelirse gelsin calisan tek cozumdur.
+    """
+    parquet = KOK / "data" / "external" / "hava_gunluk.parquet"
+    if not parquet.exists():
+        pytest.skip("hava verisi yok")
+
+    hava = pd.read_parquet(parquet)
+    for kolon in ("konum_key", "il_key", "ilce_key"):
+        assert kolon in hava.columns, f"'{kolon}' kolonu yok"
+
+    assert hava["il_key"].nunique() == 5, "bes il beklenir"
+    assert hava["ilce_key"].nunique() >= 90, "ilce kapsami eksik"
+    # Anahtarlar join_key ile normalize edilmis olmali (Turkce tuzagi).
+    assert not hava["il_key"].str.contains(r"[çğıöşüÇĞİÖŞÜ]", regex=True).any()

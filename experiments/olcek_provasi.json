@@ -5,51 +5,159 @@
   "olcumler": [
    {
     "ad": "LightGBM tek CV (500 agac)",
-    "saniye": 4.492056000000957,
-    "bellek_mb": 20.58203125,
+    "saniye": 4.848906400002306,
+    "bellek_mb": 21.23828125,
     "tahmin": false
    },
    {
     "ad": "CatBoost tek CV (500 iter)",
-    "saniye": 40.77095400000144,
-    "bellek_mb": 228.26953125,
+    "saniye": 37.619742800001404,
+    "bellek_mb": 208.40234375,
     "tahmin": false
    },
    {
     "ad": "Sinir agi CV (60 epok)",
-    "saniye": 11.22807499999908,
-    "bellek_mb": 1017.74609375,
+    "saniye": 10.518802400001732,
+    "bellek_mb": 1022.890625,
     "tahmin": false
    },
    {
     "ad": "hill_climb_weights (3 uye)",
-    "saniye": 0.013897700000597979,
-    "bellek_mb": 0.04296875,
+    "saniye": 0.013987500002258457,
+    "bellek_mb": 0.03125,
     "tahmin": false
    },
    {
     "ad": "stack_oof (meta model)",
-    "saniye": 0.028002100001685903,
-    "bellek_mb": 1.6171875,
+    "saniye": 0.017556200000399258,
+    "bellek_mb": 1.6953125,
     "tahmin": false
    },
    {
     "ad": "SHAP onem (fold basi 2000)",
-    "saniye": 0.8280832000000373,
-    "bellek_mb": 62.06640625,
+    "saniye": 0.8054827000014484,
+    "bellek_mb": 59.87890625,
     "tahmin": false
    },
    {
     "ad": "model zoo (3 model x 3 fold)",
-    "saniye": 103.71869999999944,
-    "bellek_mb": 258.328125,
+    "saniye": 86.71869919999881,
+    "bellek_mb": 254.1953125,
     "tahmin": false
    },
    {
     "ad": "Optuna TEK deneme",
-    "saniye": 19.611462299999403,
-    "bellek_mb": 142.67578125,
+    "saniye": 22.06555859999935,
+    "bellek_mb": 125.49609375,
     "tahmin": false
+   }
+  ]
+ },
+ "500000": {
+  "satir": 499968,
+  "kolon": 60,
+  "olcumler": [
+   {
+    "ad": "LightGBM tek CV (500 agac)",
+    "saniye": 16.267370699999447,
+    "bellek_mb": 21.26171875,
+    "tahmin": false
+   },
+   {
+    "ad": "CatBoost tek CV (500 iter)",
+    "saniye": 118.47630670000217,
+    "bellek_mb": 668.578125,
+    "tahmin": false
+   },
+   {
+    "ad": "Sinir agi CV (60 epok)",
+    "saniye": 66.47264930000165,
+    "bellek_mb": 0.640625,
+    "tahmin": false
+   },
+   {
+    "ad": "hill_climb_weights (3 uye)",
+    "saniye": 0.03381720000106725,
+    "bellek_mb": 0.234375,
+    "tahmin": false
+   },
+   {
+    "ad": "stack_oof (meta model)",
+    "saniye": 0.023440500001015607,
+    "bellek_mb": 12.1640625,
+    "tahmin": false
+   },
+   {
+    "ad": "SHAP onem (fold basi 2000)",
+    "saniye": 0.8674232000012125,
+    "bellek_mb": 3.6015625,
+    "tahmin": false
+   },
+   {
+    "ad": "model zoo (3 model x 3 fold)",
+    "saniye": 327.7091158999974,
+    "bellek_mb": 761.93359375,
+    "tahmin": false
+   },
+   {
+    "ad": "Optuna TEK deneme",
+    "saniye": 49.62401580000005,
+    "bellek_mb": 237.56640625,
+    "tahmin": false
+   }
+  ]
+ },
+ "2500000": {
+  "satir": 2500000,
+  "kolon": 60,
+  "olcumler": [
+   {
+    "ad": "LightGBM tek CV (500 agac)",
+    "saniye": 54.553634696043446,
+    "bellek_mb": 106.31539793546787,
+    "tahmin": true
+   },
+   {
+    "ad": "CatBoost tek CV (500 iter)",
+    "saniye": 372.98270398298223,
+    "bellek_mb": 3343.1045836933567,
+    "tahmin": true
+   },
+   {
+    "ad": "Sinir agi CV (60 epok)",
+    "saniye": 419.8217713671311,
+    "bellek_mb": 3.2033300131208398,
+    "tahmin": true
+   },
+   {
+    "ad": "hill_climb_weights (3 uye)",
+    "saniye": 0.16909682220195718,
+    "bellek_mb": 1.1719500048003073,
+    "tahmin": true
+   },
+   {
+    "ad": "stack_oof (meta model)",
+    "saniye": 0.11721000144517053,
+    "bellek_mb": 60.82420524913595,
+    "tahmin": true
+   },
+   {
+    "ad": "SHAP onem (fold basi 2000)",
+    "saniye": 4.337393593196028,
+    "bellek_mb": 18.008965073764724,
+    "tahmin": true
+   },
+   {
+    "ad": "model zoo (3 model x 3 fold)",
+    "saniye": 1237.885873509392,
+    "bellek_mb": 3809.911803105399,
+    "tahmin": true
+   },
+   {
+    "ad": "Optuna TEK deneme",
+    "saniye": 111.57243479856902,
+    "bellek_mb": 1187.9080573656715,
+    "tahmin": true
    }
   ]
  }

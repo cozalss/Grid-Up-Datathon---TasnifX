@@ -185,15 +185,36 @@ def main() -> int:
             out, "tuketim_kwh", [7], time_column=TIME, group_columns=[GROUP],
             horizon=horizon, aggregations=("mean", "std"),
         )
-        # Gercek hava verisini join et -- il bazinda, join_key ile
+        # Gercek hava verisini join et -- IL bazinda, join_key ile.
+        #
+        # DIKKAT: hava verisi artik ILCE cozunurlugunde (tarih basina 96
+        # satir). Il bazli bir paneli dogrudan merge etmek satir sayisini
+        # 96 KATINA cikarirdi. Once ile indirgiyoruz.
+        #
+        # OLCULDU: hava konumlari il merkezinden ilce anahtarina gecince
+        # ("izmir" -> "izmir-konak") bu join'in eslesme orani %0.0'a dustu.
+        # Cozum iki parcali: (a) hava verisine il_key/ilce_key kolonlari
+        # eklendi, (b) burada il duzeyine indirgeniyor.
         if weather_ok:
+            hava_kolonlari = ["isitma_derece_gun", "sogutma_derece_gun",
+                              "bolge_ruzgar_max_q90"]
+            mevcut = [k for k in hava_kolonlari if k in weather.columns]
+            il_havasi = (
+                weather.groupby(["il_key", "tarih"], observed=True)[mevcut]
+                .mean()
+                .reset_index()
+            )
+            onceki_satir = len(out)
             out = out.assign(_il_key=out["il"].map(join_key))
             out = out.merge(
-                weather[["konum_key", "tarih", "isitma_derece_gun",
-                         "sogutma_derece_gun", "bolge_ruzgar_max_q90"]],
-                left_on=["_il_key", TIME], right_on=["konum_key", "tarih"],
-                how="left", suffixes=("", "_hava"),
-            ).drop(columns=["_il_key", "konum_key"], errors="ignore")
+                il_havasi,
+                left_on=["_il_key", TIME], right_on=["il_key", "tarih"],
+                how="left", suffixes=("", "_hava"), validate="many_to_one",
+            ).drop(columns=["_il_key", "il_key"], errors="ignore")
+            if len(out) != onceki_satir:
+                raise AssertionError(
+                    f"Hava join satir sayisini degistirdi: {onceki_satir} -> {len(out)}"
+                )
         return out
 
     train_features = build(train)

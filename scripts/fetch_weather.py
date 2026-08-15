@@ -270,6 +270,19 @@ def fetch_location(
     # Ham ad gosterim, join_key eslestirme icindir -- karistirma.
     frame.insert(0, "konum", name)
     frame.insert(1, "konum_key", join_key(name))
+    # IL ve ILCE anahtarlarini AYRI kolon olarak da yaziyoruz.
+    #
+    # Konum adi artik "Il-Ilce" bicimindedir (96 ilcelik panelle birebir
+    # eslesmek icin). Ama yarisma verisinin hangi granulariteyle gelecegini
+    # BILMIYORUZ: il bazinda gelirse ilce anahtariyla join %0 eslesir.
+    # OLCULDU: bu degisiklikten sonra full_pipeline'in hava join'i
+    # "eslesme orani %0.0" verdi.
+    #
+    # Iki kolon birden yazmak, veri gunu hangi seviye gelirse gelsin
+    # calisan tek cozumdur.
+    _il, _, _ilce = name.partition("-")
+    frame.insert(2, "il_key", join_key(_il))
+    frame.insert(3, "ilce_key", join_key(_ilce) if _ilce else "")
     return frame
 
 

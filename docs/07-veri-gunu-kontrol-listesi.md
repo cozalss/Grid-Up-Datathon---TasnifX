@@ -15,7 +15,7 @@ izlenecek adımları içerir.
 | Arıza sebebi taksonomisi | `gridup.features.outage_reason` | 919 metin → 22 aile, %0,88 sınıflanamayan |
 | Uçtan uca betik | `scripts/day_one.py` | Sentetik veride 6 sn'de submission |
 | Kaggle offline paketi | `kaggle.com/datasets/cemzal/gridup-offline-paket` | Yüklendi (özel), dosyalar doğrulandı |
-| Test paketi | `tests/` | 544 test |
+| Test paketi | `tests/` | 552 test |
 
 ---
 
@@ -41,16 +41,16 @@ varsayımlar bunlar — açılış yayınında teyit ettirin.
 
 ## Zaman bütçesi (ölçüldü, `scripts/scale_rehearsal.py`)
 
-100 bin satırlık panelde, bu makinede:
+100 bin ve 500 bin satırda ölçüldü (`scripts/scale_rehearsal.py`):
 
-| İşlem | Süre |
-|---|---|
-| LightGBM tam CV (3 fold, 500 ağaç) | 6 sn |
-| CatBoost tam CV (500 iter) | 43 sn — LightGBM'in **7 katı** |
-| Sinir ağı CV (60 epok) | 15 sn, **+1 GB bellek** |
-| Model zoo (3 model × 3 fold) | 103 sn ← en yavaş |
-| Optuna tek deneme | 23 sn |
-| SHAP önem | 3 sn |
+| İşlem | 100k | 500k |
+|---|---|---|
+| LightGBM tam CV (3 fold, 500 ağaç) | 4,8 sn | 16 sn |
+| CatBoost tam CV (500 iter) | 37,6 sn | 118 sn — **7 katı** |
+| Sinir ağı CV (60 epok) | 10,5 sn | 66 sn |
+| Model zoo (3 model × 3 fold) | 86,7 sn | **328 sn** ← en yavaş |
+| Optuna tek deneme | 22,1 sn | 49,6 sn |
+| SHAP önem | 0,8 sn | 0,9 sn |
 
 **Bağlayan kısıt hesaplama değil, sizin dikkatiniz.** 60 saatlik yarışmada
 makine binlerce koşu çıkarabilir ama insan ~140 hipotez kurup yorumlayabilir.
