@@ -51,13 +51,23 @@ __all__ = [
     "TwoStageResult",
     "fit_two_stage",
     "fit_quantile_ladder",
+    "fit_conditional_quantile_ladder",
+    "CONDITIONAL_LADDER_LEVELS",
     "mae_optimal_quantile",
     "conditional_quantile_from_hurdle",
     "tune_threshold",
     "zero_baseline_score",
 ]
 
-PredictMode = Literal["expected", "thresholded", "mae_optimal"]
+#: ``_combine``in GERCEKTEN destekledigi modlar.
+#:
+#: Eskiden burada bir ucuncu deger vardi: ``"mae_optimal"``. ``_combine`` onu
+#: reddediyordu, yani tip denetleyicisi cagriyi GECERLI sayarken calisma
+#: zamaninda ``ValueError: Bilinmeyen mod 'mae_optimal'`` aliniyordu (olculdu).
+#: MAE-optimal tahmin iki asamadan degil, KUANTIL MERDIVENINDEN uretilir --
+#: bkz. ``conditional_quantile_from_hurdle``; tek bir olasilik+buyukluk
+#: ciftinden hesaplanamaz, bu yuzden ``_combine``in imzasina ait degildir.
+PredictMode = Literal["expected", "thresholded"]
 
 
 def mae_optimal_quantile(positive_probability: np.ndarray) -> np.ndarray:
@@ -129,9 +139,31 @@ class TwoStageResult:
     best_threshold: float | None = None
     metric_name: str = "mae"
     diagnostics: dict[str, Any] = field(default_factory=dict)
+    #: Hangi satirlar GERCEKTEN bir fold tarafindan dogrulandi. Kapsanmayan
+    #: satirlarda ``oof_probability`` ve ``oof_magnitude`` 0'dir -- tahmin
+    #: degil, DOLGUDUR.
+    oof_covered: np.ndarray | None = None
+
+    @property
+    def coverage(self) -> float:
+        """Fold'larin dogruladigi satir orani."""
+        if self.oof_covered is None:
+            return 1.0
+        return float(self.oof_covered.mean())
+
+    def covered(self) -> np.ndarray:
+        """Kapsam maskesi; yoksa hepsi True."""
+        if self.oof_covered is None:
+            return np.ones(len(self.oof_probability), dtype=bool)
+        return self.oof_covered
 
     def predict_oof(self, *, mode: PredictMode = "thresholded") -> np.ndarray:
-        """Fold-disi birlesik tahmin uretir -- esik optimizasyonu icin."""
+        """Fold-disi birlesik tahmin uretir -- esik optimizasyonu icin.
+
+        DIKKAT: Kapsanmayan satirlar 0 doner. Skorlamada ``covered()`` maskesi
+        ile filtrele -- aksi halde hic dogrulanmamis satirlari "sifir tahmin
+        edildi" diye puanlarsin.
+        """
         return _combine(
             self.oof_probability, self.oof_magnitude,
             mode=mode, threshold=self.best_threshold,
@@ -271,9 +303,109 @@ def fit_quantile_ladder(
     return ladder
 
 
+#: ``q* = 1 - 0.5/p`` her zaman ``(0, 0.5]`` araligindadir (p=1 -> 0.5).
+#: 0.5 USTU seviyeler MAE-optimal yolda HIC kullanilmaz -- egitilirlerse
+#: CV kosusu bosa gider. Varsayilan merdiven bu araligi sikca orneklemeli.
+CONDITIONAL_LADDER_LEVELS: tuple[float, ...] = (
+    0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+)
+
+
+def fit_conditional_quantile_ladder(
+    train: pd.DataFrame,
+    target: np.ndarray | pd.Series,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    *,
+    quantiles: Sequence[float] = CONDITIONAL_LADDER_LEVELS,
+    params: dict[str, Any] | None = None,
+    kind: ModelKind = "lightgbm",
+    early_stopping_rounds: int = 100,
+    verbose: bool = True,
+) -> dict[float, np.ndarray]:
+    """POZITIF satirlarla egitilmis kuantil merdiveni; TUM satirlara tahmin.
+
+    ``conditional_quantile_from_hurdle``in ihtiyac duydugu sey budur ve
+    onceki surumde **public API ile uretilemiyordu.**
+
+    NEDEN ``fit_quantile_ladder`` YETMIYOR (olculdu)
+    -----------------------------------------------
+    ``fit_quantile_ladder`` hedefin TAMAMIYLA (sifirlar dahil) egitilir,
+    yani MARJINAL kuantilleri ogrenir. Oysa ``q* = 1 - 0.5/p`` turetimi
+    ``F(y | y>0)`` KOSULLU dagilimin kuantilini ister. Ikisi ayni sey degildir:
+
+        sifir orani %50 olan bir hurdle veride
+          marjinal merdivenin q=0.50 tahmini : 3.700
+          gercek KOSULLU medyan (y>0)        : 9.328     -> 2.5 KAT fark
+          marjinal merdivenin q=0.05 tahmini : 0.000     -> tamamen sifir
+
+    Sonuc pratikte de gorulur: marjinal merdivenle MAE 5.2678, oysa duz
+    ``thresholded`` modu 5.0914 verir. Yani "MAE-optimal" diye sunulan yol,
+    basit yoldan DAHA KOTUYDU.
+
+    Args:
+        quantiles: Kuantil seviyeleri. Varsayilan ``(0, 0.5]`` araligini
+            orneklemektedir; q* asla 0.5'i asmaz.
+
+    Returns:
+        ``{kuantil: tahmin dizisi}`` -- her dizi ``len(train)`` uzunlugunda ve
+        SIFIR satirlarini da icerir (model onlarin hedefini hic gormedi, bu
+        yuzden sizinti degildir -- ``_stage2_predictions_everywhere`` ile ayni
+        gerekce).
+    """
+    y = np.asarray(target).ravel()
+    fold_list = list(folds)
+    positive = y > 0
+    positive_index = np.flatnonzero(positive)
+    if positive_index.size == 0:
+        raise ValueError("Pozitif satir yok; kosullu merdiven egitilemez.")
+
+    # Fold'lari POZITIF alt kumesinin konumsal indekslerine cevir.
+    yeniden: dict[int, int] = {
+        int(eski): yeni for yeni, eski in enumerate(positive_index)
+    }
+    positive_folds: list[tuple[np.ndarray, np.ndarray]] = []
+    source_folds: list[int] = []
+    for konum, (train_idx, valid_idx) in enumerate(fold_list):
+        tr = np.array([yeniden[i] for i in train_idx if i in yeniden], dtype=int)
+        va = np.array([yeniden[i] for i in valid_idx if i in yeniden], dtype=int)
+        if tr.size == 0 or va.size == 0:
+            continue
+        positive_folds.append((tr, va))
+        source_folds.append(konum)
+    if not positive_folds:
+        raise ValueError(
+            "Hicbir fold'da hem egitim hem dogrulama pozitifi yok; "
+            "kosullu merdiven kurulamaz."
+        )
+
+    base = dict(params) if params else starter_params(kind, "regression")
+    ladder: dict[float, np.ndarray] = {}
+
+    for level in quantiles:
+        level_params = dict(base)
+        level_params["objective"] = "quantile"
+        level_params["alpha"] = float(level)
+        if verbose:
+            print(f"  kosullu kuantil {level:.2f} egitiliyor...")
+
+        result = cross_validate(
+            train.iloc[positive_index], y[positive_index], positive_folds,
+            kind=kind, task_type="regression", metric="mae",
+            params=level_params, early_stopping_rounds=early_stopping_rounds,
+            verbose=False,
+        )
+        ladder[float(level)] = _stage2_predictions_everywhere(
+            result, train, fold_list, source_folds, kind=kind
+        )
+
+    return ladder
+
+
 def conditional_quantile_from_hurdle(
     positive_probability: np.ndarray,
     ladder_predictions: dict[float, np.ndarray],
+    *,
+    verbose: bool = True,
 ) -> np.ndarray:
     """Kuantil merdivenini kullanarak MAE-optimal tahmini uretir.
 
@@ -282,10 +414,22 @@ def conditional_quantile_from_hurdle(
       2. ``q* <= 0`` ise (yani ``p <= 0.5``) tahmin **0**
       3. Degilse merdivendeki komsu iki seviye arasinda dogrusal interpolasyon
 
+    MERDIVEN **KOSULLU** OLMALIDIR
+    ------------------------------
+    ``q*`` turetimi ``F(y | y>0)`` kuantilini ister. ``fit_quantile_ladder``
+    hedefin TAMAMIYLA egitilir ve MARJINAL kuantil ogrenir; ikisini
+    karistirmak sessizce yanlis tahmin uretir (olculdu: marjinal q=0.50 ->
+    3.700, gercek kosullu medyan -> 9.328).
+
+    **``fit_conditional_quantile_ladder`` kullan.** Marjinal bir merdiven
+    verildiginde bu fonksiyon uyarir ama durduramaz -- kesin ayrimi yalnizca
+    egitim verisi bilir.
+
     Args:
         positive_probability: 1. asamanin OOF olasiliklari.
         ladder_predictions: ``{kuantil: tahmin dizisi}`` -- her dizi tum
-            satirlar icin o kuantil seviyesindeki tahmin.
+            satirlar icin o kuantil seviyesindeki **kosullu** tahmin.
+        verbose: Kirpma / bosa seviye / marjinal-merdiven uyarilarini basar.
 
     Returns:
         MAE-optimal tahminler.
@@ -306,6 +450,8 @@ def conditional_quantile_from_hurdle(
             "uzunluklari farkli."
         )
 
+    _merdiven_uyarilari(levels, matrix, probability, verbose=verbose)
+
     targets = mae_optimal_quantile(probability)
     result = np.zeros(len(probability), dtype="float64")
 
@@ -319,6 +465,54 @@ def conditional_quantile_from_hurdle(
             result[row] = float(np.interp(level, levels, matrix[row]))
 
     return np.clip(result, 0, None)
+
+
+def _merdiven_uyarilari(
+    levels: np.ndarray,
+    matrix: np.ndarray,
+    probability: np.ndarray,
+    *,
+    verbose: bool,
+) -> None:
+    """Merdiven MARJINAL mi, q* kirpiliyor mu? Ikisi de sessiz kalmamali."""
+    if not verbose:
+        return
+
+    hedefler = mae_optimal_quantile(probability)
+    gecerli = ~np.isnan(hedefler)
+
+    # 1. Kirpma: q* merdivenin ALTINA duserse en dusuk seviyeye yapisir ve
+    #    sistematik ASIRI TAHMIN uretir. OLCULDU: [0.05, 0.5] merdiveninde
+    #    q* min 0.0003, 646 satirin 56'si (%8.7) kirpildi.
+    if gecerli.any():
+        alt_asan = int((hedefler[gecerli] < levels.min()).sum())
+        if alt_asan:
+            print(
+                f"[conditional_quantile] {alt_asan:,}/{int(gecerli.sum()):,} "
+                f"satirda q* merdivenin altinda (min q*={hedefler[gecerli].min():.4f} "
+                f"< {levels.min()}); en dusuk seviyeye kirpildi -> ASIRI TAHMIN. "
+                "Merdivene daha dusuk bir seviye ekle."
+            )
+    # 2. Bosa egitilmis seviyeler: q* asla 0.5'i asmaz.
+    bosa = levels[levels > 0.5]
+    if bosa.size:
+        print(
+            f"[conditional_quantile] {list(np.round(bosa, 3))} seviyeleri HIC "
+            "kullanilmaz (q* <= 0.5). Bunlari egitmek CV kosusunu bosa harciyor."
+        )
+    # 3. Merdiven MARJINAL gorunuyor mu? Kosullu merdivende en dusuk seviye
+    #    pozitif buyuklukleri tahmin eder; marjinal merdivende sifir-siskin
+    #    veride TAM SIFIRA cokerdi. OLCULDU: marjinal q=0.05 ortalamasi 0.0000.
+    en_dusuk = matrix[:, 0]
+    sifir_payi = float(np.mean(np.isclose(en_dusuk, 0.0)))
+    if sifir_payi > 0.5:
+        print(
+            f"[conditional_quantile] UYARI: en dusuk seviyenin (q={levels.min()}) "
+            f"tahminlerinin %{sifir_payi * 100:.0f}'i sifir. Merdiven MARJINAL "
+            "kuantilleri ogrenmis olabilir (fit_quantile_ladder tum hedefle "
+            "egitir). Bu fonksiyon KOSULLU kuantil ister -- "
+            "fit_conditional_quantile_ladder kullan."
+        )
 
 
 def _stage2_predictions_everywhere(
@@ -368,6 +562,52 @@ def _stage2_predictions_everywhere(
         predictions[uncovered] = 0.0
 
     return np.clip(predictions, 0, None)
+
+
+def _teshis_tablosu(
+    tuning: dict[str, float],
+    *,
+    zero_share: float,
+    metric: str,
+    covered: np.ndarray,
+    n_rows: int,
+    verbose: bool,
+) -> dict[str, Any]:
+    """Karsilastirma tablosunu kurar ve gerekiyorsa basar."""
+    diagnostics: dict[str, Any] = {
+        "sifir_orani": round(zero_share, 4),
+        "oof_kapsami": round(float(covered.mean()), 4),
+        f"hep_sifir_baseline_{metric}": round(tuning["score_all_zero"], 6),
+        f"carpim_modu_{metric}": round(tuning["score_expected"], 6),
+        f"esikli_mod_{metric}": round(tuning["best_score"], 6),
+        f"esik_0.5_{metric}": round(tuning["score_at_half"], 6),
+    }
+    if covered.mean() < 1.0:
+        diagnostics["not"] = (
+            f"skorlar {int(covered.sum()):,}/{n_rows:,} kapsanan satirda "
+            "hesaplandi (kapsanmayanlar dogrulanmis tahmin tasimaz)"
+        )
+
+    if verbose:
+        print("\n--- Iki asamali karsilastirma ---")
+        for key, value in diagnostics.items():
+            print(f"  {key:<32} {value}")
+        if tuning["best_score"] >= tuning["score_all_zero"]:
+            print(
+                "  UYARI: model 'hep sifir' baseline'ini GECEMEDI. Sifir-siskin veride "
+                "bu olur -- duz regresyonu ve farkli objective'leri de dene."
+            )
+        elif tuning["score_at_half"] >= tuning["score_all_zero"]:
+            # SECILMIS esik baseline'i geciyor ama SABIT esik gecemiyor:
+            # kazanc 200 noktali izgara aramasindan gelmis olabilir. Ayni
+            # veride hem esik secip hem skor raporlamak iyimserdir.
+            print(
+                "  DIKKAT: baseline yalnizca SECILMIS esikle gecildi "
+                f"({tuning['best_score']:.6f}); sabit esik 0.5 gecemedi "
+                f"({tuning['score_at_half']:.6f}). Kazanc 200 noktali izgara "
+                "aramasindan geliyor olabilir -- esigi ayri bir kumede dogrula."
+            )
+    return diagnostics
 
 
 def fit_two_stage(
@@ -471,25 +711,35 @@ def fit_two_stage(
         regressor, train, fold_list, source_folds, kind=kind
     )
 
-    tuning = tune_threshold(y, classifier.oof_predictions, magnitude_oof, metric=metric)
+    # Skorlar ve esik YALNIZCA kapsanan satirlarda hesaplanir.
+    #
+    # NEDEN: TimeSeriesSplit/purged bolme ilk donemi HIC dogrulamaz. O
+    # satirlarda oof_probability tam olarak 0.0'dir -- bir tahmin degil,
+    # dolgudur. Onlari skora katmak, gercek pozitif satirlari "sifir tahmin
+    # edildi" diye puanlamaktir.
+    #
+    # OLCULDU (600 satir, kapsam %75): kapsanmayan 150 satirin gercek hedef
+    # ortalamasi 6.086 iken oof_probability'leri tek deger: 0.0.
+    #   TUM satirlarda   -> mae 5.4283
+    #   yalniz kapsanan  -> mae 5.2092   (%4.2 sisme)
+    # Esik SECIMI sapmaz (o satirlar her esikte ayni davranir) ama RAPORLANAN
+    # skor siser ve fold sayisi degisince karsilastirilamaz hale gelir.
+    covered = classifier.oof_covered
+    if covered is None:
+        covered = np.ones(len(y), dtype=bool)
+    covered = np.asarray(covered, dtype=bool)
 
-    diagnostics = {
-        "sifir_orani": round(zero_share, 4),
-        f"hep_sifir_baseline_{metric}": round(tuning["score_all_zero"], 6),
-        f"carpim_modu_{metric}": round(tuning["score_expected"], 6),
-        f"esikli_mod_{metric}": round(tuning["best_score"], 6),
-        f"esik_0.5_{metric}": round(tuning["score_at_half"], 6),
-    }
+    tuning = tune_threshold(
+        y[covered],
+        classifier.oof_predictions[covered],
+        magnitude_oof[covered],
+        metric=metric,
+    )
 
-    if verbose:
-        print("\n--- Iki asamali karsilastirma ---")
-        for key, value in diagnostics.items():
-            print(f"  {key:<32} {value}")
-        if tuning["best_score"] >= tuning["score_all_zero"]:
-            print(
-                "  UYARI: model 'hep sifir' baseline'ini GECEMEDI. Sifir-siskin veride "
-                "bu olur -- duz regresyonu ve farkli objective'leri de dene."
-            )
+    diagnostics = _teshis_tablosu(
+        tuning, zero_share=zero_share, metric=metric,
+        covered=covered, n_rows=len(y), verbose=verbose,
+    )
 
     return TwoStageResult(
         classifier=classifier,
@@ -500,4 +750,5 @@ def fit_two_stage(
         best_threshold=tuning["best_threshold"],
         metric_name=metric,
         diagnostics=diagnostics,
+        oof_covered=covered,
     )

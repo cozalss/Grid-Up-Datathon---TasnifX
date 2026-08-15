@@ -59,6 +59,7 @@ from .tuning import TuningResult, tune_with_optuna
 from .turkish import diagnose_join, join_key, tr_lower, tr_sorted, tr_upper
 from .two_stage import (
     conditional_quantile_from_hurdle,
+    fit_conditional_quantile_ladder,
     fit_quantile_ladder,
     fit_two_stage,
     mae_optimal_quantile,
@@ -98,6 +99,7 @@ __all__ = [
     # iki asamali (sifir-siskin)
     "fit_two_stage", "tune_threshold", "zero_baseline_score",
     "mae_optimal_quantile", "fit_quantile_ladder", "conditional_quantile_from_hurdle",
+    "fit_conditional_quantile_ladder",
     # model zoo ve arama
     "make_model_zoo", "sweep_count_objectives", "ZooEntry",
     "tune_with_optuna", "TuningResult",
