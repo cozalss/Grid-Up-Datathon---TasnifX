@@ -34,9 +34,13 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1          # Git Bash: source .venv/Scripts/activate
 pip install -e ".[full]"
 
+python scripts\ekip_kontrol.py         # kurulum doktoru: 7 kontrol, ~3 sn
 python -m pytest -q                    # 808 test — hepsi geçmeli
 python scripts\smoke_test.py           # uçtan uca kanıt, ~42 sn
 ```
+
+`ekip_kontrol` geçemediğin her maddede düzeltme komutunu kendisi söyler —
+takıldıysan önce onu çalıştır, sonra sor.
 
 Çalıştıysa hazırsın. `smoke_test` sentetik veri üretip pipeline'ın her adımını geçirir
 ve sonunda geçerli bir submission dosyası yazar.
@@ -189,6 +193,7 @@ src/gridup/
   features/aggregate.py  grup istatistikleri, sapma/oran
   features/categorical.py fold-dışı hedef kodlama, frekans, nadir birleştirme
   features/outage_reason.py 919 serbest metin → 22 arıza ailesi
+  features/school.py     MEB okul takvimi 2021–2026 (6 ders yılı doğrulanmış)
 
   ── veri ──────────────────────────────────────────────────────────────
   epias.py          EPİAŞ Şeffaflık istemcisi (tüketim, üretim, kesinti)
@@ -229,6 +234,14 @@ Hepsi `data/` altında, **gitignore'da** (repoda yok — aşağıdaki komutlarla
 | Türkiye saatlik tüketim | 58.044 × 2 | `python scripts/fetch_epias_load.py` |
 | Türkiye saatlik üretim | 58.044 × 18 | aynı betik — **yakıt kırılımı** |
 | 96 ilçe + koordinat + nüfus | 96 × 10 | `python scripts/fetch_districts.py` |
+| MEB okul takvimi 2021–2026 | kod içinde | `gridup.features.school` — indirme gerekmez |
+| **Gerçek GDZ provası** (68.257 kayıt) | 11 MB | `kaggle datasets download -d tmlalper/manisa-izmir-plansiz-elektrik-kesintileri --unzip -p data/prior/ayna` |
+
+Gerçek veride ölçülen her şey `experiments/ablasyon_gercek.json` ve
+`experiments/benchmark_gercek.json` içinde: feature ailesi öncelik sırası
+(lag +22,3 baskın; tatil/güneş negatif) ve model sıralaması (iki aşamalı >
+catboost_mae > …; harman 308,3 şampiyon, stacking rekabet dışı). Veri günü
+planı bu ölçümlere yaslanır — `docs/07`.
 
 EPİAŞ için `.env` gerekir — `.env.example`'ı kopyalayıp kendi bilgilerinizi yazın.
 **`.env` asla commit edilmez.**
