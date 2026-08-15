@@ -246,3 +246,64 @@ def test_marjinal_gorunumlu_merdiven_uyari_uretiyor(capsys):
     }
     conditional_quantile_from_hurdle(olasilik, merdiven, verbose=True)
     assert "MARJINAL" in capsys.readouterr().out
+
+
+# --------------------------------------------------------------------------
+# Ornek agirligi passthrough -- benchmark_gercek.py'nin agirlikli kosusu icin
+# --------------------------------------------------------------------------
+
+
+def test_ornek_agirligi_iki_asamaya_gercekten_ulasiyor():
+    """sample_weight iki asamaya da inmeli: kayip yuzeyi degisir, OOF degisir.
+
+    Agirlik yalnizca TRAIN dilimini olcekler (cross_validate sozlesmesi);
+    kapsam ve uzunluk agirliksiz kosuyla ayni kalmali.
+    """
+    # Arrange
+    frame, y, folds = _hurdle(600, tohum=3)
+    agirlik = np.linspace(0.05, 0.95, len(y))
+
+    # Act
+    agirliksiz = fit_two_stage(frame, y, folds, verbose=False)
+    agirlikli = fit_two_stage(frame, y, folds, sample_weight=agirlik, verbose=False)
+
+    # Assert
+    assert len(agirlikli.oof_probability) == len(y)
+    assert (agirlikli.covered() == agirliksiz.covered()).all()
+    maske = agirlikli.covered()
+    assert not np.allclose(
+        agirlikli.oof_probability[maske], agirliksiz.oof_probability[maske]
+    ), "agirlik hicbir tahmini degistirmedi -- passthrough kopuk olabilir"
+
+
+def test_ornek_agirligi_kosullu_merdivene_pozitif_alt_kumeyle_iniyor():
+    """Merdiven pozitif satirlarla egitilir; agirlik da ayni alt kumeye
+    indekslenmeli. Tam boy dizi verilir, hata cikmadan merdiven kurulmali."""
+    # Arrange
+    frame, y, folds = _hurdle(600, tohum=3)
+    agirlik = np.linspace(0.05, 0.95, len(y))
+
+    # Act
+    merdiven = fit_conditional_quantile_ladder(
+        frame, y, folds, quantiles=(0.25, 0.5),
+        sample_weight=agirlik, verbose=False,
+    )
+
+    # Assert
+    assert set(merdiven) == {0.25, 0.5}
+    for tahminler in merdiven.values():
+        assert len(tahminler) == len(y)
+        assert np.isfinite(tahminler).all()
+
+
+def test_ornek_agirligi_yanlis_boyda_erken_ve_acik_hata():
+    """Yanlis boy, pozitif alt kumeye indekslenmeden ONCE yakalanmali --
+    sessiz hizalama kaymasi en sinsi hata bicimidir."""
+    frame, y, folds = _hurdle(600, tohum=3)
+    with pytest.raises(ValueError, match="sample_weight"):
+        fit_two_stage(frame, y, folds, sample_weight=np.ones(10), verbose=False)
+    with pytest.raises(ValueError, match="sample_weight"):
+        fit_conditional_quantile_ladder(
+            frame, y, folds, quantiles=(0.5,),
+            sample_weight=np.ones(10), verbose=False,
+        )

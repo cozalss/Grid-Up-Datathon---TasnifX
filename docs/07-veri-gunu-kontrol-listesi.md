@@ -198,24 +198,31 @@ değiştirmeyin** — hangisinin işe yaradığını bilemezsiniz.
    > ölçerek ekleyin, asla varsayılan olarak değil. Okul takvimi ailesi de
    > (`add_school_calendar_features`) aynı kurala tabi: hazır, ama ölçmeden girmez.
 
-5. **Model çeşitliliği** — sıra gerçek veride ölçüldü
-   (`experiments/benchmark_gercek.json`): önce **iki aşamalı + medyan kuralı**
+5. **Model çeşitliliği** — sıra gerçek veride ölçüldü, 3. dalga feature
+   setiyle (Hawkes bozunumu + toplu-olay payı dahil;
+   `experiments/benchmark_gercek.json`): önce **catboost_mae** (MAE 304,9 —
+   2023 birincisinin reçetesi bu feature setiyle kazanan tekil), sonra
+   `lgb_mae` (310,1), sonra **iki aşamalı + medyan kuralı**
    (`fit_conditional_quantile_ladder` + `conditional_quantile_from_hurdle`,
-   MAE 312,7 — eşikli 317,2'yi geçti), sonra `lgb_sqrt` (315,5 — Rohlik
-   reçetesi: sqrt+L2, geri-kare), sonra `catboost_mae` (322,0 — 2023
-   birincisinin reçetesi), sonra `lgb_tweedie`. Sayım hedefiyse
-   `COUNT_OBJECTIVES` ile süpürün. Kalibrasyonu varsaymayın:
+   316,9 — eşikli 317,0'a farkı 0,1'e indi: sinyali Hawkes feature'ları
+   taşıyınca kuralın kazancı eridi), sonra `lgb_sqrt` (324,0) ve
+   `lgb_tweedie` (327,8 — tekil zayıf ama harmanda ağırlık alıyor). Sayım
+   hedefiyse `COUNT_OBJECTIVES` ile süpürün. Kalibrasyonu varsaymayın:
    `calibrate_positive_probability` ölçer — gerçek veride İYİLEŞTİRMEDİ
-   (Brier 0,205→0,212), eşik 0,606 verinin gerçeğiydi.
+   (Brier 0,207→0,241), eşik 0,680 verinin gerçeğiydi. Örnek ağırlığını
+   (`recency_activity_weights`) Hawkes'la birlikte KULLANMAYIN: aynı yenilik
+   sinyali iki kanaldan verilince kaybetti (lgb_mae 310,1→335,3, ölçüldü).
 
 6. **Feature seçimi** — önce `null_importance_filter` (dakikalar), sonra
    `shap_backward_selection` (saatler; 2024 birincisi Pikachow da aynısını
    yaptı: SHAP ile 490→97 feature).
 
-7. **Harmanlama** — `hill_climb_weights` OOF üzerinde, **kapsam maskesiyle**
-   ve **TÜM üyelerle** (gerçek veride 305,8; "en iyi 3" kısayolu 311,8'e
-   geriletti — harmanı üye kalitesi değil hata çeşitliliği taşır). Stacking'e
-   zaman ayırmayın: aynı ölçümde baseline'ın bile altında kaldı.
+7. **Harmanlama** — `hill_climb_weights` OOF üzerinde, **kapsam maskesiyle**,
+   **TÜM üyelerle** ve **kararlılık cezasıyla** (`stability_penalty=0.5` +
+   fold dilimleri; gerçek veride 302,6 — catboost_mae 0,75 + lgb_tweedie
+   0,25. "En iyi 3" kısayolu önceki dalgada 311,8'e geriletti — harmanı üye
+   kalitesi değil hata çeşitliliği taşır). Stacking'e zaman ayırmayın: aynı
+   ölçümde baseline'ın bile altında kaldı.
 
 8. **Son gün** — `multi_seed_refit` + `postprocess_predictions`.
 

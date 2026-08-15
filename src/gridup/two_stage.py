@@ -44,7 +44,13 @@ import numpy as np
 import pandas as pd
 
 from .metrics import get_metric
-from .models import CVResult, ModelKind, cross_validate, starter_params
+from .models import (
+    CVResult,
+    ModelKind,
+    _validate_sample_weight,
+    cross_validate,
+    starter_params,
+)
 from .validation import assert_folds_align
 
 __all__ = [
@@ -461,6 +467,7 @@ def fit_conditional_quantile_ladder(
     quantiles: Sequence[float] = CONDITIONAL_LADDER_LEVELS,
     params: dict[str, Any] | None = None,
     kind: ModelKind = "lightgbm",
+    sample_weight: np.ndarray | Sequence[float] | None = None,
     early_stopping_rounds: int = 100,
     verbose: bool = True,
 ) -> dict[float, np.ndarray]:
@@ -487,6 +494,10 @@ def fit_conditional_quantile_ladder(
     Args:
         quantiles: Kuantil seviyeleri. Varsayilan ``(0, 0.5]`` araligini
             orneklemektedir; q* asla 0.5'i asmaz.
+        sample_weight: Satir basina egitim agirligi, ``len(train)`` boyutlu
+            (or. ``weighting.recency_activity_weights``). Merdiven pozitif
+            alt kumede egitildigi icin agirliklar da ayni alt kumeye
+            indekslenir; ``cross_validate`` yalnizca train dilimini olcekler.
 
     Returns:
         ``{kuantil: tahmin dizisi}`` -- her dizi ``len(train)`` uzunlugunda ve
@@ -496,6 +507,9 @@ def fit_conditional_quantile_ladder(
     """
     y = np.asarray(target).ravel()
     fold_list = list(folds)
+    # Boy/isaret hatasi pozitif alt kumeye indekslemeden ONCE yakalanir --
+    # yanlis boyda dizi, positive_index ile sessizce yanlis hizalanabilirdi.
+    weights = _validate_sample_weight(sample_weight, len(train))
     positive = y > 0
     positive_index = np.flatnonzero(positive)
     if positive_index.size == 0:
@@ -533,7 +547,9 @@ def fit_conditional_quantile_ladder(
         result = cross_validate(
             train.iloc[positive_index], y[positive_index], positive_folds,
             kind=kind, task_type="regression", metric="mae",
-            params=level_params, early_stopping_rounds=early_stopping_rounds,
+            params=level_params,
+            sample_weight=(weights[positive_index] if weights is not None else None),
+            early_stopping_rounds=early_stopping_rounds,
             verbose=False,
         )
         ladder[float(level)] = _stage2_predictions_everywhere(
@@ -763,6 +779,7 @@ def fit_two_stage(
     classifier_params: dict[str, Any] | None = None,
     regressor_params: dict[str, Any] | None = None,
     magnitude_metric: str = "mae",
+    sample_weight: np.ndarray | Sequence[float] | None = None,
     early_stopping_rounds: int = 200,
     verbose: bool = True,
 ) -> TwoStageResult:
@@ -774,6 +791,11 @@ def fit_two_stage(
     Args:
         folds: CV bolmeleri. 2. asama icin, her fold'un pozitif alt kumesine
             **yeniden indekslenir** -- bu, sizintisiz kalmasinin sarti.
+        sample_weight: Satir basina egitim agirligi, ``len(train)`` boyutlu
+            (or. ``weighting.recency_activity_weights``). 1. asamaya oldugu
+            gibi, 2. asamaya pozitif alt kumeye indekslenerek gecirilir;
+            ``cross_validate`` yalnizca train dilimini olcekler, esik ve
+            skorlar agirliksiz OOF uzerinde kalir.
 
     Returns:
         ``TwoStageResult``.
@@ -785,6 +807,8 @@ def fit_two_stage(
     fold_list = list(folds)
     y = np.asarray(target, dtype="float64").ravel()
     assert_folds_align(len(train), fold_list)
+    # Boy/isaret dogrulamasi pozitif alt kumeye indekslemeden ONCE yapilir.
+    weights = _validate_sample_weight(sample_weight, len(train))
 
     positive = y > 0
     if not positive.any():
@@ -811,7 +835,7 @@ def fit_two_stage(
     classifier = cross_validate(
         train, positive.astype(int), fold_list,
         kind=kind, task_type="binary", metric="auc",
-        params=classifier_config, test=test,
+        params=classifier_config, test=test, sample_weight=weights,
         early_stopping_rounds=early_stopping_rounds, verbose=verbose,
     )
 
@@ -846,6 +870,7 @@ def fit_two_stage(
         train.iloc[positive_index], y[positive_index], positive_folds,
         kind=kind, task_type="regression", metric=magnitude_metric,
         params=regressor_config, test=test,
+        sample_weight=(weights[positive_index] if weights is not None else None),
         early_stopping_rounds=early_stopping_rounds, verbose=verbose,
     )
 

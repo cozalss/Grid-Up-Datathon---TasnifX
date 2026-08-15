@@ -13,11 +13,23 @@ ADIL KARSILASTIRMA SARTLARI
 * Ayni fold'lar : purged_time_series_split(embargo=31g, test_span=31g, 4 bolme)
   -- provayla (real_data_rehearsal.py) birebir ayni sema.
 * Ayni feature seti: takvim + tatil + hava + gunes + lag(31/62/93, ufuk=31)
-  + frekans. Ayni gunun reason/effectedsubscribers/hourlyloadavg kolonlari
-  FEATURE DEGIL (tahmin aninda bilinmez); yalnizca ufuk=31 kaydirilmis
-  lag'leri mesru. (Ilk provanin MAE=266.60'i bu kurala uymuyordu -- ayni gunun
-  effectedsubscribers'ini feature aliyordu; buradaki sayilar o yuzden
-  provayla KIYASLANMAZ, kendi hep-sifir baseline'iyla kiyaslanir.)
+  + frekans + 3. dalga (Hawkes bozunumu 3g/14g + toplu-olay payi, ikisi de
+  ufuk=31 kaydirmali). Ayni gunun reason/effectedsubscribers/hourlyloadavg
+  kolonlari FEATURE DEGIL (tahmin aninda bilinmez); yalnizca ufuk=31
+  kaydirilmis lag'leri mesru. (Ilk provanin MAE=266.60'i bu kurala uymuyordu
+  -- ayni gunun effectedsubscribers'ini feature aliyordu; buradaki sayilar o
+  yuzden provayla KIYASLANMAZ, kendi hep-sifir baseline'iyla kiyaslanir.)
+* Ornek agirligi YOK -- olculmus bir catisma karari (2026-08-15):
+  recency_activity_weights tek basina kazandiriyordu (lgb_mae 323.13 ->
+  313.63) ama ayni yenilik sinyalini feature olarak tasiyan Hawkes
+  bozunumuyla CATISIYOR: bozunum+agirlik birlikte lgb_mae'yi 335.30'a itti
+  (bozunum tek basina 309.92, ikisi feature setinde agirliksiz 310.14).
+  Yumusak rampa (326.51), yalniz-aktiflik (322.45) ve yalniz-rampa (324.97)
+  varyantlari da kurtaramadi. Ders: ayni bilgiyi hem kayip agirligi hem
+  feature kanalindan vermek kaybettirir; feature kanali kazandi cunku model
+  eski veriyi ATMAK yerine rejime KOSULLANIYOR. Boru hatti duruyor:
+  fonksiyonlar ``agirliklar`` alir, fit_two_stage/merdiven sample_weight
+  gecirir -- 2026 verisinde yeniden olcmek tek satir.
 * Ayni butce: her modele 2000 agac/iterasyon, erken durdurma 100 tur.
   CatBoost'a 5000 vermek toplam koşuyu 25 dk hedefinin uzerine tasiyordu
   (olcek provasi: CatBoost 500 iter/100k satir = 37.6 sn, LightGBM = 4.8 sn).
@@ -57,8 +69,10 @@ from gridup import (  # noqa: E402
 from gridup.ensemble import hill_climb_weights, stack_oof  # noqa: E402
 from gridup.features import (  # noqa: E402
     add_calendar_features,
+    add_event_decay_features,
     add_frequency_encoding,
     add_lag_features,
+    add_mass_event_features,
     add_turkish_holiday_features,
 )
 from gridup.features.solar import add_solar_features  # noqa: E402
@@ -103,6 +117,13 @@ UFUK = 31           # test bloğu 31 gun -> lag'ler en az 31 gun geriden gelmeli
 LAGLAR = (31, 62, 93)
 ORTAK_BUTCE = 2000  # agac/iterasyon -- TUM modellere ayni; adil karsilastirma sarti
 ERKEN_DURDURMA = 100
+#: Hawkes bozunumunun yari omurleri: 3g = gecen haftanin izleri, 14g = ayin
+#: rejimi. Tek basina olculdu: lgb_mae 323.13 -> 309.92 (docs/10 bolum 3).
+YARI_OMURLER = (3.0, 14.0)
+#: Harman tirmanmasinin kararlilik cezasi (Home Credit 2024 + M5 1.si):
+#: objektif = ortalama(fold MAE) + ceza * std(fold MAE). Tek fold'un
+#: hediyesiyle parlayan agirlik LB'de geri teper; 0.5 near-free olculdu.
+KARARLILIK_CEZASI = 0.5
 
 
 def panel_kur() -> pd.DataFrame:
@@ -131,7 +152,7 @@ def panel_kur() -> pd.DataFrame:
 
 
 def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
-    """Feature seti: takvim + tatil + hava + gunes + lag + frekans.
+    """Feature seti: takvim + tatil + hava + gunes + lag + frekans + 3. dalga.
 
     Butun donusumler satir sirasini korur (kutuphane sozlesmesi) -- fold
     indeksleri panelle ayni kalir.
@@ -144,6 +165,21 @@ def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
             ozellik, kolon, LAGLAR,
             time_column=ZAMAN, horizon=UFUK, group_columns=[GRUP],
         )
+
+    # 3. dalga -- iki aile de hedeften turer ama YALNIZCA ufuk=31 kaydirmali
+    # yayin yapar (fonksiyonlar horizon<1'i zaten reddeder), yani sizinti
+    # duvarinin ARKASINDA kalirlar; HAM_KOLONLAR dus kumesi degismez.
+    # Hawkes bozunumu: art arda ariza kumelenir -- tek basina en buyuk
+    # olculmus kazanc (lgb_mae 323.13 -> 309.92).
+    ozellik = add_event_decay_features(
+        ozellik, HEDEF, time_column=ZAMAN, horizon=UFUK,
+        group_columns=[GRUP], half_lives=YARI_OMURLER,
+    )
+    # Toplu-olay payi: firtina gunu ilcelerin buyuk kismi ayni gun kesintili
+    # (M5 out-of-stock analogu; tek basina 320.37).
+    ozellik = add_mass_event_features(
+        ozellik, HEDEF, time_column=ZAMAN, horizon=UFUK, group_columns=[GRUP],
+    )
 
     # include_year=False: test donemi train'den sonra -- yil ekstrapolasyon riski.
     ozellik = add_calendar_features(ozellik, ZAMAN, include_year=False)
@@ -208,9 +244,17 @@ def _butceli(kind: str, params: dict[str, Any]) -> dict[str, Any]:
 
 
 def tek_modelleri_kos(
-    x: pd.DataFrame, y: np.ndarray, folds: list[tuple[np.ndarray, np.ndarray]],
+    x: pd.DataFrame,
+    y: np.ndarray,
+    folds: list[tuple[np.ndarray, np.ndarray]],
+    agirliklar: np.ndarray | None,
 ) -> tuple[dict[str, dict[str, float]], dict[str, np.ndarray], dict[str, np.ndarray]]:
-    """Bes tek modeli ayni fold'larda kosturur; skor + OOF + kapsam dondurur."""
+    """Bes tek modeli ayni fold'larda kosturur; skor + OOF + kapsam dondurur.
+
+    ``agirliklar`` verilirse her modelin egitimine gecirilir (cross_validate
+    yalnizca train dilimini olcekler); skorlar agirliksiz OOF uzerinde kalir.
+    Kanonik kosu None gecer -- bkz. modul docstring'indeki catisma olcumu.
+    """
     tweedie = starter_params("lightgbm", "regression", objective="tweedie")
     tweedie["tweedie_variance_power"] = 1.3
     catboost = starter_params("catboost", "regression", objective="mae")
@@ -231,7 +275,7 @@ def tek_modelleri_kos(
         print(f"  {ad} kosuyor...")
         sonuc = cross_validate(
             x, y, folds, kind=kind, metric="mae",  # type: ignore[arg-type]
-            params=_butceli(kind, params),
+            params=_butceli(kind, params), sample_weight=agirliklar,
             early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
         )
         skorlar[ad] = {
@@ -252,6 +296,7 @@ def tek_modelleri_kos(
     sonuc = cross_validate(
         x, sqrt_transform_target(y), folds, kind="lightgbm", metric="mae",
         params=_butceli("lightgbm", starter_params("lightgbm", "regression")),
+        sample_weight=agirliklar,
         early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
     )
     geri = inverse_sqrt_transform(sonuc.oof_predictions)
@@ -276,7 +321,10 @@ def tek_modelleri_kos(
 
 
 def iki_asama_kos(
-    x: pd.DataFrame, y: np.ndarray, folds: list[tuple[np.ndarray, np.ndarray]],
+    x: pd.DataFrame,
+    y: np.ndarray,
+    folds: list[tuple[np.ndarray, np.ndarray]],
+    agirliklar: np.ndarray | None,
 ) -> tuple[dict[str, float], np.ndarray, np.ndarray, float, float, np.ndarray]:
     """Iki asamali (hurdle) modeli kosturur; birlesik OOF ve sifir oranini dondurur.
 
@@ -291,6 +339,7 @@ def iki_asama_kos(
         regressor_params=_butceli(
             "lightgbm", starter_params("lightgbm", "regression", objective="mae")
         ),
+        sample_weight=agirliklar,
         early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
     )
     sure = time.perf_counter() - baslangic
@@ -321,6 +370,7 @@ def medyan_kurali_kos(
     folds: list[tuple[np.ndarray, np.ndarray]],
     olasilik: np.ndarray,
     maske: np.ndarray,
+    agirliklar: np.ndarray | None,
 ) -> tuple[dict[str, dict[str, float]], dict[str, np.ndarray], dict[str, Any]]:
     """MAE-optimal medyan kurali: kosullu kuantil merdiveni + q* = 1 - 0.5/p.
 
@@ -341,6 +391,7 @@ def medyan_kurali_kos(
     merdiven = fit_conditional_quantile_ladder(
         x, y, folds,
         params=_butceli("lightgbm", starter_params("lightgbm", "regression")),
+        sample_weight=agirliklar,
         early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
     )
     kalibrasyon = calibrate_positive_probability(
@@ -404,6 +455,10 @@ def harman_ve_stack(
     lgb_mae) 308.27 veriyordu. Ders: harmani uye KALITESI degil hata
     CESITLILIGI tasir. Simdi tum uyeler hill-climb'e girer; ise yaramayanlara
     zaten ~0 agirlik verir, agirligi 0 cikanlar rapordan dusulur.
+
+    Tirmanma KARARLILIK CEZALI kosulur (stability_penalty=0.5): objektif tum-
+    OOF MAE degil, fold MAE'lerinin ortalama + 0.5*std'sidir -- tek fold'un
+    hediyesiyle parlayan agirlik burada kazanamaz.
     """
     uyeler = sorted(modeller, key=lambda ad: modeller[ad]["mae"])
 
@@ -412,10 +467,21 @@ def harman_ve_stack(
         ortak_maske &= kapsam[ad]
     indeks = np.flatnonzero(ortak_maske)
 
+    # Kararlilik cezasi fold-bazli skor ister: her fold'un valid indeksleri
+    # ortak kapsama indirgenir ve MASKELI dizinin konumsal indeksine cevrilir.
+    # indeks sirali ve kapsanan_valid onun alt kumesi oldugu icin searchsorted
+    # birebir konumu verir.
+    dilimler = []
+    for _, valid_idx in folds:
+        kapsanan_valid = valid_idx[ortak_maske[valid_idx]]
+        if kapsanan_valid.size:
+            dilimler.append(np.searchsorted(indeks, kapsanan_valid))
+
     maskeli = {ad: oof[ad][indeks] for ad in uyeler}
     agirliklar = hill_climb_weights(
         maskeli, y[indeks], metric="mae",
         covered=np.ones(indeks.size, dtype=bool),  # onceden maskelendi
+        stability_penalty=KARARLILIK_CEZASI, fold_slices=dilimler,
         verbose=False,
     )
     mae_fn, _, _ = get_metric("mae")
@@ -485,6 +551,9 @@ def recete_yaz(
     medyan_mae = modeller["iki_asama_medyan"]["mae"]
     kalibre_mae = modeller["iki_asama_medyan_kalibre"]["mae"]
     sqrt_mae = modeller["lgb_sqrt"]["mae"]
+    # Harmanin agirlik verdigi DIGER uyeler onerilir; kazanan zaten baslangic.
+    ek_uyeler = [ad for ad in harman["uyeler"] if ad != tek]
+    ek_metin = " ve ".join(ek_uyeler) if ek_uyeler else "catboost_mae ve lgb_tweedie"
     return (
         f"Veri gununde ilk kosulacak tek model {tek} (MAE {tek_mae:.2f}; hep-sifir "
         f"baseline {sifir_baseline:.2f}, sifir orani %{sifir_orani * 100:.1f}). "
@@ -496,8 +565,8 @@ def recete_yaz(
         f"{harman['mae']:.2f} (agirlik alan uyeler: {', '.join(harman['uyeler'])}), "
         f"ridge stacking {stack_mae:.2f} (purged semada ilk "
         f"fold'lar meta-egitim kapsami disinda kaliyor); genel kazanan '{kazanan}'. "
-        f"Oneri: gun-1'de {tek} ile basla, ayni fold'larda catboost_mae ve "
-        f"lgb_tweedie'yi ekleyip hill-climb harmanini kur; stacking'e fold kapsami "
+        f"Oneri: gun-1'de {tek} ile basla, ayni fold'larda {ek_metin} uyelerini "
+        f"ekleyip hill-climb harmanini kur; stacking'e fold kapsami "
         f"genislemeden donme."
     )
 
@@ -517,6 +586,14 @@ def main() -> int:
     y = ozellik[HEDEF].to_numpy()
     print(f"  panel {panel.shape[0]:,} satir, {len(kolonlar)} sayisal feature")
 
+    # ORNEK AGIRLIGI KARARI (olculdu, modul docstring'inde dokum): Hawkes
+    # bozunumu feature setine girince recency_activity_weights ZARARLI --
+    # ayni yenilik sinyali iki kanaldan verilince lgb_mae 310.14 -> 335.30.
+    # Kanonik kosu agirliksiz; 2026 verisinde yeniden olcmek icin buraya
+    # recency_activity_weights(ozellik, HEDEF, time_column=ZAMAN,
+    # group_columns=[GRUP]) gecir.
+    agirliklar = None
+
     folds = purged_time_series_split(
         ozellik[ZAMAN], embargo=pd.Timedelta(days=UFUK),
         n_splits=4, test_span=pd.Timedelta(days=UFUK), verbose=False,
@@ -524,11 +601,11 @@ def main() -> int:
 
     print("2/4 tek modeller (ortak butce: "
           f"{ORTAK_BUTCE} agac, erken durdurma {ERKEN_DURDURMA})...")
-    modeller, oof, kapsam = tek_modelleri_kos(ozellik[kolonlar], y, folds)
+    modeller, oof, kapsam = tek_modelleri_kos(ozellik[kolonlar], y, folds, agirliklar)
 
     print("3/4 iki asamali model...")
     iki_skor, iki_oof, iki_maske, sifir_orani, esik, olasilik = iki_asama_kos(
-        ozellik[kolonlar], y, folds
+        ozellik[kolonlar], y, folds, agirliklar
     )
     modeller["iki_asama"] = iki_skor
     oof["iki_asama"] = iki_oof
@@ -536,7 +613,7 @@ def main() -> int:
 
     print("3b/4 MAE-optimal medyan kurali (ham + kalibre olasilik)...")
     medyan_skorlar, medyan_oof, kalibrasyon_ozeti = medyan_kurali_kos(
-        ozellik[kolonlar], y, folds, olasilik, iki_maske
+        ozellik[kolonlar], y, folds, olasilik, iki_maske, agirliklar
     )
     modeller.update(medyan_skorlar)
     for ad, tahminler in medyan_oof.items():

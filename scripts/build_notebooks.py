@@ -579,25 +579,34 @@ yarıştırdık (`scripts/benchmark_gercek.py` → `experiments/benchmark_gercek
 
 | Reçete | MAE (dk) | Not |
 |---|---|---|
-| **iki_asama_medyan** | **312.74** | Kazanan tekil: koşullu merdiven + q\\*=1−0.5/p kuralı |
-| lgb_sqrt | 315.51 | Rohlik reçetesi: sqrt(y)+L2, geri-kare — en iyi düz model |
-| iki_asama_medyan_kalibre | 317.00 | İzotonik kalibrasyon BOZDU (Brier 0.205→0.212) |
-| iki_asama (eşikli) | 317.23 | Eşik 0.606; medyan kuralı bunu 4.5 dk geçti |
-| catboost_mae | 322.04 | 2023 birincisinin reçetesi — iyi ama tek başına kazanmıyor |
-| lgb_mae | 323.13 | |
-| lgb_tweedie | 325.54 | Sıfır-şişkin hedefe uygun, hızlı aday |
-| lgb_l2 | 357.06 | Metrik MAE iken L2 kaybı ~34 dk kaybettiriyor |
-| xgb | 364.21 | Baseline'ı zar zor geçiyor |
+| **catboost_mae** | **304.89** | Kazanan tekil: 2023 birincisinin reçetesi zirveye çıktı |
+| lgb_mae | 310.14 | En iyi LightGBM — kayıp = metrik |
+| iki_asama_medyan | 316.95 | Koşullu merdiven + q\\*=1−0.5/p kuralı |
+| iki_asama (eşikli) | 317.04 | Eşik 0.680; medyan kuralının farkı 0.1 dk'ya indi |
+| lgb_sqrt | 324.03 | Rohlik reçetesi: sqrt(y)+L2, geri-kare |
+| lgb_tweedie | 327.83 | Sıfır-şişkin hedefe uygun, hızlı aday — harmanda değerli |
+| iki_asama_medyan_kalibre | 328.15 | İzotonik kalibrasyon BOZDU (Brier 0.207→0.241) |
+| xgb | 402.83 | Baseline'ın altında |
+| lgb_l2 | 403.78 | Metrik MAE iken L2 kaybı ~94 dk kaybettiriyor |
 | hep-sıfır | 366.97 | Alt çizgi; bunu geçemeyen model rafa kalkar |
+
+Bu tablo **3. dalga** feature setiyle ölçüldü: önceki 49 kolona Hawkes-esinli
+üstel bozunum (3g/14g yarı ömür) ve bölgesel toplu-olay payı eklendi (56 kolon,
+ikisi de ufuk=31 kaydırmalı) — sayıların önceki dalgadan (en iyi tekil 312.74)
+oynamasının nedeni bu. Örnek ağırlığı (`recency_activity_weights`) tek başına
+kazandırmıştı ama Hawkes ile ÇATIŞTI (aynı yenilik sinyali iki kanaldan →
+lgb_mae 310.14→335.30); ölçüm sonucu kanonik koşu ağırlıksız.
 
 Dört ölçülmüş ders:
 
 - **Kayıp fonksiyonu model seçiminden önce gelir.** Aynı LightGBM, kayıp
-  `l2 → mae` değişince ~34 dk kazanıyor. Yarışma metriği neyse kayıp odur.
-- **MAE'nin optimali medyandır ve bu satır satır uygulanabilir.** Karışımın
-  medyanı: p≤0.5 ise tam 0, değilse koşullu dağılımın q\\*=1−0.5/p kantili.
-  Bu kural eşikli hurdle'ı 317.23→312.74 taşıdı (`conditional_quantile_from_hurdle`).
-- **Kalibrasyonu varsaymadık, ölçtük.** "Eşik 0.606, sınıflandırıcı kalibresiz
+  `l2 → mae` değişince ~94 dk kazanıyor. Yarışma metriği neyse kayıp odur.
+- **MAE'nin optimali medyandır ama kazancı feature setine bağlıdır.** Karışımın
+  medyanı: p≤0.5 ise tam 0, değilse koşullu dağılımın q\\*=1−0.5/p kantili
+  (`conditional_quantile_from_hurdle`). Önceki dalgada eşikli hurdle'ı 4.5 dk
+  geçmişti (317.23→312.74); Hawkes feature'ları eklenince fark 0.1 dk'ya indi —
+  kural bedava, ama sinyali feature'lar zaten taşıyorsa kazanç erir.
+- **Kalibrasyonu varsaymadık, ölçtük.** "Eşik 0.680, sınıflandırıcı kalibresiz
   olduğu için 0.5'ten sapmış olabilir" hipotezini izotonik kalibrasyonla test
   ettik: Brier kötüleşti, MAE kötüleşti. Eşik sapması verinin gerçeği.
 - **Bu tablonun ilk sürümü sızıntılıydı ve bunu çekişmeli denetim yakaladı.**
@@ -612,7 +621,7 @@ if LOG_TARGET:
     y = log_transform_target(y)
 
 # Kayip = yarisma metrigi. Gercek GDZ olcumu: ayni LightGBM'de l2 -> mae
-# gecisi 38 dk kazandirdi (experiments/benchmark_gercek.json).
+# gecisi ~94 dk kazandirdi (experiments/benchmark_gercek.json).
 params = (starter_params("lightgbm", TASK, objective="mae") if METRIC == "mae"
           else starter_params("lightgbm", TASK))
 
@@ -627,15 +636,18 @@ print(result.summary())
     markdown("""
 ## 4 · Harman — ve kapsam maskesi neden şart
 
-Gerçek GDZ ölçümünde en iyi tekil model 312.74; TÜM üyeler üzerinde hill-climb
-harmanı **305.78** (ağırlık alanlar: iki_asama_medyan + lgb_tweedie + iki_asama +
-catboost_mae + lgb_l2) — `scripts/benchmark_gercek.py`. Bir ölçülmüş ders daha:
-"en iyi 3 üyeyi harmanla" kısayolu 311.83 verdi, çünkü en iyi üçü birbirinin
+Gerçek GDZ ölçümünde en iyi tekil model 304.89; TÜM üyeler üzerinde
+kararlılık-cezalı hill-climb harmanı **302.64** (ağırlık alanlar: catboost_mae
+0.75 + lgb_tweedie 0.25; `stability_penalty=0.5` — tırmanma tek fold'un
+hediyesini değil, fold MAE'lerinin ortalama + 0.5·std'sini kovalar) —
+`scripts/benchmark_gercek.py`. Bir ölçülmüş ders daha: "en iyi 3 üyeyi
+harmanla" kısayolu bir önceki dalgada 311.83 verdi, çünkü en iyi üçü birbirinin
 kopyası çıktı — harmanı üye kalitesi değil **hata çeşitliliği** taşır; hill-climb
-tüm adayları görünce işe yaramayana zaten 0 ağırlık veriyor. Ridge stacking ise
-rekabet dışı: purged şemada ilk dönem hiçbir fold'un valid tarafına düşmediği
-için meta-modelin eğitim kapsamı daralıyor. Tercihimiz hill climbing —
-ağırlıklar jüriye tek satırda açıklanabilir.
+tüm adayları görünce işe yaramayana zaten 0 ağırlık veriyor (lgb_tweedie tekil
+6. sıradayken harmanda ağırlık alan iki üyeden biri olması bunun kanıtı).
+Ridge stacking ise rekabet dışı: purged şemada ilk dönem hiçbir fold'un valid
+tarafına düşmediği için meta-modelin eğitim kapsamı daralıyor. Tercihimiz hill
+climbing — ağırlıklar jüriye tek satırda açıklanabilir.
 
 **Kapsam maskesi:** purged bölme ilk dönemi hiçbir valid'e koymaz; o satırların
 OOF değeri tahmin değil **dolgudur** (0.0). Maskesiz harman kurmak skoru ölçülü
@@ -659,7 +671,7 @@ agirliklar = hill_climb_weights({k: oof[k] for k in secilen}, y_kapsanan, metric
 print("harman agirliklari:", agirliklar)
 
 # Stacking'i ancak fold kapsami genisse dene -- gercek GDZ'de purged semada
-# 385.12 ile rekabet disiydi (benchmark_gercek.json):
+# 645.48 ile rekabet disiydi (benchmark_gercek.json):
 # stack = stack_oof(zoo.oof_matrix, y, folds, test_predictions=zoo.test_matrix,
 #                   base_covered=zoo.oof_covered)
 """),
@@ -717,7 +729,7 @@ log.leaderboard()
 
 - **CV gürültülü.** Provada tek modelin fold skorları 150.8 → 461.4 dk salındı
   (std 122.35, `scripts/real_data_rehearsal.py`); ablasyonda fold_std 94.31,
-  benchmark'ta 69.1–116.3. İki reçete arasındaki 2–3 dakikalık fark hüküm
+  benchmark'ta 22.4–113.1. İki reçete arasındaki 2–3 dakikalık fark hüküm
   değildir; kararlar aile düzeyindeki büyük farklara yaslanır.
 - **Seçim yanlılıkları aynı yönde birikir.** Erken durdurma, skorun ölçüldüğü
   fold'da ağaç sayısı seçer (ölçülen sapma %0.16); Optuna araması ~%0.3; SHAP
@@ -728,7 +740,7 @@ log.leaderboard()
   ham kaydın `id` kolonu panel dolgusunun birebir kopyası çıktı (y==0 ile uyum
   0.9975) ve tüm skorları ~60 dk iyimser gösterdi. İkisi de çekişmeli denetimle
   bulundu, düzeltildi ve bu sayfadaki sayılar düzeltilmiş ölçümlerdir
-  (prova 334.29, harman 305.78). Sızıntı "bizde olmaz" denen şey değil,
+  (prova 334.29, güncel harman 302.64). Sızıntı "bizde olmaz" denen şey değil,
   sistematik aranan şeydir.
 - **Bu ölçümlerin kapsamı 2021–22 verisidir.** Ablasyon ve benchmark sayıları
   2021-05→2022-08 GDZ kaydında, `kesinti_dk` hedefi ve 47 ilçeyle ölçüldü.
@@ -746,35 +758,43 @@ Sıra ölçümden geliyor (`experiments/benchmark_gercek.json` → `gun1_recetes
 
 1. **Saat 0–2 · Keşif:** 01 notebook'u — panel, fold'lar, sızıntı duvarı.
    İlk iki saatin sonunda üç karar da verilmiş olmalı.
-2. **İlk submission:** iki aşamalı model + medyan kuralı (gerçek GDZ'de MAE
-   312.74, eşikli 317.23, hep-sıfır 366.97). Optimize etmeden önce LB'de bir sayı:
+2. **İlk submission:** `catboost_mae` — 2023 birincisinin reçetesi, 3. dalga
+   feature'larıyla gerçek GDZ'de kazanan tekil (MAE 304.89; hep-sıfır 366.97).
+   Optimize etmeden önce LB'de bir sayı:
    ```python
    print(zero_baseline_score(y, metric="mae"))   # once bunu gectigini gor
-   sonuc = fit_two_stage(train_features[FEATURES], y, folds, metric=METRIC)
    ```
-   Metrik MAE ise `q* = 1 − 0.5/p` kantil çözücüsü — `expected` ve `thresholded`
-   modlarının ikisi de MAE altında suboptimaldir (ölçüldü: medyan kuralı eşikliyi
-   4.5 dk geçti). Merdiven **koşullu** olmalı — marjinal `fit_quantile_ladder`
-   burada ölçülmüş şekilde yanlış sonuç verir:
+   İki aşamalı + medyan kuralını aynı fold'larda ölçün (eşikli 317.04, medyan
+   316.95): `q* = 1 − 0.5/p` kantil çözücüsü bedava ama kazancı feature setine
+   bağlı — önceki dalgada eşikliyi 4.5 dk geçen fark, Hawkes feature'ları
+   sinyali taşıyınca 0.1 dk'ya indi. Merdiven **koşullu** olmalı — marjinal
+   `fit_quantile_ladder` burada ölçülmüş şekilde yanlış sonuç verir:
    ```python
+   sonuc = fit_two_stage(train_features[FEATURES], y, folds, metric=METRIC)
    merdiven = fit_conditional_quantile_ladder(train_features[FEATURES], y, folds)
    tahmin = conditional_quantile_from_hurdle(sonuc.oof_probability, merdiven)
    ```
    Kalibrasyonu deneme — gerçek GDZ'de izotonik kalibrasyon Brier'i de MAE'yi de
    kötüleştirdi (`calibrate_positive_probability` ölçüp söyler).
-3. **Feature'lar ablasyon sırasıyla:** önce lag (+22.34), sonra hava (+2.47;
-   `add_regional_aggregates` + `add_physical_derivatives`, ortalama değil
-   `max`/quantile), komşu lag ucuzsa (`nearest_neighbours` +
-   `add_neighbour_target_lag`, ufuk şart). Tatil/güneş en sona — gerçek veride
-   negatif ölçüldüler. Her adımda kayma kontrolü:
+3. **Feature'lar ablasyon sırasıyla:** önce lag (+22.34), sonra Hawkes bozunumu
+   + toplu-olay payı (`add_event_decay_features` 3g/14g +
+   `add_mass_event_features`, ikisi de ufuk şart; birlikte lgb_mae
+   323.13→310.14), sonra hava (+2.47; `add_regional_aggregates` +
+   `add_physical_derivatives`, ortalama değil `max`/quantile), komşu lag ucuzsa
+   (`nearest_neighbours` + `add_neighbour_target_lag`, ufuk şart).
+   `recency_activity_weights`'i Hawkes'la BİRLİKTE kullanmayın — aynı yenilik
+   sinyali iki kanaldan verilince kaybettirdi (310.14→335.30, ölçüldü); önce
+   feature'sız ölçün. Tatil/güneş en sona — gerçek veride negatif ölçüldüler.
+   Her adımda kayma kontrolü:
    ```python
    sonuc = adversarial_validation(train_features[FEATURES], test_features[FEATURES])
    print(sonuc["auc"], sonuc["verdict"])   # AUC > 0.8 ise ayristiran feature'i cikar
    ```
-4. **Aynı fold'larda** `catboost_mae`, `lgb_tweedie` ve `lgb_sqrt` eklenir
-   (`sweep_count_objectives` ile) → TÜM üyeler üzerinde kapsam maskeli
-   hill-climb harmanı (gerçek GDZ'de 305.78; "en iyi 3" kısayolu 311.83
-   verdi — çeşitlilik kaliteden değerli).
+4. **Aynı fold'larda** `lgb_mae`, `lgb_tweedie` ve `lgb_sqrt` eklenir
+   (`sweep_count_objectives` ile) → TÜM üyeler üzerinde kapsam maskeli,
+   kararlılık-cezalı hill-climb harmanı (`stability_penalty=0.5`; gerçek
+   GDZ'de 302.64 — catboost_mae 0.75 + lgb_tweedie 0.25; "en iyi 3" kısayolu
+   önceki dalgada 311.83 verdi — çeşitlilik kaliteden değerli).
 5. **Hiperparametre araması** ancak harman oturduktan sonra — objective de arama
    uzayına girer: `tune_with_optuna(..., search_objective=True)`.
 6. **Son gün:** çok tohumlu tam veri refit + jüri çıktıları:
