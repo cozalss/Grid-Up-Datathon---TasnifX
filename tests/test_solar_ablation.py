@@ -601,3 +601,55 @@ def test_butce_raporu_okunabilir(tmp_path):
     rapor = log.budget_report(today="2026-08-22")
     assert "SUBMISSION BUTCESI" in rapor
     assert "2026-08-22" in rapor
+
+
+# --------------------------------------------------------------------------
+# suggest_scheme grup adayi filtresi
+# --------------------------------------------------------------------------
+
+
+def _sema_verisi():
+    n = 300
+    tarih = pd.date_range("2025-01-01", periods=n, freq="D")
+    train = pd.DataFrame(
+        {
+            "tarih": tarih,
+            "trafo": np.tile([f"t{i}" for i in range(10)], n // 10),
+            "il": np.tile(["izmir", "manisa"], n // 2),
+            "hedef": np.random.default_rng(0).normal(10, 2, n),
+            "hedef_var_mi": np.tile([0, 1], n // 2),
+        }
+    )
+    test = train.drop(columns=["hedef", "hedef_var_mi"]).copy()
+    return train, test
+
+
+def test_hedef_grup_adayi_olamaz():
+    """REGRESYON: onceki surum hedefi ve hedeften tureyeni grup adayi sayiyordu."""
+    from gridup.validation import suggest_scheme
+
+    train, _ = _sema_verisi()
+    oneri = suggest_scheme(train, target="hedef")
+    assert oneri.group_column != "hedef"
+
+
+def test_testte_olmayan_kolon_grup_adayligindan_cikiyor():
+    from gridup.validation import suggest_scheme
+
+    train, test = _sema_verisi()
+    oneri = suggest_scheme(train, target="hedef", test=test)
+
+    metin = str(oneri)
+    assert "hedef_var_mi" not in (oneri.group_column or "")
+    assert "test'te yok" in metin
+    if oneri.group_column is not None:
+        assert oneri.group_column in test.columns
+
+
+def test_known_group_verilirse_filtreye_takilmiyor():
+    """Kullanici acikca grup verdiyse ona karisimiyoruz -- domain bilgisi bizden ustundur."""
+    from gridup.validation import suggest_scheme
+
+    train, test = _sema_verisi()
+    oneri = suggest_scheme(train, target="hedef", test=test, known_group="hedef_var_mi")
+    assert oneri.group_column == "hedef_var_mi"

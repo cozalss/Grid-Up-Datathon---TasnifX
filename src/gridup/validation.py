@@ -192,6 +192,7 @@ def suggest_scheme(
     frame: pd.DataFrame,
     *,
     target: str | None = None,
+    test: pd.DataFrame | None = None,
     task_type: TaskType | None = None,
     known_group: str | None = None,
     known_time: str | None = None,
@@ -200,11 +201,48 @@ def suggest_scheme(
 
     Bu bir OTOMATIK KARAR DEGIL, bir baslangic noktasidir. Ciktiyi oku ve
     domain bilginle dogrula -- ozellikle grup kolonu secimini.
+
+    Args:
+        target: Hedef kolon. **Grup adaylarindan cikarilir.**
+        test: Test frame'i. Verilirse, test'te BULUNMAYAN kolonlar grup
+            adayligindan cikarilir -- bkz. asagisi.
+
+    NEDEN ``test`` VERMELISIN
+    -------------------------
+    Grup kolonu, CV'nin test bolunmesini taklit etmesi icin kullanilir; bu
+    yuzden **tahmin aninda var olmak zorundadir.** Test'te olmayan bir kolona
+    gore gruplamak, gerceklestirilemeyen bir semayi dogruluyormus gibi
+    yapmaktir.
+
+    Bu, prova verisinde OLCULMUS gercek bir tuzaktir: ``target`` verilmesine
+    ragmen onceki surum grup adayi olarak ``ariza_var_mi`` ve ``ariza_tipi``
+    doneriyordu -- ikisi de HEDEFTEN turer ve test'te yoktur. Hedefe gore
+    gruplanan bir CV anlamsizdir.
     """
     warnings: list[str] = []
 
     time_columns = [known_time] if known_time else _detect_time_columns(frame)
-    group_columns = [known_group] if known_group else _detect_group_columns(frame)
+
+    if known_group:
+        group_columns = [known_group]
+    else:
+        group_columns = _detect_group_columns(frame)
+        # Hedef ve hedeften turemis kolonlar grup olamaz: CV'yi etikete gore
+        # bolmek, dogrulamayi anlamsiz kilar.
+        dislanan: list[str] = []
+        if target and target in group_columns:
+            group_columns = [c for c in group_columns if c != target]
+            dislanan.append(f"{target} (hedef)")
+        if test is not None:
+            yok = [c for c in group_columns if c not in test.columns]
+            if yok:
+                group_columns = [c for c in group_columns if c in test.columns]
+                dislanan.extend(f"{c} (test'te yok)" for c in yok)
+        if dislanan:
+            warnings.append(
+                "Grup adayligindan cikarilanlar: " + ", ".join(dislanan) +
+                ". Grup kolonu tahmin aninda VAR OLMALIDIR."
+            )
 
     time_column = time_columns[0] if time_columns else None
     group_column = group_columns[0] if group_columns else None

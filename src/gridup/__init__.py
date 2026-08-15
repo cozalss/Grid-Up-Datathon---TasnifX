@@ -11,9 +11,13 @@ VERI GELDIGINDE ILK 30 DAKIKA
     train = read_any("data/raw/train.csv")     # kodlama/ayirici otomatik
     test  = read_any("data/raw/test.csv")
 
-    print(profile(train, test, target="HEDEF").report())   # 1. ne var elimizde
-    print(suggest_scheme(train, target="HEDEF"))           # 2. hangi CV semasi
-    print(leakage_report(train, "HEDEF", test=test))       # 3. sizinti var mi
+    print(profile(train, test, target="HEDEF").report())        # 1. ne var elimizde
+    print(suggest_scheme(train, target="HEDEF", test=test))     # 2. hangi CV semasi
+    print(leakage_report(train, "HEDEF", test=test))            # 3. sizinti var mi
+
+``suggest_scheme``a ``test`` vermeyi ATLAMA: test'te bulunmayan kolonlar grup
+adayi olmaktan cikar. Aksi halde hedeften turemis bir kolona gore gruplama
+onerilebilir ve CV anlamsiz olur (prova verisinde olculdu).
 
 Bu uc cikti, sonraki 12 gunun her kararini belirler. Once bunlari oku.
 
