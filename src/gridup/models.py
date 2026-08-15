@@ -36,7 +36,9 @@ __all__ = [
     "LGB_DEFAULTS",
     "XGB_DEFAULTS",
     "CAT_DEFAULTS",
+    "EARLY_STOPPING_BIAS_NOTE",
     "INFRASTRUCTURE_KEYS",
+    "MIN_CATEGORY_OVERLAP",
     "assert_finite_target",
     "merge_infrastructure_params",
     "starter_params",
@@ -276,6 +278,19 @@ COUNT_OBJECTIVES: dict[str, dict[str, str]] = {
 }
 
 
+#: ``cross_validate`` erken durdurma ile kosarken skora eklenen bilinen
+#: yanlilik. Sayi tek basina dolasmasin diye ``CVResult.warnings``a yazilir.
+#: Gerekce ve olcum tablosu ``cross_validate`` docstring'inde.
+EARLY_STOPPING_BIAS_NOTE = (
+    "Agac sayisi, skorun hesaplandigi AYNI valid fold'da secildi (erken "
+    "durdurma) -- bu skor hafif IYIMSER. OLCULDU (N=3000, KFold(4), lr=0.05, "
+    "esr=200): erken durdurmali CV 2.118068, ayni fold'larda sabit 87 agac "
+    "2.121460 -- fark 0.003392 (%0.16). Tek basina kucuk; ama Optuna (%0.3) ve "
+    "geri eleme (+0.0137) yanliliklariyla AYNI YONDE toplanir. Nihai karari "
+    "ayrilmis bir holdout veya LB ile dogrula."
+)
+
+
 @dataclass
 class CVResult:
     """Bir capraz dogrulama kosusunun tum ciktisi."""
@@ -295,6 +310,11 @@ class CVResult:
     #: veya korelasyona sokmak sonucu bozar (olculdu: gercek korelasyon 0.93
     #: iken tum diziyle 0.47). ``covered_predictions()`` kisayolunu kullan.
     oof_covered: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=bool))
+    #: Bu skorun NASIL uretildigine dair, sayiyi okuyan herkesin bilmesi
+    #: gereken cekinceler. Bos degilse ``summary()`` bunlari basar. Sessiz
+    #: kalmamak icin var: skor tek basina dolasima girdiginde (deney gunlugu,
+    #: juri slaydi) yaniyla birlikte tasinsin.
+    warnings: list[str] = field(default_factory=list)
 
     def covered_predictions(self) -> tuple[np.ndarray, np.ndarray]:
         """``(kapsanan_satir_indeksleri, o_satirlarin_tahminleri)``.
@@ -351,11 +371,66 @@ class CVResult:
             f"Fold skorlari: {[round(score, 5) for score in self.fold_scores]}",
             f"Sure: {self.elapsed_seconds:.1f} sn",
         ]
+        for uyari in self.warnings:
+            lines.append(f"UYARI: {uyari}")
         top = self.feature_importance.head(15)
         lines.append("\nEn onemli 15 feature:")
         for _, row in top.iterrows():
             lines.append(f"  {row['feature']:<45} {row['importance']:>12.1f}")
         return "\n".join(lines)
+
+
+#: Test satirlarinin en az bu kadari train'de GORULMUS bir kategoriye dusmeli.
+#: Altina inince sessiz gecmeyiz -- bkz. ``_warn_on_low_category_overlap``.
+MIN_CATEGORY_OVERLAP = 0.50
+
+
+def _warn_on_low_category_overlap(
+    column: str, train_text: pd.Series, test_text: pd.Series
+) -> float:
+    """Test satirlarinin kacinin kategorisi train'de gorulmus -- olcer ve dondurur.
+
+    NEDEN OLCUYORUZ: birlesik kategori kumesi kurdugumuz icin ortusme SIFIR
+    olsa bile hicbir sey patlamaz, NaN bile olusmaz -- test tarafi sadece
+    train'de hic ornegi olmayan kodlara duser ve model onlar icin ogrendigi
+    hicbir seyi kullanamaz. Kusur CV'de GORUNMEZ cunku CV yalnizca train
+    icindedir.
+
+    OLCULDU (30 ilce, test tarafinda basta TEK BOSLUK -> ortak kategori 0):
+      CV rmse (train ici)        :  3.0139
+      gercek test RMSE           : 28.5162
+      hep-ortalama baseline RMSE : 25.1324
+    Yani model CV'de 8 kat iyi gorunurken gercekte baseline'in ALTINDA.
+    Baska hicbir katman bunu yakalamiyor: profile() ve leakage_report()
+    yalnizca kolon ADLARINI karsilastirir, check_train_test_overlap ise
+    gun-1 zincirinde hic cagrilmaz.
+
+    Returns:
+        Satir agirlikli ortusme orani (0..1). Test bossa 1.0.
+    """
+    train_seen = set(train_text.dropna().unique())
+    test_values = test_text.dropna()
+    if len(test_values) == 0:
+        return 1.0
+
+    row_overlap = float(test_values.isin(train_seen).mean())
+    if row_overlap >= MIN_CATEGORY_OVERLAP:
+        return row_overlap
+
+    test_seen = set(test_values.unique())
+    ortak = len(train_seen & test_seen)
+    print(
+        f"[cross_validate] UYARI: '{column}' kolonunda train/test kategori "
+        f"ortusmesi COK DUSUK -- test satirlarinin yalnizca %{row_overlap * 100:.1f}'i "
+        f"train'de gorulmus bir degere dusuyor "
+        f"(ortak kategori {ortak}; train {len(train_seen)}, test {len(test_seen)}).\n"
+        "  Model bu satirlar icin ogrendigi hicbir seyi kullanamaz ve CV skoru "
+        "bunu GOSTERMEZ (CV yalnizca train icindedir).\n"
+        "  Once nedenini bul: bosluk/buyuk-kucuk harf farki, farkli kod semasi "
+        "veya gercekten yeni kategoriler. Sonra ya normalize et ya da bu kolonu "
+        "frekans/hedef kodlamasiyla degistir."
+    )
+    return row_overlap
 
 
 def _prepare_categoricals(
@@ -365,6 +440,11 @@ def _prepare_categoricals(
 
     Train ve test AYNI kategori kumesini paylasmak zorundadir; aksi halde
     LightGBM/XGBoost farkli kodlamalar uretir ve tahminler sessizce bozulur.
+
+    Ortak kategori kumesi kurmak dtype'lari hizalar ama ORTUSMEYI garanti
+    ETMEZ: sifir ortusme sessizce gecerdi (olculdu: 0 uyari). Artik her
+    kategorik kolonun ortusmesi olculur ve
+    ``MIN_CATEGORY_OVERLAP``in altinda kalirsa kullaniciya SOYLENIR.
     """
     # Surumden bagimsiz: pandas 3.0'da metin 'str' dtype'indadir ve
     # is_object_dtype onu gormez -- bkz. compat.is_categorical_like.
@@ -382,6 +462,9 @@ def _prepare_categoricals(
         if test_out is not None and column in test_out.columns:
             train_text = safe_str(train_out[column])
             test_text = safe_str(test_out[column])
+            # Kodlamadan ONCE olc: birlesik kategori kumesi kurulduktan sonra
+            # ortusme kaybi NaN birakmaz, yani geriye izi kalmaz.
+            _warn_on_low_category_overlap(column, train_text, test_text)
             combined = pd.concat([train_text, test_text], ignore_index=True)
             categories = pd.Index(combined.dropna().unique())
             dtype = pd.CategoricalDtype(categories=categories)
@@ -515,14 +598,57 @@ def _predict(model: Any, features: pd.DataFrame, *, needs_proba: bool) -> np.nda
     return np.asarray(model.predict(features)).ravel()
 
 
+def _lightgbm_gain_importance(model: Any, feature_names: Sequence[str]) -> np.ndarray | None:
+    """LightGBM modelinden 'gain' onemini cikarir; LightGBM degilse ``None``.
+
+    NEDEN MODELIN KENDI ``importance_type``INE GUVENMIYORUZ: ``LGB_DEFAULTS``
+    'gain' diyor ama ``feature_importances_`` yalnizca modelin KURULUS aninda
+    verilen ``importance_type``i uygular. ``params`` disaridan gelen her yol
+    (Optuna'nin best_params'i, ``selection.null_importance_filter``) o anahtari
+    tasimaz ve model sessizce LightGBM varsayilani 'split'e duser.
+
+    OLCULDU (3 gercek sinyal + 40 saf gurultu, 1000 agac, N=4000; params ile
+    kurulmus LGBMRegressor):
+      model.importance_type      = 'split'
+      split gercek/gurultu orani =  1.31x
+      gain  gercek/gurultu orani = 12.89x
+    Yani ayni modelde iki farkli tablo -- ve 'split' gercek sinyali gurultuden
+    neredeyse ayirt edemiyor.
+    """
+    booster = getattr(model, "booster_", None) or model
+    getir = getattr(booster, "feature_importance", None)
+    if not callable(getir):
+        return None
+    try:
+        importance = np.asarray(getir(importance_type="gain"), dtype="float64").ravel()
+    except (TypeError, ValueError):  # pragma: no cover - LightGBM disi bir 'feature_importance'
+        return None
+    return importance if importance.size == len(feature_names) else None
+
+
 def _extract_importance(model: Any, feature_names: Sequence[str]) -> np.ndarray:
     """Model tipinden bagimsiz feature onem vektoru.
+
+    LightGBM'de olcu HER ZAMAN 'gain'dir -- modelin ``importance_type``i ne
+    olursa olsun (bkz. ``_lightgbm_gain_importance``). XGBoost ve CatBoost
+    zaten gain tabanli bir olcu doner.
+
+    DIKKAT -- OLCEK KUTUPHANELER ARASI KARSILASTIRILAMAZ. OLCULDU (10 feature,
+    300 agac, N=4000) bu fonksiyonun donen vektorunun toplami:
+      LightGBM (ham gain)          : 23228.6
+      XGBoost  (normalize edilmis) :     1.0
+    ``zoo`` icindeki farkli modellerin onem tablolarini yan yana koyup MUTLAK
+    degerle karsilastirma; her tabloyu kendi icinde sirala.
 
     Cikaramadigi durumda sifir vektoru doner ama SESSIZ KALMAZ: sifirlarla dolu
     bir onem tablosu, "hicbir feature ise yaramiyor" diye yanlis okunur ve
     gereksiz feature elemesine yol acar. Sorun feature'larda degil, cikarim
     mekanizmasindadir -- bunu soylemek zorundayiz.
     """
+    gain = _lightgbm_gain_importance(model, feature_names)
+    if gain is not None:
+        return gain
+
     for attribute in ("feature_importances_", "get_feature_importance"):
         value = getattr(model, attribute, None)
         if value is None:
@@ -568,10 +694,35 @@ def cross_validate(
         early_stopping_rounds: Iyilesme olmadan kac tur beklenecegi.
 
     Returns:
-        ``CVResult``.
+        ``CVResult``. ``warnings`` alani skorun bilinen yanliliklarini tasir.
 
     Raises:
         ValueError: Fold listesi bossa veya boyutlar uyumsuzsa.
+
+    ERKEN DURDURMA SKORU HAFIF IYIMSER YAPAR -- OLCULEN BUYUKLUK
+    -----------------------------------------------------------
+    Agac sayisi ``eval_set=[(x_valid, y_valid)]`` ile SECILIR, sonra ayni
+    ``x_valid`` uzerinde OOF uretilip ayni fold'dan skor alinir. Yani her
+    fold'un agac sayisi, skorlandigi veriye bakarak secilmis olur.
+
+    OLCULDU (N=3000, 12 feature, KFold(4), lr=0.05, n_estimators=3000,
+    early_stopping_rounds=200; referans = AYNI fold'larda sabit agac
+    sayisiyla, eval_set olmadan egitilmis model):
+
+        erken durdurmali CV  : 2.118068   (fold agaclari 86/88/70/94)
+        sabit  87 agac       : 2.121460   -> fark 0.003392  (%0.16)
+        sabit 100 agac       : 2.122541   -> fark 0.004472  (%0.21)
+        sabit 200 agac       : 2.153995   -> fark 0.035927  (%1.67)
+
+    Yanlilik %0.2 mertebesinde: tek basina fold sayisini veya semayi
+    degistirmeyi HAK ETMEZ, bu yuzden mimari oldugu gibi birakildi.
+    Ama ayni yonde calisan iki yanlilik daha var (Optuna'nin en iyi
+    denemeyi secmesi ~%0.3, geri elemenin +0.0137'si) ve bunlar TOPLANIR.
+    Bu yuzden sayi tek basina dolasmasin diye ``CVResult.warnings``a yazilir.
+    ``early_stopping_rounds``u buyuterek "erken durdurmasiz referans" ALAMAZSIN:
+    callback takiliyken model yine ``best_iteration``a kirpilir (olculdu:
+    esr=20/200/10^6 ucunde de CV 2.091143, fold agaclari birebir ayni).
+    Referans istiyorsan ``fit_without_validation`` ile sabit tur sayisi kullan.
     """
     fold_list = list(folds)
     y = np.asarray(target).ravel()
@@ -658,9 +809,16 @@ def cross_validate(
         .reset_index(drop=True)
     )
 
+    uyarilar = []
+    if early_stopping_rounds > 0 and fold_scores:
+        uyarilar.append(EARLY_STOPPING_BIAS_NOTE)
+        if verbose:
+            print(f"  NOT: {EARLY_STOPPING_BIAS_NOTE}")
+
     return CVResult(
         oof_predictions=oof,
         oof_covered=oof_filled,
+        warnings=uyarilar,
         test_predictions=test_predictions,
         fold_scores=fold_scores,
         overall_score=overall,

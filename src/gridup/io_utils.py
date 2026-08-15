@@ -23,6 +23,7 @@ anlamazsin. Bu modul tespiti ACIKCA yapar ve ne buldugunu raporlar.
 from __future__ import annotations
 
 import csv
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -34,6 +35,7 @@ from .turkish import normalize_columns
 __all__ = [
     "DialectGuess",
     "sniff_dialect",
+    "sniff_dialect_shared",
     "read_table",
     "read_any",
     "to_parquet_cache",
@@ -53,13 +55,19 @@ _SNIFF_BYTES = 64 * 1024
 
 @dataclass(frozen=True)
 class DialectGuess:
-    """Bir metin dosyasi hakkinda tespit edilen bicim bilgisi."""
+    """Bir metin dosyasi hakkinda tespit edilen bicim bilgisi.
+
+    ``warnings`` alani, tespitin BELIRSIZ kaldigi durumlari tasir. Bos degilse
+    train ve test icin farkli karar verilmis olabilir -- sessiz birakilmaz,
+    ``sniff_dialect`` bunlari ekrana da basar.
+    """
 
     encoding: str
     delimiter: str
     decimal: str
     thousands: str | None
     sample_line: str
+    warnings: tuple[str, ...] = ()
 
     def as_read_csv_kwargs(self) -> dict[str, Any]:
         kwargs: dict[str, Any] = {
@@ -137,34 +145,63 @@ def _guess_delimiter(head: str) -> str:
     return best_delimiter
 
 
-def _guess_decimal(head: str, delimiter: str) -> tuple[str, str | None]:
+def _alan_tokenleri(head: str, delimiter: str) -> list[str]:
+    """Basligi atlar ve govdeyi SATIR SATIR alanlara boler.
+
+    NEDEN SATIR SATIR: onceki surum ``body.split(delimiter)`` yaziyordu, yani
+    satir sonlarini hic gormuyordu. Bir satirin son alani ile sonraki satirin
+    ilk alani tek token'a yapisiyordu (``'9,00\\n212.001'``); o token hem ``.``
+    hem ``,`` icerdigi icin binlik tespiti dosyadaki KOLON SIRASINA baglaniyordu.
+    OLCULDU: ayni sekilde yazilmis train/test ciftinde binlik train'de '.',
+    test'te 'yok' cikiyor ve ayni kolon train'de int64, test'te str oluyordu.
+    """
+    lines = [line for line in head.splitlines() if line.strip()][1:]
+    return [alan for line in lines for alan in line.split(delimiter)]
+
+
+def _guess_decimal(head: str, delimiter: str) -> tuple[str, str | None, tuple[str, ...]]:
     """Ondalik ve binlik isaretlerini tespit eder.
 
     Kural: ayirici ``;`` ise ondalik neredeyse kesin ``,``dir (Turkce Excel).
     Ayirici ``,`` ise ondalik ``.`` olmak zorundadir -- aksi halde dosya
     ayristirilamaz.
+
+    Returns:
+        ``(ondalik, binlik, uyarilar)``.
     """
     if delimiter == ",":
-        return ".", None
+        return ".", None, ()
 
-    body = head[head.find("\n") + 1 :]  # basligi atla
-    tokens = body.split(delimiter)
-    comma_decimal_hits = sum(1 for token in tokens if _looks_like_tr_number(token))
-    dot_decimal_hits = sum(1 for token in tokens if _looks_like_en_number(token))
+    tokens = _alan_tokenleri(head, delimiter)
+    virgul_ondalik = sum(1 for token in tokens if _looks_like_tr_number(token))
+    nokta_ondalik = sum(1 for token in tokens if _looks_like_en_number(token))
+    cok_grup = any(_cok_gruplu(token) for token in tokens)
 
-    # ';' ayirici gorulduyse ondalik VARSAYILAN olarak ',' kabul edilir.
-    # Neden: ';' ayirici zaten ',' ondalik oldugu ICIN secilir (Turkce Excel).
-    # Heuristik sayim yanilabilir -- '212.345' gibi nokta-grupli bir trafo ID'si
-    # "Ingilizce ondalik" sayilir ve gercek ondalikli alanlar ornekte seyrekse
-    # sayaci yanlis tarafa kaydirir. Sonuc sessizdir: decimal='.' ile okunan
-    # '1.234,56' hucreleri sayiya cevrilemez, kolon object dtype'da kalir ve
-    # sayisal bir feature kategorik muamelesi gorur.
-    # Bu yuzden ','den ancak GUCLU kanit varsa vazgeciyoruz.
-    if dot_decimal_hits > comma_decimal_hits * 2 and dot_decimal_hits >= 3:
-        return ".", None
+    # BINLIK ICIN **POZITIF KANIT** SART.
+    #
+    # Onceki surum ';' ayirici gorunce ondaligi varsayilan olarak ',' yapiyor,
+    # ve TAM 3 haneli her kesri ("9.801") binlik gruplama kaniti sayiyordu.
+    # Bu, en yaygin hedef bicimini SESSIZCE 1000 kat buyutuyordu:
+    #
+    #   OLCULDU -- 'tuketim_mwh' kolonu, ';' ayirici, cp1254:
+    #     girdi  9.801        -> okunan np.int64(9801)   dtype=int64
+    #     toplam 143.055      -> okunan 143055
+    #   Uyari da cikmiyordu (uyari kosulu tam da bu durumda susuyordu).
+    #
+    # Hedef MWh oldugunda uc ondalik en olagan haldir; yani bu, gercek
+    # yarisma verisinde neredeyse kesin tetiklenecek bir bozulmaydi.
+    #
+    # Nokta ancak SU DURUMDA binliktir:
+    #   * dosyada bir yerde virgul-ondalik var ("1,5" veya "1.234,56"), YA DA
+    #   * cok gruplu bir sayi var ("1.234.567") -- tek basina belirsiz degil.
+    # Tek basina "9.801" KANIT DEGILDIR; nokta ondalik kabul edilir.
+    binlik_kaniti = virgul_ondalik > 0 or cok_grup
+    if not binlik_kaniti:
+        return ".", None, ()
 
-    has_thousands = any("." in token and "," in token for token in tokens)
-    return ",", "." if has_thousands else None
+    grupli = any(_binlik_kaniti(token) for token in tokens)
+    binlik = "." if grupli else None
+    return ",", binlik, _belirsizlik_uyarisi(grupli, nokta_ondalik, ",")
 
 
 def _looks_like_tr_number(token: str) -> bool:
@@ -185,6 +222,74 @@ def _looks_like_en_number(token: str) -> bool:
     return right.isdigit() and left.replace("-", "").isdigit()
 
 
+def _cok_gruplu(token: str) -> bool:
+    """``1.234.567`` gibi BIRDEN FAZLA nokta grubu var mi?
+
+    Tek grup (``9.801``) ondalik da olabilir binlik de; belirsizdir. Iki veya
+    daha fazla grup ise ondalik olarak okunamaz -- kesin binlik kanitidir.
+    """
+    stripped = token.strip().strip('"')
+    govde = stripped.rpartition(",")[0] if "," in stripped else stripped
+    return govde.lstrip("-").count(".") >= 2 and _nokta_grupli(govde)
+
+
+def _kesin_en_ondalik(token: str) -> bool:
+    """Ingilizce ondalik oldugu BELIRSIZ OLMAYAN bir bicim mi?
+
+    ``212.345`` Ingilizce ondalik gibi gorunur ama Turkce dosyada bu neredeyse
+    her zaman nokta-grupli bir trafo/abone kodudur: kesir kismi TAM 3 hane
+    oldugu icin binlik gruplamadan ayirt EDILEMEZ. Bu yuzden 3 haneli kesirler
+    kanit sayilmaz. OLCULDU: yalnizca ``212.xxx`` kodlari iceren test dosyasi
+    bu kural olmadan 60 "Ingilizce ondalik" kaniti uretiyor ve ondalik isaretini
+    ','den '.'ya cevirip ayni veriyi okuyan train'den ayrisiyordu.
+    """
+    if not _looks_like_en_number(token):
+        return False
+    kesir = token.strip().strip('"').rpartition(".")[2]
+    return len(kesir) != 3
+
+
+def _nokta_grupli(tamsayi: str) -> bool:
+    """``1.234`` / ``212.345.678`` gibi TAM 3 haneli gruplara bolunmus mu?"""
+    parcalar = tamsayi.lstrip("-").split(".")
+    if len(parcalar) < 2 or not parcalar[0].isdigit() or len(parcalar[0]) > 3:
+        return False
+    return all(parca.isdigit() and len(parca) == 3 for parca in parcalar[1:])
+
+
+def _binlik_kaniti(token: str) -> bool:
+    """Token, ``.`` ile gruplanmis bir tamsayi kismi tasiyor mu?
+
+    Onceki kural ``"." in token and "," in token`` idi ve YALNIZCA ondalikli
+    grupli sayilari (``1.234,56``) goruyordu. Ondaliksiz ``212.345`` bir
+    dosyada bulunup digerinde bulunmadiginda binlik karari degisiyordu.
+    Burada once kesir kismi atilir, geriye kalan tamsayi kismina bakilir --
+    boylece ``1.234,56`` ile ``212.345`` AYNI karari uretir.
+    """
+    stripped = token.strip().strip('"')
+    govde = stripped.rpartition(",")[0] if "," in stripped else stripped
+    return _nokta_grupli(govde)
+
+
+def _belirsizlik_uyarisi(grupli: bool, dot_hits: int, secilen: str) -> tuple[str, ...]:
+    """Nokta hem binlik hem ondalik gibi kullanilmissa uyari uretir.
+
+    Iki kanit ayni dosyada bulunuyorsa hangi kolonun hangi kurala tabi oldugunu
+    dosyaya bakarak bilemeyiz. Sessizce birini secmek yerine soyleriz: train ve
+    test farkli kanit dagilimina sahipse ayni kolon iki dosyada iki farkli
+    dtype'a duser ve model egitimi son adimda patlar.
+    """
+    if not (grupli and dot_hits):
+        return ()
+    mesaj = (
+        f"'.' isareti hem binlik gruplama ('1.234') hem ondalik ('12.5') gibi "
+        f"kullanilmis ({dot_hits} belirsiz-olmayan ondalik token). Ondalik "
+        f"'{secilen}' secildi -- train ve test icin AYNI karari aldigini dogrula, "
+        "aksi halde ayni kolon iki dosyada farkli dtype olur."
+    )
+    return (mesaj,)
+
+
 def sniff_dialect(path: str | Path) -> DialectGuess:
     """Bir metin dosyasinin kodlama/ayirici/ondalik bicimini tespit eder.
 
@@ -194,8 +299,13 @@ def sniff_dialect(path: str | Path) -> DialectGuess:
     path = Path(path)
     head, encoding = _decode_head(path)
     delimiter = _guess_delimiter(head)
-    decimal, thousands = _guess_decimal(head, delimiter)
+    decimal, thousands, uyarilar = _guess_decimal(head, delimiter)
     first_line = next((line for line in head.splitlines() if line.strip()), "")
+
+    # Belirsizlik SESSIZ kalmaz: bu uyari, train/test'in farkli ayristirilma
+    # riskinin tek gorunur isaretidir.
+    for uyari in uyarilar:
+        print(f"[sniff_dialect] {path.name}: UYARI: {uyari}")
 
     return DialectGuess(
         encoding=encoding,
@@ -203,6 +313,59 @@ def sniff_dialect(path: str | Path) -> DialectGuess:
         decimal=decimal,
         thousands=thousands,
         sample_line=first_line[:300],
+        warnings=uyarilar,
+    )
+
+
+def sniff_dialect_shared(paths: Sequence[str | Path]) -> DialectGuess:
+    """Birden fazla dosya icin TEK bir bicim karari uretir.
+
+    NEDEN GEREKLI (olculdu)
+    -----------------------
+    ``sniff_dialect`` her dosyaya BAGIMSIZ bakar. Train ve test ayni kolonu
+    tasiyor ama kanit dagilimi farkliysa iki dosya iki farkli karara varir:
+
+        train.csv  ('enlem' 4 haneli kesir + hedefte '1,5')
+          -> ondalik=','  -> enlem dtype = str
+        test.csv   (yalnizca 'enlem')
+          -> ondalik='.'  -> enlem dtype = float64
+
+    Ayni kolon iki dosyada iki farkli dtype olur. Hicbir hata cikmaz; model
+    egitimi ya son adimda patlar ya da kategorik/sayisal karisimi sessizce
+    yanlis ogrenir.
+
+    Cozum: dosyalarin BASLIKLARINI havuzlayip tek karar vermek. Kodlama ve
+    ayirici ilk dosyadan alinir (bunlar dosya bazinda dogru tespit edilir);
+    ONDALIK karari havuzlanmis metinden verilir -- cunku yanlis giden budur.
+    """
+    yollar = [Path(p) for p in paths]
+    if not yollar:
+        raise ValueError("En az bir dosya gerekli.")
+
+    ilk_head, encoding = _decode_head(yollar[0])
+    delimiter = _guess_delimiter(ilk_head)
+
+    havuz = [ilk_head]
+    for yol in yollar[1:]:
+        try:
+            head, _ = _decode_head(yol)
+        except (OSError, ValueError):
+            continue
+        havuz.append(head)
+
+    decimal, thousands, uyarilar = _guess_decimal("\n".join(havuz), delimiter)
+    ilk_satir = next((line for line in ilk_head.splitlines() if line.strip()), "")
+
+    for uyari in uyarilar:
+        print(f"[sniff_dialect_shared] {len(yollar)} dosya: UYARI: {uyari}")
+
+    return DialectGuess(
+        encoding=encoding,
+        delimiter=delimiter,
+        decimal=decimal,
+        thousands=thousands,
+        sample_line=ilk_satir[:300],
+        warnings=uyarilar,
     )
 
 
@@ -211,6 +374,7 @@ def read_table(
     *,
     normalize_column_names: bool = True,
     verbose: bool = True,
+    dialect: DialectGuess | None = None,
     **overrides: Any,
 ) -> pd.DataFrame:
     """Bicimi otomatik tespit ederek CSV/TSV okur.
@@ -226,33 +390,55 @@ def read_table(
         Yeni DataFrame.
     """
     path = Path(path)
-    guess = sniff_dialect(path)
+    # ``dialect`` verilirse ONU kullan: train/test/sample icin tek karar
+    # (bkz. sniff_dialect_shared). Verilmezse dosyaya tek basina bak.
+    guess = dialect if dialect is not None else sniff_dialect(path)
     kwargs = {**guess.as_read_csv_kwargs(), **overrides}
 
     if verbose:
         print(f"[read_table] {path.name}: {guess}")
 
     frame = pd.read_csv(path, **kwargs)
-
-    if normalize_column_names:
-        mapping = normalize_columns(frame.columns)
-        frame = frame.rename(columns=mapping)
-        frame.attrs["original_columns"] = mapping
-
-    frame.attrs["source_path"] = str(path)
+    frame = _adlari_normalize_et(
+        frame, path, normalize_column_names=normalize_column_names, verbose=verbose
+    )
     frame.attrs["dialect"] = str(guess)
     return frame
 
 
-def read_any(path: str | Path, **kwargs: Any) -> pd.DataFrame:
-    """Uzantiya gore CSV / Parquet / Excel / JSON okur.
+def _adlari_normalize_et(
+    frame: pd.DataFrame,
+    path: Path,
+    *,
+    normalize_column_names: bool,
+    verbose: bool,
+) -> pd.DataFrame:
+    """Kolon adlarini normalize eder ve ham eslemeyi ``attrs``e yazar.
 
-    Parquet varsa onu tercih et: 5-20 kat hizli ve dtype'lari korur; boylece
-    her notebook calistirmasinda kodlama tespitini tekrarlamazsin.
+    Bu adim TUM formatlar icin ortaktir. Onceki surumde yalnizca CSV dalinda
+    calisiyordu ve ayni veri iki formatta FARKLI kolon adlari veriyordu:
+    OLCULDU -- csv ['id', 'dagitilan_enerji_mwh'] / parquet ve json
+    ['ID', 'Dagitilan Enerji (MWh)']. Parquet onbellekli train + CSV ornek
+    submission karisiminda hedef kolon adi eslesmiyor ve pipeline duruyordu.
     """
-    path = Path(path)
-    suffix = path.suffix.lower()
+    if normalize_column_names:
+        mapping = normalize_columns(frame.columns)
+        degisen = {ham: yeni for ham, yeni in mapping.items() if ham != yeni}
+        if degisen and verbose:
+            ornek = list(degisen.items())[:3]
+            print(
+                f"[normalize] {path.name}: {len(degisen)} kolon adi degistirildi "
+                f"(ornek: {ornek}). Ham adlar attrs['original_columns'] icinde."
+            )
+        frame = frame.rename(columns=mapping)
+        frame.attrs["original_columns"] = mapping
 
+    frame.attrs["source_path"] = str(path)
+    return frame
+
+
+def _oku_ikili(path: Path, suffix: str, kwargs: dict[str, Any]) -> pd.DataFrame:
+    """CSV DISI formatlari okur; kolon adlarina dokunmaz."""
     if suffix in {".parquet", ".pq"}:
         return pd.read_parquet(path, **kwargs)
     if suffix in {".feather", ".ftr"}:
@@ -261,10 +447,41 @@ def read_any(path: str | Path, **kwargs: Any) -> pd.DataFrame:
         return pd.read_excel(path, **kwargs)
     if suffix == ".json":
         return pd.read_json(path, **kwargs)
-    if suffix in {".csv", ".tsv", ".txt", ".dat", ""}:
-        return read_table(path, **kwargs)
 
     raise ValueError(f"{path}: desteklenmeyen uzanti '{suffix}'")
+
+
+def read_any(
+    path: str | Path,
+    *,
+    normalize_column_names: bool = True,
+    verbose: bool = True,
+    **kwargs: Any,
+) -> pd.DataFrame:
+    """Uzantiya gore CSV / Parquet / Excel / JSON okur.
+
+    Parquet varsa onu tercih et: 5-20 kat hizli ve dtype'lari korur; boylece
+    her notebook calistirmasinda kodlama tespitini tekrarlamazsin.
+
+    Kolon adi normalizasyonu FORMATTAN BAGIMSIZDIR: ayni veri CSV, parquet ve
+    JSON olarak okundugunda AYNI kolon adlarini verir ve ham adlar her zaman
+    ``frame.attrs["original_columns"]`` icinde saklanir.
+    """
+    path = Path(path)
+    suffix = path.suffix.lower()
+
+    if suffix in {".csv", ".tsv", ".txt", ".dat", ""}:
+        return read_table(
+            path,
+            normalize_column_names=normalize_column_names,
+            verbose=verbose,
+            **kwargs,
+        )
+
+    frame = _oku_ikili(path, suffix, kwargs)
+    return _adlari_normalize_et(
+        frame, path, normalize_column_names=normalize_column_names, verbose=verbose
+    )
 
 
 def to_parquet_cache(frame: pd.DataFrame, cache_path: str | Path) -> Path:

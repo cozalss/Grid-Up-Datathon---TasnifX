@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 
 from ..turkish import tr_lower
+from ..validation import parse_time_series
 
 __all__ = [
     "ADMINISTRATIVE_LEAVE",
@@ -129,6 +130,47 @@ TURKISH_SEASONS = {
 }
 
 
+def _zaman_ayristir(frame: pd.DataFrame, time_column: str, *, cagiran: str) -> pd.Series:
+    """Zaman kolonunu TEK kuralla ayristirir: ``validation.parse_time_series``.
+
+    NEDEN TEK KAYNAK (olculdu)
+    --------------------------
+    Bu modulde AYNI kolon iki farkli sekilde cozuluyordu::
+
+        shared_origin        : pd.to_datetime(..., format="mixed")
+        add_calendar_features: pd.to_datetime(...)              # format YOK
+
+    TR bicimli ``gg.aa.yyyy`` kolonunda ikisi ayri takvim uretiyordu::
+
+        ham                     ['01.10.2025', ..., '15.10.2025', '20.10.2025']
+        shared_origin  ONCE     -> 2025-01-10   (yanlis: ay-once okundu)
+        add_calendar   ONCE     -> gun>12 olan 2 satir NaT (%40 gecersiz uyarisi)
+        ikisi de       SONRA    -> 2025-10-01   (dogru; bicim VERIDEN kanitlandi)
+
+    Yani origin hesabinda GORULEN satir, feature uretiminde GORULMUYORDU.
+
+    ``parse_time_series`` bicimi tahmin etmez, KANITLAR: bir kayitta ilk
+    bilesen 12'yi asiyorsa gun-once, ikinci bilesen asiyorsa ay-once. Hicbiri
+    asmiyorsa iki okuma da hatasiz calisir ama farkli takvim uretir -- o
+    durumda ``strict=True`` hata firlatir ve biz de firlatiriz.
+
+    Bozuk tarihler ise TOLERE edilir (NaT olarak doner): ``strict`` kapisi
+    yalnizca bicim kaniti icin, ayristirilabilen satirlar uzerinde calisir.
+    Cagiranin bozuk satiri nasil ele alacagi kendi sorumlulugundadir.
+    """
+    if time_column not in frame.columns:
+        raise KeyError(f"[{cagiran}] Zaman kolonu '{time_column}' frame'de yok.")
+    ham = frame[time_column]
+    gevsek = parse_time_series(ham, strict=False)
+    try:
+        # Bicim kapisi: NaT orani kapisini devre disi birakmak icin yalnizca
+        # ayristirilabilen satirlarla cagriyoruz.
+        parse_time_series(ham[gevsek.notna()], strict=True)
+    except ValueError as hata:
+        raise ValueError(f"[{cagiran}] '{time_column}' kolonu: {hata}") from hata
+    return gevsek
+
+
 def shared_origin(*frames: pd.DataFrame, time_column: str) -> pd.Timestamp:
     """Birden fazla frame icin ORTAK zaman baslangici hesaplar.
 
@@ -141,14 +183,32 @@ def shared_origin(*frames: pd.DataFrame, time_column: str) -> pd.Timestamp:
     Neden gerekli: gun sayaci monoton bir trend kolonudur ve train ile test
     AYNI sifir noktasindan olculmezse test satirlari train'in gecmisine
     kaymis gorunur. Bkz. ``add_calendar_features`` docstring'i.
+
+    Raises:
+        ValueError: Kolonun bicimi veriden kanitlanamiyorsa, hicbir frame'de
+            gecerli tarih yoksa veya frame'ler arasinda saat dilimi
+            (tz-aware/tz-naive) TUTARSIZSA.
     """
     minimums = [
-        pd.to_datetime(frame[time_column], errors="coerce", format="mixed").min()
-        for frame in frames
+        _zaman_ayristir(frame, time_column, cagiran=f"shared_origin frame#{sira}").min()
+        for sira, frame in enumerate(frames)
     ]
     valid = [value for value in minimums if pd.notna(value)]
     if not valid:
         raise ValueError(f"'{time_column}' kolonunda gecerli tarih bulunamadi.")
+
+    # tz KARISIMI: min() ham TypeError ("Cannot compare tz-naive and tz-aware
+    # timestamps") firlatiyordu ve mesaj HANGI frame'in suclu oldugunu
+    # soylemiyordu. Karsilastirmadan once kendimiz soyluyoruz.
+    tz_durumlari = {value.tz is not None for value in valid}
+    if len(tz_durumlari) > 1:
+        etiket = [f"frame#{sira}={'tz-aware' if v.tz else 'tz-naive'}"
+                  for sira, v in enumerate(valid)]
+        raise ValueError(
+            f"'{time_column}' kolonu frame'ler arasinda TUTARSIZ saat dilimi tasiyor: "
+            f"{', '.join(etiket)}. Ortak origin hesaplanamaz -- once hepsini ayni "
+            "hale getir: df['tarih'] = df['tarih'].dt.tz_localize(None)"
+        )
     return min(valid)
 
 
@@ -200,7 +260,11 @@ def add_calendar_features(
         origin = shared_origin(train, test, time_column="tarih")
     """
     prefix = prefix or time_column
-    times = pd.to_datetime(frame[time_column], errors="coerce")
+    # shared_origin ile AYNI kural: bicim veriden kanitlanir. Duz
+    # ``pd.to_datetime(errors="coerce")`` TR ``gg.aa.yyyy`` kolonunda gun>12
+    # olan satirlari sessizce NaT yapiyordu -- yani origin hesabinda gorulen
+    # satir burada gorulmuyordu.
+    times = _zaman_ayristir(frame, time_column, cagiran="add_calendar_features")
 
     # Bozuk/eksik tarihler: gercek veride kacinilmaz (bos hucre, '00.00.0000',
     # yanlis bicim). NaT'yi int8'e cast etmek IntCastingNaNError ile coker --

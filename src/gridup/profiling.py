@@ -31,6 +31,10 @@ __all__ = ["ColumnProfile", "DatasetProfile", "profile_columns", "profile", "qui
 _ID_UNIQUE_RATIO = 0.98
 # Kategorik sayilmasi icin ust kardinalite siniri (bunun ustu "yuksek kardinalite").
 _HIGH_CARDINALITY = 100
+# TEKRARLI MONOTON isareti icin alt sinirlar. Kucuk frame'de veya iki-uc
+# degerli bir kolonda monotonluk tesadufen olusur; kanit sayilmaz.
+_MONOTON_MIN_SATIR = 20
+_MONOTON_MIN_BENZERSIZ = 3
 
 
 @dataclass(frozen=True)
@@ -66,6 +70,69 @@ def _classify(series: pd.Series) -> str:
     return "metin" if unique_ratio > 0.5 else "kategorik"
 
 
+def _tamsayi_gibi(series: pd.Series) -> bool:
+    """Kolon TAMSAYI kimligi tasiyor mu (int dtype veya tamsayi degerli float)?
+
+    ``1.0, 2.0, 3.0`` seklinde okunmus bir ID kolonu (CSV'de NaN varsa pandas
+    onu float yapar) hala ID'dir; ``18.4, 21.7`` gibi surekli bir olcum
+    degildir. Bool disarida: ``True/False`` ne kimlik ne sayactir.
+    """
+    if pd.api.types.is_bool_dtype(series):
+        return False
+    if pd.api.types.is_integer_dtype(series):
+        return True
+    if not pd.api.types.is_float_dtype(series):
+        return False
+    finite = series.replace([np.inf, -np.inf], np.nan).dropna()
+    return bool(len(finite)) and bool((finite == finite.round()).all())
+
+
+def _id_benzeri_mi(series: pd.Series, kind: str, unique: int, row_count: int) -> bool:
+    """ID-BENZERI isaretinin kosulu: benzersiz VE kimlik tasiyabilen bir tip.
+
+    NEDEN TIP KAPISI EKLENDI (olculdu)
+    ----------------------------------
+    Eski kosul yalnizca benzersizlik oranina bakiyordu. Surekli bir float
+    kolonu tanim geregi neredeyse %100 benzersizdir, yani her sicaklik/nem
+    olcumu ve cogu regresyon HEDEFI "ID" isaretlenir::
+
+        96 ilce x 240 gun paneli, isaret alanlar:
+          ONCE : ['kayit_no', 'sicaklik', 'nem', 'kesinti']   <- 3 yanlis pozitif
+          SONRA: ['kayit_no']
+
+    ``kesinti`` hedefin kendisiydi. Uc yanlis pozitif arasinda kaybolan bir
+    uyari, uyari degildir.
+    """
+    if unique / max(row_count, 1) < _ID_UNIQUE_RATIO:
+        return False
+    if kind in {"kategorik", "metin"}:
+        return True
+    return kind == "sayisal" and _tamsayi_gibi(series)
+
+
+def _tekrarli_monoton_mu(series: pd.Series, kind: str, unique: int, row_count: int) -> bool:
+    """Satir sirasiyla artan, TEKRARLI bir tamsayi sayaci mi?
+
+    NEDEN AYRI BIR ISARET (olculdu)
+    -------------------------------
+    Gercek zaman sizintisi tasiyan kolon genellikle benzersiz DEGILDIR:
+    ``parti_no = gun_no // 7`` gibi bir yukleme sayaci 23.040 satirda yalnizca
+    35 farkli deger alir, ama satir sirasiyla monoton artar ve train/holdout
+    araliklari neredeyse hic ortusmez (train [0, 28] / holdout [28, 34]).
+    Yalnizca benzersizlige bakan ID-BENZERI kapisi bunu TAMAMEN kaciriyordu::
+
+        ONCE : parti_no icin uretilen isaret sayisi = 0
+        SONRA: 'TEKRARLI MONOTON' isareti uretiliyor
+    """
+    if kind != "sayisal" or row_count < _MONOTON_MIN_SATIR:
+        return False
+    if unique < _MONOTON_MIN_BENZERSIZ or unique / max(row_count, 1) >= _ID_UNIQUE_RATIO:
+        return False
+    if not _tamsayi_gibi(series):
+        return False
+    return bool(series.is_monotonic_increasing or series.is_monotonic_decreasing)
+
+
 def _column_flags(series: pd.Series, kind: str, row_count: int) -> tuple[str, ...]:
     """Kolon hakkinda dikkat edilmesi gereken isaretler."""
     flags: list[str] = []
@@ -74,8 +141,13 @@ def _column_flags(series: pd.Series, kind: str, row_count: int) -> tuple[str, ..
 
     if unique <= 1:
         flags.append("SABIT -- bilgi tasimaz, cikar")
-    if unique / max(row_count, 1) >= _ID_UNIQUE_RATIO:
+    if _id_benzeri_mi(series, kind, unique, row_count):
         flags.append("ID-BENZERI -- feature yapma, sirali ise zaman sizdirir")
+    if _tekrarli_monoton_mu(series, kind, unique, row_count):
+        flags.append(
+            "TEKRARLI MONOTON -- satir sirasiyla artan sayac (parti/yukleme no); "
+            "benzersiz olmadigi icin ID kapisina takilmaz ama ZAMAN SIZDIRIR"
+        )
     if missing_ratio > 0.5:
         flags.append(f"COK EKSIK (%{missing_ratio * 100:.0f})")
     if kind == "kategorik" and unique > _HIGH_CARDINALITY:

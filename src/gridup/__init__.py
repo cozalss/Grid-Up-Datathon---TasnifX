@@ -36,7 +36,13 @@ __version__ = "0.1.0"
 from .ablation import FeatureGroup, ablation_ensemble, leave_one_group_out
 from .compat import environment_report, reduce_memory
 from .config import CONFIG, PATHS, CompetitionConfig, Paths, set_global_seed
-from .io_utils import read_any, read_table, sniff_dialect, to_parquet_cache
+from .io_utils import (
+    read_any,
+    read_table,
+    sniff_dialect,
+    sniff_dialect_shared,
+    to_parquet_cache,
+)
 from .metrics import (
     get_metric,
     optimize_threshold,
@@ -79,7 +85,8 @@ __all__ = [
     # konfig
     "CONFIG", "PATHS", "CompetitionConfig", "Paths", "set_global_seed",
     # okuma
-    "read_any", "read_table", "sniff_dialect", "to_parquet_cache",
+    "read_any", "read_table", "sniff_dialect", "sniff_dialect_shared",
+    "to_parquet_cache",
     # kesif
     "profile", "quick_look", "environment_report", "reduce_memory",
     # turkce

@@ -92,7 +92,7 @@ def _zincir(frame: pd.DataFrame) -> pd.DataFrame:
     )
     return add_neighbour_feature_mean(
         cikti, _komsuluk(), key_column="yer", time_column="tarih",
-        value_columns=["sicaklik_ort"],
+        value_columns=["sicaklik_ort"], target_column="hedef",
     )
 
 

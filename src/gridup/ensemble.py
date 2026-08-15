@@ -29,6 +29,79 @@ __all__ = [
 ]
 
 
+def _dolgu_satirlari(oof_predictions: dict[str, np.ndarray]) -> np.ndarray:
+    """TUM uyelerde ayni anda TAM SIFIR olan satirlarin maskesi.
+
+    Bu kalip tesadufen olusmaz: gercek tahminlerin hepsinin ayni satirda
+    bit-birebir 0.0 olmasi pratikte imkansizdir. Yani bu satirlar temel
+    modellerin OOF kapsami disidir -- tahmin degil DOLGU.
+    """
+    diziler = [np.asarray(v, dtype="float64") for v in oof_predictions.values()]
+    dolgu = np.ones(len(diziler[0]), dtype=bool)
+    for dizi in diziler:
+        dolgu &= dizi == 0.0
+    return dolgu
+
+
+def _uyar_kapsam_disi(
+    oof_predictions: dict[str, np.ndarray],
+    fonksiyon: str,
+    covered: np.ndarray | None = None,
+) -> None:
+    """Dolgu satiri varsa SESSIZ GECMEZ -- raporlanan skor yanlis olur.
+
+    purged_time_series_split / TimeSeriesSplit ilk donemi hicbir fold'un valid
+    tarafina koymaz. O satirlar harmana girdiginde metrige sabit bir terim
+    ekler; agirliklarin argmin'i degismez ama RAPORLANAN SAYI yanlistir ve
+    deney gunlugu, juri slaydi ve LB karsilastirmasi bunun uzerine kurulur.
+
+    OLCULDU (3 uye, TimeSeriesSplit(4), N=3000, kapsam %80):
+      maskesiz hill climbing rmse 2.754756 / maskeli 2.213196  -> %24.5 sapma
+
+    ``covered`` VERILIRSE OLCUM SEZGININ ONUNE GECER
+    -----------------------------------------------
+    "Tum uyeler tam sifir" bir SEZGIDIR ve sifir-siskin hedefte YANILIR --
+    ki bu yarismanin gercek hedef profili odur. OLCULDU (sifir orani %86.8,
+    KFold(4), yani GERCEK dolgu satiri YOK, 3 uye MAE objective):
+
+        olculen kapsam            : 1.0  (tam)
+        tum uyeler tam sifir olan : 3.918/4.000  (%98.0)
+        sezgiye dayali uyari      : 1 adet  -> TAMAMEN YANLIS ALARM
+
+    Kullaniciya verisinin %98'ini maskelemesini soyluyordu. Olculmus maske
+    varsa ona bakiyoruz; sezgi yalnizca olcum YOKKEN ve o zaman da "olabilir"
+    diliyle konusuyor.
+    """
+    if covered is not None:
+        maske = np.asarray(covered, dtype=bool)
+        adet = int((~maske).sum())
+        if adet == 0:
+            return
+        warnings.warn(
+            f"{fonksiyon}: {adet:,} satir (%{(~maske).mean() * 100:.1f}) hicbir "
+            "fold tarafindan dogrulanmadi; bu satirlardaki tahminler DOLGUDUR ve "
+            "raporlanan skoru sisirir (olculdu: rmse 2.213196 -> 2.754756). "
+            "covered_oof_matrix() ile maskele ve hedefi ayni indeksle kirp.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return
+
+    dolgu = _dolgu_satirlari(oof_predictions)
+    adet = int(dolgu.sum())
+    if adet == 0:
+        return
+    warnings.warn(
+        f"{fonksiyon}: {adet:,} satirda (%{dolgu.mean() * 100:.1f}) TUM uyeler tam "
+        "sifir. Bu OOF kapsami disi DOLGU satiri OLABILIR (raporlanan skoru "
+        "sisirir; olculdu: rmse 2.213196 -> 2.754756) ama sifir-siskin hedefte "
+        "MESRU de olabilir. Emin olmak icin olculmus kapsam maskesini ver: "
+        "covered=zoo.oof_covered (ya da ZooResult.covered_oof_matrix()).",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
 def correlation_matrix(predictions: dict[str, np.ndarray]) -> pd.DataFrame:
     """Model tahminleri arasindaki korelasyon matrisi.
 
@@ -48,6 +121,7 @@ def hill_climb_weights(
     metric: str = "rmse",
     n_iterations: int = 200,
     step: float = 0.01,
+    covered: np.ndarray | None = None,
     verbose: bool = True,
 ) -> dict[str, float]:
     """OOF tahminleri uzerinde harmanlama agirliklarini ogrenir.
@@ -66,6 +140,7 @@ def hill_climb_weights(
     Returns:
         ``{model_adi: agirlik}`` -- toplami 1.0.
     """
+    _uyar_kapsam_disi(oof_predictions, "hill_climb_weights", covered)
     metric_fn, greater_is_better, _ = get_metric(metric)
 
     names = list(oof_predictions)
@@ -132,6 +207,7 @@ def greedy_forward_selection(
     metric: str = "rmse",
     max_models: int = 30,
     with_replacement: bool = True,
+    covered: np.ndarray | None = None,
     verbose: bool = True,
 ) -> dict[str, float]:
     """Tekrarli acgozlu secim (Caruana yontemi) ile harman kurar.
@@ -142,6 +218,7 @@ def greedy_forward_selection(
     Az sayida modelle (3-6) tepe tirmanma yeterlidir; 10+ modelde bu yontem
     daha kararli sonuc verir.
     """
+    _uyar_kapsam_disi(oof_predictions, "greedy_forward_selection", covered)
     metric_fn, greater_is_better, _ = get_metric(metric)
 
     names = list(oof_predictions)
@@ -190,6 +267,7 @@ def prune_by_correlation(
     metric: str = "rmse",
     max_correlation: float = 0.99,
     max_members: int = 8,
+    covered: np.ndarray | None = None,
 ) -> list[str]:
     """Birbirine cok benzeyen modelleri eler, cesitliligi korur.
 
@@ -208,6 +286,7 @@ def prune_by_correlation(
     Returns:
         Tutulacak model adlari, en iyiden baslayarak.
     """
+    _uyar_kapsam_disi(oof_predictions, "prune_by_correlation", covered)
     metric_fn, greater_is_better, _ = get_metric(metric)
 
     scores = {
@@ -250,8 +329,7 @@ def _resolve_base_coverage(
     Tespit YETERLI DEGILDIR, sadece son savunmadir: dogrusu
     ``CVResult.oof_covered`` maskelerinin kesisimini VERMEKTIR.
     """
-    diziler = [np.asarray(v, dtype="float64") for v in oof_predictions.values()]
-    n = len(diziler[0])
+    n = len(next(iter(oof_predictions.values())))
 
     if base_covered is not None:
         maske = np.asarray(base_covered, dtype=bool).ravel()
@@ -261,9 +339,7 @@ def _resolve_base_coverage(
             )
         return maske
 
-    dolgu = np.ones(n, dtype=bool)
-    for dizi in diziler:
-        dolgu &= dizi == 0.0
+    dolgu = _dolgu_satirlari(oof_predictions)
     maske = ~dolgu
 
     oran = float(dolgu.mean())
@@ -271,8 +347,8 @@ def _resolve_base_coverage(
         print(
             f"  NOT: {int(dolgu.sum()):,} satirda ({oran:.1%}) TUM uyeler tam sifir -- "
             "temel OOF kapsami disi sayildi ve meta-egitimden cikarildi.\n"
-            "  Daha guvenlisi: base_covered=... ile CVResult.oof_covered maskelerinin "
-            "kesisimini ver."
+            "  Daha guvenlisi: base_covered=zoo.oof_covered ver (ZooResult bu "
+            "kesisimi OLCEREK tasir, biz burada sadece tahmin ediyoruz)."
         )
     return maske
 

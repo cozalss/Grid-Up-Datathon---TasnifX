@@ -306,7 +306,7 @@ class TestSpatial:
 
         result = add_neighbour_feature_mean(
             frame, neighbours, key_column="konum_key", time_column="tarih",
-            value_columns=["ruzgar"], statistics=("max",),
+            value_columns=["ruzgar"], target_column=None, statistics=("max",),
         )
 
         izmir = result[result["konum_key"] == "izmir"].iloc[0]

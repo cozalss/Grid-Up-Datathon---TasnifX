@@ -53,6 +53,24 @@ class TuningResult:
     n_trials: int
     study: Any = field(default=None, repr=False)
     history: pd.DataFrame = field(default_factory=pd.DataFrame)
+    #: Metrigin yonu. Varsayilan ``False`` cunku varsayilan metrik ``rmse``.
+    #: ``tune_with_optuna`` bunu ``get_metric(metric)``ten DOLDURUR -- elle
+    #: kurulan bir TuningResult'ta yanlis kalirsa tablolar ters siralanir.
+    greater_is_better: bool = False
+
+    @property
+    def selection_optimism(self) -> float:
+        """``best_score`` ile deneme skorlarinin ortalamasi arasindaki fark.
+
+        ``best_score`` AYNI fold'lar uzerinde kosulan N korele denemenin en
+        iyisidir; bagimsiz bir kumede beklenenden IYIMSERDIR. Bu sayi o
+        iyimserligin kaba bir olcusudur. ``selection.SelectionResult`` ile
+        BIREBIR ayni desen -- oradaki gerekce burada da gecerli.
+        """
+        if len(self.history) < 2 or "skor" not in self.history.columns:
+            return 0.0
+        ortalama = float(self.history["skor"].mean())
+        return abs(self.best_score - ortalama)
 
     def summary(self) -> str:
         lines = [
@@ -61,6 +79,21 @@ class TuningResult:
         ]
         for key, value in sorted(self.best_params.items()):
             lines.append(f"  {key:<24} {value}")
+        # SECIM YANLILIGI ACIKCA SOYLENIR -- selection.SelectionResult ile ayni desen.
+        #
+        # best_score, AYNI fold'lar uzerinde kosulan N denemenin en iyisidir ve
+        # hicbir yerde yeniden tahmin edilmiyordu. OLCULDU (SIFIR sinyalli hedef,
+        # y.std()=1.952159 teorik tavan, 12 deneme):
+        #   raporlanan best 1.947733, deneme ortalamasi 1.951498 -> fark 0.003766
+        # Ogrenilecek HICBIR SEY yokken raporlanan skor hedefin kendi std'sinin
+        # ALTINA indi -- matematiksel olarak imkansiz bir iyilesme, tamamen secim
+        # artefakti. Sayi yanlis degil, SUNUMU yaniltici; ve juriye giden slayt bu.
+        if len(self.history) >= 2:
+            lines.append(
+                f"DIKKAT: bu skor {len(self.history)} korele denemenin EN IYISIDIR "
+                f"(deneme ortalamasindan {self.selection_optimism:.6f} uzakta). "
+                "Secim yanliligi tasir -- kazanci bagimsiz bir kumede dogrula."
+            )
         return "\n".join(lines)
 
     def objective_comparison(self) -> pd.DataFrame:
@@ -69,13 +102,23 @@ class TuningResult:
         Aramanin en ogretici ciktisi: hangi kayip fonksiyonunun bu veride
         gercekten kazandigini gosterir ve juri sunumunda tek satirlik bir
         gerekce olur.
+
+        YON: ``en_iyi`` sutunu ONCEDEN HER ZAMAN ``min`` ile hesaplaniyordu.
+        r2/auc/f1/accuracy gibi buyuk-daha-iyi metriklerde bu, her ailenin EN
+        KOTU denemesini "en iyi" diye gosterir ve tabloyu ters siralar.
+        OLCULDU (A ailesi [0.60, 0.62, 0.91], B ailesi [0.55, 0.58, 0.59],
+        metric='r2'):
+            ONCE : basa B konuyor, A'nin en_iyi'si 0.60 yaziliyor (gercegi 0.91)
+            SONRA: basa A konuyor, A'nin en_iyi'si 0.91
+        Yani tablo, juri sunumunda KAYBEDEN aileyi oneriyordu.
         """
         if self.history.empty or "objective" not in self.history.columns:
             return pd.DataFrame()
         return (
             self.history.groupby("objective", observed=True)["skor"]
-            .agg(deneme="size", en_iyi="min", medyan="median")
-            .sort_values("en_iyi")
+            .agg(deneme="size", en_iyi="max" if self.greater_is_better else "min",
+                 medyan="median")
+            .sort_values("en_iyi", ascending=not self.greater_is_better)
             .reset_index()
         )
 
@@ -188,7 +231,10 @@ def tune_with_optuna(
             devam edebilir -- uzun aramada makine kapanirsa is kaybolmaz.
 
     Returns:
-        ``TuningResult``.
+        ``TuningResult``. ``best_score`` N denemenin EN IYISIDIR ve secim
+        yanliligi tasir -- ``selection_optimism`` bu yanliligin kaba olcusu,
+        ``summary()`` de bunu acikca yazar. Zoo/harman skorlariyla veya LB ile
+        karsilastirmadan once bagimsiz bir kumede dogrula.
 
     Raises:
         ImportError: Optuna kurulu degilse.
@@ -272,6 +318,7 @@ def tune_with_optuna(
         n_trials=len(study.trials),
         study=study,
         history=pd.DataFrame(records),
+        greater_is_better=greater_is_better,
     )
 
     if verbose:

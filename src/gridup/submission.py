@@ -180,6 +180,41 @@ def _orijinal_basliklar(
     return ters.get(id_column, id_column), ters.get(target_column, target_column)
 
 
+def _iki_kolon_sartini_dogrula(sample: pd.DataFrame | None) -> None:
+    """Ornek submission 2 kolondan genisse ACIK hata firlatir.
+
+    NEDEN AYRI BIR KAPI
+    -------------------
+    ``write_submission`` yapisal olarak ``{id_column: ids, target_column:
+    values}`` yani TAM IKI kolonluk bir frame kurar; ortadaki kolonlari
+    uretebilecegi bir girdisi yoktur. 3+ kolonlu bir ``sample_submission``
+    (bilesik anahtar veya coklu hedef) geldiginde iki kotu yol vardi:
+
+      * ``validate=True``  -> "Eksik kolon(lar): ['Ilce']" -- kullaniciyi
+        KENDI hatasini aramaya yollayan yaniltici mesaj, ustelik pipeline'in
+        EN SON adiminda.
+      * ``validate=False`` -> OLCULDU: 3 kolonlu ornege karsi diske 2 kolonlu
+        dosya yazildi ve hicbir uyari cikmadi. Kaggle bunu reddeder, biz de
+        neden reddettigini goremeyiz.
+
+    Bu yuzden kapi dogrulamadan ONCE ve ``validate`` bayragindan BAGIMSIZ
+    calisir: eksik olan sey kullanicinin verisi degil, bu fonksiyonun
+    yetenegidir.
+    """
+    if sample is None or len(sample.columns) <= 2:
+        return
+    raise ValueError(
+        f"Ornek submission {len(sample.columns)} kolonlu: {list(sample.columns)}. "
+        "write_submission yalnizca (id, hedef) ikilisi uretebilir -- ortadaki "
+        "kolonlari uretecek bir girdisi yok.\n"
+        "Bilesik anahtar veya coklu hedef varsa frame'i KENDIN kur ve "
+        "dogrulamayi ayrica cagir:\n"
+        "    gonderim = sample[list(sample.columns[:-1])].assign(**{sample.columns[-1]: tahmin})\n"
+        "    validate_submission(gonderim, sample=sample).raise_if_invalid()\n"
+        "    gonderim.to_csv(yol, index=False, float_format='%.6f', encoding='utf-8')"
+    )
+
+
 def write_submission(
     ids: np.ndarray | pd.Series,
     predictions: np.ndarray,
@@ -200,8 +235,11 @@ def write_submission(
     ayristiricilari bunu reddeder.
 
     Raises:
-        ValueError: Dogrulama basarisizsa (``validate=True`` iken).
+        ValueError: Ornek submission 2 kolondan genisse (``validate``
+            bayragindan bagimsiz) veya dogrulama basarisizsa.
     """
+    _iki_kolon_sartini_dogrula(sample)
+
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 

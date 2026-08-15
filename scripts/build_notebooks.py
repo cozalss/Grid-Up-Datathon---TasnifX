@@ -566,9 +566,18 @@ print(tuned.objective_comparison())
 **7 · Model zoo + harman**
 ```python
 zoo = make_model_zoo(train[FEATURES], y, folds, metric=METRIC, test=test[FEATURES])
-secilen = prune_by_correlation(zoo.oof_matrix, y, max_members=5)
-agirliklar = hill_climb_weights({k: zoo.oof_matrix[k] for k in secilen}, y, metric=METRIC)
-stack = stack_oof(zoo.oof_matrix, y, folds, test_predictions=zoo.test_matrix)
+
+# KAPSAM MASKESI SART. purged/TimeSeriesSplit ilk donemi hicbir fold'un valid
+# tarafina koymaz; o satirlarda OOF degeri tahmin degil DOLGUDUR (0.0) ve
+# harman skorunu sisirir -- olculdu: rmse 2.213196 -> 2.754756 (%24.5 sapma).
+kapsanan, oof = zoo.covered_oof_matrix()
+y_kapsanan = y[kapsanan]
+print(f"OOF kapsami: %{zoo.coverage * 100:.1f}")
+
+secilen = prune_by_correlation(oof, y_kapsanan, max_members=5)
+agirliklar = hill_climb_weights({k: oof[k] for k in secilen}, y_kapsanan, metric=METRIC)
+stack = stack_oof(zoo.oof_matrix, y, folds, test_predictions=zoo.test_matrix,
+                  base_covered=zoo.oof_covered)
 ```
 `stack_oof` hem stacking hem hill climbing skorunu raporlar. Fark küçükse
 **hill climbing'i tercih edin** — jüri notebook'u okuyacak, açıklanabilirlik değerli.

@@ -175,7 +175,7 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
         "spatial",
         lambda m, f: m.add_neighbour_feature_mean(
             f, _komsuluk(), key_column="yer", time_column="tarih",
-            value_columns=["sicaklik"],
+            value_columns=["sicaklik"], target_column=None,
         ),
     ),
     # --- solar ---
@@ -372,6 +372,12 @@ FOLDSUZ_GEREKCE: dict[str, str] = {
     "features.temporal.add_rolling_features": "closed='left' -- mevcut satiri DISLAR",
     "features.temporal.add_expanding_features": "shift(1) -- mevcut satiri DISLAR",
     "features.spatial.add_neighbour_target_lag": "horizon>=1 zorunlu -- komsunun gecmisi",
+    "features.spatial.add_neighbour_feature_mean": (
+        "target_column YALNIZCA reddetme icin; bu fonksiyon KAYDIRMA YAPMAZ, "
+        "hedef value_columns'a girerse komsunun AYNI GUNKU hedefi feature olur "
+        "(olculdu: corr 0.813099) -- bu yuzden target_column acikca istenir ve "
+        "hedef verilirse ValueError firlatilir"
+    ),
     # Hedefi feature'a CEVIRMEZ; hedefi yalnizca reddetmek icin tanir.
     "features.aggregate.add_group_statistics": (
         "target_column YALNIZCA reddetme icin; hedef value_columns'a girerse "

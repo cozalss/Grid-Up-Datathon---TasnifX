@@ -154,6 +154,56 @@ def get_metric(name: str) -> tuple[Callable[..., float], bool, bool]:
 #: gorulduyse neredeyse her zaman EGITIM tahminleri verilmistir.
 SUSPICIOUS_SCORE = 0.99
 
+#: AYNI sezgi, KUCUK-DAHA-IYI metrikler icin. logloss/mae/rmse'de "supheli
+#: mukemmellik" yukari degil ASAGI dogrudur: skor 0'a yaklasir. Esik simetrik
+#: secildi (1 - 0.99). Hard 0/1 tahminlerde bu metrikler ancak siniflar
+#: neredeyse hatasiz ayrildiginda buranin altina iner -- logloss'ta tek bir
+#: hatali satir bile ~36 katki verir, yani fold-disi bir dizide 0.01'in altina
+#: inmek pratikte imkansizdir.
+SUSPICIOUS_LOW_SCORE = 0.01
+
+
+#: Secilen esikte pozitif tahmin orani bu araligin DISINDAysa tahmin
+#: DEJENEREDIR (herkese ayni etiket). Kucuk-daha-iyi metriklerde mukemmel
+#: gorunen skor o zaman sizintidan degil, metrigin kendisinden gelir.
+DEGENERATE_POSITIVE_RATE = (0.02, 0.98)
+
+
+def _skor_supheli(
+    best_score: float, greater_is_better: bool, positive_rate: float | None = None
+) -> bool:
+    """Esik skoru "fazla iyi" mi? Metrigin YONUNE ve DEJENERELIGE gore bakar.
+
+    Buyuk-daha-iyi metrikte mukemmellik yukaridan (``> 0.99``), kucuk-daha-iyi
+    metrikte asagidan (``< 0.01``) gelir. Tek yone bakmak, metrigin yarisinda
+    sezgiyi sessizce kapatir.
+
+    DEJENERE TAHMIN ELENIR (olculdu)
+    --------------------------------
+    Kucuk-daha-iyi tarafta tek bir mutlak sabit, olcekleri tamamen farkli
+    metriklere (mae, logloss 0..34.5, mape 0..sonsuz) uygulaniyordu ve MUMKUN
+    OLAN EN KOTU modele "sizinti var" diyordu:
+
+        mape + "her seye POZITIF de" modeli, n=5000
+          best_threshold=0.0100  best_score(mape)=0.000000
+          pozitif tahmin orani  = 1.0000   <- mumkun olan EN KOTU tahmin
+          ayni tahminin accuracy'si = 0.2094
+          -> SUPHELI UYARI: 1  (tamamen yanlis)
+
+    Mekanizma deterministik: ikili hedefte hard tahminle MAPE, pozitifler
+    arasindaki yanlis-negatif oranidir; hicbir pozitif kacmayinca TAM 0 olur.
+    Bu bir sizinti belirtisi degil, metrigin dejenere halidir. Pozitif tahmin
+    orani ucta ise sezgiyi susturuyoruz.
+    """
+    if greater_is_better:
+        return best_score > SUSPICIOUS_SCORE
+    if best_score >= SUSPICIOUS_LOW_SCORE:
+        return False
+    if positive_rate is None:
+        return True
+    alt, ust = DEGENERATE_POSITIVE_RATE
+    return alt <= positive_rate <= ust
+
 
 def optimize_threshold(
     y_true: np.ndarray,
@@ -203,10 +253,23 @@ def optimize_threshold(
     # Gercek bir yarismada fold-disi tahminlerle 0.99 ustu skor pratikte
     # gorulmez. Gorulduyse ya sizinti vardir ya problem trivialdir; ikisi de
     # kullanicinin BILMESI gereken seylerdir.
-    if greater_is_better and best_score > SUSPICIOUS_SCORE:
+    #
+    # SEZGI IKI YONE DE BAKAR. Onceki surumdeki ``greater_is_better and ...``
+    # kapisi, kucuk-daha-iyi metriklerde mekanizmayi TAMAMEN devre disi
+    # birakiyordu -- oysa oralarda supheli mukemmellik yukari degil ASAGI
+    # dogrudur. OLCULDU (y_proba = y, yani tam sizintili dizi, n=800):
+    #   f1       best_score=1.000000 -> uyari 1   (yakalaniyordu)
+    #   accuracy best_score=1.000000 -> uyari 1   (yakalaniyordu)
+    #   logloss  best_score=0.000000 -> uyari 0   (SESSIZ)
+    #   mae      best_score=0.000000 -> uyari 0   (SESSIZ)
+    #   rmse     best_score=0.000000 -> uyari 0   (SESSIZ)
+    pozitif_oran = float((np.asarray(y_proba) >= thresholds[best_index]).mean())
+    if _skor_supheli(best_score, greater_is_better, pozitif_oran):
+        yon = "yuksek" if greater_is_better else "dusuk"
+        sinir = SUSPICIOUS_SCORE if greater_is_better else SUSPICIOUS_LOW_SCORE
         warnings.warn(
             f"Esik optimizasyonu {metric}={best_score:.4f} buldu -- fold-disi "
-            "tahminlerde bu deger supheli derecede yuksek.\n"
+            f"tahminlerde bu deger supheli derecede {yon} (sinir {sinir}).\n"
             "Kontrol et: y_proba GERCEKTEN fold-disi mi? Egitim tahminlerinde "
             "optimize edilen esik, gercek veride cok daha kotu calisir.\n"
             "Dogru kullanim: CVResult.covered_predictions() ile OOF dizisini al.",

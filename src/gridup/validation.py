@@ -166,11 +166,28 @@ def _gun_once_mu(values: pd.Series) -> str:
     if metin.empty:
         return "bilinmiyor"
 
+    # KANITI TOPLA, ILK ESLESMEDE DONME.
+    #
+    # Onceki surum ilk ISO satirini gorur gormez "ay" donuyordu. Karisik bir
+    # kolonda (bazi satir ISO, bazisi TR) bu, toplanmis gun-once kanitini
+    # cope atiyor ve AYNI kolona iki farkli kural uygulaniyordu:
+    #
+    #   ham          : ['2024-03-01', '15.03.2024', '05.03.2024']
+    #   dogru okuma  : ['2024-03-01', '2024-03-15', '2024-03-05']
+    #   eski sonuc   : ay=[3, 3, 5]  gun=[1, 15, 3]
+    #                  -> '15.03.2024' gun-once, '05.03.2024' ay-once okundu
+    #                  -> UYARI YOK, ISTISNA YOK -- tamamen sessiz
+    #
+    # Ustelik bu bir GERILEMEYDI: daha eski surum ayni girdide gurultulu
+    # "2 gecersiz tarih (%66.67)" uyarisi veriyordu. Sessiz yanlis deger,
+    # gorunur yanlis degerden kotudur.
+    iso_gorulen = False
     ilk_bilesenler: list[int] = []
     ikinci_bilesenler: list[int] = []
     for deger in metin:
         if _YIL_ONCE.match(deger):
-            return "ay"  # yil once (ISO) -- gun-once sorusu gecersiz
+            iso_gorulen = True
+            continue
         eslesme = _GUN_AY_YIL.match(deger)
         if eslesme is None:
             continue
@@ -178,7 +195,12 @@ def _gun_once_mu(values: pd.Series) -> str:
         ikinci_bilesenler.append(int(eslesme.group(2)))
 
     if not ilk_bilesenler:
-        return "bilinmiyor"
+        # Saf ISO ise gun-once sorusu gecersizdir; hic kalip yoksa bilinmiyor.
+        return "ay" if iso_gorulen else "bilinmiyor"
+    if iso_gorulen:
+        # Ayni kolonda iki bicim birden. Hangi satirin hangi kurala tabi
+        # oldugunu veriden bilemeyiz -- tahmin etmiyoruz.
+        return "belirsiz"
 
     ilk_asan = any(deger > 12 for deger in ilk_bilesenler)
     ikinci_asan = any(deger > 12 for deger in ikinci_bilesenler)

@@ -44,6 +44,39 @@ class ZooEntry:
     params: dict[str, Any] = field(default_factory=dict)
 
 
+def _kapsam_kesisimi(results: dict[str, CVResult]) -> np.ndarray:
+    """Tum uyelerin AYNI ANDA gercek tahmin urettigi satirlarin maskesi.
+
+    KESISIM aliriz cunku harman tek bir satirda TUM uyelerin degerini birlikte
+    kullanir: uyelerden biri o satirda dolgu (0.0) ise harman da o satirda
+    dolgudur ve skora sahte bir terim ekler.
+
+    Raises:
+        ValueError: Zoo bossa veya uyelerin OOF uzunluklari farkliysa (bu
+            durumda uyeler ayni fold'larla uretilmemistir -- harmanlamak
+            sizinti yaratir, sessizce kirpmak yerine hata firlatiriz).
+    """
+    if not results:
+        raise ValueError("Zoo bos -- kapsam maskesi hesaplanamaz.")
+
+    uzunluklar = {ad: len(sonuc.oof_predictions) for ad, sonuc in results.items()}
+    n = next(iter(uzunluklar.values()))
+    farkli = {ad: u for ad, u in uzunluklar.items() if u != n}
+    if farkli:
+        raise ValueError(
+            f"Uyelerin OOF uzunluklari farkli ({farkli} vs {n}) -- ayni fold'larla "
+            "uretilmemisler. Harmanlamak sizinti yaratir."
+        )
+
+    maske = np.ones(n, dtype=bool)
+    for sonuc in results.values():
+        # Elle kurulmus/eski CVResult'ta maske bostur; o uye kapsami daraltmaz.
+        if sonuc.oof_covered.size == 0:
+            continue
+        maske &= sonuc.oof_covered
+    return maske
+
+
 @dataclass
 class ZooResult:
     """Zoo kosusunun ciktisi."""
@@ -55,8 +88,58 @@ class ZooResult:
 
     @property
     def oof_matrix(self) -> dict[str, np.ndarray]:
-        """Harmanlamaya dogrudan verilebilecek OOF sozlugu."""
+        """TAM UZUNLUKTA OOF sozlugu -- kapsam DISI satirlar 0.0 DOLGUSUDUR.
+
+        Yalnizca fold indeksleriyle calisan ``ensemble.stack_oof`` icin
+        kullan; o zaman da ``base_covered=zoo.oof_covered`` ver.
+
+        HARMANLAMAYA VE KORELASYONA DOGRUDAN VERME. purged_time_series_split
+        ilk donemi hicbir fold'un valid tarafina koymaz; o satirlarda deger
+        tahmin degil dolgudur ve skora sahte bir terim ekler.
+        OLCULDU (3 uye, TimeSeriesSplit(4), N=3000, kapsam %80):
+        maskesiz hill climbing rmse 2.754756, maskeli 2.213196 -- %24.5 sapma.
+        Bunun yerine ``covered_oof_matrix()`` kullan.
+        """
         return {name: result.oof_predictions for name, result in self.results.items()}
+
+    @property
+    def oof_covered(self) -> np.ndarray:
+        """Tum uyelerin ortak OOF kapsam maskesi (``CVResult.oof_covered`` kesisimi).
+
+        ``ensemble.stack_oof(..., base_covered=zoo.oof_covered)`` seklinde
+        dogrudan verilebilir; stack_oof'un kendi tam-sifir sezgisinden daha
+        guvenilirdir cunku tahmin degil OLCUM tasir.
+        """
+        return _kapsam_kesisimi(self.results)
+
+    @property
+    def coverage(self) -> float:
+        """Ortak OOF kapsam orani (0..1). 1.0'dan kucukse harman maskesiz olamaz."""
+        return float(self.oof_covered.mean())
+
+    def covered_oof_matrix(self) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        """``(kapsanan_satir_indeksleri, {model: o satirlarin OOF tahminleri})``.
+
+        HARMANLAMA, KORELASYON VE HARMAN SKORU HER ZAMAN BUNUNLA YAPILIR.
+        Hedefi de ayni indeksle kirp: ``y[indeks]``.
+
+        ``CVResult.covered_predictions()`` ile ayni deseni izler; fark, burada
+        maskenin tum uyelerin KESISIMI olmasidir.
+
+        Raises:
+            ValueError: Hicbir satir tum uyelerce kapsanmiyorsa -- bu durumda
+                harman skoru tanimsizdir, sessizce bos dizi dondurmeyiz.
+        """
+        maske = self.oof_covered
+        indeks = np.flatnonzero(maske)
+        if indeks.size == 0:
+            raise ValueError(
+                "Hicbir satir tum uyelerce kapsanmiyor -- ortak OOF kapsami bos. "
+                "Uyeler ayni fold'larla mi egitildi? Daha az fold dene."
+            )
+        return indeks, {
+            ad: sonuc.oof_predictions[indeks] for ad, sonuc in self.results.items()
+        }
 
     @property
     def test_matrix(self) -> dict[str, np.ndarray]:
@@ -83,14 +166,19 @@ class ZooResult:
         ).reset_index(drop=True)
 
     def correlation(self) -> pd.DataFrame:
-        """Modeller arasi OOF korelasyonu.
+        """Modeller arasi OOF korelasyonu -- YALNIZCA ortak kapsamdaki satirlar.
 
         > 0,99 -> modeller aslinda ayni; harmanlamak kazanc getirmez
         0,90-0,98 -> saglikli cesitlilik
+
+        Kapsam disi satirlar tum uyelerde ayni sabit (0.0) oldugu icin
+        korelasyonu yapay olarak yukari ceker (olculdu: 0.885434 -> 0.885381,
+        kucuk ama sistematik ve hep AYNI yonde).
         """
         from .ensemble import correlation_matrix
 
-        return correlation_matrix(self.oof_matrix)
+        _, kapsamli = self.covered_oof_matrix()
+        return correlation_matrix(kapsamli)
 
     def summary(self) -> str:
         lines = [
@@ -98,6 +186,17 @@ class ZooResult:
             "",
             self.leaderboard().to_string(index=False),
         ]
+        kapsam = self.coverage
+        if kapsam < 0.999:
+            lines.append("")
+            lines.append(
+                f"Ortak OOF kapsami: %{kapsam * 100:.1f} -- kalan satirlarda deger "
+                "DOLGUDUR (0.0), tahmin degil."
+            )
+            lines.append(
+                "  Harman ve korelasyon icin covered_oof_matrix() kullan; "
+                "oof_matrix'i dogrudan harmanlamak skoru sisirir."
+            )
         if len(self.results) > 1:
             correlations = self.correlation()
             values = correlations.to_numpy()
@@ -133,7 +232,9 @@ def make_model_zoo(
         entries: Egitilecek modeller. ``None`` ise uc kutuphanenin varsayilani.
 
     Returns:
-        ``ZooResult`` -- ``oof_matrix`` dogrudan ``hill_climb_weights``a verilir.
+        ``ZooResult``. Harman icin ``indeks, kapsamli = result.covered_oof_matrix()``
+        kullan ve hedefi ``y[indeks]`` diye kirp -- ham ``oof_matrix`` kapsam
+        disinda 0.0 DOLGUSU icerir ve harman skorunu sisirir.
     """
     if entries is None:
         entries = [
