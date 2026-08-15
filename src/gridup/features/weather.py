@@ -221,6 +221,14 @@ def _consecutive_run(condition: np.ndarray) -> np.ndarray:
     return result
 
 
+
+def _orijinal_siraya_don(frame: pd.DataFrame, index) -> pd.DataFrame:
+    """Gecici sira kolonuna gore geri sirala, kolonu at, girdi index'ini koy."""
+    geri = frame.sort_values("_gridup_sira").drop(columns="_gridup_sira")
+    geri.index = index
+    return geri
+
+
 def add_physical_derivatives(
     daily: pd.DataFrame,
     *,
@@ -261,7 +269,15 @@ def add_physical_derivatives(
     """
     frame = daily.copy()
     frame[time_column] = pd.to_datetime(frame[time_column], errors="coerce")
-    frame = frame.sort_values(list(group_columns) + [time_column]).reset_index(drop=True)
+    # SIRA KORUMA: hesaplama icin siralamak ZORUNLU (kayan pencere kronolojik
+    # olmali), ama girdi sirasini bozarak dondurmek TEHLIKELIDIR. Fold'lar
+    # KONUMSAL indekstir: bu fonksiyon fold'lardan SONRA cagrilirsa, fold
+    # indeksleri artik baska satirlara isaret eder ve hata VERMEZ.
+    # validation.assert_folds_align docstring'i tam olarak bu kazayi uyariyor.
+    # Bu yuzden orijinal konumu saklayip sonunda geri donuyoruz.
+    _giris_sirasi = np.arange(len(frame))
+    frame = frame.assign(_gridup_sira=_giris_sirasi)
+    frame = frame.sort_values(list(group_columns) + [time_column])
 
     if temperature_mean not in frame.columns:
         raise KeyError(f"Sicaklik kolonu '{temperature_mean}' bulunamadi.")
@@ -345,7 +361,7 @@ def add_physical_derivatives(
                 * frame[wind_column].astype("float64")
             ).astype("float32")
 
-    return frame
+    return _orijinal_siraya_don(frame, daily.index)
 
 
 def add_weather_accumulators(
@@ -383,7 +399,15 @@ def add_weather_accumulators(
     """
     frame = daily.copy()
     frame[time_column] = pd.to_datetime(frame[time_column], errors="coerce")
-    frame = frame.sort_values(list(group_columns) + [time_column]).reset_index(drop=True)
+    # SIRA KORUMA: hesaplama icin siralamak ZORUNLU (kayan pencere kronolojik
+    # olmali), ama girdi sirasini bozarak dondurmek TEHLIKELIDIR. Fold'lar
+    # KONUMSAL indekstir: bu fonksiyon fold'lardan SONRA cagrilirsa, fold
+    # indeksleri artik baska satirlara isaret eder ve hata VERMEZ.
+    # validation.assert_folds_align docstring'i tam olarak bu kazayi uyariyor.
+    # Bu yuzden orijinal konumu saklayip sonunda geri donuyoruz.
+    _giris_sirasi = np.arange(len(frame))
+    frame = frame.assign(_gridup_sira=_giris_sirasi)
+    frame = frame.sort_values(list(group_columns) + [time_column])
 
     available = [column for column in value_columns if column in frame.columns]
     if not available:
@@ -413,4 +437,4 @@ def add_weather_accumulators(
             )
             new_columns[f"{column}_ileri{window}_max"] = np.asarray(forward, dtype="float32")
 
-    return frame.assign(**new_columns)
+    return _orijinal_siraya_don(frame.assign(**new_columns), daily.index)

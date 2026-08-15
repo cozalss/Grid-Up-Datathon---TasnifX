@@ -190,6 +190,23 @@ def tune_with_optuna(
     except ImportError as exc:  # pragma: no cover
         raise ImportError("Arama icin optuna gerekli: pip install optuna") from exc
 
+    # storage verilip study_name verilmezse Optuna HER SEFERINDE rastgele bir
+    # ad uretir ("no-name-<uuid>") ve load_if_exists=True hicbir ise yaramaz:
+    # arama kaldigi yerden DEVAM ETMEZ, sifirdan baslar. Ne hata ne uyari cikar.
+    # OLCULDU: ayni sqlite dosyasina iki kosu -> iki ayri study, ikisi de 3 trial.
+    #
+    # Deterministik bir ad UYDURMUYORUZ cunku farkli feature setleriyle yapilan
+    # iki arama ayni study'ye dolar ve birbirini kirletir. Karari kullaniciya
+    # birakiyoruz -- ``embargo``da oldugu gibi.
+    if storage is not None and study_name is None:
+        raise ValueError(
+            "storage verildi ama study_name verilmedi. Optuna bu durumda her "
+            "kosuda rastgele bir ad uretir ve arama KALDIGI YERDEN DEVAM ETMEZ.\n"
+            "Acik bir ad ver, orn: study_name='lgbm_takvim_lag_v2'.\n"
+            "DIKKAT: ayni adi farkli feature setiyle tekrar kullanma -- eski "
+            "trial'lar yeni arama uzayina karisir."
+        )
+
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
     _, greater_is_better, _ = get_metric(metric)

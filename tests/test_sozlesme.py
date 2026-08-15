@@ -47,7 +47,9 @@ def _ornek_panel(n_gun: int = 40, n_yer: int = 4) -> pd.DataFrame:
     """Her feature fonksiyonunu besleyebilecek genis bir ornek panel."""
     rng = np.random.default_rng(0)
     gunler = pd.date_range("2026-02-10", periods=n_gun, freq="D")
-    yerler = [f"yer_{i}" for i in range(n_yer)]
+    # Gorunum sirasi KASITLI olarak alfabetik DEGIL: pd.factorize ile
+    # groupby(sort=True) arasindaki uyusmazlik ancak boyle yakalanir.
+    yerler = ["zeytinburnu", "aliaga", "menemen", "bornova"][:n_yer]
     tarih = pd.Series(np.tile(gunler, n_yer))
     n = len(tarih)
     return pd.DataFrame(
@@ -70,10 +72,10 @@ def _ornek_panel(n_gun: int = 40, n_yer: int = 4) -> pd.DataFrame:
 
 
 KOORDINATLAR = {
-    "yer_0": (38.42, 27.14),
-    "yer_1": (38.63, 27.42),
-    "yer_2": (37.21, 28.36),
-    "yer_3": (36.63, 29.12),
+    "zeytinburnu": (38.42, 27.14),
+    "aliaga": (38.63, 27.42),
+    "menemen": (37.21, 28.36),
+    "bornova": (36.63, 29.12),
 }
 
 
@@ -93,7 +95,7 @@ def _saatlik() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "tarih": np.tile(saatler, 2),
-            "yer": np.repeat(["yer_0", "yer_1"], len(saatler)),
+            "yer": np.repeat(["zeytinburnu", "aliaga"], len(saatler)),
             "sicaklik": rng.normal(18, 5, len(saatler) * 2),
             "ruzgar_yonu": rng.uniform(0, 360, len(saatler) * 2),
         }
@@ -442,4 +444,133 @@ def test_oof_target_encode_foldsuz_calismiyor():
     assert "folds" in parametreler
     assert parametreler["folds"].default is inspect.Parameter.empty, (
         "folds'un varsayilani var -- fold'suz cagrilabilir hale gelmis"
+    )
+
+
+@pytest.mark.parametrize("fonksiyon_adi", sorted(SENARYOLAR))
+def test_feature_fonksiyonu_satir_sirasini_da_korumali(fonksiyon_adi: str):
+    """SOZLESME: feature ekleme satir SIRASINI da degistirmemeli.
+
+    Satir sayisini korumak YETMEZ. Fold'lar KONUMSAL indekstir; bir feature
+    fonksiyonu satirlari yeniden sirlarsa, daha once hesaplanmis fold'lar
+    artik baska satirlara isaret eder ve **hata vermez**. Model yanlis
+    hedeflerle egitilir, CV skoru anlamsizlasir.
+
+    OLCULDU: ``add_weather_accumulators`` ve ``add_physical_derivatives``
+    tam olarak bunu yapiyordu -- girdi [bornova x5, aliaga x5] iken cikti
+    [aliaga x5, bornova x5] donuyordu.
+    """
+    if fonksiyon_adi == "aggregate_hourly_to_daily":
+        pytest.skip("kasitli indirgeme -- satir kimligi degisir")
+
+    modul_adi, cagri = SENARYOLAR[fonksiyon_adi]
+    if modul_adi == "temporal" and fonksiyon_adi in {
+        "add_ramadan_features", "add_turkish_holiday_features"
+    }:
+        pytest.importorskip("hijridate" if "ramadan" in fonksiyon_adi else "holidays")
+
+    modul = importlib.import_module(f"gridup.features.{modul_adi}")
+    panel = _ornek_panel()
+
+    sonuc = cagri(modul, panel)
+
+    for kimlik_kolonu in ("yer", "tarih"):
+        if kimlik_kolonu in panel.columns and kimlik_kolonu in sonuc.columns:
+            assert list(sonuc[kimlik_kolonu]) == list(panel[kimlik_kolonu]), (
+                f"{fonksiyon_adi} satir SIRASINI degistirdi ('{kimlik_kolonu}' kolonunda). "
+                "Fold'lar konumsaldir -- bu sessizce yanlis egitim demektir."
+            )
+
+
+# --------------------------------------------------------------------------
+# REGRESYON: gorunum sirasi != alfabetik sira oldugunda grup kaymasi
+# --------------------------------------------------------------------------
+
+
+def _kayma_paneli() -> pd.DataFrame:
+    """Gorunum sirasi alfabetik OLMAYAN, degerleri buyuk olcude ayrisan panel.
+
+    Degerler kasitli olarak 1000 kat farkli: gruplar kayarsa fark aninda
+    gorunur, kucuk sayisal fark degil.
+    """
+    adlar = ["zeytinburnu", "aliaga", "menemen"]
+    kayit = []
+    for i, il in enumerate(adlar):
+        for gun, t in enumerate(pd.date_range("2025-01-01", periods=8)):
+            kayit.append({"tarih": t, "ilce": il, "y": float((i + 1) * 1000 + gun)})
+    return pd.DataFrame(kayit).sample(frac=1, random_state=7).reset_index(drop=True)
+
+
+@pytest.mark.parametrize(
+    ("fonksiyon", "kolon", "beklenen"),
+    [
+        ("add_rolling_features", "y_kayan3_mean", "rolling"),
+        ("add_expanding_features", "y_genisleyen_mean", "expanding"),
+    ],
+)
+def test_kayan_pencere_dogru_gruptan_okuyor(fonksiyon, kolon, beklenen):
+    """REGRESYON P0: ic groupby sort=True iken degerler BASKA gruba yaziliyordu.
+
+    ``_sorted_view`` satirlari ``pd.factorize`` ile GORUNUM sirasina dizer;
+    ikinci groupby varsayilan ``sort=True`` ile ALFABETIK sirlar. Iki sira
+    uyusmadiginda bornova'nin kayan ortalamasi aliaga'nin degerlerinden
+    hesaplanir -- hatasiz, ayni satir sayisiyla, tamamen sessizce.
+
+    Bu test ancak grup adlarinin gorunum sirasi alfabetik DEGILSE hatayi
+    yakalar; onceki fixture'lar ('TR001','TR002') zaten alfabetikti.
+    """
+    from gridup.features import temporal
+
+    panel = _kayma_paneli()
+    if beklenen == "rolling":
+        cikti = temporal.add_rolling_features(
+            panel, "y", [3], time_column="tarih", group_columns=["ilce"]
+        )
+    else:
+        cikti = temporal.add_expanding_features(
+            panel, "y", time_column="tarih", group_columns=["ilce"]
+        )
+
+    for il in panel["ilce"].unique():
+        grup = panel[panel.ilce == il].sort_values("tarih")
+        kaydirilmis = grup["y"].shift(1)
+        referans = (
+            kaydirilmis.rolling(3, min_periods=1).mean()
+            if beklenen == "rolling"
+            else kaydirilmis.expanding(min_periods=1).mean()
+        ).to_numpy()
+        gercek = cikti[cikti.ilce == il].sort_values("tarih")[kolon].to_numpy()
+
+        assert np.allclose(referans, gercek, equal_nan=True), (
+            f"'{il}' icin {beklenen} degerleri BASKA gruptan geliyor.\n"
+            f"  beklenen: {np.round(referans, 1)}\n"
+            f"  gercek  : {np.round(gercek, 1)}"
+        )
+
+
+def test_gunes_tekrarli_indexte_ilceleri_karistirmiyor():
+    """REGRESYON P0: pd.concat([train, test]) sonrasi index tekrarli olur ve
+    etiket hizalamasi ilcelerin gunes degerlerini SESSIZCE takas ediyordu."""
+    from gridup.features.solar import add_solar_features
+
+    koordinat = {"kuzey": (60.0, 25.0), "guney": (20.0, 25.0)}
+    gunler = pd.date_range("2024-01-10", periods=4, freq="D")
+    panel = pd.concat(
+        [
+            pd.DataFrame({"tarih": gunler, "yer": "kuzey"}),
+            pd.DataFrame({"tarih": gunler, "yer": "guney"}),
+        ]
+    )
+    assert not panel.index.is_unique, "test kurulumu bozuk: index benzersiz olmamali"
+
+    cikti = add_solar_features(
+        panel, time_column="tarih", location_column="yer",
+        coordinates=koordinat, geometry_only=True,
+    )
+
+    kuzey = cikti.loc[cikti.yer == "kuzey", "gun_uzunlugu_saat"].mean()
+    guney = cikti.loc[cikti.yer == "guney", "gun_uzunlugu_saat"].mean()
+    # Ocak ayinda 60N kutba yakin -> KISA gun; 20N ekvatora yakin -> uzun gun.
+    assert kuzey < guney, (
+        f"Ocak'ta 60N ({kuzey:.2f} sa) 20N'den ({guney:.2f} sa) KISA gun gormeli -- takas var"
     )

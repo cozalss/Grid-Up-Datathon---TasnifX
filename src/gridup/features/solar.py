@@ -187,15 +187,21 @@ def clear_sky_daily(
     local_day = pd.DatetimeIndex(clear_sky.index.tz_convert(TIMEZONE).date)
     grouped = clear_sky.groupby(local_day)
 
-    daily = pd.DataFrame(
-        {
-            # W/m2 x 1 saat = Wh/m2; /1000 -> kWh/m2
-            "gunes_ghi_gunluk": grouped["ghi"].sum() / 1000.0,
-            "gunes_dni_gunluk": grouped["dni"].sum() / 1000.0,
-            "gunes_dhi_gunluk": grouped["dhi"].sum() / 1000.0,
-            "gunes_ghi_tepe": grouped["ghi"].max(),
-        }
-    )
+    # Her model uc bileseni de dondurmez: ``haurwitz`` YALNIZCA ``ghi``
+    # uretir (pvlib 0.15.2'de olculdu), ``ineichen`` ve ``simplified_solis``
+    # ucunu de. Kosulsuz ``grouped["dni"]`` istemek haurwitz'de
+    # ``KeyError: Column not found: dni`` ile cokuyordu -- ustelik docstring
+    # haurwitz'i desteklenen model olarak listeliyordu.
+    sutunlar: dict[str, pd.Series] = {
+        # W/m2 x 1 saat = Wh/m2; /1000 -> kWh/m2
+        "gunes_ghi_gunluk": grouped["ghi"].sum() / 1000.0,
+        "gunes_ghi_tepe": grouped["ghi"].max(),
+    }
+    for bilesen, ad in (("dni", "gunes_dni_gunluk"), ("dhi", "gunes_dhi_gunluk")):
+        if bilesen in clear_sky.columns:
+            sutunlar[ad] = grouped[bilesen].sum() / 1000.0
+
+    daily = pd.DataFrame(sutunlar)
     daily.index = pd.DatetimeIndex(daily.index)
 
     geometry = solar_geometry_daily(latitude, daily.index)
@@ -273,7 +279,24 @@ def add_solar_features(
             "anahtar formatiyla eslestirdiginden emin ol."
         )
 
-    pieces: list[pd.DataFrame] = []
+    # KONUMSAL yazim, etiket hizalamasi DEGIL.
+    #
+    # Onceki surum ``pd.concat(pieces).reindex(result.index)`` kullaniyordu.
+    # Frame'in index'i benzersizse bu dogru calisir; ama ``pd.concat([train,
+    # test])`` sonrasi index TEKRARLIDIR ve bu repoda o kalip belgelenmis bir
+    # kullanimdir (features/categorical.py docstring'i onu oneriyor).
+    # Tekrarli index'te ``reindex`` hizalama YAPMAZ -- diziyi oldugu gibi
+    # gecirir. Sonuc: her ilcenin gunes degerleri BASKA bir ilceye yazilir.
+    #
+    # OLCULDU: Ocak ayinda 60N enlemi 6.1 saatlik gun gormesi gerekirken
+    # 10.9 saat aliyordu (20N'nin degeri). Hata firlamiyor, satir sayisi ve
+    # kolonlar ayni -- tamamen sessiz. Fizik kontrolu olmasa fark edilmezdi.
+    #
+    # Konumsal yazim index'ten tamamen bagimsizdir, dolayisiyla bu tuzak
+    # yapisal olarak ortadan kalkar.
+    konum = np.arange(len(result))
+    ciktilar: dict[str, np.ndarray] = {}
+
     for key, group_times in times.groupby(keys):
         latitude, longitude = coordinates[key]
         altitude = (
@@ -283,12 +306,15 @@ def add_solar_features(
         )
         table = _solar_table(latitude, longitude, group_times, altitude, geometry_only)
         aligned = table.reindex(group_times.to_numpy())
-        aligned.index = group_times.index
-        pieces.append(aligned)
+        # group_times.index -> result icindeki KONUMLAR
+        satirlar = konum[keys.to_numpy() == key]
+        for column in aligned.columns:
+            if column not in ciktilar:
+                ciktilar[column] = np.full(len(result), np.nan, dtype="float64")
+            ciktilar[column][satirlar] = aligned[column].to_numpy(dtype="float64")
 
-    solar = pd.concat(pieces).reindex(result.index)
-    for column in solar.columns:
-        result[column] = solar[column].to_numpy()
+    for column, degerler in ciktilar.items():
+        result[column] = degerler
     return result
 
 

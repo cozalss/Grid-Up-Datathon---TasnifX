@@ -777,8 +777,19 @@ def add_rolling_features(
     if group_columns:
         grouped = ordered.groupby(list(group_columns), observed=True)[value_column]
         shifted = grouped.shift(horizon)
+        # sort=False ZORUNLU. ``_sorted_view`` satirlari pd.factorize ile
+        # GORUNUM sirasina gore dizer; buradaki ikinci groupby varsayilan
+        # sort=True ile gruplari ALFABETIK sirlar. Iki sira uyusmazsa kayan
+        # pencere degerleri BASKA GRUBA yazilir -- hatasiz, ayni satir
+        # sayisiyla, tamamen sessizce.
+        #
+        # OLCULDU: gorunum sirasi [bornova, aliaga] olan bir panelde
+        # bornova'nin y=1000..1004 degerleri icin uretilen pencere
+        # [nan, 1.0, 1.5, 2.0, 3.0] cikiyordu -- yani ALIAGA'nin degerleri.
+        # 96 ilcelik bir panelde bu, tum kayan feature'larin yanlis ilceye
+        # yazilmasi demektir.
         rolling_source = shifted.groupby(
-            [ordered[column].to_numpy() for column in group_columns]
+            [ordered[column].to_numpy() for column in group_columns], sort=False
         )
     else:
         shifted = ordered[value_column].shift(horizon)
@@ -819,7 +830,10 @@ def add_expanding_features(
 
     if group_columns:
         shifted = ordered.groupby(list(group_columns), observed=True)[value_column].shift(1)
-        source = shifted.groupby([ordered[column].to_numpy() for column in group_columns])
+        # sort=False ZORUNLU -- ayni sebep: bkz. add_rolling_features.
+        source = shifted.groupby(
+            [ordered[column].to_numpy() for column in group_columns], sort=False
+        )
     else:
         source = ordered[value_column].shift(1)
 
