@@ -423,10 +423,16 @@ class TestMetrics:
         assert np.isfinite(smape(np.array([0.0, 10.0]), np.array([1.0, 10.0])))
 
     def test_threshold_optimization_beats_default_half_on_imbalanced_data(self):
-        # Arrange -- %5 pozitif, model kalibre degil
+        # Arrange -- %5 pozitif, model kalibre degil.
+        #
+        # Gurultu araligi (0.5) sinif araligindan (0.3) GENIS: siniflar
+        # ORTUSUYOR. Onceki surumde gurultu 0.25'ti ve siniflar kusursuz
+        # ayrisiyordu -> f1 = 1.000. Bu, gercek bir OOF tahmininde pratikte
+        # gorulmez ve yeni eklenen "supheli skor" sizinti sezgisini
+        # tetikliyordu -- hakli olarak. Test artik gercekci.
         rng = np.random.default_rng(0)
         y_true = (rng.random(2000) < 0.05).astype(int)
-        y_proba = np.clip(y_true * 0.3 + rng.random(2000) * 0.25, 0, 1)
+        y_proba = np.clip(y_true * 0.3 + rng.random(2000) * 0.5, 0, 1)
 
         # Act
         result = optimize_threshold(y_true, y_proba, metric="f1")

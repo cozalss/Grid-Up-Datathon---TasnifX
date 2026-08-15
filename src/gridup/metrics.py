@@ -149,6 +149,12 @@ def get_metric(name: str) -> tuple[Callable[..., float], bool, bool]:
     return entry["fn"], entry["greater_is_better"], entry["needs_proba"]  # type: ignore[return-value]
 
 
+#: Esik optimizasyonu bu skorun uzerine cikarsa uyaririz. Gercek bir
+#: yarismada fold-disi tahminlerle 0.99 ustu F1/accuracy pratikte GORULMEZ;
+#: gorulduyse neredeyse her zaman EGITIM tahminleri verilmistir.
+SUSPICIOUS_SCORE = 0.99
+
+
 def optimize_threshold(
     y_true: np.ndarray,
     y_proba: np.ndarray,
@@ -170,16 +176,47 @@ def optimize_threshold(
     """
     metric_fn, greater_is_better, _ = get_metric(metric)
 
-    thresholds = np.linspace(0.01, 0.99, n_steps)
+    # 0.5 IZGARAYA ACIKCA EKLENIR.
+    #
+    # np.linspace(0.01, 0.99, 200) adimi 0.004924'tur ve 0.5'i ISKALAR
+    # (en yakin nokta 0.4975). Bu fonksiyonun tum amaci 0.5'i yenmekken,
+    # 0.5'i hic denemedigi icin ONDAN KOTU bir esik dondurebiliyordu.
+    # OLCULDU: dengesiz veride en iyi f1=0.7356 dondu, oysa 0.5 esiginde
+    # f1=0.7429 -- yani "optimizasyon" skoru DUSURDU.
+    thresholds = np.unique(np.concatenate([np.linspace(0.01, 0.99, n_steps), [0.5]]))
     scores = np.array(
         [float(metric_fn(y_true, (y_proba >= threshold).astype(int))) for threshold in thresholds]
     )
 
     best_index = int(np.argmax(scores) if greater_is_better else np.argmin(scores))
+    best_score = float(scores[best_index])
+
+    # SIZINTI SEZGISI
+    # ---------------
+    # Bu fonksiyon aldigi dizinin fold-disi mi yoksa EGITIM tahmini mi
+    # oldugunu BILEMEZ -- imzasinda fold yok ve olamaz da (dogal kullanim
+    # zaten fold'lardan uretilmis bir OOF dizisidir).
+    #
+    # Ama belirtisini yakalayabilir. OLCULDU: ayni hedefte
+    #   egitim tahminiyle optimize -> f1 = 1.000
+    #   OOF tahminiyle optimize    -> f1 = 0.612
+    # Gercek bir yarismada fold-disi tahminlerle 0.99 ustu skor pratikte
+    # gorulmez. Gorulduyse ya sizinti vardir ya problem trivialdir; ikisi de
+    # kullanicinin BILMESI gereken seylerdir.
+    if greater_is_better and best_score > SUSPICIOUS_SCORE:
+        warnings.warn(
+            f"Esik optimizasyonu {metric}={best_score:.4f} buldu -- fold-disi "
+            "tahminlerde bu deger supheli derecede yuksek.\n"
+            "Kontrol et: y_proba GERCEKTEN fold-disi mi? Egitim tahminlerinde "
+            "optimize edilen esik, gercek veride cok daha kotu calisir.\n"
+            "Dogru kullanim: CVResult.covered_predictions() ile OOF dizisini al.",
+            UserWarning,
+            stacklevel=2,
+        )
 
     return {
         "best_threshold": float(thresholds[best_index]),
-        "best_score": float(scores[best_index]),
+        "best_score": best_score,
         "score_at_half": float(metric_fn(y_true, (y_proba >= 0.5).astype(int))),
     }
 
