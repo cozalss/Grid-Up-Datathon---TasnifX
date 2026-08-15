@@ -17,8 +17,21 @@ Bu, iki sekilde oldurur:
 Cozum: tam kartezyen carpim (her varlik x her tarih) uzerinde yeniden indeksle
 ve eksik gunleri sifirla doldur.
 
-2024 GDZ Datathon'unda hedef ``bildirimsiz_sum`` (gunluk plansiz kesinti sayisi)
-ve panel yapisi ``tarih x ilce`` idi.
+DOGRULANMIS ONCEKI YARISMA
+--------------------------
+Onceki surumde burada "2024 GDZ Datathon'unda hedef ``bildirimsiz_sum``"
+yaziyordu. Bu atif **DOGRULANAMADI ve iki yonden yanlisti**: Kaggle'da
+GDZ'nin 2024 yarismasi YOKTUR (bkz. ``kaggle competitions list -s gdz``),
+ve gercek olan 2023 yarismasinin hedefi ``Dagitilan Enerji (MWh)`` idi --
+bir SAYIM degil, bir OLCUM.
+
+Bu ayrim tam da bu modulun konusudur:
+
+    olcum hedefi (MWh)      -> kayit yoksa deger BILINMIYOR  -> np.nan
+    sayim hedefi (kesinti)  -> kayit yoksa olay OLMAMIS      -> 0.0
+
+2026 Grid Up'in hangisi oldugu HENUZ BILINMIYOR. Veri geldiginde ilk
+kararlardan biri budur; yanlis secim veriyi sessizce bozar.
 """
 
 from __future__ import annotations
@@ -28,6 +41,15 @@ from collections.abc import Sequence
 import pandas as pd
 
 __all__ = ["build_panel", "panel_coverage"]
+
+
+#: Doldurma orani bunu asarsa fill_value semantigini ACIKCA hatirlatiriz.
+#: %5 esigi kasitli dusuk: birkac yuz sentetik satir bile bir varligin
+#: ortalamasini belirgin kaydirabilir (olculdu: %40 doldurmada 50.0 -> 10.0).
+FILL_NOTICE_SHARE = 5.0
+
+#: Bu oranin ustunde hedef pratikte sifir-siskindir; iki asamali model oner.
+HIGH_FILL_SHARE = 60.0
 
 
 def build_panel(
@@ -138,7 +160,23 @@ def build_panel(
             f"[build_panel] {len(entities):,} varlik x {len(timeline):,} zaman adimi "
             f"= {len(panel):,} satir. {added:,} satir eklendi (%{share:.1f})."
         )
-        if share > 60:
+        # Doldurulan her satir UYDURULMUS bir gozlemdir. Hangi degerle
+        # dolduruldugu ve bunun ne ANLAMA geldigi, oran anlamli oldugunda
+        # acikca soylenmeli -- aksi halde kullanici olcum hedefinde sahte
+        # sifirlarla model egitir ve bunu hicbir yerde gormez.
+        #
+        # OLCULDU: yalnizca ariza gunlerinde kayit ureten bir trafo icin
+        # panel %40 sentetik satir uretti ve o varligin ortalamasi
+        # 50.0 -> 10.0'a dustu. Sayim hedefinde bu DOGRUDUR; tuketim gibi
+        # bir OLCUM hedefinde ise veriyi bozar.
+        if added and share >= FILL_NOTICE_SHARE:
+            print(
+                f"  DOLDURMA: {added:,} satira fill_value={fill_value!r} yazildi.\n"
+                "    sayim hedefi   (ariza adedi, kesinti suresi) -> 0.0 DOGRU\n"
+                "    olcum hedefi   (tuketim, gerilim)            -> np.nan KULLAN\n"
+                "    'kayit yok' ile 'deger sifir' ayni sey degildir."
+            )
+        if share > HIGH_FILL_SHARE:
             print(
                 "  NOT: satirlarin cogu sentetik. Hedef sifir-siskin -- iki asamali "
                 "model (once 'olay var mi', sonra 'kac tane') dusun."

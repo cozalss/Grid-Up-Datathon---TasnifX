@@ -190,3 +190,77 @@ def test_optimizasyon_asla_varsayilandan_kotu_olmuyor(metrik: str):
         assert sonuc["best_score"] >= sonuc["score_at_half"] - 1e-12, (
             f"tohum={tohum} metrik={metrik}: optimizasyon varsayilani yenemedi"
         )
+
+
+# --------------------------------------------------------------------------
+# Panel doldurma: sentetik satirlar UYDURULMUS gozlemdir
+# --------------------------------------------------------------------------
+
+
+def test_panel_doldurma_semantigini_acikca_soyluyor(capsys):
+    """Doldurulan satir uydurulmus bir gozlemdir -- kullanici bunu GORMELI.
+
+    OLCULDU: yalnizca ariza gunlerinde kayit ureten bir varlik icin panel
+    %40 sentetik satir uretti ve o varligin ortalamasi 50.0 -> 10.0'a dustu.
+    Sayim hedefinde DOGRU, olcum hedefinde veriyi BOZAR.
+    """
+    from gridup.panel import build_panel
+
+    kayit = []
+    for gun, tarih in enumerate(pd.date_range("2025-01-01", periods=10)):
+        kayit.append({"tarih": tarih, "trafo": "A", "deger": float(gun)})
+        if gun in (2, 7):
+            kayit.append({"tarih": tarih, "trafo": "B", "deger": 50.0})
+
+    build_panel(
+        pd.DataFrame(kayit), entity_columns=["trafo"], time_column="tarih",
+        value_columns=["deger"], verbose=True,
+    )
+
+    cikti = capsys.readouterr().out
+    assert "DOLDURMA" in cikti
+    assert "fill_value=0.0" in cikti
+    assert "np.nan" in cikti, "olcum hedefi icin alternatif soylenmemis"
+
+
+def test_panel_nan_doldurma_ortalamayi_bozmuyor():
+    """Olcum hedefinde np.nan ile doldurmak gercek ortalamayi korur."""
+    from gridup.panel import build_panel
+
+    kayit = []
+    for gun, tarih in enumerate(pd.date_range("2025-01-01", periods=10)):
+        kayit.append({"tarih": tarih, "trafo": "A", "tuketim": float(100 + gun)})
+        if gun in (2, 7):
+            kayit.append({"tarih": tarih, "trafo": "B", "tuketim": 500.0})
+    frame = pd.DataFrame(kayit)
+
+    sifirli = build_panel(
+        frame, entity_columns=["trafo"], time_column="tarih",
+        value_columns=["tuketim"], verbose=False,
+    )
+    nanli = build_panel(
+        frame, entity_columns=["trafo"], time_column="tarih",
+        value_columns=["tuketim"], fill_value=np.nan, verbose=False,
+    )
+
+    b_sifir = sifirli.loc[sifirli.trafo == "B", "tuketim"].mean()
+    b_nan = nanli.loc[nanli.trafo == "B", "tuketim"].mean()
+
+    assert b_nan == pytest.approx(500.0), "NaN doldurma gercek ortalamayi korumali"
+    assert b_sifir < b_nan, "sifir doldurma ortalamayi asagi ceker -- beklenen davranis"
+
+
+def test_dolduruldu_bayragi_sentetik_satirlari_isaretliyor():
+    from gridup.panel import build_panel
+
+    kayit = [{"tarih": pd.Timestamp("2025-01-01"), "trafo": "A", "deger": 1.0},
+             {"tarih": pd.Timestamp("2025-01-03"), "trafo": "A", "deger": 3.0}]
+    panel = build_panel(
+        pd.DataFrame(kayit), entity_columns=["trafo"], time_column="tarih",
+        value_columns=["deger"], verbose=False,
+    )
+    assert len(panel) == 3
+    assert int(panel["_dolduruldu"].sum()) == 1
+    # Bayrak DOGRU satiri isaretlemeli (2 Ocak eksikti).
+    eksik = panel.loc[panel["_dolduruldu"] == 1, "tarih"].iloc[0]
+    assert eksik == pd.Timestamp("2025-01-02")
