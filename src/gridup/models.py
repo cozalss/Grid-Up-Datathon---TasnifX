@@ -531,6 +531,26 @@ def cross_validate(
     if len(y) != len(train):
         raise ValueError(f"train ({len(train)}) ve target ({len(y)}) uzunluklari farkli.")
 
+    # Hedefte NaN/inf SESSIZCE GECIYORDU ve bu en tehlikeli hata bicimidir:
+    # LightGBM bu satirlari egitimde yok sayar, skor MAKUL GORUNEN bir sayi
+    # cikar ve neyin yanlis oldugu anlasilmaz.
+    #
+    # OLCULDU: 400 satirin BIRINDE NaN olan bir hedefte skor 0.527 dondu --
+    # tamamen inandirici. inf durumunda 4.1e+35 dondu; absurt ama yine
+    # HATASIZ. Ikisi de sessizce yanlis CV skoru uretir.
+    #
+    # Siniflandirmada olasilik metrikleri icin de gecerli: NaN etiketle
+    # egitilen model, hicbir zaman ogrenmedigi bir sinifi tahmin eder.
+    if np.issubdtype(y.dtype, np.number) and not np.isfinite(y).all():
+        bozuk = int((~np.isfinite(y)).sum())
+        raise ValueError(
+            f"Hedefte {bozuk} adet NaN/sonsuz deger var (%{bozuk / len(y) * 100:.1f}). "
+            "Model bunlari sessizce yok sayar ve CV skoru MAKUL GORUNEN ama "
+            "YANLIS bir sayi olur.\n"
+            "Temizle: maske = np.isfinite(y); train=train[maske]; y=y[maske]\n"
+            "SONRA fold'lari YENIDEN uret -- konumsal indeksler kaydi."
+        )
+
     # Fold'lar bu frame icin mi uretildi? Kontrol etmezsek yanlis satirlar
     # sessizce train/valid olarak eslesir -- bkz. assert_folds_align.
     assert_folds_align(len(train), fold_list)

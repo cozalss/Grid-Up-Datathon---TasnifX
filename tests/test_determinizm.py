@@ -269,3 +269,66 @@ def test_sabit_kodlanmis_kimlik_bilgisi_yok():
         if not any(g in m.group(0).lower() for g in ("environ", "getenv", "ornek", "example"))
     ]
     assert not bulunan, f"sabit kodlanmis kimlik bilgisi: {bulunan}"
+
+
+# --------------------------------------------------------------------------
+# Bozuk hedef ANA YOLDA da sessiz geciyordu
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("bozuk", [np.nan, np.inf, -np.inf])
+def test_cross_validate_bozuk_hedefi_reddediyor(bozuk):
+    """REGRESYON: NaN hedefle skor 0.527 donuyordu -- tamamen inandirici.
+
+    Bu, hata bicimlerinin EN TEHLIKELISI: model NaN satirlari sessizce yok
+    sayar, skor makul gorunur, kimse bir sey fark etmez. inf durumunda
+    4.1e+35 donuyordu -- absurt ama yine hatasiz.
+    """
+    X, y, folds = _veri()
+    X = X.drop(columns=["k"])
+    kirli = np.array(y, copy=True)
+    kirli[3] = bozuk
+
+    with pytest.raises(ValueError, match="NaN/sonsuz"):
+        cross_validate(
+            X, kirli, folds, kind="lightgbm", metric="rmse",
+            params={"n_estimators": 20}, verbose=False,
+        )
+
+
+def test_saglikli_hedef_ve_siniflandirma_etkilenmiyor():
+    """Koruma yanlis pozitif uretmemeli -- regresyon ve siniflandirma calismali."""
+    X, y, folds = _veri()
+    X = X.drop(columns=["k"])
+
+    regresyon = cross_validate(
+        X, y, folds, kind="lightgbm", metric="rmse",
+        params={"n_estimators": 20}, verbose=False,
+    )
+    ikili = cross_validate(
+        X, (X.a > 0).astype(int).to_numpy(), folds, kind="lightgbm",
+        task_type="binary", metric="auc", params={"n_estimators": 20}, verbose=False,
+    )
+    assert np.isfinite(regresyon.overall_score)
+    assert np.isfinite(ikili.overall_score)
+
+
+def test_sayisal_olmayan_hedefte_koruma_patlamiyor():
+    """np.isfinite metin dizisinde TypeError firlatir -- koruma onu atlamali.
+
+    (LightGBM metin etiketi zaten kabul etmez; burada sinanan sey KORUMANIN
+    kendisinin sayisal olmayan dtype'ta cokmemesi.)
+    """
+    X, _, folds = _veri()
+    X = X.drop(columns=["k"])
+    etiket = np.array(["a", "b"] * (len(X) // 2))
+
+    # Koruma satiri: sayisal degilse kontrol ATLANIR, TypeError firlamaz.
+    assert not np.issubdtype(etiket.dtype, np.number)
+    with pytest.raises(Exception) as hata:
+        cross_validate(
+            X, etiket, folds, kind="lightgbm", task_type="binary",
+            metric="accuracy", params={"n_estimators": 20}, verbose=False,
+        )
+    # Hata LightGBM'den gelmeli, bizim NaN korumamizdan DEGIL.
+    assert "NaN/sonsuz" not in str(hata.value)
