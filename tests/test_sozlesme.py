@@ -321,3 +321,125 @@ def test_feature_fonksiyonu_satir_sayisini_korumali(fonksiyon_adi: str):
     assert len(sonuc) == len(panel), (
         f"{fonksiyon_adi} satir sayisini {len(panel)} -> {len(sonuc)} degistirdi"
     )
+
+
+# --------------------------------------------------------------------------
+# SOZLESME 2: hedefe dokunan her fonksiyon ya fold-farkinda olmali
+#             ya da NEDEN olmadigi kayitli olmali
+# --------------------------------------------------------------------------
+
+#: Hedef anlamina gelen parametre adlari.
+_HEDEF_PARAMS = frozenset({"target", "target_column", "y", "y_true", "value_column"})
+
+#: Fold farkindaligi anlamina gelen parametre adlari.
+_FOLD_PARAMS = frozenset({"folds", "fold", "fold_list", "cv"})
+
+HEDEF_MODULLERI = (
+    "features.categorical", "features.aggregate", "features.spatial",
+    "features.temporal", "selection", "two_stage", "ensemble", "models",
+    "refit", "zoo", "tuning", "ablation", "neural", "metrics",
+)
+
+#: Hedefe dokunan ama fold ALMAYAN fonksiyonlar ve bunun NEDEN guvenli oldugu.
+#: Bu sozluk bir muafiyet listesi degil, bir GEREKCE kaydidir: her satir
+#: "bu fonksiyon neden sizinti yapmiyor" sorusunu cevaplar.
+FOLDSUZ_GEREKCE: dict[str, str] = {
+    # Saf skorlama -- model egitmez, hicbir sey ogrenmez.
+    "metrics.rmse": "saf skorlama, fit yok",
+    "metrics.rmsle": "saf skorlama, fit yok",
+    "metrics.mape": "saf skorlama, fit yok",
+    "metrics.mape_coverage": "saf tanisal olcum, fit yok",
+    "metrics.smape": "saf skorlama, fit yok",
+    "metrics.log_transform_target": "geri cevrilebilir donusum, istatistik ogrenmez",
+    # OOF tahminler UZERINDE calisir -- girdisi zaten fold-disidir.
+    "metrics.optimize_threshold": "OOF tahminler uzerinde calisir (docstring'de zorunlu kilinmis)",
+    "ensemble.hill_climb_weights": "girdisi OOF tahmin matrisi -- fold zaten uygulanmis",
+    "ensemble.greedy_forward_selection": "girdisi OOF tahmin matrisi",
+    "ensemble.prune_by_correlation": "girdisi OOF tahmin matrisi",
+    "two_stage.tune_threshold": "OOF olasiliklar uzerinde esik arar",
+    "two_stage.zero_baseline_score": "sabit tahminin skoru, fit yok",
+    # Nedensel olarak guvenli: yalnizca GECMISE bakar (shift/horizon).
+    "features.temporal.add_lag_features": "shift(horizon) -- yalnizca gecmis, ileri bakmaz",
+    "features.temporal.add_rolling_features": "closed='left' -- mevcut satiri DISLAR",
+    "features.temporal.add_expanding_features": "shift(1) -- mevcut satiri DISLAR",
+    "features.spatial.add_neighbour_target_lag": "horizon>=1 zorunlu -- komsunun gecmisi",
+    # Hedefi feature'a CEVIRMEZ; hedefi yalnizca reddetmek icin tanir.
+    "features.aggregate.add_group_statistics": (
+        "target_column YALNIZCA reddetme icin; hedef value_columns'a girerse "
+        "_reject_target ValueError firlatir"
+    ),
+    "features.aggregate.add_target_free_aggregates": "adinda: hedef kullanmaz",
+    # Bilincli tam-veri egitimi -- dogrulama degil, final refit.
+    "models.fit_without_validation": "bilincli tam-veri refit; skor URETMEZ",
+    "refit.multi_seed_refit": "bilincli tam-veri refit; tur sayisi CV'den DISARIDAN gelir",
+    # Kendi ic bolmesini kurar.
+    "selection.null_importance_filter": "hedefi permute eder; ic bolmesini kendi kurar",
+}
+
+
+def _hedefe_dokunanlar() -> dict[str, bool]:
+    """``tam_ad -> fold_farkinda_mi`` esleme."""
+    sonuc: dict[str, bool] = {}
+    for modul_adi in HEDEF_MODULLERI:
+        modul = importlib.import_module(f"gridup.{modul_adi}")
+        for ad in getattr(modul, "__all__", []):
+            nesne = getattr(modul, ad, None)
+            if not callable(nesne) or isinstance(nesne, type):
+                continue
+            try:
+                parametreler = set(inspect.signature(nesne).parameters)
+            except (TypeError, ValueError):  # pragma: no cover
+                continue
+            if parametreler & _HEDEF_PARAMS:
+                sonuc[f"{modul_adi}.{ad}"] = bool(parametreler & _FOLD_PARAMS)
+    return sonuc
+
+
+def test_hedefe_dokunan_her_fonksiyon_ya_fold_alir_ya_gerekcelidir():
+    """SOZLESME: 'Hedef kullanan her kodlama fold-disi calisir -- sizinti imkansiz'.
+
+    Bu test o vaadi API yuzeyinde zorlar. Hedef parametresi alan bir
+    fonksiyon ya ``folds`` da almalidir, ya da ``FOLDSUZ_GEREKCE`` icinde
+    NEDEN guvenli oldugu yazili olmalidir.
+
+    Yeni bir fonksiyon eklendiginde bu test kirilir ve yazan kisi
+    "bu hedefe dokunuyor, sizinti yapar mi?" sorusunu cevaplamak zorunda kalir.
+    """
+    dokunanlar = _hedefe_dokunanlar()
+    foldsuz = {ad for ad, fold_var in dokunanlar.items() if not fold_var}
+
+    gerekcesiz = sorted(foldsuz - set(FOLDSUZ_GEREKCE))
+    assert not gerekcesiz, (
+        "Su fonksiyonlar hedefe dokunuyor, fold ALMIYOR ve gerekceleri KAYITLI DEGIL: "
+        f"{gerekcesiz}. Ya folds parametresi ekle, ya FOLDSUZ_GEREKCE'ye neden "
+        "guvenli oldugunu yaz. Bos birakma."
+    )
+
+    # Ters yon: artik var olmayan veya artik fold alan bir fonksiyon icin
+    # gerekce tutmak, kaydin cürümesidir.
+    gereksiz = sorted(set(FOLDSUZ_GEREKCE) - foldsuz)
+    assert not gereksiz, (
+        f"Su gerekceler artik gecersiz (fonksiyon yok ya da artik fold aliyor): {gereksiz}"
+    )
+
+
+def test_grup_istatistigi_hedefi_reddediyor():
+    """add_group_statistics'in tek koruma noktasi GERCEKTEN atesleniyor mu?"""
+    from gridup.features.aggregate import add_group_statistics
+
+    panel = _ornek_panel()
+    with pytest.raises(ValueError, match="fold-disi DEGILDIR"):
+        add_group_statistics(
+            panel, group_columns=["yer"], value_columns=["hedef"], target_column="hedef"
+        )
+
+
+def test_oof_target_encode_foldsuz_calismiyor():
+    """Hedef kodlamanin fold'suz cagrilmasi YAPISAL olarak imkansiz olmali."""
+    from gridup.features.categorical import oof_target_encode
+
+    parametreler = inspect.signature(oof_target_encode).parameters
+    assert "folds" in parametreler
+    assert parametreler["folds"].default is inspect.Parameter.empty, (
+        "folds'un varsayilani var -- fold'suz cagrilabilir hale gelmis"
+    )
