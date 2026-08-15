@@ -28,6 +28,7 @@ KARAR AGACI
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -49,6 +50,7 @@ __all__ = [
     "SchemeSuggestion",
     "suggest_scheme",
     "build_splitter",
+    "parse_time_series",
     "purged_time_series_split",
     "adversarial_validation",
     "leakage_report",
@@ -57,6 +59,14 @@ __all__ = [
 ]
 
 TaskType = Literal["regression", "binary", "multiclass"]
+
+#: Ayristirilamayan tarihlerin sessizce tolere edilecegi ust oran. Uzerinde
+#: hata firlatilir -- cunku NaT'lar np.argsort ile dizinin SONUNA gidip SON
+#: fold'un dogrulama setine yigilir ve kimse fark etmez.
+MAX_UNPARSED_TIME_RATIO = 0.02
+
+_YIL_ONCE = re.compile(r"^\s*\d{4}\s*[-/.]")
+_GUN_AY_YIL = re.compile(r"^\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(\d{4})")
 
 
 @dataclass(frozen=True)
@@ -127,6 +137,119 @@ def assert_folds_align(n_rows: int, folds: Sequence[tuple[np.ndarray, np.ndarray
             )
 
 
+def _gun_once_mu(values: pd.Series) -> str:
+    """Gun-once mi ay-once mi? Veriden KANITLAR; tahmin etmez.
+
+    Doner: ``"gun"`` | ``"ay"`` | ``"belirsiz"`` | ``"bilinmiyor"``.
+
+    ``"belirsiz"`` ile ``"bilinmiyor"`` ayrimi KRITIKTIR:
+      * ``"bilinmiyor"`` -- gg/aa/yyyy kalibi hic goruleMEDI (ornegin ISO
+        olmayan serbest metin). Duz cozume dusmek zararsizdir.
+      * ``"belirsiz"``  -- kalip GORULDU ama iki bilesen de daima <=12. Bu,
+        tuzagin EN TEHLIKELI hali: her kayit sorunsuz cozulur, tek bir NaT
+        cikmaz ve tarihler SESSIZCE ay-once okunur. NaT oranina bakan bir
+        koruma burada hic devreye girmez.
+
+    NEDEN TAHMIN ETMIYORUZ (bu makinede olculdu, pandas 3.0.3)
+    ----------------------------------------------------------
+    ``dayfirst=True`` korlemesine denenemez -- pandas onu **ISO tarihlere de
+    uygular**:
+
+        pd.to_datetime("2024-01-02", format="mixed")                -> 2024-01-02
+        pd.to_datetime("2024-01-02", format="mixed", dayfirst=True) -> 2024-02-01
+
+    Yani "once normal dene, olmazsa dayfirst dene" mantigi ISO veriyi SESSIZCE
+    bozar. Bunun yerine ilk iki bileseni okuyup kanit ariyoruz: bir kayitta ilk
+    bilesen 12'den buyukse gun-once KANITLANMIS olur.
+    """
+    metin = values.dropna().astype(str)
+    if metin.empty:
+        return "bilinmiyor"
+
+    ilk_bilesenler: list[int] = []
+    ikinci_bilesenler: list[int] = []
+    for deger in metin:
+        if _YIL_ONCE.match(deger):
+            return "ay"  # yil once (ISO) -- gun-once sorusu gecersiz
+        eslesme = _GUN_AY_YIL.match(deger)
+        if eslesme is None:
+            continue
+        ilk_bilesenler.append(int(eslesme.group(1)))
+        ikinci_bilesenler.append(int(eslesme.group(2)))
+
+    if not ilk_bilesenler:
+        return "bilinmiyor"
+
+    ilk_asan = any(deger > 12 for deger in ilk_bilesenler)
+    ikinci_asan = any(deger > 12 for deger in ikinci_bilesenler)
+    if ilk_asan and not ikinci_asan:
+        return "gun"
+    if ikinci_asan and not ilk_asan:
+        return "ay"
+    # Ikisi de asiyorsa iki bicim ayni kolonda karisik; hicbiri asmiyorsa
+    # kanit yok. Iki durumda da tahmin etmiyoruz.
+    return "belirsiz"
+
+
+def parse_time_series(times: pd.Series, *, strict: bool = True) -> pd.Series:
+    """Zaman kolonunu kronolojik siralanabilir hale getirir.
+
+    Args:
+        times: Ham zaman kolonu (datetime, ISO metin veya TR ``gg.aa.yyyy``).
+        strict: ``True`` ise belirsiz bicimde ve asiri NaT'ta **hata firlatir**.
+            ``False`` yalnizca tespit (``_detect_time_columns``) icindir.
+
+    Raises:
+        ValueError: Bicim belirsizse veya ayristirilamayan oran
+            ``MAX_UNPARSED_TIME_RATIO``'yu asarsa.
+
+    NEDEN BU FONKSIYON VAR (olculdu)
+    --------------------------------
+    Turkce veri gununde ``TARIH`` kolonu ``gg.aa.yyyy`` metni olarak gelirse
+    ``pd.to_datetime(errors="coerce")`` 366 gunun **354'unu NaT** yapar --
+    yalnizca gun<=12 olanlar (ay olarak okunabilenler) hayatta kalir.
+    ``parsed.isna().all()`` False oldugu icin eski koruma DEVREYE GIRMEZ,
+    ``np.argsort`` NaT'lari sona atar ve olculen sonuc soydur:
+
+        fold: train_son=2024-12-06  valid_ilk=2024-01-09
+              -> 73 train satiri GERCEK takvimde valid'in GELECEGINDE
+
+    Yani ambargo hicbir sey yapmaz ve CV sessizce anlamsizlasir.
+    """
+    if pd.api.types.is_datetime64_any_dtype(times):
+        parsed = pd.to_datetime(times)
+    else:
+        sira = _gun_once_mu(times)
+        if sira == "belirsiz" and strict:
+            # Buraya NaT oranina bakarak gelinmez: belirsiz kolonun HEPSI
+            # sorunsuz cozulur, yalnizca YANLIS cozulur. Tek koruma, tahmin
+            # etmeyi reddetmektir.
+            ornek = list(times.dropna().astype(str).head(3))
+            raise ValueError(
+                "Zaman kolonunun bicimi BELIRSIZ -- gun-once mu ay-once mi "
+                f"oldugu veriden kanitlanamadi (ornek: {ornek}).\n"
+                "Her iki okuma da hatasiz calisir ama farkli takvim uretir, "
+                "yani yanlis secim SESSIZ kalir. Kolonu once kendin cevir:\n"
+                "    df['TARIH'] = pd.to_datetime(df['TARIH'], dayfirst=True)"
+            )
+        parsed = pd.to_datetime(
+            times, errors="coerce", format="mixed", dayfirst=(sira == "gun")
+        )
+
+    if parsed.isna().all():
+        raise ValueError("Zaman kolonu ayristirilamadi -- kronolojik bolme yapilamaz.")
+
+    oran = float(parsed.isna().mean())
+    if strict and oran > MAX_UNPARSED_TIME_RATIO:
+        raise ValueError(
+            f"Zaman kolonunun %{oran * 100:.1f}'i ayristirilamadi "
+            f"(sinir %{MAX_UNPARSED_TIME_RATIO * 100:.0f}).\n"
+            "Bunlar sessizce SON fold'un dogrulama setine yigilirdi. "
+            "Kolonu duzelt veya bu satirlari kendin ele al."
+        )
+    return parsed
+
+
 def _detect_time_columns(frame: pd.DataFrame) -> list[str]:
     """Datetime kolonlarini bulur; metin olarak saklanmis tarihleri de dener."""
     found = [
@@ -159,7 +282,13 @@ def _detect_time_columns(frame: pd.DataFrame) -> list[str]:
         sample = frame[column].dropna().head(200)
         if sample.empty:
             continue
-        parsed = pd.to_datetime(sample, errors="coerce", format="mixed")
+        # parse_time_series ile: duz to_datetime, TR "gg.aa.yyyy" kolonunda
+        # 366 gunun 354'unu NaT yapar -> notna()=0.03 -> kolon HIC BULUNAMAZ
+        # -> suggest_scheme KFold onerir -> gelecek sizar. (olculdu)
+        try:
+            parsed = parse_time_series(sample, strict=False)
+        except ValueError:
+            continue
         if parsed.notna().mean() > 0.9:
             found.append(column)
     return found
@@ -197,7 +326,12 @@ def _detect_group_columns(
         if unique <= 1:
             continue
         repeat_factor = row_count / unique
-        if repeat_factor >= min_repeat and unique / row_count < max_cardinality_ratio:
+        # ``<=`` ONEMLI, ``<`` DEGIL. Her varlik TAM 2 kez goruluyorsa
+        # unique/row_count TAM 0.5'tir ve ``<`` onu ELER: repeat_factor kosulu
+        # (2.0 >= 2.0) gecerken kardinalite kosulu sinirda takilir, grup kolonu
+        # bulunamaz, KFold onerilir ve ayni varlik hem train hem valid'e duser.
+        # OLCULDU: varlik basina 2 satir -> KFold/None, 3 satir -> GroupKFold/ilce.
+        if repeat_factor >= min_repeat and unique / row_count <= max_cardinality_ratio:
             candidates.append((column, repeat_factor))
 
     candidates.sort(key=lambda pair: pair[1], reverse=True)
@@ -442,16 +576,50 @@ def purged_time_series_split(
         raise ValueError("Bos zaman serisi ile bolme yapilamaz.")
     if test_span is not None and test_span <= pd.Timedelta(0):
         raise ValueError(f"test_span pozitif olmali, {test_span} verildi.")
+    # Negatif ambargo train'i valid'in ICINE tasirir -- yani tam olarak bu
+    # fonksiyonun onlemek icin var oldugu sizintinin kendisi, ustelik sessizce.
+    # OLCULDU: embargo=-40 gun -> train'in son ani valid'in ilk anindan 39 gun
+    # SONRA. Hicbir uyari cikmiyordu.
+    if embargo < pd.Timedelta(0):
+        raise ValueError(
+            f"embargo negatif olamaz ({embargo}). Negatif ambargo train'i "
+            "valid'in icine tasirir ve dogrudan sizinti uretir. "
+            "Ambargo istemiyorsan pd.Timedelta(0) yaz."
+        )
 
     # Metin olarak saklanmis tarih SOZLUKSEL siralanir ("2024-1-10" < "2024-1-2")
     # ve fold'lar kronolojik olmaz. Cevirmeyi garanti altina aliyoruz.
-    parsed = pd.to_datetime(times, errors="coerce")
-    if parsed.isna().all():
-        raise ValueError("Zaman kolonu ayristirilamadi -- kronolojik bolme yapilamaz.")
+    parsed = parse_time_series(pd.Series(times).reset_index(drop=True))
 
     values = parsed.to_numpy()
-    order = np.argsort(values, kind="stable")
+    # NaT'lar np.argsort ile dizinin SONUNA gider ve fold penceresi onlari
+    # gercek tarihmis gibi kullanir -- olculdu: 5 gecersiz tarihin 5'i de SON
+    # fold'un valid setine yigildi, tek bir uyari cikmadan. parse_time_series
+    # %2 ustunde zaten hata firlatiyor; buradaki kalinti azinligi fold'lardan
+    # tamamen DISLIYORUZ (sessizce dogrulama setine koymuyoruz).
+    gecerli = np.flatnonzero(~pd.isna(values))
+    if gecerli.size == 0:
+        raise ValueError("Zaman kolonu ayristirilamadi -- kronolojik bolme yapilamaz.")
+    order = gecerli[np.argsort(values[gecerli], kind="stable")]
     sorted_times = values[order]
+
+    atilan = len(values) - gecerli.size
+    if atilan and verbose:
+        print(
+            f"[purged_time_series_split] {atilan} satirin tarihi ayristirilamadi; "
+            "hicbir fold'a KONULMADI (aksi halde son fold'un valid setine yigilirdi)."
+        )
+    # Panel veride (ayni gunde birden cok satir) satir-sayisi esitleyen
+    # pencereler ZAMAN uzunlugu esit olmayan fold'lar uretir ve skorlar
+    # birbiriyle karsilastirilamaz hale gelir. 2023 birincisi test_size=744
+    # (=31 gun) kullandi; biz de test blogunun boyunu vermeliyiz.
+    if test_span is None and verbose and pd.Series(sorted_times).duplicated().any():
+        print(
+            "[purged_time_series_split] PANEL veri (tekrarlayan zaman damgasi) + "
+            "test_span=None: fold'lar satir sayisina gore bolunuyor, ZAMAN "
+            "uzunluklari esit degil. Test blogunun boyunu ver: "
+            "test_span=pd.Timedelta(days=<ufuk>)."
+        )
 
     folds: list[tuple[np.ndarray, np.ndarray]] = []
     skipped: list[str] = []
@@ -533,15 +701,40 @@ def adversarial_validation(
 
     shared = [column for column in train.columns if column in test.columns]
     columns = list(feature_columns) if feature_columns else shared
+    # Istenen ama ortak olmayan kolonlari SESSIZ dusurmeyiz: kullanici o kolonu
+    # bilerek istedi ve "incelendi" saniyor. Test'te olmamasi zaten baslibasina
+    # bir bulgudur.
+    dusen = [column for column in columns if column not in shared]
     columns = [column for column in columns if column in shared]
     if not columns:
         raise ValueError("Train ve test arasinda ortak feature kolonu yok.")
+    notlar: list[str] = []
+    if dusen:
+        notlar.append(
+            f"Istenen {len(dusen)} kolon train+test'te ortak degil, kullanilmadi: "
+            f"{dusen[:10]}"
+        )
 
     combined = pd.concat(
         [train[columns].assign(_is_test=0), test[columns].assign(_is_test=1)],
         ignore_index=True,
     )
     labels = combined.pop("_is_test").to_numpy()
+
+    # Ham datetime kolonu LightGBM'e verilemez ve numpy DTypePromotionError ile
+    # coker (olculdu). Oysa train/test'i en cok ayiran kolon TAM OLARAK odur --
+    # atlamak bu fonksiyonun isini yapmamasi demektir. Epoch'a ceviriyoruz.
+    zaman_kolonlari = [
+        column
+        for column in combined.columns
+        if pd.api.types.is_datetime64_any_dtype(combined[column])
+    ]
+    for column in zaman_kolonlari:
+        combined[column] = combined[column].astype("int64")
+    if zaman_kolonlari:
+        notlar.append(
+            f"Datetime kolonlari epoch'a cevrildi: {zaman_kolonlari[:10]}"
+        )
 
     # Surumden bagimsiz kategorik tespiti: pandas 3.0'da metin 'str' dtype'indadir
     # ve is_object_dtype onu GORMEZ -- bkz. compat.is_categorical_like.
@@ -556,6 +749,11 @@ def adversarial_validation(
         model = lgb.LGBMClassifier(
             n_estimators=200, learning_rate=0.1, num_leaves=31,
             random_state=seed, verbose=-1,
+            # 'split' (varsayilan) kac kez BOLUNDUGUNU sayar, ne kadar
+            # AYIRDIGINI degil. Olculdu: gercek ayirici kolonun split onemi
+            # 896.7, gurultununki 413.0 (2.2 kat); gain'de 4008.7'ye 8.1
+            # (495 kat). Yani split, sucluyu gurultunun icinde kaybediyor.
+            importance_type="gain",
         )
         model.fit(combined.iloc[train_idx], labels[train_idx])
         oof[valid_idx] = model.predict_proba(combined.iloc[valid_idx])[:, 1]
@@ -566,12 +764,29 @@ def adversarial_validation(
         zip(columns, importances, strict=True), key=lambda pair: pair[1], reverse=True
     )
 
+    # Agirliklarin KAC satiri gercekten tasidigini olc (Kish etkin ornek
+    # buyuklugu). AUC 1.0'a yakinken model train satirlarinin neredeyse
+    # hepsine ~0 verir; olculdu: 400 train satiri, agirlik toplami 2.004,
+    # ESS 2.0 -- yani "bunlarla agirliklandir" tavsiyesi modeli 2 satirla
+    # egitmek demek olur.
+    weights = oof[: len(train)]
+    kare_toplam = float(np.square(weights).sum())
+    ess = float(weights.sum() ** 2 / kare_toplam) if kare_toplam > 0 else 0.0
+    ess_orani = ess / max(len(train), 1)
+
     if auc < 0.6:
         verdict = "Dagilimlar benzer. Rastgele CV guvenli."
     elif auc < 0.8:
         verdict = (
             "Orta duzey kayma. Ilk siradaki feature'lari incele; "
             "ambargo/zaman bazli CV dusun."
+        )
+    elif ess_orani < 0.05:
+        verdict = (
+            "CIDDI kayma. Ayristiran feature'lari modelden cikar veya zamana gore bol. "
+            f"sample_weights KULLANMA: etkin ornek buyuklugu {ess:.0f}/{len(train)} "
+            f"(%{ess_orani * 100:.1f}) -- agirliklandirma modeli neredeyse bos bir "
+            "egitim setiyle birakir."
         )
     else:
         verdict = (
@@ -582,9 +797,98 @@ def adversarial_validation(
     return {
         "auc": auc,
         "top_features": ranked[:15],
-        "sample_weights": oof[: len(train)],
+        "sample_weights": weights,
+        "sample_weight_ess": ess,
+        "sample_weight_ess_ratio": ess_orani,
+        "notes": tuple(notlar),
         "verdict": verdict,
     }
+
+
+def _kategorik_hedef_turevi(
+    column_series: pd.Series,
+    target_series: pd.Series,
+    column: str,
+    threshold: float,
+) -> str | None:
+    """Kategorik bir kolon hedefi belirliyor mu? Eta-kare ile olcer.
+
+    Eta-kare = 1 - (grup ici varyans / toplam varyans). 1.0'a yakinsa kolonu
+    bildiginde hedefi de biliyorsun demektir.
+
+    Neredeyse benzersiz kolonlar (ID) TRIVIAL olarak eta-kare 1.0 verir --
+    onlari eliyoruz; zaten 4. kontrol ID'leri ayrica yakaliyor.
+    """
+    birlikte = pd.DataFrame({"k": column_series, "h": target_series}).dropna()
+    if len(birlikte) < 30:
+        return None
+    benzersiz = birlikte["k"].nunique()
+    if benzersiz < 2 or benzersiz > len(birlikte) / 2:
+        return None
+
+    toplam_varyans = float(birlikte["h"].var(ddof=0))
+    if not np.isfinite(toplam_varyans) or toplam_varyans <= 0:
+        return None
+    grup_ici = float(
+        birlikte.groupby("k", observed=True)["h"].transform(lambda s: s - s.mean()).var(ddof=0)
+    )
+    eta_kare = 1.0 - grup_ici / toplam_varyans
+    if eta_kare < threshold:
+        return None
+    return (
+        f"'{column}' kategorik ama hedefin varyansinin %{eta_kare * 100:.1f}'ini "
+        f"acikliyor ({benzersiz} seviye) -- hedeften turemis olabilir. "
+        "Sayisal olmadigi icin korelasyon kontrolunden kaciyordu."
+    )
+
+
+def _zaman_ortusmesi_kontrolu(
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+    time_column: str | None,
+    findings: dict[str, Any],
+) -> None:
+    """Train'in sonu test'in basindan sonra mi? Kolonu gerekirse kendisi bulur.
+
+    ``time_column`` verilmediginde bu kontrol eskiden SESSIZCE atlaniyordu ve
+    README quickstart tam bu sekilde cagiriyordu. OLCULDU: test train'in
+    ortasinda basladigi halde time_column'suz cagri "0 kritik" dedi, ayni veri
+    time_column ile "1 kritik" verdi. Raporun en agir bulgusu, kullanici bir
+    argumani atladigi icin kayboluyordu.
+    """
+    if time_column is None:
+        adaylar = [c for c in _detect_time_columns(train) if c in test.columns]
+        if not adaylar:
+            findings["info"].append(
+                "Zaman kolonu bulunamadi -- donem ortusmesi kontrolu YAPILAMADI. "
+                "Veride tarih varsa time_column= ile ver."
+            )
+            return
+        time_column = adaylar[0]
+        findings["info"].append(
+            f"time_column verilmedi; '{time_column}' otomatik secildi "
+            f"(adaylar: {adaylar[:5]}). Yanlissa acikca belirt."
+        )
+
+    if time_column not in test.columns:
+        return
+
+    train_times = parse_time_series(train[time_column], strict=False)
+    test_times = parse_time_series(test[time_column], strict=False)
+    if not (train_times.notna().any() and test_times.notna().any()):
+        return
+
+    train_max, test_min = train_times.max(), test_times.min()
+    if train_max > test_min:
+        findings["critical"].append(
+            f"Zaman ortusmesi: train {train_max} tarihine kadar uzaniyor ama "
+            f"test {test_min} tarihinde basliyor. Rastgele CV GELECEGI SIZDIRIR."
+        )
+    else:
+        findings["info"].append(
+            f"Temiz zaman ayrimi: train <= {train_max}, test >= {test_min}. "
+            "Ileri zincirleme CV kullan."
+        )
 
 
 def leakage_report(
@@ -623,17 +927,40 @@ def leakage_report(
         )
     else:
         for column in train.columns:
-            if column == target or not pd.api.types.is_numeric_dtype(train[column]):
+            if column == target:
                 continue
-            valid = train[[column, target]].dropna()
-            if len(valid) < 30:
-                continue
-            correlation = float(valid[column].corr(valid[target]))
-            if abs(correlation) >= correlation_threshold:
-                findings["critical"].append(
-                    f"'{column}' hedefle {correlation:.4f} korelasyonlu -- "
-                    "muhtemelen hedefin turevi veya gelecek bilgisi."
+            if pd.api.types.is_numeric_dtype(train[column]):
+                valid = train[[column, target]].dropna()
+                if len(valid) < 30:
+                    continue
+                correlation = float(valid[column].corr(valid[target]))
+                if abs(correlation) >= correlation_threshold:
+                    findings["critical"].append(
+                        f"'{column}' hedefle {correlation:.4f} korelasyonlu -- "
+                        "muhtemelen hedefin turevi veya gelecek bilgisi."
+                    )
+                    continue
+                # Pearson yalnizca DOGRUSAL iliskiyi gorur. Hedefin tam
+                # tersinir monoton bir donusumu (log1p, sqrt, rank) sizintinin
+                # ta kendisidir ama Pearson'u esigin altinda kalir.
+                # OLCULDU: log1p(hedef) -> Pearson 0.8841, Spearman 1.0000.
+                sira = float(valid[column].corr(valid[target], method="spearman"))
+                if abs(sira) >= correlation_threshold:
+                    findings["critical"].append(
+                        f"'{column}' hedefle Spearman {sira:.4f} (Pearson "
+                        f"{correlation:.4f}) -- hedefin MONOTON donusumu olabilir; "
+                        "dogrusal olmadigi icin korelasyon kontrolunden kacti."
+                    )
+            else:
+                # Metin/kategorik kolonlar eskiden TAMAMEN atlaniyordu: hedefi
+                # kovalara bolen bir metin kolonu 'tertemiz' raporlaniyordu.
+                # Grup ici varyansi olcuyoruz (eta-kare): 1.0'a yakinsa kolon
+                # hedefi neredeyse belirliyor demektir.
+                bulgu = _kategorik_hedef_turevi(
+                    train[column], target_series, column, correlation_threshold
                 )
+                if bulgu:
+                    findings["critical"].append(bulgu)
 
     # 2. Test'te olmayan kolonlar
     if test is not None:
@@ -647,21 +974,14 @@ def leakage_report(
             )
 
     # 3. Zaman ortusmesi
-    if time_column and test is not None and time_column in test.columns:
-        train_times = pd.to_datetime(train[time_column], errors="coerce")
-        test_times = pd.to_datetime(test[time_column], errors="coerce")
-        if train_times.notna().any() and test_times.notna().any():
-            train_max, test_min = train_times.max(), test_times.min()
-            if train_max > test_min:
-                findings["critical"].append(
-                    f"Zaman ortusmesi: train {train_max} tarihine kadar uzaniyor ama "
-                    f"test {test_min} tarihinde basliyor. Rastgele CV GELECEGI SIZDIRIR."
-                )
-            else:
-                findings["info"].append(
-                    f"Temiz zaman ayrimi: train <= {train_max}, test >= {test_min}. "
-                    "Ileri zincirleme CV kullan."
-                )
+    #
+    # ``time_column`` verilmediginde bu kontrol eskiden SESSIZCE atlaniyordu ve
+    # README quickstart tam bu sekilde cagiriyordu. OLCULDU: test train'in
+    # ortasinda basladigi halde time_column'suz cagri "0 kritik" dedi, ayni
+    # veri time_column ile "1 kritik" verdi. Raporun en agir bulgusu, kullanici
+    # bir argumani atladigi icin kayboluyordu. Artik kendimiz ariyoruz.
+    if test is not None:
+        _zaman_ortusmesi_kontrolu(train, test, time_column, findings)
 
     # 4. ID benzeri kolonlar
     for column in train.columns:
