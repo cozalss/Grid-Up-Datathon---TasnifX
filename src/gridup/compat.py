@@ -210,7 +210,14 @@ def downcast_numeric(series: pd.Series) -> pd.Series:
         return pd.to_numeric(series, downcast="integer")
 
     if pd.api.types.is_float_dtype(series):
-        as_float32 = series.astype(np.float32)
+        # float32 araligi disindaki degerler (|x| > ~3.4e38) cast sirasinda
+        # inf'e tasar ve numpy "overflow encountered in cast" RuntimeWarning'i
+        # basar. Sonuc DOGRUDUR -- asagidaki hata kontrolu inf'i gorup float64'te
+        # birakir -- ama uyari kullaniciya bir hata varmis gibi gorunur ve
+        # yarisma gununde vakit kaybettirir. Bilinen ve ELE ALINAN bir durum
+        # oldugu icin sadece bu cast'in etrafinda susturuyoruz.
+        with np.errstate(over="ignore", invalid="ignore"):
+            as_float32 = series.astype(np.float32)
         # Hassasiyet kaybi kabul edilebilir mi? NaN'lar disinda tam esitlik ariyoruz.
         finite = series.notna()
         if finite.sum() == 0:
