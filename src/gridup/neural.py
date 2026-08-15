@@ -51,6 +51,7 @@ sifirdan kurulur.
 from __future__ import annotations
 
 import time
+import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -291,7 +292,18 @@ def _train_one_fold(
             if bad_epochs >= config.patience:
                 break
 
-    if best_state is not None:
+    if best_state is None:
+        # Hicbir epok dogrulama kaybini iyilestirmedi. Bu genelde sayisal
+        # sapma demektir (NaN kayip) ve modeli SESSIZCE egitilmemis birakir.
+        warnings.warn(
+            "Sinir agi hicbir epokta iyilesmedi -- dogrulama kaybi hep "
+            f"{best_loss}. Model egitilmemis sayilmali. Muhtemel sebepler: "
+            "cok yuksek learning_rate, olceklenmemis asiri buyuk deger, "
+            "veya tek satirlik egitim fold'u.",
+            UserWarning,
+            stacklevel=3,
+        )
+    else:
         network.load_state_dict(best_state)
     return network, best_epoch
 
@@ -368,6 +380,19 @@ def neural_cross_validate(
     torch.manual_seed(config.seed)
 
     y = np.asarray(target, dtype="float64").ravel()
+    # Hedefte NaN/inf varsa on-isleyicinin ortalama/std'si de NaN olur, kayip
+    # NaN cikar, erken durdurma hicbir epogu "iyilesme" saymaz ve model
+    # egitilmemis halde kalir. Hata ancak SKORLAMA asamasinda, sklearn'in
+    # "Input contains NaN" mesajiyla ortaya cikar -- nereden geldigi belirsiz.
+    # Burada erken ve ACIK sekilde soyluyoruz.
+    if not np.isfinite(y).all():
+        bozuk = int((~np.isfinite(y)).sum())
+        raise ValueError(
+            f"Hedefte {bozuk} adet NaN/sonsuz deger var ({bozuk / len(y) * 100:.1f}%). "
+            "Sinir agi bunlarla egitilemez.\n"
+            "Once temizle: y = y[np.isfinite(y)] ve train'i ayni maskeyle filtrele "
+            "(fold'lari da YENIDEN uret -- konumsal indeksler kayar)."
+        )
     categorical, numeric = _split_columns(train, cat_columns)
     metric_fn, _, _ = get_metric(metric)
 

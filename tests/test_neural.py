@@ -210,3 +210,82 @@ def test_olmayan_kategorik_kolon_reddediliyor():
     X, y, folds = _panel()
     with pytest.raises(KeyError, match="frame'de yok"):
         neural_cross_validate(X, y, folds, cat_columns=["yok_boyle_kolon"], config=HIZLI)
+
+
+# --------------------------------------------------------------------------
+# Bozuk girdi ACIK hata vermeli -- sessizce egitilmemis model dondurmemeli
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("bozuk_deger", [np.nan, np.inf, -np.inf])
+def test_hedefte_gecersiz_deger_acik_hata_veriyor(bozuk_deger):
+    """NaN/inf hedef, on-isleyicinin istatistiklerini bozar; kayip NaN cikar,
+    hicbir epok 'iyilesme' sayilmaz ve model EGITILMEMIS kalir.
+
+    Onceki surumde hata ancak SKORLAMA asamasinda sklearn'in
+    'Input contains NaN' mesajiyla ortaya cikiyordu -- nereden geldigi
+    belirsizdi. Artik erken ve acik.
+    """
+    X, y, folds = _panel()
+    bozuk = np.array(y, copy=True)
+    bozuk[3] = bozuk_deger
+
+    with pytest.raises(ValueError, match="NaN/sonsuz"):
+        neural_cross_validate(X, bozuk, folds, config=HIZLI, verbose=False)
+
+
+def test_saglikli_hedef_hala_calisiyor():
+    """Koruma yanlis pozitif uretmemeli."""
+    X, y, folds = _panel()
+    sonuc = neural_cross_validate(X, y, folds, config=HIZLI, verbose=False)
+    assert np.isfinite(sonuc.overall_score)
+
+
+def test_egitim_hic_iyilesmezse_uyariyor():
+    """best_state None kalirsa model egitilmemis demektir -- sessiz kalmamali."""
+    import warnings as _w
+
+    from gridup.neural import _train_one_fold
+
+    torch_mod = pytest.importorskip("torch")
+    ag = torch_mod.nn.Sequential(torch_mod.nn.Linear(2, 1))
+    ag.mlp = ag  # _train_one_fold state_dict bekliyor
+
+    class _SabitKayip(torch_mod.nn.Module):
+        """Kayip her zaman NaN -> hicbir epok iyilesmez."""
+
+        def forward(self, *_):
+            return torch_mod.tensor(float("nan"), requires_grad=True)
+
+    kodlar = torch_mod.zeros((4, 0), dtype=torch_mod.int64)
+    sayisal = torch_mod.zeros((4, 2))
+    hedef = torch_mod.zeros(4)
+
+    class _Ag(torch_mod.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.mlp = torch_mod.nn.Sequential(torch_mod.nn.Linear(2, 1))
+            self.embeddings = torch_mod.nn.ModuleList()
+
+        def forward(self, _codes, numeric):
+            return self.mlp(numeric).squeeze(-1)
+
+    ag = _Ag()
+    yapilandirma = NeuralConfig(max_epochs=3, patience=2, batch_size=2)
+
+    with _w.catch_warnings(record=True) as yakalanan:
+        _w.simplefilter("always")
+        # Kayip NaN oldugu icin hicbir epok iyilesme saymayacak.
+        orijinal = torch_mod.nn.MSELoss
+        torch_mod.nn.MSELoss = _SabitKayip
+        try:
+            _train_one_fold(
+                ag, (kodlar, sayisal, hedef), (kodlar, sayisal, hedef),
+                yapilandirma, torch_mod,
+            )
+        finally:
+            torch_mod.nn.MSELoss = orijinal
+
+    assert any("iyilesmedi" in str(u.message) for u in yakalanan), (
+        "egitim hic iyilesmedigi halde uyari verilmedi"
+    )
