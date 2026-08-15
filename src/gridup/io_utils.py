@@ -85,7 +85,14 @@ def _decode_head(path: Path) -> tuple[str, str]:
     Hicbir aday kodlama calismazsa acik hata firlatir -- sessizce latin-1'e
     dusmek mojibake'i gizler.
     """
-    raw = path.open("rb").read(_SNIFF_BYTES)
+    # ``with`` ZORUNLU. Onceki surum ``path.open("rb").read(...)`` yaziyordu
+    # ve dosya tanitiCisi acik kaliyordu (ResourceWarning). Bu, Windows'ta
+    # sadece kaynak sizintisi degildir: acik tanitici dosyayi KILITLER ve
+    # ayni yola sonradan yazmak PermissionError verir. Yarisma gunu bir
+    # dosyayi okuyup ustune yazmak (temizlenmis surumu kaydetmek) son derece
+    # olagan bir istir -- ve tam orada patlardi.
+    with path.open("rb") as handle:
+        raw = handle.read(_SNIFF_BYTES)
 
     for encoding in _ENCODING_CANDIDATES:
         try:

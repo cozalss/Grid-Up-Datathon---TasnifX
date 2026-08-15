@@ -143,3 +143,33 @@ def test_zincir_dogru_gruptan_hesapliyor():
         assert np.allclose(beklenen, gercek, equal_nan=True), (
             f"'{yer}' kayan ortalamasi BASKA gruptan geliyor"
         )
+
+
+# --------------------------------------------------------------------------
+# Kaynak sizintisi: Windows'ta dosya KILITLENMESI demek
+# --------------------------------------------------------------------------
+
+
+def test_okuma_dosya_taniticisini_kapatiyor(tmp_path):
+    """REGRESYON: _decode_head dosyayi acik birakiyordu.
+
+    Windows'ta acik tanitici dosyayi KILITLER. Yarisma gunu bir dosyayi
+    okuyup ustune temizlenmis surumunu yazmak son derece olagan bir istir --
+    ve tam orada PermissionError alinirdi.
+
+    Burada ayni yolu okuyup USTUNE yaziyoruz; kilit varsa bu satir patlar.
+    (pyproject'te ResourceWarning zaten hata sayiliyor; bu test somut
+    senaryoyu da kapsiyor.)
+    """
+    from gridup.io_utils import read_any, sniff_dialect
+
+    yol = tmp_path / "veri.csv"
+    yol.write_text("id,deger\n1,10\n2,20\n", encoding="utf-8")
+
+    sniff_dialect(yol)
+    okunan = read_any(yol)
+
+    # Ayni yola YAZ -- tanitici acik kalmissa Windows burada PermissionError verir.
+    yol.write_text("id,deger\n3,30\n", encoding="utf-8")
+    assert len(read_any(yol)) == 1
+    assert len(okunan) == 2

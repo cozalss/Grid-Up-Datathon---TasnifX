@@ -50,6 +50,21 @@ markers = [
     "slow: model egiten testler (varsayilan calisir, -m 'not slow' ile atlanir)",
 ]
 
+# IKI uyari sinifini HATA sayiyoruz. Ucuncusunu (DeprecationWarning) KASITLI
+# olarak sayimiyoruz -- o ucuncu taraf kutuphane calkantisidir ve bizim
+# hatamiz degildir; build'i sebepsiz kirmasin.
+#
+# ResourceWarning: kapatilmamis dosya tanitiCisi. Windows'ta bu sadece
+#   sizinti degil KILITLENMEDIR -- ayni yola sonradan yazmak PermissionError
+#   verir. io_utils.py:88'de tam olarak bu vardi (olculdu).
+# RuntimeWarning: sifira bolme, tasma, gecersiz islem. Her biri ya gercek bir
+#   sayisal hata ya da ele alinmamis bir kenar durumdur. Bilincli olanlari
+#   np.errstate ile susturmak zaten dogru cozumdur.
+filterwarnings = [
+    "error::ResourceWarning",
+    "error::RuntimeWarning",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
