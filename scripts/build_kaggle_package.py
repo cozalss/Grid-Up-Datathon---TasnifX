@@ -57,7 +57,16 @@ VERI_DOSYALARI = (
 #: Kaggle imajinda OLMAYAN, bizim kullandigimiz paketler. Bunlarin wheel'ini
 #: yanimizda goturmezsek internetsiz notebook'ta ilgili feature ailesi calismaz.
 #: (Kaggle'da lightgbm/xgboost/catboost/optuna/shap/holidays ZATEN vardir.)
-EKSIK_PAKETLER = ("pvlib", "hijridate")
+#:
+#: tabm: cekirdek degil, OPSIYON -- 2024-25 Kaggle kanitli MLP-ansambl
+#: (CIBMTR 1.'si kullandi). Yarisma sirasinda harman uyesi olarak denemek
+#: istersek internetsiz ortamda elimizin altinda olsun diye tasiniyor;
+#: agirlik dosyasi yok, kendi verimizle egitilir (torch Kaggle'da zaten var).
+#: NOT: tabm'in kendi bagimliligi rtdl_num_embeddings de Kaggle'da yok --
+#: --no-deps indirdigimiz icin acikca listelenmek zorunda (olculdu:
+#: METADATA Requires-Dist: torch [var], rtdl_num_embeddings [YOK],
+#: typing_extensions [var]).
+EKSIK_PAKETLER = ("pvlib", "hijridate", "tabm", "rtdl_num_embeddings")
 
 #: Bu paketleri **KASITLI OLARAK PAKETLEMIYORUZ.** Kaggle imajinda zaten
 #: varlar ve farkli bir surumu kurmak AKTIF ZARARLIDIR: numpy/scipy ikili
