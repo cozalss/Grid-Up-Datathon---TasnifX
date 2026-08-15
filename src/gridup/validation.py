@@ -43,6 +43,7 @@ from sklearn.model_selection import (
 )
 
 from .compat import categorical_columns
+from .turkish import join_key
 
 __all__ = [
     "SchemeSuggestion",
@@ -136,9 +137,24 @@ def _detect_time_columns(frame: pd.DataFrame) -> list[str]:
     if found:
         return found
 
+    # Kolon adi eslestirmesinde ``join_key`` kullaniyoruz, duz ``.lower()``
+    # DEGIL. Duz ``.lower()`` bu projede IKI YONDE birden kiriliyor
+    # (bu makinede olculdu):
+    #
+    #   "TARİH".lower()  -> "tari̇h"  (U+0069 + U+0307 birlesik nokta)
+    #                       -> "tarih" ipucu ESLESMEZ, kolon KACAR
+    #   "TARIH".lower()  -> "tarih"   -> eslesir
+    #
+    # tr_lower da tek basina yetmez, ters yonde kirilir:
+    #   tr_lower("TARIH") -> "tarıh"  -> "tarih" ipucu ESLESMEZ
+    #
+    # join_key ikisini de "tarih"e indirger (tr_lower + diyakritik katlama).
+    # Bu, veri gununun ILK 30 DAKIKASINDA calisan bir yoldur: zaman kolonu
+    # bulunamazsa suggest_scheme rastgele KFold onerir ve gelecek sizar.
     name_hints = ("tarih", "date", "time", "zaman", "gun", "saat", "timestamp", "ts")
     for column in frame.columns:
-        if not any(hint in column.lower() for hint in name_hints):
+        normalized = join_key(str(column))
+        if not any(hint in normalized for hint in name_hints):
             continue
         sample = frame[column].dropna().head(200)
         if sample.empty:

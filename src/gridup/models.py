@@ -171,6 +171,32 @@ class CVResult:
     elapsed_seconds: float = 0.0
     metric_name: str = ""
     model_kind: str = ""
+    #: Hangi satirlarin GERCEKTEN bir fold'un valid tarafinda oldugu.
+    #: Kapsanmayan satirlarda ``oof_predictions`` SIFIRDIR -- gercek bir
+    #: tahmin degil, dolgu. Bu maskeyi kullanmadan tum diziyi harmanlamaya
+    #: veya korelasyona sokmak sonucu bozar (olculdu: gercek korelasyon 0.93
+    #: iken tum diziyle 0.47). ``covered_predictions()`` kisayolunu kullan.
+    oof_covered: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=bool))
+
+    def covered_predictions(self) -> tuple[np.ndarray, np.ndarray]:
+        """``(kapsanan_satir_indeksleri, o_satirlarin_tahminleri)``.
+
+        Harmanlama ve korelasyon HER ZAMAN bu ciftle yapilmalidir. Purged
+        TimeSeriesSplit'te ilk donem hicbir fold'un valid tarafinda olmaz;
+        o satirlarin OOF degeri 0'dir ve gercek bir tahmin degildir.
+        """
+        if self.oof_covered.size == 0:
+            # Eski kayitlar/elle kurulmus CVResult -- hepsini kapsanmis say.
+            return np.arange(len(self.oof_predictions)), self.oof_predictions
+        indeks = np.flatnonzero(self.oof_covered)
+        return indeks, self.oof_predictions[indeks]
+
+    @property
+    def coverage(self) -> float:
+        """OOF kapsam orani (0..1)."""
+        if self.oof_covered.size == 0:
+            return 1.0
+        return float(self.oof_covered.mean())
 
     @property
     def fold_std(self) -> float:
@@ -500,6 +526,7 @@ def cross_validate(
 
     return CVResult(
         oof_predictions=oof,
+        oof_covered=oof_filled,
         test_predictions=test_predictions,
         fold_scores=fold_scores,
         overall_score=overall,

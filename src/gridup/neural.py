@@ -448,6 +448,7 @@ def neural_cross_validate(
 
     return CVResult(
         oof_predictions=oof,
+        oof_covered=covered,
         test_predictions=test_predictions,
         fold_scores=fold_scores,
         overall_score=overall,

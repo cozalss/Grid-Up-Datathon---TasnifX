@@ -574,3 +574,75 @@ def test_gunes_tekrarli_indexte_ilceleri_karistirmiyor():
     assert kuzey < guney, (
         f"Ocak'ta 60N ({kuzey:.2f} sa) 20N'den ({guney:.2f} sa) KISA gun gormeli -- takas var"
     )
+
+
+# --------------------------------------------------------------------------
+# REGRESYON: OOF kapsam maskesi
+# --------------------------------------------------------------------------
+
+
+def _kucuk_cv():
+    from gridup.models import cross_validate
+    from gridup.validation import purged_time_series_split
+
+    rng = np.random.default_rng(0)
+    n = 600
+    tarih = pd.Series(np.tile(pd.date_range("2025-01-01", periods=200), 3))
+    X = pd.DataFrame({"a": rng.normal(0, 1, n), "b": rng.normal(0, 1, n)})
+    y = (X.a * 3 + rng.normal(0, 1, n)).to_numpy()
+    folds = purged_time_series_split(
+        tarih, embargo=pd.Timedelta(days=5), n_splits=2,
+        test_span=pd.Timedelta(days=30), verbose=False,
+    )
+    return cross_validate(
+        X, y, folds, kind="lightgbm", metric="rmse",
+        params={"n_estimators": 50, "verbose": -1}, verbose=False,
+    ), y, folds
+
+
+@pytest.mark.slow
+def test_oof_kapsam_maskesi_foldlarla_ortusuyor():
+    """REGRESYON P0: kapsanmayan satirlar OOF'ta SIFIR kalir -- gercek tahmin degil.
+
+    Maske disari cikmadigi surece her cagiran onu yeniden hesaplamak zorunda
+    kalir ve unutmak sessizce yanlis harman/korelasyon uretir.
+    OLCULDU: gercek korelasyon 0.93 iken tum diziyle 0.47.
+    """
+    sonuc, _, folds = _kucuk_cv()
+
+    beklenen = np.zeros(len(sonuc.oof_predictions), dtype=bool)
+    for _, valid in folds:
+        beklenen[valid] = True
+
+    assert sonuc.oof_covered.dtype == bool
+    assert np.array_equal(sonuc.oof_covered, beklenen)
+    assert sonuc.coverage == pytest.approx(beklenen.mean())
+    # Kapsanmayanlar gercekten sifir olmali (dolgu oldugunun kaniti).
+    assert np.all(sonuc.oof_predictions[~beklenen] == 0.0)
+
+
+@pytest.mark.slow
+def test_covered_predictions_dogru_alt_kumeyi_veriyor():
+    sonuc, y, _ = _kucuk_cv()
+    indeks, tahminler = sonuc.covered_predictions()
+
+    assert len(indeks) == len(tahminler) == int(sonuc.oof_covered.sum())
+    assert np.array_equal(tahminler, sonuc.oof_predictions[indeks])
+    # Dogru alt kumede korelasyon, tum diziden BELIRGIN sekilde yuksek olmali.
+    dogru = abs(np.corrcoef(tahminler, y[indeks])[0, 1])
+    hamdan = abs(np.corrcoef(sonuc.oof_predictions, y)[0, 1])
+    assert dogru > hamdan
+
+
+def test_maskesiz_cvresult_geriye_uyumlu():
+    """Elle kurulmus veya eski CVResult'ta maske bos -- hepsi kapsanmis sayilmali."""
+    from gridup.models import CVResult
+
+    eski = CVResult(
+        oof_predictions=np.arange(5.0), test_predictions=None, fold_scores=[1.0],
+        overall_score=1.0, feature_importance=pd.DataFrame(),
+    )
+    indeks, tahminler = eski.covered_predictions()
+    assert len(indeks) == 5
+    assert eski.coverage == 1.0
+    assert np.array_equal(tahminler, eski.oof_predictions)
