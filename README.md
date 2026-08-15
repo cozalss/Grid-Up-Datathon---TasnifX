@@ -225,7 +225,7 @@ tests/    808 test — sızıntı, Türkçe, sözleşmeler, determinizm, özelli
 
 ## Hazır harici veri
 
-Hepsi `data/` altında, **gitignore'da** (repoda yok — aşağıdaki komutlarla üretilir).
+Gerçek GDZ provası hariç hepsi `data/` altında ve **gitignore'da** (aşağıdaki komutlarla üretilir).
 
 | Veri | Boyut | Nasıl üretilir |
 |---|---|---|
@@ -235,7 +235,7 @@ Hepsi `data/` altında, **gitignore'da** (repoda yok — aşağıdaki komutlarla
 | Türkiye saatlik üretim | 58.044 × 18 | aynı betik — **yakıt kırılımı** |
 | 96 ilçe + koordinat + nüfus | 96 × 10 | `python scripts/fetch_districts.py` |
 | MEB okul takvimi 2021–2026 | kod içinde | `gridup.features.school` — indirme gerekmez |
-| **Gerçek GDZ provası** (68.257 kayıt) | 11 MB | `kaggle datasets download -d tmlalper/manisa-izmir-plansiz-elektrik-kesintileri --unzip -p data/prior/ayna` |
+| **Gerçek GDZ provası** (68.257 kayıt) | 11 MB | **repoda geliyor** — `data/prior/ayna/` (kaynak: Kaggle `tmlalper/manisa-izmir-plansiz-elektrik-kesintileri`, halka açık) |
 
 Gerçek veride ölçülen her şey `experiments/ablasyon_gercek.json` ve
 `experiments/benchmark_gercek.json` içinde: feature ailesi öncelik sırası

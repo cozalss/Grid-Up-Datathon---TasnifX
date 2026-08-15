@@ -1,6 +1,14 @@
 # --- Veri: asla commit edilmez (yarisma verisi + turetilmis dosyalar) ---
-data/
+data/*
 !data/.gitkeep
+# ISTISNA: gercek GDZ provasinin kaynagi repoda TASINIR (11 MB, ekip
+# arkadasi klonlayinca indirme derdi olmasin). Kaynak: Kaggle
+# tmlalper/manisa-izmir-plansiz-elektrik-kesintileri (halka acik).
+!data/prior/
+data/prior/*
+!data/prior/ayna/
+data/prior/ayna/*
+!data/prior/ayna/MANISA_IZMIR_PLANSIZ_KESINTILER.csv
 *.csv
 *.parquet
 *.feather
@@ -70,6 +78,6 @@ Thumbs.db
 desktop.ini
 kaggle_paket/
 
-# Gercek veri provasinin kaynagi -- Kaggle'dan indirilir, repoya konmaz
-data/prior/ayna/
-data/prior/2023/
+# SON SATIR OLMALI: gitignore'da son eslesme kazanir; yukaridaki *.csv
+# kurali bu dosyayi yakalamasin diye istisna en sonda durur.
+!data/prior/ayna/MANISA_IZMIR_PLANSIZ_KESINTILER.csv
