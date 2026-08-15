@@ -241,7 +241,9 @@ Gerçek veride ölçülen her şey `experiments/ablasyon_gercek.json` ve
 `experiments/benchmark_gercek.json` içinde: feature ailesi öncelik sırası
 (lag +22,3 baskın; tatil/güneş negatif) ve model sıralaması (iki aşamalı >
 catboost_mae > …; harman 308,3 şampiyon, stacking rekabet dışı). Veri günü
-planı bu ölçümlere yaslanır — `docs/07`.
+planı bu ölçümlere yaslanır — `docs/07`. **Kapsam:** sayılar 2021–22 verisi ve
+`kesinti_dk` hedefi içindir; 2026 verisi gelince ablasyon 1. günde yeniden
+koşulur (betik hazır, ~10 dk).
 
 EPİAŞ için `.env` gerekir — `.env.example`'ı kopyalayıp kendi bilgilerinizi yazın.
 **`.env` asla commit edilmez.**

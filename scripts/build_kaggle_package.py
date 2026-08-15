@@ -195,7 +195,8 @@ def kaggle_kullanici() -> str | None:
 BOOTSTRAP = '''# ==== KAGGLE INTERNETSIZ BOOTSTRAP -- notebook'un ILK hucresi ====
 # Dataset'i notebook'a "Add Input" ile ekledikten sonra bu hucre yeter.
 # Her adim SESSIZ BASARISIZ OLMAZ: ne kurulduğunu ve neyin eksik oldugunu yazar.
-import glob, importlib, os, subprocess, sys
+import importlib, os, subprocess, sys
+from pathlib import Path
 
 GIRDI = "/kaggle/input/{slug}"
 assert os.path.isdir(GIRDI), f"Dataset bagli degil: {{GIRDI}} -- 'Add Input' ile ekle."
@@ -210,7 +211,7 @@ if eksik_temel:
 # 1) Kaggle'da olmayan paketler -- yerel wheel'den, bagimlilik COZMEDEN.
 #    --no-deps sart: aksi halde pip numpy/scipy'yi yukseltmeye calisir ve
 #    onlara karsi derlenmis lightgbm/catboost bozulur.
-tekerlekler = sorted(glob.glob(os.path.join(GIRDI, "tekerlekler", "*.whl")))
+tekerlekler = sorted(str(w) for w in Path(GIRDI, "tekerlekler").glob("*.whl"))
 if tekerlekler:
     r = subprocess.run([sys.executable, "-m", "pip", "install", "--no-index", "--no-deps",
                         *tekerlekler, "-q"], capture_output=True, text=True)
@@ -220,7 +221,7 @@ if tekerlekler:
         print(r.stderr[:400])
 
 # 2) gridup paketi
-gridup_whl = glob.glob(os.path.join(GIRDI, "gridup-*.whl"))
+gridup_whl = sorted(str(w) for w in Path(GIRDI).glob("gridup-*.whl"))
 assert gridup_whl, "gridup wheel'i dataset'te yok."
 r = subprocess.run([sys.executable, "-m", "pip", "install", "--no-index", "--no-deps",
                     gridup_whl[0], "-q"], capture_output=True, text=True)

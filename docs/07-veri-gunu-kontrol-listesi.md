@@ -165,7 +165,13 @@ log.record_lb("gun1_baseline", <LB_SKORU>)
 ## Saat 4+ — Sırayla ekleyin (sıra ÖLÇÜLDÜ, tahmin değil)
 
 Sıra, 68.257 gerçek GDZ kaydında leave-one-group-out ablasyonla ölçüldü
-(`scripts/ablation_gercek.py` → `experiments/ablasyon_gercek.json`). Her
+(`scripts/ablation_gercek.py` → `experiments/ablasyon_gercek.json`).
+
+> **Kapsam sınırı:** bu sayılar 2021–22 verisi, `kesinti_dk` hedefi ve 47
+> ilçe içindir. 2026 hedefi/kapsamı farklıysa sıralamayı taşımayın —
+> **1. günde ablasyonu yeni veride tekrar koşun** (betik hazır, ~10 dk;
+> yol haritası: `ablation_gercek.py` içindeki panel kurulumunu yeni kolon
+> adlarına uyarlamak yeter). Her
 adımdan sonra CV'yi ölçün ve deftere yazın. **Aynı anda birden fazla şey
 değiştirmeyin** — hangisinin işe yaradığını bilemezsiniz.
 

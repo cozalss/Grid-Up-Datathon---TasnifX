@@ -66,19 +66,20 @@ if IS_KAGGLE:
     # DIKKAT: gridup Kaggle imajinda KURULU DEGILDIR. Onceki surumde sys.path
     # yalnizca YERELDE ayarlaniyordu; Kaggle'da 'import gridup' ModuleNotFound
     # veriyordu. Once offline paket dataset'indeki wheel'i kur, o yoksa ham
-    # kaynagi sys.path'e ekle.
-    import glob
+    # kaynagi sys.path'e ekle. (Path.glob, glob.glob degil: juri notebook'u
+    # ruff'tan geciyor -- PTH207.)
     import subprocess
 
-    _whl = glob.glob("/kaggle/input/*/gridup-*.whl")
+    _whl = sorted(Path("/kaggle/input").glob("*/gridup-*.whl"))
     if _whl:
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--no-index", "--no-deps", _whl[0], "-q"],
+            [sys.executable, "-m", "pip", "install", "--no-index", "--no-deps",
+             str(_whl[0]), "-q"],
             check=False,
         )
     else:
-        for _src in glob.glob("/kaggle/input/*/src"):
-            sys.path.insert(0, _src)
+        for _src in Path("/kaggle/input").glob("*/src"):
+            sys.path.insert(0, str(_src))
 else:
     sys.path.insert(0, str(Path.cwd().parent / "src"))
 """
@@ -720,6 +721,11 @@ log.leaderboard()
   bulundu, düzeltildi ve bu sayfadaki sayılar düzeltilmiş ölçümlerdir
   (prova 334.29, harman 308.27). Sızıntı "bizde olmaz" denen şey değil,
   sistematik aranan şeydir.
+- **Bu ölçümlerin kapsamı 2021–22 verisidir.** Ablasyon ve benchmark sayıları
+  2021-05→2022-08 GDZ kaydında, `kesinti_dk` hedefi ve 47 ilçeyle ölçüldü.
+  2026 yarışması muhtemelen farklı hedef ve 96 ilçeyle gelecek — "tatil zarar
+  veriyor" gibi sonuçlar oraya taşınmaz, **1. günde yeni veride yeniden
+  ölçülür** (`scripts/ablation_gercek.py` hazır, ~10 dk).
 - **Public LB bir fold değildir.** LB rastgele bölmeyse zaman-temelli CV ile
   uyuşmayabilir; CV–LB korelasyonu düşükken LB'ye göre model seçmek shakeup'ta
   kaybettirir. Önce şema, sonra karar.
