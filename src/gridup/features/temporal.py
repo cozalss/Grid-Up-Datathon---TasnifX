@@ -66,6 +66,20 @@ MISSING_HOLIDAY_DISTANCE = 999
 #      u (U+00FC), c (U+00E7) ve kesme isareti. Kodlama zincirinin her
 #      halkasinda bozulma riski.
 #   3. Kutuphane surumleri arasinda metin degisebilir; sabit kod degismez.
+#: ``holidays`` kutuphanesi tatil adlarinin DILINI sistem yerelinden secer.
+#: ``_holiday_code`` ise ad icinde TURKCE anahtar kelime arar ("ramazan",
+#: "cumhuriyet"...). Dil Ingilizce olursa ad "Eid al-Fitr" / "Republic Day"
+#: gelir, hicbir anahtar eslesmez ve HER TATIL SESSIZCE 0 (tatil yok) olur.
+#:
+#: OLCULDU 2026-08-18: yerelde (Turkce Windows yereli) kodlar dogru
+#: uretiliyordu; GitHub'in Ubuntu runner'inda (Ingilizce yerel) dort test
+#: birden ``tatil_kod == 0`` ile dustu. KAGGLE DA LINUX/INGILIZCE yereldir --
+#: yani bu hata fark edilmeseydi yarisma notebook'unda tum tatil ailesi
+#: olu olacakti ve hicbir hata mesaji cikmayacakti.
+#:
+#: Bu yuzden dil ACIKCA sabitlenir; ortamdan miras ALINMAZ.
+HOLIDAY_LANGUAGE = "tr"
+
 HOLIDAY_NONE = 0
 HOLIDAY_CODES: dict[str, int] = {
     "ramazan": 1,
@@ -638,10 +652,12 @@ def add_turkish_holiday_features(
 
     years = list(range(int(valid_years.min()) - 1, int(valid_years.max()) + 2))
     categories = ("public", "half_day") if include_half_days else ("public",)
-    calendar = holidays_lib.TR(years=years, categories=categories)
+    calendar = holidays_lib.TR(years=years, categories=categories, language=HOLIDAY_LANGUAGE)
 
     # Yarim gunleri ayirt edebilmek icin yalnizca tam gunlerin ayri bir kumesi.
-    full_day_calendar = holidays_lib.TR(years=years, categories=("public",))
+    full_day_calendar = holidays_lib.TR(
+        years=years, categories=("public",), language=HOLIDAY_LANGUAGE
+    )
 
     dates = times.dt.date
     in_calendar = dates.map(lambda day: day in calendar if pd.notna(day) else False)
@@ -1551,7 +1567,7 @@ def add_upcoming_holiday_features(
     # +2 yil ileri: serinin son gunlerinde bile "sonraki tatil" bulunsun.
     years = list(range(int(valid_years.min()) - 1, int(valid_years.max()) + 2))
     categories = ("public", "half_day") if include_half_days else ("public",)
-    calendar = holidays_lib.TR(years=years, categories=categories)
+    calendar = holidays_lib.TR(years=years, categories=categories, language=HOLIDAY_LANGUAGE)
     holiday_dates = np.array(sorted(calendar.keys()), dtype="datetime64[D]")
 
     # NaT maskesi CAST'TEN ONCE -- gerekce add_turkish_holiday_features'taki

@@ -6,6 +6,8 @@ karsilik gelir. Tarihler holidays kutuphanesinden teyit edildi.
 
 from __future__ import annotations
 
+from datetime import date
+
 import pandas as pd
 import pytest
 
@@ -216,3 +218,60 @@ def test_no_nan_in_generated_columns():
     result = add_turkish_holiday_features(_frame(dates), "tarih")
     generated = [c for c in result.columns if c.startswith("tatil")]
     assert not result[generated].isna().to_numpy().any()
+
+
+class TestYerelBagimsizlik:
+    """Tatil kodlari SISTEM YERELINDEN bagimsiz olmali.
+
+    2026-08-18'de gercek bir hata: ``holidays`` kutuphanesi tatil adlarinin
+    dilini sistem yerelinden seciyor. ``_holiday_code`` ad icinde TURKCE
+    anahtar kelime aradigi icin, Ingilizce yerelde adlar "Eid al-Fitr" /
+    "Republic Day" geliyor, hicbiri eslesmiyor ve HER TATIL sessizce 0
+    oluyordu.
+
+    Yerelde (Turkce Windows) gorunmuyordu; GitHub'in Ubuntu runner'inda dort
+    test birden dustu. KAGGLE DA LINUX/INGILIZCE yereldir -- fark edilmeseydi
+    yarisma notebook'unda tum tatil ailesi olu olacak, hicbir hata da
+    cikmayacakti.
+    """
+
+    def test_dil_acikca_sabitlenmis(self):
+        """Cagri, dili ortamdan MIRAS ALMAMALI."""
+        import inspect
+
+        from gridup.features import temporal
+
+        kaynak = inspect.getsource(temporal)
+        cagri_sayisi = kaynak.count("holidays_lib.TR(")
+        dil_sayisi = kaynak.count("language=HOLIDAY_LANGUAGE")
+        assert cagri_sayisi > 0, "Test kurgusu bozuk: hic TR cagrisi bulunamadi."
+        assert dil_sayisi >= cagri_sayisi, (
+            f"{cagri_sayisi} adet holidays_lib.TR cagrisi var ama yalnizca "
+            f"{dil_sayisi} tanesi dili sabitliyor. Sabitlemeyen cagri, "
+            "Ingilizce yerelde TUM tatil kodlarini sessizce 0 yapar."
+        )
+
+    def test_ingilizce_adlar_kod_uretmez_turkce_uretir(self):
+        """Hatanin MEKANIZMASINI kilitler.
+
+        Bu test, kutuphanenin gercekten dile gore farkli ad dondurdugunu ve
+        bizim eslestirmemizin buna duyarli oldugunu kanitlar. Yalnizca
+        "kodlar dogru" demek yetmez -- neden dogru oldugunu de sabitlemek
+        gerekir, aksi halde biri dili kaldirdiginda sessizce bozulur.
+        """
+        holidays_lib = pytest.importorskip("holidays")
+        from gridup.features.temporal import HOLIDAY_CODES, _holiday_code
+
+        gun = date(2026, 10, 29)
+        turkce = holidays_lib.TR(years=[2026], categories=("public",), language="tr").get(gun)
+        ingilizce = holidays_lib.TR(years=[2026], categories=("public",), language="en_US").get(gun)
+
+        assert turkce != ingilizce, (
+            "Kutuphane iki dilde ayni adi donduruyor; bu test artik mekanizmayi "
+            "olcmuyor demektir -- gozden gecir."
+        )
+        assert _holiday_code(turkce) == HOLIDAY_CODES["cumhuriyet"]
+        assert _holiday_code(ingilizce) == 0, (
+            "Ingilizce ad kod uretmemeli -- uretiyorsa eslestirme degismis, "
+            "bu testin gerekcesi guncellenmeli."
+        )
