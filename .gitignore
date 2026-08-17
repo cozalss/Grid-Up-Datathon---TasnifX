@@ -83,3 +83,4 @@ kaggle_paket/
 # SON SATIR OLMALI: gitignore'da son eslesme kazanir; yukaridaki *.csv
 # kurali bu dosyayi yakalamasin diye istisna en sonda durur.
 !data/prior/ayna/MANISA_IZMIR_PLANSIZ_KESINTILER.csv
+.venv-ci/

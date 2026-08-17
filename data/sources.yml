@@ -252,18 +252,18 @@
     },
     {
             "path": "data/external/turizm_aylik_il.parquet",
-      "sha256": "82303fcc6a2b17987934b9a8b7f0a9a7f7de7540ef1613dd978f0020f8a098cc",
+      "sha256": "fa555ad5c57002d0328c5f8bcab55645ffa6997d9692520c545b3cbbdfd3a9dc",
       "license": "KTB-institutional-clearance",
       "redistribution": "allowed",
       "attribution": "T.C. Kultur ve Turizm Bakanligi, Yatirim ve Isletmeler Genel Mudurlugu (YIGM) monthly accommodation statistics bulletins (Bakanlik Belgeli Tesis Konaklama Istatistikleri, Il sheet).",
       "verification": {
         "basis": "institutional-confirmation",
         "reviewed_at": "2026-08-17",
-        "evidence": "Same publisher and publication series as turizm_geceleme.parquet (YIGM accommodation bulletins); the institutional redistribution clearance covers the bulletin series. NOT a published open license. Cross-checked: 12-month sums equal the annual bulletin province totals for 2023-2025 (0.00% deviation, all 81 provinces); no revisions between successive monthly releases (82 periods, max 0.0%)."
+        "evidence": "Same publisher and publication series as turizm_geceleme.parquet (YIGM accommodation bulletins); the institutional redistribution clearance covers the bulletin series. NOT a published open license. Cross-checked: 12-month sums equal the annual bulletin province totals for 2023-2025 (0.00% deviation, all 81 provinces); no revisions between successive monthly releases (82 periods, max 0.0%). Coverage regimes measured from implied bed capacity: breaks at 2022-09 and 2025-07 (kapsam_rejimi); belediye series folded into *_tum_belgeli columns."
       },
       "source": {
         "uri": "https://yigm.ktb.gov.tr/TR-201125/aylik-bultenler.html",
-        "snapshot_ref": "2019-01..2026-06 monthly bulletins, 90 xlsx files (Eklenti ids fixed in scripts/fetch_turizm_aylik.py)",
+        "snapshot_ref": "Bakanlik belgeli 2019-01..2026-06 (90 xlsx) + belediye belgeli 2019-01..2022-10 (46 xlsx); Eklenti ids fixed in scripts/fetch_turizm_aylik.py",
         "retrieved_at": "2026-08-17",
         "immutable": false
       },
@@ -276,7 +276,9 @@
           "il_key",
           "kapsam_rejimi",
           "geceleme",
-          "doluluk"
+          "doluluk",
+          "geceleme_tum_belgeli",
+          "doluluk_tum_belgeli"
         ]
       }
     },

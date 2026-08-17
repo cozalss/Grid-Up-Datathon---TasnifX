@@ -39,17 +39,27 @@ def _betik():
 ILLER = ["Adana", "Aydın", "Muğla", "İzmir"]
 
 
-def _sahte_bulten(yol: Path, *, yil: int, ay: int, kapsam_basit: bool, il_sayisi: int = 81) -> None:
+def _sahte_bulten(
+    yol: Path,
+    *,
+    yil: int,
+    ay: int,
+    kapsam_basit: bool,
+    il_sayisi: int = 81,
+    belediye: bool = False,
+    carpan: int = 1,
+) -> None:
     """KTB aylik bultenin sayfa yapisini birebir taklit eden xlsx yazar."""
     ay_adlari = [
         "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN",
         "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK",
     ]  # fmt: skip
-    baslik = (
-        "İŞLETME VE BASİT BELGELİ KONAKLAMA TESİSLERİNDE ..."
-        if kapsam_basit
-        else "TURİZM İŞLETME BELGELİ KONAKLAMA TESİSLERİNDE ..."
-    )
+    if belediye:
+        baslik = "MAHALLİ İDARELERCE BELGELENDİRİLEN KONAKLAMA TESİSLERİNDE ..."
+    elif kapsam_basit:
+        baslik = "İŞLETME VE BASİT BELGELİ KONAKLAMA TESİSLERİNDE ..."
+    else:
+        baslik = "TURİZM İŞLETME BELGELİ KONAKLAMA TESİSLERİNDE ..."
     yil_sayfa = pd.DataFrame([[baslik, None, None], ["YILLAR", "TESİSE GELİŞ", "GECELEME"]]
                              + [[str(y), 1, 2] for y in range(yil - 3, yil + 1)])  # fmt: skip
     ay_sayfa = pd.DataFrame([[baslik, None, None], ["AYLAR", "TESİSE GELİŞ", "GECELEME"]]
@@ -76,8 +86,9 @@ def _sahte_bulten(yol: Path, *, yil: int, ay: int, kapsam_basit: bool, il_sayisi
         [None] + ["YABANCI", "YERLİ", "TOPLAM"] * 4,
     ]
     for sira, il in enumerate(iller, start=1):
-        satirlar.append([il, sira, sira * 2, sira * 3, sira * 10, sira * 20, sira * 30,
-                         1.5, 1.5, 1.5, 10.0, 20.0, 30.0])  # fmt: skip
+        c = carpan
+        satirlar.append([il, sira * c, sira * 2 * c, sira * 3 * c, sira * 10 * c, sira * 20 * c,
+                         sira * 30 * c, 1.5, 1.5, 1.5, 10.0, 20.0, 30.0])  # fmt: skip
     satirlar.append(["TOPLAM"] + [999] * 12)
     il_sayfa = pd.DataFrame(satirlar)
 
@@ -134,7 +145,8 @@ def test_il_tablosu_sema_ve_kapsam(tmp_path: Path) -> None:
 
     t_eski = m.il_tablosu(eski, 2022, 10)
     t_yeni = m.il_tablosu(yeni, 2022, 11)
-    assert list(t_eski.columns) == m.CIKTI_KOLONLARI
+    temel = [k for k in m.CIKTI_KOLONLARI if k not in (*m.BELEDIYE_KOLONLARI, *m.TUM_KOLONLARI)]
+    assert list(t_eski.columns) == temel
     assert len(t_eski) == 81 and "toplam" not in set(t_eski["il_key"])
     assert set(t_eski["kapsam"]) == {"isletme"}
     assert set(t_yeni["kapsam"]) == {"isletme_basit"}
@@ -178,6 +190,77 @@ def test_il_tablosu_kapsam_rejimi_kolonu(tmp_path: Path) -> None:
     t = m.il_tablosu(yol, 2022, 10)
     assert set(t["kapsam"]) == {"isletme"}
     assert set(t["kapsam_rejimi"]) == {2}
+
+
+def test_belediye_haritasi_2019_01_2022_10_bosluksuz() -> None:
+    """Belediye serisi 2019-01..2022-10; sonrasi bakanlik serisine katildi."""
+    m = _betik()
+    donemler = sorted(m.BELEDIYE_BULTENLER)
+    assert donemler[0] == (2019, 1) and donemler[-1] == (2022, 10)
+    assert len(donemler) == 46
+    assert len(set(m.BELEDIYE_BULTENLER.values())) == 46
+    assert not set(m.BELEDIYE_BULTENLER.values()) & set(m.BULTENLER.values())
+
+
+def test_il_tablosu_seri_kapsam_capraz_dogrular(tmp_path: Path) -> None:
+    """Belediye dosyasi bakanlik olarak (veya tersi) okunursa reddedilmeli."""
+    m = _betik()
+    bel = tmp_path / "bel.xlsx"
+    bak = tmp_path / "bak.xlsx"
+    _sahte_bulten(bel, yil=2021, ay=6, kapsam_basit=False, belediye=True, il_sayisi=79)
+    _sahte_bulten(bak, yil=2021, ay=6, kapsam_basit=False)
+
+    t = m.il_tablosu(bel, 2021, 6, seri="belediye")
+    assert len(t) == 79 and set(t["kapsam"]) == {"belediye"}
+    with pytest.raises(ValueError, match="belediye serisi bekleniyordu"):
+        m.il_tablosu(bak, 2021, 6, seri="belediye")
+    with pytest.raises(ValueError, match="il satiri"):
+        m.il_tablosu(bel, 2021, 6)  # bakanlik olarak: 79 il -> red
+    _sahte_bulten(bel, yil=2021, ay=6, kapsam_basit=False, belediye=True, il_sayisi=81)
+    with pytest.raises(ValueError, match="baslik belediye diyor"):
+        m.il_tablosu(bel, 2021, 6)
+    with pytest.raises(ValueError, match="Bilinmeyen seri"):
+        m.il_tablosu(bel, 2021, 6, seri="x")
+
+
+def test_tum_belgeli_birlestir_toplam_ve_doluluk() -> None:
+    """tum = bakanlik + belediye; birlesik doluluk yatak-gun agirlikli; belediye yoksa bakanlik."""
+    m = _betik()
+    bak = pd.DataFrame(
+        {"yil": [2022, 2022, 2023], "ay": [8, 8, 8], "il_key": ["mugla", "izmir", "mugla"],
+         "gelis": [100.0, 50.0, 300.0], "geceleme": [800.0, 200.0, 2400.0],
+         "doluluk": [80.0, 40.0, 60.0]}
+    )  # fmt: skip
+    # Mugla 2022-08: belediye 200 geceleme, %20 doluluk -> yatak-gun 1000; bakanlik yg 1000
+    bel = pd.DataFrame(
+        {"yil": [2022], "ay": [8], "il_key": ["mugla"], "gelis": [40.0],
+         "geceleme": [200.0], "doluluk": [20.0]}
+    )  # fmt: skip
+    kopya = bak.copy()
+    out = m.tum_belgeli_birlestir(bak, bel).set_index(["yil", "ay", "il_key"])
+    pd.testing.assert_frame_equal(bak, kopya)
+    mug22 = out.loc[(2022, 8, "mugla")]
+    assert mug22["geceleme_tum_belgeli"] == 1000.0 and mug22["gelis_tum_belgeli"] == 140.0
+    assert np.isclose(mug22["doluluk_tum_belgeli"], 100.0 * 1000.0 / 2000.0)  # %50
+    izm = out.loc[(2022, 8, "izmir")]  # belediye satiri yok -> 0 sayilir
+    assert izm["geceleme_tum_belgeli"] == 200.0 and np.isnan(izm["geceleme_belediye"])
+    assert izm["doluluk_tum_belgeli"] == 40.0
+    mug23 = out.loc[(2023, 8, "mugla")]  # seri bitmis -> bakanlik degeri
+    assert mug23["geceleme_tum_belgeli"] == 2400.0 and mug23["doluluk_tum_belgeli"] == 60.0
+    # belediye tamamen yoksa da kolonlar var ve tum = bakanlik
+    out2 = m.tum_belgeli_birlestir(bak, None)
+    assert (out2["geceleme_tum_belgeli"] == bak["geceleme"]).all()
+    assert out2["geceleme_belediye"].isna().all()
+
+
+def test_tum_belgeli_birlestir_yetim_belediye_satiri_hata() -> None:
+    m = _betik()
+    bak = pd.DataFrame({"yil": [2022], "ay": [8], "il_key": ["mugla"], "gelis": [1.0],
+                        "geceleme": [1.0], "doluluk": [50.0]})  # fmt: skip
+    bel = pd.DataFrame({"yil": [2022], "ay": [8], "il_key": ["van"], "gelis": [1.0],
+                        "geceleme": [1.0], "doluluk": [50.0]})  # fmt: skip
+    with pytest.raises(ValueError, match="bakanlikta olmayan"):
+        m.tum_belgeli_birlestir(bak, bel)
 
 
 # --------------------------------------------------------------------------

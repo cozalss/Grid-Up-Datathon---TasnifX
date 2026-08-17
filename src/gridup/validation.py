@@ -766,7 +766,9 @@ def adversarial_validation(
             importance_type="gain",
         )
         model.fit(combined.iloc[train_idx], labels[train_idx])
-        oof[valid_idx] = model.predict_proba(combined.iloc[valid_idx])[:, 1]
+        # lightgbm predict_proba tip imzasi birlesim (ndarray | sparse | list);
+        # asarray ile ndarray'e sabitlenir, davranis degismez.
+        oof[valid_idx] = np.asarray(model.predict_proba(combined.iloc[valid_idx]))[:, 1]
         importances += model.feature_importances_ / n_splits
 
     auc = float(roc_auc_score(labels, oof))

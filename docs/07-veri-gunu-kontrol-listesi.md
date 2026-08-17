@@ -20,11 +20,11 @@ izlenecek adımları içerir.
 | Deprem katalogu (AFAD) | `data/external/depremler.parquet` | 373 deprem, M4,0–6,6, Ege kutusu 2020–2026 |
 | Yangın tespitleri (NASA FIRMS) | `data/external/yanginlar.parquet` | 30.575 uydu sıcak-noktası, 5 il, 2020–2024 (poligon değil tespit; FRP yoğunluk vekili) |
 | Turizm gecelemeleri (KTB) | `data/external/turizm_geceleme.parquet` | İlçe bazlı geceleme/geliş, 2023–2025, 231 satır; Alsancak→Konak katlanmış, her satır 96 ilçe referansında — Muğla yaz-nüfus vekili |
-| Turizm aylık il serisi (KTB) | `data/external/turizm_aylik_il.parquet` | 81 il × ay, 2019-01…2026-06 (7290 satır): geliş/geceleme (yabancı-yerli-toplam) + doluluk. **Çapraz doğrulandı:** 12 ay toplamı = yıllık bülten (%0,00, 81 il), sonraki bültenlerde revizyon yok. `kapsam_rejimi` 1/2/3 = **ölçülen** kapasite kırılmaları 2022-09 ve 2025-07 (başlık 2022-11'de değişti, veri 2 ay önce); yıllar arası kıyasta `doluluk` kullan. `features.tourism`: lag ≥2 ay zorunlu (vars. 12); ilçe-ay tahmini = yıllık ilçe payı × il aylık profil, `districts=` ile tesissiz ilçeler 0 |
+| Turizm aylık il serisi (KTB) | `data/external/turizm_aylik_il.parquet` | 81 il × ay, 2019-01…2026-06 (7290 satır): geliş/geceleme (yabancı-yerli-toplam) + doluluk. **Çapraz doğrulandı:** 12 ay toplamı = yıllık bülten (%0,00, 81 il), sonraki bültenlerde revizyon yok. `kapsam_rejimi` 1/2/3 = **ölçülen** kapasite kırılmaları 2022-09 ve 2025-07 (başlık 2022-11'de değişti, veri 2 ay önce); yıllar arası kıyasta `doluluk` kullan. `features.tourism`: lag ≥2 ay zorunlu (vars. 12); ilçe-ay tahmini = yıllık ilçe payı × il aylık profil, `districts=` ile tesissiz ilçeler 0. **+ Belediye belgeli seri** 2019-01…2022-10 (46 bülten) → `*_belediye` ve `*_tum_belgeli` (bakanlık+belediye; 2022-09 dikişini kapatır, 2022-11'de ters düşüş — kusursuz sürekli seviye serisi yok, bkz. docs/15) |
 | EPDK bölge sınıfı | `gridup.features.demografi.epdk_bolge_sinifi` | Resmi kentsel/kentaltı/kırsal eşikleri |
 | Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
 | Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
-| Test paketi | `tests/` | 1173 test |
+| Test paketi | `tests/` | 1179 test |
 
 ---
 

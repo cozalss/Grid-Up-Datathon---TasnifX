@@ -237,7 +237,10 @@ def turizm_aylik():
 
 class TestTurizmAylik:
     def test_sema_ve_kapsam(self, turizm_aylik):
-        gerekli = {"yil", "ay", "il_key", "kapsam", "kapsam_rejimi", "gelis", "geceleme", "doluluk"}
+        gerekli = {
+            "yil", "ay", "il_key", "kapsam", "kapsam_rejimi", "gelis", "geceleme", "doluluk",
+            "geceleme_belediye", "geceleme_tum_belgeli", "doluluk_tum_belgeli",
+        }  # fmt: skip
         assert gerekli <= set(turizm_aylik.columns)
         assert turizm_aylik["il_key"].nunique() == 81
         assert (turizm_aylik.groupby(["yil", "ay"]).size() == 81).all()
@@ -269,6 +272,43 @@ class TestTurizmAylik:
         assert len(ortak) >= 10
         sapma = (aylik_il[ortak] - yillik_il[ortak]).abs() / yillik_il[ortak]
         assert (sapma < 0.005).all(), sapma[sapma >= 0.005]
+
+    def test_belediye_ve_tum_belgeli_kolonlari(self, turizm_aylik):
+        """Belediye 2022-10'a kadar dolu, sonra NaN; tum = bakanlik + belediye."""
+        t = turizm_aylik
+        donem = t["yil"] * 12 + t["ay"]
+        sinir = 2022 * 12 + 10
+        assert t.loc[donem <= sinir, "geceleme_belediye"].notna().mean() > 0.95
+        assert t.loc[donem > sinir, "geceleme_belediye"].isna().all()
+        beklenen = t["geceleme"] + t["geceleme_belediye"].fillna(0)
+        assert (t["geceleme_tum_belgeli"] == beklenen).all()
+        assert t["doluluk_tum_belgeli"].between(0, 110).all()
+        # belediye olmayan donemde birlesik doluluk = bakanlik dolulugu
+        sonra = t[donem > sinir]
+        assert np.allclose(sonra["doluluk_tum_belgeli"], sonra["doluluk"])
+
+    def test_tum_belgeli_2022_09_kirilmasini_kapatir(self, turizm_aylik):
+        """Ortuk yatak (geceleme / doluluk) 'tum belgeli' seride 2022-08 -> 2022-09
+        sicramamali; bakanlik serisinde sicrar (olculdu: Turkiye 1,04M -> 1,24M).
+
+        NOT: tum seri 2022-11'de TERSINE duser (1,44M -> 1,03M; belgeye
+        gecmeyen belediye tesisleri istatistikten cikti). Bu test yalnizca
+        Eylul dikisini olcer; Kasim dususu bilinen ve belgelenmis bir olgudur.
+        """
+        t = turizm_aylik
+        gun = pd.to_datetime(
+            pd.DataFrame({"year": t["yil"], "month": t["ay"], "day": 1})
+        ).dt.days_in_month
+        yatak_bak = (t["geceleme"] / (t["doluluk"] / 100 * gun)).groupby([t["yil"], t["ay"]]).sum()
+        yatak_tum = (
+            (t["geceleme_tum_belgeli"] / (t["doluluk_tum_belgeli"] / 100 * gun))
+            .groupby([t["yil"], t["ay"]])
+            .sum()
+        )
+        sicrama_bak = yatak_bak[(2022, 9)] / yatak_bak[(2022, 8)]
+        sicrama_tum = yatak_tum[(2022, 9)] / yatak_tum[(2022, 8)]
+        assert sicrama_bak > 1.10, f"bakanlik serisinde beklenen sicrama yok: {sicrama_bak:.3f}"
+        assert abs(sicrama_tum - 1.0) < 0.06, f"tum belgeli seride sicrama kaldi: {sicrama_tum:.3f}"
 
     def test_mugla_yaz_profili(self, turizm_aylik):
         """docs/10: Mugla yaz nufusu katlanir -- Temmuz/Ocak orani buyuk olmali."""

@@ -27,11 +27,20 @@ etiketli: **2022-09** (Turkiye 1,04M -> 1,24M yatak; baslik ancak 2022-11'de
 "isletme ve basit belgeli" oldu) ve **2025-07** (1,46M -> 1,73M; Mugla
 133k -> 219k; doluluk sabit). Ham geceleme/gelis yalnizca AYNI rejim icinde
 kiyaslanabilir. Rejimden bagimsiz olculer:
-  * ``doluluk`` -- oran, tesis sayisindan etkilenmez; TERCIH EDILEN.
+  * ``doluluk`` -- oran, tesis sayisindan etkilenmez; TERCIH EDILEN. Olculdu:
+    Mugla Temmuz dolulugu 2019/2022/2024'te %86-90 iken geceleme 2 katina
+    cikti. Uyari: 2025-07 sonrasi doluluk da ~%15 asagi kayar (karisim
+    etkisi -- yeni tesisler dusuk dolulukla calisiyor); mevsim SEKLI icin
+    doluluk, seviye icin ``kapsam_rejimi`` birlikte verilmeli.
   * ``{prefix}_{kolon}_yil_payi`` -- o ayin, kaynak yilin 12 ayindaki
     payi; kapsam yil ICINDE degismediyse temizdir. 2022 (Eylul kirilmasi)
     ve 2025 (Temmuz kirilmasi) paylari BOZUKTUR: o yillarin yaz aylari
     oldugundan agir gorunur. Modele ``kapsam_rejimi`` de verilmeli.
+  * ``geceleme_tum_belgeli`` / ``doluluk_tum_belgeli`` -- bakanlik +
+    belediye (2022-10'a kadar); 2022-09 sicramasini kapatir ama 2022-11'de
+    ters bir dusus tasir (belgeye gecmeyen tesisler cikti). 2019-2022 icin
+    gercek turist yukune daha yakin (Mugla'da +%40); ayrintisi
+    fetch_turizm_aylik.py basliginda.
 Ay payi yalnizca 12 ayin tamami varsa hesaplanir; eksikse NaN birakilir
 (yanlis payda ile "dogru gorunen" oran uretmek yerine).
 

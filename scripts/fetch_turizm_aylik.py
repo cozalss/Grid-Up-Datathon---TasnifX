@@ -184,6 +184,64 @@ BULTENLER: dict[tuple[int, int], str] = {
     (2026, 6): "150391,konaklama-aylik-b-lten-2026---06-2026-08-03xlsx.xlsx?0",
 }
 
+#: BELEDIYE (mahalli idare) belgeli tesislerin AYLIK bultenleri, ayni "Il"
+#: sayfasi duzeni. Seri 2022-10'da BITER: 7334 sayili Kanun (28.07.2021)
+#: belediye belgeli tesislere "basit konaklama turizm isletmesi belgesi"
+#: zorunlulugu getirdi; belgelenenler Bakanlik serisine katildi (KTB
+#: metaveri TR-201124: "2022 Kasim'dan itibaren Bakanlik Belgeli Konaklama
+#: Istatistikleri olarak yayimlanmaktadir"). Bakanlik + belediye toplami,
+#: 2022-09 kirilmasini KAPATAN "tum belgeli" serisidir. Yil sayfalari
+#: TR-232595 (2019) .. TR-311439 (2022); slug'lardaki "hairan", "agusto"
+#: yazim hatalari sitede gercekten boyle.
+BELEDIYE_BULTENLER: dict[tuple[int, int], str] = {
+    (2019, 1): "90681,ocak-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 2): "90684,subat-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 3): "90680,mart-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 4): "90690,nisan-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 5): "90685,mayis-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 6): "90689,haziran-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 7): "90682,temmuz-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 8): "90679,agustos-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 9): "90683,eylul-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 10): "90686,ekim-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 11): "90688,kasim-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2019, 12): "90687,aralik-2019-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 1): "90714,ocak-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 2): "90706,subat-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 3): "90712,mart-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 4): "90705,nisan-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 5): "90708,mayis-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 6): "90715,haziran-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 7): "90711,temmuz-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 8): "90704,agustos-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 9): "90709,eylul-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 10): "90713,ekim-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 11): "90710,kasim-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2020, 12): "90707,aralik-2020-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 1): "98265,ocak-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 2): "98266,subat-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 3): "98263,mart-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 4): "98268,nisan-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 5): "98264,mayis-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 6): "98260,hairan-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 7): "98267,temmuz-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 8): "98257,agusto-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 9): "98262,eylul-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 10): "98258,ekim-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 11): "98261,kasim-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2021, 12): "98259,aralik-2021-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2022, 1): "93659,ocak-2022-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2022, 2): "100833,subat-2022-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2022, 3): "97127,mart-2022-belediye-belgeli-aylik-bultenxlsx.xlsx?0",
+    (2022, 4): "111324,konaklama-aylik-bulten-2022---nisan-belediyexlsx.xlsx?0",
+    (2022, 5): "111327,konaklama-aylik-bulten-2022---mayis-belediyexlsx.xlsx?0",
+    (2022, 6): "111326,konaklama-aylik-bulten-2022---haziran-belediyexlsx.xlsx?0",
+    (2022, 7): "111325,konaklama-aylik-bulten-2022---temmuz-belediyexlsx.xlsx?0",
+    (2022, 8): "111321,konaklama-aylik-bulten-2022---agustos-belediyexlsx.xlsx?0",
+    (2022, 9): "111322,konaklama-aylik-bulten-2022--eylul-belediyexlsx.xlsx?0",
+    (2022, 10): "111323,konaklama-aylik-bulten-2022---ekim-belediyexlsx.xlsx?0",
+}
+
 #: Bultendeki ay adi (join_key bicimi) -> ay numarasi.
 AY_ADLARI: dict[str, int] = {
     "ocak": 1, "subat": 2, "mart": 3, "nisan": 4, "mayis": 5, "haziran": 6,
@@ -208,11 +266,16 @@ CIKTI_YOLU = Path("data/external/turizm_aylik_il.parquet")
 #: yeni rejim. Rejim 1: <=2022-08, 2: 2022-09..2025-06, 3: >=2025-07.
 REJIM_KIRILMALARI: tuple[tuple[int, int], ...] = ((2022, 9), (2025, 7))
 
+#: Belediye serisinden gelen kolonlar (2022-10'a kadar dolu, sonra NaN) ve
+#: bakanlik + belediye toplami "tum belgeli" kolonlari (her donem dolu).
+BELEDIYE_KOLONLARI = ["gelis_belediye", "geceleme_belediye", "doluluk_belediye"]
+TUM_KOLONLARI = ["gelis_tum_belgeli", "geceleme_tum_belgeli", "doluluk_tum_belgeli"]
 CIKTI_KOLONLARI = [
     "yil", "ay", "il", "il_key", "kapsam", "kapsam_rejimi",
     "gelis_yabanci", "gelis_yerli", "gelis",
     "geceleme_yabanci", "geceleme_yerli", "geceleme",
     "doluluk",
+    *BELEDIYE_KOLONLARI, *TUM_KOLONLARI,
 ]  # fmt: skip
 
 REQUEST_PAUSE_S = 6.0
@@ -221,10 +284,11 @@ RETRIES = 4
 MIN_BAYT = 50_000
 
 
-def indir(yil: int, ay: int, eklenti: str) -> Path:
+def indir(yil: int, ay: int, eklenti: str, *, seri: str = "bakanlik") -> Path:
     """Bulteni ham dizine indirir; hash'i dogrulanmis dosya varsa dokunmaz."""
     url = EKLENTI + eklenti
-    hedef = HAM_DIZIN / f"ktb_konaklama_aylik_{yil}_{ay:02d}.xlsx"
+    ek = "" if seri == "bakanlik" else f"{seri}_"
+    hedef = HAM_DIZIN / f"ktb_konaklama_{ek}aylik_{yil}_{ay:02d}.xlsx"
     if hedef.exists():
         try:
             validate_cached_file(hedef, min_bytes=MIN_BAYT, source=url)
@@ -300,6 +364,8 @@ def _kapsam(baslik: str) -> str:
     Kasim seviye sicramasini gormezden gelmek olur.
     """
     anahtar = join_key(baslik)
+    if "mahalli idare" in anahtar or "belediye" in anahtar:
+        return "belediye"
     if "basit" in anahtar:
         return "isletme_basit"
     if "isletme belgeli" in anahtar:
@@ -312,12 +378,18 @@ def kapsam_rejimi(yil: int, ay: int) -> int:
     return 1 + sum((yil, ay) >= kirilma for kirilma in REJIM_KIRILMALARI)
 
 
-def il_tablosu(yol: Path, yil: int, ay: int) -> pd.DataFrame:
+def il_tablosu(yol: Path, yil: int, ay: int, *, seri: str = "bakanlik") -> pd.DataFrame:
     """Bultenin "Il" sayfasini ortak semaya cevirir; donemi icerikten dogrular.
 
+    ``seri="bakanlik"``: tam 81 il ve kapsam isletme/isletme_basit olmali.
+    ``seri="belediye"``: kapsam "belediye" olmali; il sayisi 81'den AZ
+    olabilir (olculdu: 2022-10'da Karaman yok -- belediye belgeli tesisi
+    kalmamis). Eksik il "sifir tesis" demektir, birlestirmede 0 sayilir.
+
     Raises:
-        ValueError: Donem uyusmazsa, baslik dizilimi degismisse veya il
-            sayisi 81 degilse.
+        ValueError: Donem uyusmazsa, baslik dizilimi degismisse, il sayisi
+            beklenenden sapmissa veya kapsam etiketi seriyle celisiyorsa
+            (yanlis URL'nin tek belirtisi budur).
     """
     with pd.ExcelFile(yol) as kitap:
         okunan = dosya_donemi(kitap)
@@ -338,8 +410,23 @@ def il_tablosu(yol: Path, yil: int, ay: int) -> pd.DataFrame:
     veri = veri[veri[0].notna()]
     veri["il_key"] = veri[0].astype(str).map(join_key)
     veri = veri[~veri["il_key"].str.contains("toplam")]
-    if len(veri) != BEKLENEN_IL_SAYISI:
-        raise ValueError(f"{yol.name}: {len(veri)} il satiri, {BEKLENEN_IL_SAYISI} bekleniyordu.")
+    kapsam = _kapsam(str(ham.iloc[0, 0]))
+    if seri == "bakanlik":
+        if len(veri) != BEKLENEN_IL_SAYISI:
+            raise ValueError(
+                f"{yol.name}: {len(veri)} il satiri, {BEKLENEN_IL_SAYISI} bekleniyordu."
+            )
+        if kapsam == "belediye":
+            raise ValueError(f"{yol.name}: bakanlik serisi bekleniyordu, baslik belediye diyor.")
+    elif seri == "belediye":
+        if not 1 <= len(veri) <= BEKLENEN_IL_SAYISI:
+            raise ValueError(
+                f"{yol.name}: {len(veri)} il satiri, 1..{BEKLENEN_IL_SAYISI} bekleniyordu."
+            )
+        if kapsam != "belediye":
+            raise ValueError(f"{yol.name}: belediye serisi bekleniyordu, baslik {kapsam!r} diyor.")
+    else:
+        raise ValueError(f"Bilinmeyen seri: {seri!r}")
 
     def sayi(kolon: int) -> pd.Series:
         return pd.to_numeric(veri[kolon], errors="coerce")
@@ -350,7 +437,7 @@ def il_tablosu(yol: Path, yil: int, ay: int) -> pd.DataFrame:
             "ay": ay,
             "il": veri[0].astype(str).str.strip(),
             "il_key": veri["il_key"],
-            "kapsam": _kapsam(str(ham.iloc[0, 0])),
+            "kapsam": kapsam,
             "kapsam_rejimi": kapsam_rejimi(yil, ay),
             "gelis_yabanci": sayi(KOLON_GELIS),
             "gelis_yerli": sayi(KOLON_GELIS + 1),
@@ -365,6 +452,71 @@ def il_tablosu(yol: Path, yil: int, ay: int) -> pd.DataFrame:
         eksik = tablo.loc[tablo["geceleme"].isna(), "il"].tolist()
         raise ValueError(f"{yol.name}: geceleme sayiya cevrilemedi: {eksik}")
     return tablo.reset_index(drop=True)
+
+
+def _yatak_gun(geceleme: pd.Series, doluluk: pd.Series) -> pd.Series:
+    """Ortuk yatak-gun = geceleme / (doluluk/100); doluluk 0/NaN ise NaN."""
+    oran = doluluk / 100.0
+    return (geceleme / oran.where(oran.gt(0))).where(oran.gt(0))
+
+
+def tum_belgeli_birlestir(bakanlik: pd.DataFrame, belediye: pd.DataFrame | None) -> pd.DataFrame:
+    """Bakanlik satirlarina belediye kolonlarini ve 'tum belgeli' toplamini ekler.
+
+    * ``*_belediye``: belediye serisinin degeri; serinin bittigi 2022-10
+      sonrasi NaN (yok degil, BAKANLIK serisine katildi).
+    * ``*_tum_belgeli``: bakanlik + belediye (belediye NaN ise 0 sayilir).
+      2022-11'den itibaren bakanlik degerine esittir. OLCULDU: 2022-09
+      sicramasini kapatir (Turkiye ortuk yatak 1,50M -> 1,57M, oran 1,04;
+      bakanlikta 1,19) AMA 2022-11'de TERS bir kirilma yaratir (1,44M ->
+      1,03M): belediye belgeli tesislerin buyuk kismi basit belgeye
+      GECMEMIS, istatistikten cikmis. Mugla Agustos: bakanlik 82k -> 125k
+      yatak (2022 -> 2023, +%52), tum 154k -> 125k (-%19). Yani KUSURSUZ
+      surekli bir seviye serisi YOKTUR; tum_belgeli 2019-2022 icin gercek
+      turist yukune daha yakindir (Mugla'da belediye pansiyonlari +%40),
+      2022-11 sonrasi bakanlikla aynidir. Yillar arasi seviye kiyasinda
+      ``kapsam_rejimi`` ile birlikte kullanilmali; mevsim SEKLI icin
+      doluluk tercih edilmeli. 2025-07 kirilmasini KAPATMAZ.
+    * ``doluluk_tum_belgeli``: yatak-gun agirlikli birlesik doluluk. Yatak
+      sayisi dogrudan yok; her serinin ortuk yatak-gunu = geceleme /
+      (doluluk/100) ile geri cikarilir (bultenin kendi paydasi), sonra
+      toplam geceleme / toplam yatak-gun alinir. Belediye yoksa bakanlik
+      dolulugudur.
+
+    Raises:
+        ValueError: Belediye tablosunda bakanlikta olmayan (yil, ay, il) varsa
+            -- eslesmeyen satir sessizce dusmemeli.
+    """
+    cikti = bakanlik.copy()
+    if belediye is None or belediye.empty:
+        for kolon in BELEDIYE_KOLONLARI:
+            cikti[kolon] = float("nan")
+    else:
+        anahtar = ["yil", "ay", "il_key"]
+        bel = belediye[[*anahtar, "gelis", "geceleme", "doluluk"]].rename(
+            columns={
+                "gelis": "gelis_belediye",
+                "geceleme": "geceleme_belediye",
+                "doluluk": "doluluk_belediye",
+            }
+        )
+        eslesme = bel.merge(cikti[anahtar], on=anahtar, how="left", indicator=True)
+        yetim = int((eslesme["_merge"] == "left_only").sum())
+        if yetim:
+            raise ValueError(f"Belediye serisinde bakanlikta olmayan {yetim} (yil, ay, il) var.")
+        cikti = cikti.merge(bel, on=anahtar, how="left")
+
+    bel_gelis = cikti["gelis_belediye"].fillna(0)
+    bel_gec = cikti["geceleme_belediye"].fillna(0)
+    cikti["gelis_tum_belgeli"] = cikti["gelis"] + bel_gelis
+    cikti["geceleme_tum_belgeli"] = cikti["geceleme"] + bel_gec
+
+    bak_yg = _yatak_gun(cikti["geceleme"], cikti["doluluk"])
+    bel_yg = _yatak_gun(bel_gec, cikti["doluluk_belediye"].fillna(0)).fillna(0)
+    toplam_yg = bak_yg + bel_yg
+    birlesik_doluluk = 100.0 * cikti["geceleme_tum_belgeli"] / toplam_yg.where(toplam_yg.gt(0))
+    cikti["doluluk_tum_belgeli"] = birlesik_doluluk.where(toplam_yg.gt(0), cikti["doluluk"])
+    return cikti
 
 
 def main() -> int:
@@ -385,7 +537,16 @@ def main() -> int:
     for yil, ay in donemler:
         yol = indir(yil, ay, BULTENLER[(yil, ay)])
         parcalar.append(il_tablosu(yol, yil, ay))
-    birlesik = pd.concat(parcalar, ignore_index=True)
+    bakanlik = pd.concat(parcalar, ignore_index=True)
+
+    belediye_donemler = [d for d in sorted(BELEDIYE_BULTENLER) if d in set(donemler)]
+    bel_parcalar: list[pd.DataFrame] = []
+    for yil, ay in belediye_donemler:
+        yol = indir(yil, ay, BELEDIYE_BULTENLER[(yil, ay)], seri="belediye")
+        bel_parcalar.append(il_tablosu(yol, yil, ay, seri="belediye"))
+    belediye = pd.concat(bel_parcalar, ignore_index=True) if bel_parcalar else None
+
+    birlesik = tum_belgeli_birlestir(bakanlik, belediye)
     birlesik = birlesik[CIKTI_KOLONLARI].sort_values(["yil", "ay", "il_key"]).reset_index(drop=True)
 
     tekrar = birlesik.duplicated(subset=["yil", "ay", "il_key"])
@@ -406,6 +567,11 @@ def main() -> int:
         f"  {len(birlesik)} satir, {len(donemler)} donem, "
         f"rejimler: {sorted(birlesik['kapsam_rejimi'].unique())}"
     )
+    if belediye_donemler:
+        ilk, son = belediye_donemler[0], belediye_donemler[-1]
+        print(
+            f"  belediye serisi: {len(belediye_donemler)} donem ({ilk}..{son}); sonrasi bakanlikta"
+        )
     print("  Kaynak: KTB Yatirim ve Isletmeler Gn.Md. aylik konaklama bultenleri.")
     return 0
 
