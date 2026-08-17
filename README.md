@@ -15,8 +15,8 @@ dersler var.
 
 | | |
 |---|---|
-| Kod | **17.516 satır** · 41 modül · test tarafı 15.677 satır |
-| Test | **1088 test** toplanıyor · ruff check + format, mypy (41 dosya) temiz |
+| Kod | **18.073 satır** · 43 modül · test tarafı 16.179 satır |
+| Test | **1135 test** toplanıyor · ruff check + format, mypy temiz |
 | Uçtan uca kanıt | `full_pipeline.py` 21/21 · `smoke_test.py` · `day_one.py` submission üretiyor |
 | Harici veri | 96 ilçe hava (günlük + saatlik türev: basınç, eşik-üstü rüzgâr) · güneş · deprem (AFAD) · yangın (FIRMS) · turizm gecelemesi (KTB) · Türkiye tüketim+üretim · 96 ilçe referans |
 | Kaggle offline | [`cemzal/gridup-offline-paket`](https://www.kaggle.com/datasets/cemzal/gridup-offline-paket) — internet kapalı notebook için |
@@ -220,7 +220,7 @@ docs/
   06-teknik-tuzaklar.md          bilinen tuzaklar
   07-veri-gunu-kontrol-listesi.md saat saat veri günü planı
 
-tests/    1085 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
+tests/    1135 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
 ```
 
 ---

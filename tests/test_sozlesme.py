@@ -41,6 +41,11 @@ FEATURE_MODULLERI = (
     "categorical",
     "outage_reason",
     "school",
+    # 2026-08-17: harici veriyi panele baglayan iki yeni modul. Listeye
+    # EKLENMEZSE kendiliginden buyuyen tarama onlara ULASMAZ -- ayni bosluk
+    # pipeline.py'de yasandi ve kapatildi; tekrarlamamak icin buradalar.
+    "point_events",
+    "national",
 )
 
 
@@ -103,10 +108,94 @@ def _saatlik() -> pd.DataFrame:
     )
 
 
+#: SATIR SAYISINI KORUMASI BEKLENMEYEN fonksiyonlar -- kasitli indirgeyiciler.
+#: Bunlar "feature ekleyen" degil "cozunurluk dusuren" fonksiyonlardir
+#: (saatlik -> gunluk). Sozlesme 1'in satir-sayisi ve satir-kimligi
+#: kontrolleri onlara UYGULANMAZ; ama girdiyi degistirmeme kurali gecerlidir.
+#: Liste ACIK tutulur: yeni bir indirgeyici eklenirse buraya yazilir, yoksa
+#: test kirilir ve yazan kisi "bu gercekten indirgeyici mi" sorusunu cevaplar.
+KASITLI_INDIRGEYENLER = frozenset({"aggregate_hourly_to_daily", "daily_from_hourly"})
+
+
 #: Fonksiyon adi -> (modul, cagri). Cagri bir panel alip fonksiyonu calistirir.
 #: Yeni bir feature fonksiyonu eklersen BURAYA da bir satir ekle; aksi halde
 #: ``test_her_feature_fonksiyonu_kayitli`` kirilir.
 SENARYOLAR: dict[str, tuple[str, object]] = {
+    # --- point_events (harici nokta olaylari: yangin, deprem) ---
+    "add_point_event_features": (
+        "point_events",
+        lambda m, f: m.add_point_event_features(
+            f,
+            pd.DataFrame(
+                {
+                    "tarih": pd.to_datetime(["2026-02-12", "2026-02-20", "2026-03-01"]),
+                    "lat": [38.42, 38.63, 37.21],
+                    "lon": [27.14, 27.42, 28.36],
+                    "frp": [12.0, 45.0, 3.0],
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "yer": list(KOORDINATLAR),
+                    "lat": [v[0] for v in KOORDINATLAR.values()],
+                    "lon": [v[1] for v in KOORDINATLAR.values()],
+                }
+            ),
+            key_column="yer",
+            time_column="tarih",
+            horizon=2,
+            weight_column="frp",
+            windows=(7,),
+            prefix="yangin",
+        ),
+    ),
+    # --- national (ulusal saatlik seri + yillik ilce ozniteligi) ---
+    "daily_from_hourly": (
+        "national",
+        lambda m, f: m.daily_from_hourly(
+            pd.DataFrame(
+                {
+                    "zaman": pd.date_range("2026-02-10", periods=48, freq="h", tz="UTC"),
+                    "consumption": np.linspace(30000, 40000, 48),
+                }
+            ),
+            time_column="zaman",
+            value_columns=["consumption"],
+        ),
+    ),
+    "add_national_series": (
+        "national",
+        lambda m, f: m.add_national_series(
+            f,
+            pd.DataFrame(
+                {
+                    "tarih": pd.date_range("2026-02-01", periods=60, freq="D"),
+                    "consumption_mean": np.linspace(30000, 40000, 60),
+                }
+            ),
+            time_column="tarih",
+            horizon=2,
+            windows=(7,),
+            prefix="tr",
+        ),
+    ),
+    "add_annual_district_attribute": (
+        "national",
+        lambda m, f: m.add_annual_district_attribute(
+            f,
+            pd.DataFrame(
+                {
+                    "yer": list(KOORDINATLAR) * 2,
+                    "yil": [2025] * len(KOORDINATLAR) + [2026] * len(KOORDINATLAR),
+                    "geceleme": list(range(1, 2 * len(KOORDINATLAR) + 1)),
+                }
+            ),
+            key_column="yer",
+            time_column="tarih",
+            value_columns=["geceleme"],
+            prefix="turizm",
+        ),
+    ),
     # --- temporal ---
     "add_calendar_features": ("temporal", lambda m, f: m.add_calendar_features(f, "tarih")),
     "add_cyclical_features": (
@@ -372,8 +461,8 @@ def test_feature_fonksiyonu_satir_sayisini_korumali(fonksiyon_adi: str):
     Istisna: ``aggregate_hourly_to_daily`` kasitli olarak indirger (saatlik
     -> gunluk). Onun sozlesmesi farklidir ve adinda yazar.
     """
-    if fonksiyon_adi == "aggregate_hourly_to_daily":
-        pytest.skip("kasitli indirgeme -- saatlikten gunluge")
+    if fonksiyon_adi in KASITLI_INDIRGEYENLER:
+        pytest.skip("kasitli indirgeme -- cozunurluk dusuruyor")
 
     modul_adi, cagri = SENARYOLAR[fonksiyon_adi]
     if modul_adi == "temporal" and fonksiyon_adi in {
@@ -615,7 +704,7 @@ def test_feature_fonksiyonu_satir_sirasini_da_korumali(fonksiyon_adi: str):
     tam olarak bunu yapiyordu -- girdi [bornova x5, aliaga x5] iken cikti
     [aliaga x5, bornova x5] donuyordu.
     """
-    if fonksiyon_adi == "aggregate_hourly_to_daily":
+    if fonksiyon_adi in KASITLI_INDIRGEYENLER:
         pytest.skip("kasitli indirgeme -- satir kimligi degisir")
 
     modul_adi, cagri = SENARYOLAR[fonksiyon_adi]

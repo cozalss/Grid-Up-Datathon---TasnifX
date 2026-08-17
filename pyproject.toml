@@ -130,6 +130,10 @@ ignore = [
 # "hangisi hangi durumu koruyordu" izini kaybettirir -- validation.py ve
 # submission.py ile ayni gerekce.
 "src/gridup/pipeline.py" = ["PLR0912"]
+# daily_point_intensity'nin dallari girdi kapilaridir (eksik kolon, gecersiz
+# yaricap, tekrarlanan anahtar, agirlik var/yok, bos olay kumesi). Her biri
+# ayri bir sessiz-yanlis-sonuc yolunu kapatir; bolmek kapilari dagitir.
+"src/gridup/features/point_events.py" = ["PLR0912"]
 # Manifest dogrulama fail-closed kontrolleri tek raporda toplar; her dal ayri
 # bir supply-chain ihlalini kullaniciya gostermek icin gereklidir.
 "security/verify_sources.py" = ["PLR0912", "PLR0915"]

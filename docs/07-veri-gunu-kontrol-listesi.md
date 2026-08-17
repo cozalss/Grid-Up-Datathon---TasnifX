@@ -23,7 +23,7 @@ izlenecek adımları içerir.
 | EPDK bölge sınıfı | `gridup.features.demografi.epdk_bolge_sinifi` | Resmi kentsel/kentaltı/kırsal eşikleri |
 | Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
 | Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
-| Test paketi | `tests/` | 1085 test |
+| Test paketi | `tests/` | 1135 test |
 
 ---
 

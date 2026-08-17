@@ -42,6 +42,7 @@ from .aggregate import _ZORUNLU
 
 __all__ = [
     "haversine_matrix",
+    "haversine_cross",
     "nearest_neighbours",
     "add_neighbour_target_lag",
     "add_neighbour_feature_mean",
@@ -73,6 +74,41 @@ def haversine_matrix(latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarra
     inner = (
         np.sin(delta_lat / 2) ** 2
         + np.cos(latitude_rad)[:, None] * np.cos(latitude_rad)[None, :] * np.sin(delta_lon / 2) ** 2
+    )
+    return 2 * EARTH_RADIUS_KM * np.arcsin(np.sqrt(np.clip(inner, 0, 1)))
+
+
+def haversine_cross(
+    latitudes_a: np.ndarray,
+    longitudes_a: np.ndarray,
+    latitudes_b: np.ndarray,
+    longitudes_b: np.ndarray,
+) -> np.ndarray:
+    """IKI FARKLI nokta kumesi arasi mesafe (km). ``(len(a), len(b))`` dondurur.
+
+    ``haversine_matrix`` ayni kumenin kendisiyle mesafesini verir (NxN);
+    bu ise ilce merkezleri ile NOKTA OLAYLARI (yangin tespiti, deprem
+    merkez ussu) arasindaki mesafe icin gerekir -- iki kume farkli boyutta.
+
+    Ayni buyuk daire formulu kullanilir; duz Oklid mesafesi Turkiye
+    enleminde siralamayi bozacak kadar hata verir (bkz. ``haversine_matrix``).
+
+    >>> import numpy as np
+    >>> d = haversine_cross(np.array([38.42]), np.array([27.14]),
+    ...                     np.array([38.62]), np.array([27.43]))
+    >>> bool(30 < d[0, 0] < 35)
+    True
+    """
+    lat_a = np.deg2rad(np.asarray(latitudes_a, dtype="float64"))
+    lon_a = np.deg2rad(np.asarray(longitudes_a, dtype="float64"))
+    lat_b = np.deg2rad(np.asarray(latitudes_b, dtype="float64"))
+    lon_b = np.deg2rad(np.asarray(longitudes_b, dtype="float64"))
+
+    delta_lat = lat_a[:, None] - lat_b[None, :]
+    delta_lon = lon_a[:, None] - lon_b[None, :]
+    inner = (
+        np.sin(delta_lat / 2) ** 2
+        + np.cos(lat_a)[:, None] * np.cos(lat_b)[None, :] * np.sin(delta_lon / 2) ** 2
     )
     return 2 * EARTH_RADIUS_KM * np.arcsin(np.sqrt(np.clip(inner, 0, 1)))
 
