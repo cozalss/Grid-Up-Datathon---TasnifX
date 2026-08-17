@@ -223,7 +223,7 @@
     },
     {
       "path": "data/external/turizm_geceleme.parquet",
-      "sha256": "718be613090f8a7d77d89be8d0474a25bc3f9b3f8a887691f40fd364a90ad23f",
+      "sha256": "71f98d093f49baf62e7c1bdfde5d812791d088508a883b1fc2bd1837bbe76842",
       "license": "KTB-institutional-clearance",
       "redistribution": "allowed",
       "attribution": "T.C. Kultur ve Turizm Bakanligi, Yatirim ve Isletmeler Genel Mudurlugu (YIGM) annual accommodation statistics bulletins.",
@@ -234,13 +234,13 @@
       },
       "source": {
         "uri": "https://yigm.ktb.gov.tr/",
-        "snapshot_ref": "2023..2025 annual bulletins",
-        "retrieved_at": "2026-08-15",
+        "snapshot_ref": "2023..2025 annual bulletins; Il Ilce sheet; Alsancak folded into Konak",
+        "retrieved_at": "2026-08-17",
         "immutable": false
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 234,
+        "min_rows": 231,
         "required_columns": [
           "yil",
           "il_key",
@@ -251,7 +251,37 @@
       }
     },
     {
-      "path": "data/external/izsu_su_profili.parquet",
+            "path": "data/external/turizm_aylik_il.parquet",
+      "sha256": "82303fcc6a2b17987934b9a8b7f0a9a7f7de7540ef1613dd978f0020f8a098cc",
+      "license": "KTB-institutional-clearance",
+      "redistribution": "allowed",
+      "attribution": "T.C. Kultur ve Turizm Bakanligi, Yatirim ve Isletmeler Genel Mudurlugu (YIGM) monthly accommodation statistics bulletins (Bakanlik Belgeli Tesis Konaklama Istatistikleri, Il sheet).",
+      "verification": {
+        "basis": "institutional-confirmation",
+        "reviewed_at": "2026-08-17",
+        "evidence": "Same publisher and publication series as turizm_geceleme.parquet (YIGM accommodation bulletins); the institutional redistribution clearance covers the bulletin series. NOT a published open license. Cross-checked: 12-month sums equal the annual bulletin province totals for 2023-2025 (0.00% deviation, all 81 provinces); no revisions between successive monthly releases (82 periods, max 0.0%)."
+      },
+      "source": {
+        "uri": "https://yigm.ktb.gov.tr/TR-201125/aylik-bultenler.html",
+        "snapshot_ref": "2019-01..2026-06 monthly bulletins, 90 xlsx files (Eklenti ids fixed in scripts/fetch_turizm_aylik.py)",
+        "retrieved_at": "2026-08-17",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 7290,
+        "required_columns": [
+          "yil",
+          "ay",
+          "il_key",
+          "kapsam_rejimi",
+          "geceleme",
+          "doluluk"
+        ]
+      }
+    },
+    {
+"path": "data/external/izsu_su_profili.parquet",
       "sha256": "32e8a168f024b057e6557a022928600dda2c5a97b7a0992eba744b25df6976b3",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",

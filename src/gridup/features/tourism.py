@@ -20,18 +20,29 @@ basliginda olculen tarihler; 2026 Ocak istisnasi M+3). Bir tarih icin:
     Izin verilir ama bilincli secilmelidir.
   * lag 0-1 -- yayimlanmamis veriyi kullanmak demektir; REDDEDILIR.
 
-KAPSAM SICRAMALARI
-------------------
-2022 Kasim'da bulten kapsami "isletme belgeli" -> "isletme ve basit
-belgeli" oldu; 2025 Temmuz civarinda basliksiz ikinci bir genisleme daha
-var (doluluk sabitken geceleme +%25-50; bkz. fetch_turizm_aylik.py). Ham
-geceleme/gelis yillar arasi kiyaslanamaz. Iki kapsamdan bagimsiz olcu:
+KAPSAM SICRAMALARI (olculdu: ortuk yatak = geceleme / (doluluk x gun))
+----------------------------------------------------------------------
+Iki kirilma, ikisi de aylik tabloda ``kapsam_rejimi`` (1/2/3) olarak
+etiketli: **2022-09** (Turkiye 1,04M -> 1,24M yatak; baslik ancak 2022-11'de
+"isletme ve basit belgeli" oldu) ve **2025-07** (1,46M -> 1,73M; Mugla
+133k -> 219k; doluluk sabit). Ham geceleme/gelis yalnizca AYNI rejim icinde
+kiyaslanabilir. Rejimden bagimsiz olculer:
   * ``doluluk`` -- oran, tesis sayisindan etkilenmez; TERCIH EDILEN.
   * ``{prefix}_{kolon}_yil_payi`` -- o ayin, kaynak yilin 12 ayindaki
-    payi; kapsam yil ICINDE degismediyse temizdir (2022 ve 2025 icin
-    kismen bozuktur, o yillarin payina guvenilmemeli).
+    payi; kapsam yil ICINDE degismediyse temizdir. 2022 (Eylul kirilmasi)
+    ve 2025 (Temmuz kirilmasi) paylari BOZUKTUR: o yillarin yaz aylari
+    oldugundan agir gorunur. Modele ``kapsam_rejimi`` de verilmeli.
 Ay payi yalnizca 12 ayin tamami varsa hesaplanir; eksikse NaN birakilir
 (yanlis payda ile "dogru gorunen" oran uretmek yerine).
+
+KAPSAM SINIRI -- YAZLIKCI YOK
+-----------------------------
+KTB yalnizca BELGELI konaklama tesislerini sayar. Ege kiyisinda yaz
+nufusunun buyuk kismi ikinci konut sahibidir (Cesme, Kusadasi, Didim,
+Bodrum yazlikcilari) ve bu seride HIC gorunmez. Geceleme "turist yuku"
+vekilidir, "yaz nufusu"nun tamami degil; yazlik agirlikli ilcelerde
+(Didim, Seferihisar) ilce payi gercek yuku OLDUGUNDAN DUSUK gosterir.
+Su tuketimi profili (IZSU) bu boslugu Izmir icin kapatir.
 """
 
 from __future__ import annotations
@@ -138,6 +149,7 @@ def district_monthly_estimate(
     year_column: str = "yil",
     month_column: str = "ay",
     value_column: str = "geceleme",
+    districts: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Ilce x yil x ay tahmini: ilcenin il icindeki YILLIK payi x ilin AYLIK degeri.
 
@@ -149,6 +161,14 @@ def district_monthly_estimate(
     Yalnizca HER IKI tabloda da bulunan yillar uretilir. Ilcenin il payi
     yillik tablodaki il toplamina gore hesaplanir (il alt-toplam satirlari
     onceden ayiklanmis olmalidir; fetch_turizm.py bunu yapar).
+
+    ``districts`` (``province_column`` + ``district_column`` iceren referans
+    tablo, or. 96 ilce) verilirse, yillik tabloda OLMAYAN referans ilceler
+    her yil-ay icin pay 0 ve tahmin 0 alir. KTB yalnizca belgeli tesisi olan
+    ilceleri listeler (olculdu: 96 ilcenin 74-82'si; Karpuzlu, Kavaklidere,
+    Babadag gibi kirsal ilceler yok). Bu ilcelerde "bilinmiyor" (NaN) degil
+    "belgeli konaklama yok" (0) dogru bilgidir. Referans ilcenin ili aylik
+    tabloda hic yoksa yine NaN kalir (o zaman gercekten bilinmiyordur).
 
     Returns:
         Kolonlar: district_column, province_column, year_column,
@@ -178,6 +198,10 @@ def district_monthly_estimate(
         il_toplam.gt(0)
     )
     yillik = yillik.drop(columns=[value_column])
+    if districts is not None:
+        yillik = _eksik_ilceleri_sifirla(
+            yillik, districts, district_column, province_column, year_column, ortak
+        )
 
     aylik = monthly[[province_column, year_column, month_column, value_column]].copy()
     aylik[year_column] = aylik[year_column].astype(int)
@@ -196,8 +220,43 @@ def district_monthly_estimate(
         f"{value_column}_tahmini",
         "ilce_il_payi",
     ]
+    birlesik = birlesik.drop(columns=["_il_aylik"])
     return (
         birlesik[kolonlar]
         .sort_values([district_column, year_column, month_column])
         .reset_index(drop=True)
     )
+
+
+def _eksik_ilceleri_sifirla(
+    yillik: pd.DataFrame,
+    districts: pd.DataFrame,
+    district_column: str,
+    province_column: str,
+    year_column: str,
+    yillar: list[int],
+) -> pd.DataFrame:
+    """Referansta olup yillik tabloda o YIL olmayan (il, ilce) ciftlerine pay 0 ekler.
+
+    Yil bazinda calisir: bir ilce 2023'te listelenip 2024'te listelenmemisse
+    (olculdu: Bayindir), 2024 icin 0 alir -- o yil belgeli tesisi yoktur.
+    """
+    for kolon in (district_column, province_column):
+        if kolon not in districts.columns:
+            raise KeyError(f"districts icinde '{kolon}' kolonu yok.")
+    referans = districts[[province_column, district_column]].drop_duplicates()
+    tam = referans.merge(pd.DataFrame({year_column: yillar}), how="cross")
+    mevcut = set(
+        zip(yillik[province_column], yillik[district_column], yillik[year_column], strict=True)
+    )
+    eksik_maske = [
+        (il, ilce, yil) not in mevcut
+        for il, ilce, yil in zip(
+            tam[province_column], tam[district_column], tam[year_column], strict=True
+        )
+    ]
+    ek = tam[eksik_maske].copy()
+    if ek.empty:
+        return yillik
+    ek["ilce_il_payi"] = 0.0
+    return pd.concat([yillik, ek[list(yillik.columns)]], ignore_index=True)

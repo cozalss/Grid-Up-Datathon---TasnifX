@@ -55,6 +55,12 @@ BULTENLER: dict[int, str] = {
 #: GDZ + ADM hizmet bolgesi illeri (join_key bicimi).
 HEDEF_ILLER = frozenset({"izmir", "manisa", "aydin", "denizli", "mugla"})
 
+#: KTB'nin ilce OLMAYAN satirlari -> ait oldugu ilce (join_key bicimi).
+#: "Alsancak" Konak ilcesinin semtidir; KTB tarihsel olarak ayri satir
+#: tutuyor (olculdu: 2023-2025 her yil, 19-28k geceleme). Panelin 96 ilce
+#: referansinda yoktur; katlanmazsa Konak eksik, Alsancak sahipsiz kalir.
+ILCE_KATLAMA: dict[tuple[str, str], str] = {("izmir", "alsancak"): "konak"}
+
 SAYFA_ADI = "İl İlçe"
 HAM_DIZIN = Path("data/external/ham")
 CIKTI_YOLU = Path("data/external/turizm_geceleme.parquet")
@@ -152,9 +158,41 @@ def il_ilce_tablosu(yol: Path, yil: int) -> pd.DataFrame:
     tablo = tablo[~tablo["ilce_key"].str.contains("toplam")]
 
     hedef = tablo[tablo["il_key"].isin(HEDEF_ILLER)].copy()
+    hedef = _ilceleri_katla(hedef)
     if hedef.empty:
         raise ValueError(f"{yil}: hedef illerden hic satir cikmadi -- il kolonu bozuk olabilir.")
     return hedef.dropna(subset=["geceleme"]).reset_index(drop=True)
+
+
+def _ilceleri_katla(tablo: pd.DataFrame) -> pd.DataFrame:
+    """``ILCE_KATLAMA`` haritasindaki satirlari hedef ilceye toplar. YENI frame.
+
+    Katlanan satirin sayilari hedef ilceye EKLENIR (Alsancak + Konak);
+    hedef ilce tabloda yoksa katlanan satir hedef adiyla kalir. ``il`` /
+    ``ilce`` gorunen adlari hedef ilcenin ilk satirindan alinir.
+    """
+    anahtar = list(zip(tablo["il_key"], tablo["ilce_key"], strict=True))
+    katlanacak = pd.Series([ILCE_KATLAMA.get(k) for k in anahtar], index=tablo.index)
+    if katlanacak.isna().all():
+        return tablo
+    cikti = tablo.copy()
+    cikti["ilce_key"] = katlanacak.fillna(cikti["ilce_key"])
+    sayisal = ["tesise_gelis", "geceleme"]
+    toplanan = cikti.groupby(["yil", "il_key", "ilce_key"], as_index=False, sort=False).agg(
+        {"il": "first", "ilce": "first", **{k: "sum" for k in sayisal}}
+    )
+    # Gorunen ilce adi: katlanan satir once geldiyse "Alsancak" kalirdi;
+    # ilce_key'den turetilen adi degil, tablodaki gercek hedef adini kullan.
+    hedef_adlar = tablo.drop_duplicates(["il_key", "ilce_key"]).set_index(["il_key", "ilce_key"])[
+        "ilce"
+    ]
+    toplanan["ilce"] = [
+        hedef_adlar.get((il, ilce), ad)
+        for il, ilce, ad in zip(
+            toplanan["il_key"], toplanan["ilce_key"], toplanan["ilce"], strict=True
+        )
+    ]
+    return toplanan[list(tablo.columns)]
 
 
 def main() -> int:

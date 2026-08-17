@@ -19,21 +19,35 @@ yabanci-yerli-toplam. Yapi 2019-01'den 2026-06'ya kadar AYNI (olculdu:
 
 UC TUZAK (olculdu, 2026-08-17)
 ------------------------------
-1. **Kapsam degisikligi.** 2022 Ekim'e kadar bultenler yalnizca "Turizm
-   Isletme Belgeli" tesisleri kapsar; 2022 Kasim'dan itibaren "Isletme VE
-   Basit Belgeli" (belediye belgeli basit tesisler de dahil). Bu bir SEVIYE
-   sicramasidir, turizm artisi degil. ``kapsam`` kolonu bunu tasir; yillar
-   arasi karsilastirmada ay-payi gibi kapsamdan bagimsiz turevler tercih
-   edilmelidir (feature katmani bunu uretir).
-   Ikinci, BASLIKSIZ bir genisleme daha var (olculdu, tam veriyle): 2025-07
-   itibariyla Turkiye toplam gecelemesi +%25, Mugla YERLI gecelemesi 3-4x
-   artarken DOLULUK ORANI sabit (%13 -> %15). Tesis sayisi artmis, turist
-   degil. Baslik degismedigi icin ``kapsam`` bunu etiketleyemez; yillar
-   arasi kiyasta kapsamdan bagimsiz tek olcu ``doluluk``tur.
+1. **Kapsam degisikligi -- IKI KIRILMA, ikisi de olculdu.** Ortuk yatak
+   kapasitesi = geceleme / (doluluk x gun) her il-ay icin hesaplandi
+   (doluluk KTB'nin kendi paydasidir; kapasite dogrudan cikar):
+     * **2022-09**: Turkiye 1,04M -> 1,24M yatak; Mugla 82k -> 120k.
+       Bulten BASLIGI ancak 2022-11'de "Turizm Isletme Belgeli" -> "Isletme
+       ve Basit Belgeli" oldu; veri kapsami basliktan IKI AY ONCE degisti.
+     * **2025-07**: Turkiye 1,46M -> 1,73M; Mugla 133k -> 219k; Fethiye
+       yillik gecelemesi 2,3M -> 5,7M. Baslik degismedi. Doluluk sabit
+       kaldi (%13 -> %15): tesis sayisi artti, turist degil (turizm amacli
+       konut kiralama izinlerinin bakanlik belgesine gecisiyle uyumlu).
+   Iki kolon tasir: ``kapsam`` = BASLIKTAN okunan etiket (belgeleme
+   dogrulugu icin), ``kapsam_rejimi`` = OLCULEN kirilmalara gore 1/2/3
+   (modelleme icin dogru olan). Yillar arasi kiyasta rejimden bagimsiz
+   tek olcu ``doluluk``tur; ``geceleme`` yalnizca ayni rejim icinde
+   kiyaslanabilir.
+2. **Antalya Agustos dolulugu %100'u asar** (2019, 2022, 2024: %101-102;
+   ilave yatak). KTB'nin kendi artefakti, hedef illerde yok; kirpilmaz.
 3. **URL slug'lari tutarsiz.** "s-bat", "06", "yeni", "v2" gibi ekler var;
    ay adini slug'dan cikarmak guvenilmez. Bu yuzden yil-ay -> URL haritasi
    SABIT kodlanmis ve her dosyanin ayi/yili dosyanin KENDI ICINDEKI
    "Gelis-Geceleme Ay/Yil" sayfalarindan dogrulanir. Uyusmazlik = hata.
+
+CAPRAZ DOGRULAMA (olculdu, 90 dosya)
+------------------------------------
+* Her dosyada 81 il toplami = TOPLAM satiri (0 sapma).
+* Ulusal aylik seri sonraki bultenlerde HIC revize edilmemis (82 donem,
+  maks fark %0,0) -- ilk yayin nihai.
+* 12 ayin toplami = yillik bultenin il toplami, 2023-2025, HER ILDE %0,00.
+  Aylik ve yillik seri ayni kaynaktan, tutarli.
 
 YAYIN GECIKMESI
 ---------------
@@ -190,8 +204,12 @@ BEKLENEN_IL_SAYISI = 81
 
 HAM_DIZIN = Path("data/external/ham")
 CIKTI_YOLU = Path("data/external/turizm_aylik_il.parquet")
+#: Olculen kapsam kirilmalari (bkz. baslik). (yil, ay) bu donemden ITIBAREN
+#: yeni rejim. Rejim 1: <=2022-08, 2: 2022-09..2025-06, 3: >=2025-07.
+REJIM_KIRILMALARI: tuple[tuple[int, int], ...] = ((2022, 9), (2025, 7))
+
 CIKTI_KOLONLARI = [
-    "yil", "ay", "il", "il_key", "kapsam",
+    "yil", "ay", "il", "il_key", "kapsam", "kapsam_rejimi",
     "gelis_yabanci", "gelis_yerli", "gelis",
     "geceleme_yabanci", "geceleme_yerli", "geceleme",
     "doluluk",
@@ -289,6 +307,11 @@ def _kapsam(baslik: str) -> str:
     raise ValueError(f"Il sayfasi basligindan kapsam cikarilamadi: {baslik!r}")
 
 
+def kapsam_rejimi(yil: int, ay: int) -> int:
+    """(yil, ay) icin olculen kapsam rejimi (1'den baslar)."""
+    return 1 + sum((yil, ay) >= kirilma for kirilma in REJIM_KIRILMALARI)
+
+
 def il_tablosu(yol: Path, yil: int, ay: int) -> pd.DataFrame:
     """Bultenin "Il" sayfasini ortak semaya cevirir; donemi icerikten dogrular.
 
@@ -328,6 +351,7 @@ def il_tablosu(yol: Path, yil: int, ay: int) -> pd.DataFrame:
             "il": veri[0].astype(str).str.strip(),
             "il_key": veri["il_key"],
             "kapsam": _kapsam(str(ham.iloc[0, 0])),
+            "kapsam_rejimi": kapsam_rejimi(yil, ay),
             "gelis_yabanci": sayi(KOLON_GELIS),
             "gelis_yerli": sayi(KOLON_GELIS + 1),
             "gelis": sayi(KOLON_GELIS + 2),
@@ -378,7 +402,10 @@ def main() -> int:
         + f"{donemler[0][0]}-{donemler[0][1]:02d}..{donemler[-1][0]}-{donemler[-1][1]:02d}",
     )
     print(f"Yazildi: {cikti}")
-    print(f"  {len(birlesik)} satir, {len(donemler)} donem, kapsam: {birlesik['kapsam'].unique()}")
+    print(
+        f"  {len(birlesik)} satir, {len(donemler)} donem, "
+        f"rejimler: {sorted(birlesik['kapsam_rejimi'].unique())}"
+    )
     print("  Kaynak: KTB Yatirim ve Isletmeler Gn.Md. aylik konaklama bultenleri.")
     return 0
 

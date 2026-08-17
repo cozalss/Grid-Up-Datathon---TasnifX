@@ -199,12 +199,79 @@ class TestTurizmGeceleme:
         il_toplam = turizm.groupby("il_key")["geceleme"].sum()
         assert il_toplam.idxmax() == "mugla"
 
-    def test_ilce_key_referansla_eslesiyor(self, turizm):
-        """ilce_key referans tablonun anahtar bicimiyle buyuk oranda eslesmeli.
+    def test_ilce_key_referansla_tam_eslesiyor(self, turizm):
+        """Her (il, ilce) satiri 96 ilce referansinda OLMALI.
 
         KTB bazi turizm alt-bolgelerini ayri satir yazar (or. Alsancak);
-        yuzde yuz eslesme beklenmez ama cogunluk eslesmeli.
+        fetch_turizm.py bunlari ait olduklari ilceye katlar (ILCE_KATLAMA).
+        Katlanmamis bir satir kalirsa join'de sahipsiz kalir.
         """
         referans = pd.read_parquet(REFERANS_YOLU)
-        eslesen = turizm["ilce_key"].isin(set(referans["ilce_key"]))
-        assert eslesen.mean() > 0.7
+        ref_ciftler = set(zip(referans["il_key"], referans["ilce_key"], strict=True))
+        sahipsiz = {
+            cift
+            for cift in zip(turizm["il_key"], turizm["ilce_key"], strict=True)
+            if cift not in ref_ciftler
+        }
+        assert not sahipsiz, f"Referansta olmayan (il, ilce): {sorted(sahipsiz)}"
+
+    def test_alsancak_konaga_katlanmis(self, turizm):
+        assert not (turizm["ilce_key"] == "alsancak").any()
+        konak = turizm[(turizm["il_key"] == "izmir") & (turizm["ilce_key"] == "konak")]
+        assert len(konak) == turizm["yil"].nunique(), "Konak her yil tek satir olmali."
+
+
+# --------------------------------------------------------------------------
+# Turizm aylik il serisi (data/external/turizm_aylik_il.parquet)
+# --------------------------------------------------------------------------
+
+TURIZM_AYLIK_YOLU = _VERI / "external" / "turizm_aylik_il.parquet"
+
+
+@pytest.fixture(scope="module")
+def turizm_aylik():
+    if not TURIZM_AYLIK_YOLU.exists():
+        pytest.skip("Aylik turizm verisi yok: scripts/fetch_turizm_aylik.py calistir")
+    return pd.read_parquet(TURIZM_AYLIK_YOLU)
+
+
+class TestTurizmAylik:
+    def test_sema_ve_kapsam(self, turizm_aylik):
+        gerekli = {"yil", "ay", "il_key", "kapsam", "kapsam_rejimi", "gelis", "geceleme", "doluluk"}
+        assert gerekli <= set(turizm_aylik.columns)
+        assert turizm_aylik["il_key"].nunique() == 81
+        assert (turizm_aylik.groupby(["yil", "ay"]).size() == 81).all()
+
+    def test_donemler_bosluksuz(self, turizm_aylik):
+        """2019-01'den son doneme kadar her ay olmali; eksik ay lag-12'de sessiz NaN."""
+        donemler = sorted(set(zip(turizm_aylik["yil"], turizm_aylik["ay"], strict=True)))
+        assert donemler[0] == (2019, 1)
+        indeks = [y * 12 + a for y, a in donemler]
+        assert indeks == list(range(indeks[0], indeks[0] + len(indeks)))
+
+    def test_parcalar_toplama_esit(self, turizm_aylik):
+        t = turizm_aylik
+        assert (t["gelis_yabanci"] + t["gelis_yerli"] == t["gelis"]).all()
+        assert (t["geceleme_yabanci"] + t["geceleme_yerli"] == t["geceleme"]).all()
+        assert (t[["gelis", "geceleme"]] > 0).all().all()
+
+    def test_kapsam_rejimi_olculen_kirilmalarda(self, turizm_aylik):
+        """Rejim sinirlari OLCULEN yatak sicramalariyla ayni: 2022-09 ve 2025-07."""
+        t = turizm_aylik.drop_duplicates(["yil", "ay"]).set_index(["yil", "ay"])["kapsam_rejimi"]
+        assert t[(2022, 8)] == 1 and t[(2022, 9)] == 2
+        assert t[(2025, 6)] == 2 and t[(2025, 7)] == 3
+
+    def test_yillik_ile_tutarli(self, turizm, turizm_aylik):
+        """12 ayin toplami, yillik bultenin il toplamina esit olmali (olculdu: %0,00)."""
+        yillik_il = turizm.groupby(["yil", "il_key"])["geceleme"].sum()
+        aylik_il = turizm_aylik.groupby(["yil", "il_key"])["geceleme"].sum()
+        ortak = yillik_il.index.intersection(aylik_il.index)
+        assert len(ortak) >= 10
+        sapma = (aylik_il[ortak] - yillik_il[ortak]).abs() / yillik_il[ortak]
+        assert (sapma < 0.005).all(), sapma[sapma >= 0.005]
+
+    def test_mugla_yaz_profili(self, turizm_aylik):
+        """docs/10: Mugla yaz nufusu katlanir -- Temmuz/Ocak orani buyuk olmali."""
+        m = turizm_aylik[(turizm_aylik["il_key"] == "mugla") & (turizm_aylik["yil"] == 2024)]
+        m = m.set_index("ay")["geceleme"]
+        assert m[7] / m[1] > 10

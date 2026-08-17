@@ -158,6 +158,76 @@ def test_il_tablosu_eksik_il_reddedilir(tmp_path: Path) -> None:
         m.il_tablosu(yol, 2024, 3)
 
 
+def test_kapsam_rejimi_olculen_kirilmalar() -> None:
+    """Rejim, basliga degil OLCULEN yatak sicramasina gore: 2022-09 ve 2025-07."""
+    m = _betik()
+    assert m.REJIM_KIRILMALARI == ((2022, 9), (2025, 7))
+    assert m.kapsam_rejimi(2019, 1) == 1
+    assert m.kapsam_rejimi(2022, 8) == 1
+    assert m.kapsam_rejimi(2022, 9) == 2
+    assert m.kapsam_rejimi(2025, 6) == 2
+    assert m.kapsam_rejimi(2025, 7) == 3
+    assert m.kapsam_rejimi(2026, 6) == 3
+
+
+def test_il_tablosu_kapsam_rejimi_kolonu(tmp_path: Path) -> None:
+    """Baslik 2022-10'da hala 'isletme' der ama rejim 2'dir -- ikisi de tasinmali."""
+    m = _betik()
+    yol = tmp_path / "x.xlsx"
+    _sahte_bulten(yol, yil=2022, ay=10, kapsam_basit=False)
+    t = m.il_tablosu(yol, 2022, 10)
+    assert set(t["kapsam"]) == {"isletme"}
+    assert set(t["kapsam_rejimi"]) == {2}
+
+
+# --------------------------------------------------------------------------
+# Cekici (yillik): Alsancak -> Konak katlama
+# --------------------------------------------------------------------------
+
+
+def _yillik_betik():
+    yol = KOK / "scripts" / "fetch_turizm.py"
+    spec = importlib.util.spec_from_file_location("fetch_turizm", yol)
+    modul = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(modul)
+    return modul
+
+
+def test_alsancak_konaga_katlanir() -> None:
+    """Alsancak satiri Konak'a EKLENIR; Izmir toplami degismez; ad 'Konak' kalir."""
+    m = _yillik_betik()
+    tablo = pd.DataFrame(
+        {
+            "yil": [2024, 2024, 2024],
+            "il": ["İzmir"] * 3,
+            "ilce": ["Alsancak", "Konak", "Çeşme"],
+            "il_key": ["izmir"] * 3,
+            "ilce_key": ["alsancak", "konak", "cesme"],
+            "tesise_gelis": [10.0, 100.0, 50.0],
+            "geceleme": [20.0, 200.0, 80.0],
+        }
+    )
+    kopya = tablo.copy()
+    sonuc = m._ilceleri_katla(tablo)
+    pd.testing.assert_frame_equal(tablo, kopya)  # girdi degismez
+    assert "alsancak" not in set(sonuc["ilce_key"])
+    konak = sonuc[sonuc["ilce_key"] == "konak"].iloc[0]
+    assert konak["geceleme"] == 220.0 and konak["tesise_gelis"] == 110.0
+    assert konak["ilce"] == "Konak"
+    assert sonuc["geceleme"].sum() == tablo["geceleme"].sum()
+    assert list(sonuc.columns) == list(tablo.columns)
+
+
+def test_katlama_haritasi_bos_eslesmede_dokunmaz() -> None:
+    m = _yillik_betik()
+    tablo = pd.DataFrame(
+        {"yil": [2024], "il": ["Muğla"], "ilce": ["Bodrum"], "il_key": ["mugla"],
+         "ilce_key": ["bodrum"], "tesise_gelis": [1.0], "geceleme": [2.0]}
+    )  # fmt: skip
+    pd.testing.assert_frame_equal(m._ilceleri_katla(tablo), tablo)
+
+
 # --------------------------------------------------------------------------
 # Feature: add_monthly_attribute
 # --------------------------------------------------------------------------
@@ -309,3 +379,37 @@ def test_ilce_ay_tahmini_lag12_ile_panele_baglanir() -> None:
     assert np.isclose(sonuc.loc[1, "turizm_geceleme_tahmini"], 0.6 * (1000.0 + 2025))
     paylar = sonuc["turizm_geceleme_tahmini_yil_payi"]
     assert np.isclose(paylar.iloc[0] / paylar.iloc[1], (7000.0 + 2025) / (1000.0 + 2025))
+
+
+def test_ilce_ay_tahmini_referans_ilceleri_sifirlar() -> None:
+    """Yillik tabloda olmayan referans ilce NaN degil 0 alir; yil bazinda."""
+    yillik = pd.DataFrame(
+        {"ilce_key": ["bodrum", "bayindir"], "il_key": ["mugla", "izmir"],
+         "yil": [2025, 2024], "geceleme": [600.0, 10.0]}
+    )  # fmt: skip
+    ref = pd.DataFrame(
+        {"il_key": ["mugla", "mugla", "izmir", "izmir", "van"],
+         "ilce_key": ["bodrum", "kavaklidere", "bayindir", "konak", "ercis"]}
+    )  # fmt: skip
+    aylik = _aylik(yillar=(2024, 2025), iller=("mugla", "izmir"))
+    tahmin = district_monthly_estimate(yillik, aylik, districts=ref)
+
+    kav = tahmin[tahmin["ilce_key"] == "kavaklidere"]
+    assert set(kav["yil"]) == {2024, 2025} and len(kav) == 24
+    assert (kav["ilce_il_payi"] == 0).all() and (kav["geceleme_tahmini"] == 0).all()
+    # Bayindir 2024'te listeli (pay 1.0), 2025'te degil (0)
+    bay = tahmin[tahmin["ilce_key"] == "bayindir"].groupby("yil")["ilce_il_payi"].first()
+    assert bay[2024] == 1.0 and bay[2025] == 0.0
+    # Ili aylik tabloda olmayan referans ilce (Van/Ercis) uretilmez -- gercekten bilinmiyor
+    assert "ercis" not in set(tahmin["ilce_key"])
+    assert tahmin["geceleme_tahmini"].notna().all()
+
+
+def test_ilce_ay_tahmini_districts_kolon_eksikse_hata() -> None:
+    yillik = pd.DataFrame(
+        {"ilce_key": ["bodrum"], "il_key": ["mugla"], "yil": [2025], "geceleme": [1.0]}
+    )
+    with pytest.raises(KeyError, match="districts icinde"):
+        district_monthly_estimate(
+            yillik, _aylik(yillar=(2025,)), districts=pd.DataFrame({"x": [1]})
+        )
