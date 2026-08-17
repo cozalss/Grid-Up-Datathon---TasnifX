@@ -18,7 +18,7 @@ Bu yuzden ``cross_validate`` OOF'u her zaman dondurur ve diske yazmayi onerir.
 from __future__ import annotations
 
 import time
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -26,7 +26,13 @@ import numpy as np
 import pandas as pd
 
 from .compat import MISSING_CATEGORY, categorical_columns, safe_str
-from .metrics import get_metric
+from .metrics import (
+    get_metric,
+    inverse_log_transform,
+    inverse_sqrt_transform,
+    log_transform_target,
+    sqrt_transform_target,
+)
 from .validation import assert_folds_align
 
 __all__ = [
@@ -47,6 +53,166 @@ __all__ = [
 ]
 
 ModelKind = Literal["lightgbm", "xgboost", "catboost"]
+TargetTransform = (
+    str | tuple[Callable[[np.ndarray], np.ndarray], Callable[[np.ndarray], np.ndarray]] | None
+)
+
+
+_EARLY_STOPPING_METRICS: dict[str, dict[str, str]] = {
+    "lightgbm": {
+        "rmse": "rmse",
+        "rmsle": "rmse",
+        "mae": "mae",
+        "mape": "mape",
+        "r2": "l2",
+        "auc": "auc",
+        "logloss": "binary_logloss",
+        "accuracy": "binary_error",
+    },
+    "xgboost": {
+        "rmse": "rmse",
+        "rmsle": "rmsle",
+        "mae": "mae",
+        "mape": "mape",
+        "r2": "rmse",
+        "auc": "auc",
+        "logloss": "logloss",
+        "accuracy": "error",
+    },
+    "catboost": {
+        "rmse": "RMSE",
+        "rmsle": "MSLE",
+        "mae": "MAE",
+        "mape": "MAPE",
+        "smape": "SMAPE",
+        "r2": "R2",
+        "auc": "AUC",
+        "logloss": "Logloss",
+        "f1": "F1",
+        "accuracy": "Accuracy",
+    },
+}
+
+
+def _resolve_early_stopping_metric(
+    kind: ModelKind,
+    params: dict[str, Any],
+    metric: str | None,
+    *,
+    target_transform: str | None = None,
+    early_stopping_rounds: int = 200,
+) -> tuple[dict[str, Any], str | None]:
+    """Resmi metrik adini backend ``eval_metric`` degerine cevirir.
+
+    Ayni ayarin hem ust-seviye API'de hem ``params`` icinde farkli verilmesi
+    erken durdurmayi sessizce baska objektife baglardi; bu nedenle celiskide
+    hangisinin kazanacagini tahmin etmek yerine kapali hata veririz.
+    """
+    resolved = dict(params)
+    existing = resolved.get("eval_metric")
+    if early_stopping_rounds <= 0:
+        return resolved, str(existing) if existing is not None else None
+
+    if target_transform is not None:
+        if metric is None:
+            raise ValueError(
+                "target_transform ile early stopping kullanirken matematiksel olarak "
+                "denk early_stopping_metric acikca verilmelidir."
+            )
+        if not (target_transform == "log1p" and metric.lower() == "rmsle"):
+            raise ValueError(
+                f"target_transform={target_transform!r} ile ham uzaydaki "
+                f"early_stopping_metric={metric!r} matematiksel olarak denk degildir. "
+                "Early stopping'i kapatip sabit tur kullanin veya log1p+RMSLE secin."
+            )
+    elif metric is not None and metric.lower() == "rmsle":
+        raise ValueError(
+            "Donusumsuz RMSLE, backend RMSE'ye denk degildir. "
+            "target_transform='log1p' kullanin veya early stopping'i kapatin."
+        )
+
+    if metric is None:
+        return resolved, str(existing) if existing is not None else None
+
+    key = metric.lower()
+    # Model log1p(y) uzerinde egitiliyorsa ham uzaydaki RMSLE, fit uzayinda
+    # RMSE'ye denktir. XGBoost'un ``rmsle``si veya CatBoost'un ``MSLE``si bu
+    # donusturulmus hedefe bir KEZ DAHA log uygular ve erken durdurmayi yanlis
+    # uzaya baglar. Kullanici resmi metriği RMSLE diye belirtmeye devam eder;
+    # backend'e matematiksel olarak denk olan RMSE gider.
+    if target_transform == "log1p" and key == "rmsle":
+        key = "rmse"
+    mapping = _EARLY_STOPPING_METRICS[kind]
+    if key not in mapping:
+        raise ValueError(
+            f"early_stopping_metric={metric!r}, {kind} icin desteklenmiyor. "
+            f"Desteklenen genel adlar: {sorted(mapping)}"
+        )
+    backend_metric = mapping[key]
+    if existing is not None and str(existing).lower() != backend_metric.lower():
+        raise ValueError(
+            "early_stopping_metric ile params['eval_metric'] celisiyor: "
+            f"{metric!r} -> {backend_metric!r}, params={existing!r}."
+        )
+    resolved["eval_metric"] = backend_metric
+    return resolved, backend_metric
+
+
+def _resolve_target_transform(
+    target: np.ndarray,
+    transform: TargetTransform,
+    task_type: str,
+) -> tuple[np.ndarray, Callable[[np.ndarray], np.ndarray], str | None]:
+    """Ham hedefi fit uzayina, tahmini yeniden ham skor uzayina baglar."""
+    if transform is None:
+        return target, lambda values: np.asarray(values, dtype="float64"), None
+    if task_type != "regression":
+        raise ValueError("target_transform yalnizca regression gorevlerinde kullanilabilir.")
+
+    if isinstance(transform, str):
+        key = transform.lower()
+        transforms: dict[
+            str,
+            tuple[
+                Callable[[np.ndarray], np.ndarray],
+                Callable[[np.ndarray], np.ndarray],
+            ],
+        ] = {
+            "log1p": (log_transform_target, inverse_log_transform),
+            "sqrt": (sqrt_transform_target, inverse_sqrt_transform),
+        }
+        if key not in transforms:
+            raise ValueError(
+                f"Bilinmeyen target_transform {transform!r}. Secenekler: {sorted(transforms)}"
+            )
+        forward, inverse = transforms[key]
+        name = key
+    else:
+        if len(transform) != 2 or not all(callable(fn) for fn in transform):
+            raise ValueError("target_transform (forward, inverse) callable cifti olmali.")
+        forward, inverse = transform
+        name = "custom"
+
+    transformed = np.asarray(forward(target), dtype="float64").ravel()
+    if transformed.shape != target.shape:
+        raise ValueError("target_transform hedef uzunlugunu/boyutunu degistiremez.")
+    assert_finite_target(transformed)
+    return transformed, inverse, name
+
+
+def _inverse_predictions(
+    predictions: np.ndarray,
+    inverse: Callable[[np.ndarray], np.ndarray],
+) -> np.ndarray:
+    """Backend tahminini resmi (ham) skor uzayina guvenle geri cevirir."""
+    model_space = np.asarray(predictions, dtype="float64").ravel()
+    raw = np.asarray(inverse(model_space), dtype="float64").ravel()
+    if raw.shape != model_space.shape:
+        raise ValueError("target_transform inverse tahmin uzunlugunu/boyutunu degistiremez.")
+    if not np.isfinite(raw).all():
+        raise ValueError("target_transform inverse NaN/sonsuz tahmin uretti.")
+    return raw
+
 
 # --- Baslangic parametreleri -------------------------------------------------
 # Bunlar "iyi ilk deneme" degerleridir, optimum degil. Once bunlarla bir baseline
@@ -224,33 +390,41 @@ def starter_params(
 
     if kind == "lightgbm":
         params = dict(LGB_DEFAULTS)
-        params["objective"] = objective or {
-            "regression": "regression",
-            "binary": "binary",
-            "multiclass": "multiclass",
-        }[task_type]
+        params["objective"] = (
+            objective
+            or {
+                "regression": "regression",
+                "binary": "binary",
+                "multiclass": "multiclass",
+            }[task_type]
+        )
         return params
 
     if kind == "xgboost":
         params = dict(XGB_DEFAULTS)
-        params["objective"] = objective or {
-            "regression": "reg:squarederror",
-            "binary": "binary:logistic",
-            "multiclass": "multi:softprob",
-        }[task_type]
+        params["objective"] = (
+            objective
+            or {
+                "regression": "reg:squarederror",
+                "binary": "binary:logistic",
+                "multiclass": "multi:softprob",
+            }[task_type]
+        )
         return params
 
     if kind == "catboost":
         params = dict(CAT_DEFAULTS)
-        params["loss_function"] = objective or {
-            "regression": "RMSE",
-            "binary": "Logloss",
-            "multiclass": "MultiClass",
-        }[task_type]
+        params["loss_function"] = (
+            objective
+            or {
+                "regression": "RMSE",
+                "binary": "Logloss",
+                "multiclass": "MultiClass",
+            }[task_type]
+        )
         return params
 
     raise ValueError(f"Bilinmeyen model tipi '{kind}'.")
-
 
 
 def _resolve_objective(kind: ModelKind, objective: str | None) -> str | None:
@@ -277,8 +451,12 @@ COUNT_OBJECTIVES: dict[str, dict[str, str]] = {
         "mae": "reg:absoluteerror",
         "l2": "reg:squarederror",
     },
-    "catboost": {"poisson": "Poisson", "tweedie": "Tweedie:variance_power=1.5",
-                 "mae": "MAE", "l2": "RMSE"},
+    "catboost": {
+        "poisson": "Poisson",
+        "tweedie": "Tweedie:variance_power=1.5",
+        "mae": "MAE",
+        "l2": "RMSE",
+    },
 }
 
 
@@ -380,6 +558,13 @@ class CVResult:
     #: kalmamak icin var: skor tek basina dolasima girdiginde (deney gunlugu,
     #: juri slaydi) yaniyla birlikte tasinsin.
     warnings: list[str] = field(default_factory=list)
+    #: Fold ve genel skorlarin hesaplandigi hedef uzayi. Donusum kullanilsa
+    #: bile resmi metrik her zaman ham hedefte hesaplanir.
+    score_space: str = "raw"
+    #: Fit sirasinda kullanilan hedef donusumu (``None`` / ``log1p`` / ``sqrt``).
+    target_transform: str | None = None
+    #: Ust-seviye metrik adinin backend'e cevrilmis erken durdurma karsiligi.
+    early_stopping_metric: str | None = None
 
     def covered_predictions(self) -> tuple[np.ndarray, np.ndarray]:
         """``(kapsanan_satir_indeksleri, o_satirlarin_tahminleri)``.
@@ -555,11 +740,25 @@ def _prepare_categoricals(
 LGB_LOG_LINK_OBJECTIVES = frozenset({"poisson", "gamma", "tweedie"})
 
 #: LightGBM'de KIMLIK-LINK regresyon objective'leri: tahmin = ham skor.
-_LGB_IDENTITY_LINK_OBJECTIVES = frozenset({
-    "", "regression", "regression_l1", "regression_l2", "l1", "l2", "mae", "mse",
-    "rmse", "mean_absolute_error", "mean_squared_error", "huber", "fair",
-    "quantile", "mape",
-})
+_LGB_IDENTITY_LINK_OBJECTIVES = frozenset(
+    {
+        "",
+        "regression",
+        "regression_l1",
+        "regression_l2",
+        "l1",
+        "l2",
+        "mae",
+        "mse",
+        "rmse",
+        "mean_absolute_error",
+        "mean_squared_error",
+        "huber",
+        "fair",
+        "quantile",
+        "mape",
+    }
+)
 
 
 def _offset_link(kind: ModelKind, params: dict[str, Any]) -> str:
@@ -701,14 +900,19 @@ def _fit_one_fold(
 
         is_classification = params.get("objective", "").startswith(("binary", "multiclass"))
         model_class = lgb.LGBMClassifier if is_classification else lgb.LGBMRegressor
-        model = model_class(**params)
+        # ``eval_metric`` fit-parametresidir; constructor'a da gecirilirse
+        # LightGBM onu bilinmeyen booster parametresi olarak yorumlayabilir.
+        fit_metric = params.get("eval_metric")
+        constructor_params = {key: value for key, value in params.items() if key != "eval_metric"}
+        model = model_class(**constructor_params)
         model.fit(
-            x_train, y_train,
+            x_train,
+            y_train,
             sample_weight=sample_weight,
             init_score=init_train,
             eval_set=[(x_valid, y_valid)],
             eval_init_score=[init_valid] if init_valid is not None else None,
-            eval_metric=params.get("eval_metric"),
+            eval_metric=fit_metric,
             categorical_feature=categorical or "auto",
             callbacks=[
                 lgb.early_stopping(early_stopping_rounds, verbose=False),
@@ -724,7 +928,8 @@ def _fit_one_fold(
         model_class = xgb.XGBClassifier if is_classification else xgb.XGBRegressor
         model = model_class(**params, early_stopping_rounds=early_stopping_rounds)
         model.fit(
-            x_train, y_train,
+            x_train,
+            y_train,
             sample_weight=sample_weight,
             base_margin=init_train,
             eval_set=[(x_valid, y_valid)],
@@ -742,7 +947,8 @@ def _fit_one_fold(
         model_class = CatBoostClassifier if is_classification else CatBoostRegressor
         model = model_class(**params)
         model.fit(
-            x_train, y_train,
+            x_train,
+            y_train,
             sample_weight=sample_weight,
             eval_set=(x_valid, y_valid),
             cat_features=categorical or None,
@@ -775,9 +981,7 @@ def fit_without_validation(
     if kind == "lightgbm":
         import lightgbm as lgb
 
-        is_classification = str(params.get("objective", "")).startswith(
-            ("binary", "multiclass")
-        )
+        is_classification = str(params.get("objective", "")).startswith(("binary", "multiclass"))
         model_class = lgb.LGBMClassifier if is_classification else lgb.LGBMRegressor
         model = model_class(**params)
         model.fit(features, target, categorical_feature=categorical or "auto")
@@ -894,15 +1098,36 @@ def _validate_sample_weight(
         return None
     weights = np.asarray(sample_weight, dtype="float64").ravel()
     if len(weights) != n_rows:
-        raise ValueError(
-            f"sample_weight ({len(weights)}) ve train ({n_rows}) uzunluklari farkli."
-        )
+        raise ValueError(f"sample_weight ({len(weights)}) ve train ({n_rows}) uzunluklari farkli.")
     if not np.isfinite(weights).all() or (weights < 0).any():
         raise ValueError(
-            "sample_weight negatif/NaN/sonsuz deger iceriyor -- "
-            "agirliklar sonlu ve >= 0 olmali."
+            "sample_weight negatif/NaN/sonsuz deger iceriyor -- agirliklar sonlu ve >= 0 olmali."
         )
     return weights
+
+
+def _prepare_cv_target(
+    target: np.ndarray | pd.Series,
+    n_rows: int,
+    target_transform: TargetTransform,
+    task_type: str,
+    init_score: np.ndarray | Sequence[float] | None,
+    test_init_score: np.ndarray | Sequence[float] | None,
+) -> tuple[np.ndarray, np.ndarray, Callable[[np.ndarray], np.ndarray], str | None]:
+    """Ham hedef sozlesmesini ve fit uzayini CV dongusunden once dogrular."""
+    raw_y = np.asarray(target).ravel()
+    if len(raw_y) != n_rows:
+        raise ValueError(f"train ({n_rows}) ve target ({len(raw_y)}) uzunluklari farkli.")
+    assert_finite_target(raw_y)
+    if target_transform is not None and (init_score is not None or test_init_score is not None):
+        raise ValueError(
+            "target_transform ile init_score/test_init_score birlikte kullanilamaz: "
+            "offset'in fit mi ham hedef uzayinda oldugu belirsiz."
+        )
+    fit_y, inverse_target, transform_name = _resolve_target_transform(
+        raw_y, target_transform, task_type
+    )
+    return raw_y, fit_y, inverse_target, transform_name
 
 
 def cross_validate(
@@ -918,6 +1143,8 @@ def cross_validate(
     sample_weight: np.ndarray | Sequence[float] | None = None,
     init_score: np.ndarray | Sequence[float] | None = None,
     test_init_score: np.ndarray | Sequence[float] | None = None,
+    target_transform: TargetTransform = None,
+    early_stopping_metric: str | None = None,
     early_stopping_rounds: int = 200,
     verbose: bool = True,
 ) -> CVResult:
@@ -952,6 +1179,23 @@ def cross_validate(
         test_init_score: ``test`` ve ``init_score`` birlikte verildiyse
             ZORUNLU (``len(test)`` boyutlu) -- test tahmini offset'siz
             uretilirse olcek sessizce kayar.
+        target_transform: Ham hedefi fit icinde donusturur (``log1p`` veya
+            ``sqrt`` ya da ``(forward, inverse)`` callable cifti). Model
+            tahminleri OOF/test'e yazilmadan ve resmi metrik hesaplanmadan
+            once inverse ile HAM hedef uzayina dondurulur.
+
+            SART -- ``forward`` DURUMSUZ (stateless) ve ELEMAN-BAZLI olmalidir.
+            Donusum fold dongusunun DISINDA, TUM train hedefine bir kez
+            uygulanir. ``log1p``/``sqrt`` bu sarti saglar: her deger yalnizca
+            kendisine bakilarak donusur. Ancak hedeften GLOBAL ISTATISTIK
+            ogrenen bir cift -- ornegin
+            ``lambda y: (y - y.mean()) / y.std()`` -- validation fold'unun
+            hedef dagilimini train hedefine tasir ve CV'yi sessizce iyimser
+            yapar. Boyle bir normalizasyon gerekiyorsa fold ICINDE, yalnizca
+            train diliminden ogrenilerek yapilmalidir.
+        early_stopping_metric: Genel metrik adi; backend'in ``eval_metric``
+            degerine acikca cevrilir. ``params['eval_metric']`` farkli bir
+            deger iceriyorsa sessiz oncelik yerine ``ValueError`` verir.
         early_stopping_rounds: Iyilesme olmadan kac tur beklenecegi.
 
     Returns:
@@ -986,10 +1230,6 @@ def cross_validate(
     Referans istiyorsan ``fit_without_validation`` ile sabit tur sayisi kullan.
     """
     fold_list = list(folds)
-    y = np.asarray(target).ravel()
-    if len(y) != len(train):
-        raise ValueError(f"train ({len(train)}) ve target ({len(y)}) uzunluklari farkli.")
-
     # Hedefte NaN/inf SESSIZCE GECIYORDU ve bu en tehlikeli hata bicimidir:
     # LightGBM bu satirlari egitimde yok sayar, skor MAKUL GORUNEN bir sayi
     # cikar ve neyin yanlis oldugu anlasilmaz.
@@ -1000,7 +1240,14 @@ def cross_validate(
     #
     # Siniflandirmada olasilik metrikleri icin de gecerli: NaN etiketle
     # egitilen model, hicbir zaman ogrenmedigi bir sinifi tahmin eder.
-    assert_finite_target(y)
+    raw_y, fit_y, inverse_target, target_transform_name = _prepare_cv_target(
+        target,
+        len(train),
+        target_transform,
+        task_type,
+        init_score,
+        test_init_score,
+    )
 
     # Fold'lar bu frame icin mi uretildi? Kontrol etmezsek yanlis satirlar
     # sessizce train/valid olarak eslesir -- bkz. assert_folds_align.
@@ -1010,9 +1257,14 @@ def cross_validate(
 
     metric_fn, _, needs_proba = get_metric(metric)
     model_params = (
-        merge_infrastructure_params(kind, params)
-        if params
-        else starter_params(kind, task_type)
+        merge_infrastructure_params(kind, params) if params else starter_params(kind, task_type)
+    )
+    model_params, backend_early_metric = _resolve_early_stopping_metric(
+        kind,
+        model_params,
+        early_stopping_metric,
+        target_transform=target_transform_name,
+        early_stopping_rounds=early_stopping_rounds,
     )
 
     offsets, test_offsets = _resolve_offsets(
@@ -1036,32 +1288,40 @@ def cross_validate(
         x_valid = train_ready.iloc[valid_idx]
 
         model = _fit_one_fold(
-            kind, model_params, x_train, y[train_idx], x_valid, y[valid_idx],
-            categorical, early_stopping_rounds,
+            kind,
+            model_params,
+            x_train,
+            fit_y[train_idx],
+            x_valid,
+            fit_y[valid_idx],
+            categorical,
+            early_stopping_rounds,
             sample_weight=(weights[train_idx] if weights is not None else None),
             init_train=(offsets[train_idx] if offsets is not None else None),
             init_valid=(offsets[valid_idx] if offsets is not None else None),
         )
 
-        fold_prediction = (
+        fold_prediction_model_space = (
             _predict(model, x_valid, needs_proba=needs_proba)
             if offsets is None
             else _predict_with_offset(kind, model, x_valid, offsets[valid_idx], model_params)
         )
+        fold_prediction = _inverse_predictions(fold_prediction_model_space, inverse_target)
         oof[valid_idx] = fold_prediction
         oof_filled[valid_idx] = True
 
-        score = float(metric_fn(y[valid_idx], fold_prediction))
+        score = float(metric_fn(raw_y[valid_idx], fold_prediction))
         fold_scores.append(score)
         models.append(model)
         importance_total += _extract_importance(model, feature_names)
 
         if test_ready is not None and test_predictions is not None:
-            fold_test = (
+            fold_test_model_space = (
                 _predict(model, test_ready, needs_proba=needs_proba)
                 if test_offsets is None
                 else _predict_with_offset(kind, model, test_ready, test_offsets, model_params)
             )
+            fold_test = _inverse_predictions(fold_test_model_space, inverse_target)
             test_predictions += fold_test / len(fold_list)
 
         if verbose:
@@ -1073,7 +1333,9 @@ def cross_validate(
     # Genel skoru YALNIZCA doldurulmus satirlar uzerinden hesapla, aksi halde
     # sifirlar skoru sessizce bozar.
     coverage = float(oof_filled.mean())
-    overall = float(metric_fn(y[oof_filled], oof[oof_filled])) if oof_filled.any() else float("nan")
+    overall = (
+        float(metric_fn(raw_y[oof_filled], oof[oof_filled])) if oof_filled.any() else float("nan")
+    )
 
     if verbose and coverage < 0.999:
         print(
@@ -1105,4 +1367,7 @@ def cross_validate(
         elapsed_seconds=elapsed,
         metric_name=metric,
         model_kind=kind,
+        score_space="raw",
+        target_transform=target_transform_name,
+        early_stopping_metric=backend_early_metric,
     )

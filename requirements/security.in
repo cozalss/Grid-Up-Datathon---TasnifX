@@ -1,0 +1,2 @@
+pip-audit>=2.7
+cyclonedx-bom>=4.6

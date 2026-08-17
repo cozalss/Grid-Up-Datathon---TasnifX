@@ -71,8 +71,15 @@ __all__ = [
 #: gercek agac sayisi 5, RefitResult ise 500 raporladi.
 _ROUND_ALIASES: dict[str, tuple[str, ...]] = {
     "lightgbm": (
-        "num_iterations", "num_iteration", "n_iter", "num_trees", "num_round",
-        "num_rounds", "nrounds", "num_boost_round", "max_iter",
+        "num_iterations",
+        "num_iteration",
+        "n_iter",
+        "num_trees",
+        "num_round",
+        "num_rounds",
+        "nrounds",
+        "num_boost_round",
+        "max_iter",
     ),
     "xgboost": ("num_boost_round", "num_round", "num_rounds"),
     "catboost": ("num_boost_round", "num_trees"),
@@ -116,9 +123,7 @@ class RefitResult:
         )
 
 
-def fold_train_fraction(
-    folds: Sequence[tuple[np.ndarray, np.ndarray]], n_rows: int
-) -> float:
+def fold_train_fraction(folds: Sequence[tuple[np.ndarray, np.ndarray]], n_rows: int) -> float:
     """Fold'larin ORTALAMA train orani -- (k-1)/k varsayimi yerine olcum.
 
     Bunu ``estimate_full_data_rounds(mean_train_fraction=...)`` ile kullan.
@@ -196,8 +201,7 @@ def estimate_full_data_rounds(
     else:
         if not 0.0 < mean_train_fraction <= 1.0:
             raise ValueError(
-                f"mean_train_fraction (0, 1] araliginda olmali, "
-                f"{mean_train_fraction} verildi."
+                f"mean_train_fraction (0, 1] araliginda olmali, {mean_train_fraction} verildi."
             )
         scale = 1.0 / mean_train_fraction
 
@@ -279,9 +283,7 @@ def _drop_round_aliases(
     """
     temiz = dict(params)
     kaldirilan = {
-        alias: temiz.pop(alias)
-        for alias in _ROUND_ALIASES.get(kind, ())
-        if alias in temiz
+        alias: temiz.pop(alias) for alias in _ROUND_ALIASES.get(kind, ()) if alias in temiz
     }
     if kaldirilan and verbose:
         print(
@@ -353,9 +355,7 @@ def multi_seed_refit(
         raise ValueError("Tam veri egitimi icin test kumesi zorunludur.")
 
     test_aligned = _align_test_columns(train, test)
-    train_ready, test_ready, categorical = _prepare_categoricals(
-        train, test_aligned, kind
-    )
+    train_ready, test_ready, categorical = _prepare_categoricals(train, test_aligned, kind)
     if test_ready is None:  # pragma: no cover -- test None degil, buraya gelinmez
         raise ValueError("Tam veri egitimi icin test kumesi zorunludur.")
 

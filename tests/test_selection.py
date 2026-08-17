@@ -49,9 +49,7 @@ class TestNullImportance:
         params = starter_params("lightgbm", "regression")
         params["n_estimators"] = 150
 
-        result = null_importance_filter(
-            frame, target, params=params, n_runs=3, verbose=False
-        )
+        result = null_importance_filter(frame, target, params=params, n_runs=3, verbose=False)
 
         for column in ("gercek_a", "gercek_b", "gercek_c"):
             assert column in result["keep"], f"{column} gercek sinyal ama atildi"
@@ -61,9 +59,7 @@ class TestNullImportance:
         params = starter_params("lightgbm", "regression")
         params["n_estimators"] = 150
 
-        result = null_importance_filter(
-            frame, target, params=params, n_runs=3, verbose=False
-        )
+        result = null_importance_filter(frame, target, params=params, n_runs=3, verbose=False)
         ranking = result["scores"].set_index("feature")["oran"]
 
         assert ranking["gercek_a"] > ranking["gurultu_0"]
@@ -74,12 +70,13 @@ class TestNullImportance:
         params = starter_params("lightgbm", "regression")
         params["n_estimators"] = 100
 
-        result = null_importance_filter(
-            frame, target, params=params, n_runs=2, verbose=False
-        )
+        result = null_importance_filter(frame, target, params=params, n_runs=2, verbose=False)
 
         assert set(result["scores"].columns) == {
-            "feature", "gercek_onem", "null_esik", "oran",
+            "feature",
+            "gercek_onem",
+            "null_esik",
+            "oran",
         }
         assert len(result["keep"]) + len(result["drop"]) == frame.shape[1]
 
@@ -124,9 +121,17 @@ class TestShapBackwardSelection:
         params["n_estimators"] = 200
 
         result = shap_backward_selection(
-            frame, target, folds, metric="rmse", params=params,
-            drop_per_step=4, min_features=3, max_steps=4, patience=2,
-            shap_sample=400, progress=None,
+            frame,
+            target,
+            folds,
+            metric="rmse",
+            params=params,
+            drop_per_step=4,
+            min_features=3,
+            max_steps=4,
+            patience=2,
+            shap_sample=400,
+            progress=None,
         )
 
         assert len(result.best_features) <= frame.shape[1]
@@ -141,9 +146,17 @@ class TestShapBackwardSelection:
         params["n_estimators"] = 120
 
         result = shap_backward_selection(
-            frame, target, folds, metric="rmse", params=params,
-            drop_per_step=5, min_features=4, max_steps=3, patience=3,
-            shap_sample=300, progress=None,
+            frame,
+            target,
+            folds,
+            metric="rmse",
+            params=params,
+            drop_per_step=5,
+            min_features=4,
+            max_steps=3,
+            patience=3,
+            shap_sample=300,
+            progress=None,
         )
 
         curve = result.curve()

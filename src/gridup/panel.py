@@ -159,9 +159,7 @@ def _panel_hazirla(
     grid_end = pd.Timestamp(end) if end else working[time_column].max()
     timeline = pd.date_range(grid_start, grid_end, freq=freq, name=time_column)
     if len(timeline) == 0:
-        raise ValueError(
-            f"Zaman izgarasi bos: start={grid_start}, end={grid_end}, freq={freq!r}."
-        )
+        raise ValueError(f"Zaman izgarasi bos: start={grid_start}, end={grid_end}, freq={freq!r}.")
 
     # Acik start/end verildiyse disarida kalan kayitlar izgara kenarina
     # YAPISTIRILMAZ -- oraya ait olmadiklari halde kutle tasirlardi.
@@ -217,9 +215,7 @@ def build_panel(
         KeyError: Beklenen kolon yoksa.
     """
     missing = [
-        column
-        for column in list(entity_columns) + [time_column]
-        if column not in frame.columns
+        column for column in list(entity_columns) + [time_column] if column not in frame.columns
     ]
     if missing:
         raise KeyError(f"Panel icin gereken kolonlar eksik: {missing}")
@@ -258,9 +254,7 @@ def build_panel(
     toplama: dict[str, str] = {column: "sum" for column in value_list}
     toplama.update({column: "first" for column in diger_kolonlar})
     aggregated = (
-        working.groupby(entity_list + [time_column], observed=True)
-        .agg(toplama)
-        .reset_index()
+        working.groupby(entity_list + [time_column], observed=True).agg(toplama).reset_index()
     )
 
     panel = grid.merge(

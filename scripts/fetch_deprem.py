@@ -37,6 +37,8 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from gridup.io_utils import atomic_write_dataframe  # noqa: E402
+
 AFAD_URL = "https://deprem.afad.gov.tr/apiv2/event/filter"
 USGS_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 
@@ -72,7 +74,9 @@ def _getir(url: str, params: dict[str, str]) -> requests.Response:
     for deneme in range(1, RETRIES + 1):
         try:
             yanit = requests.get(
-                url, params=params, timeout=TIMEOUT_S,
+                url,
+                params=params,
+                timeout=TIMEOUT_S,
                 headers={"User-Agent": "Mozilla/5.0 (datathon veri toplayici)"},
             )
             yanit.raise_for_status()
@@ -92,8 +96,10 @@ def fetch_afad(start: str, end: str, minmag: float) -> pd.DataFrame:
             "start": f"{dilim_bas} 00:00:00",
             "end": f"{dilim_son} 23:59:59",
             "minmag": str(minmag),
-            "minlat": str(LAT_MIN), "maxlat": str(LAT_MAX),
-            "minlon": str(LON_MIN), "maxlon": str(LON_MAX),
+            "minlat": str(LAT_MIN),
+            "maxlat": str(LAT_MAX),
+            "minlon": str(LON_MIN),
+            "maxlon": str(LON_MAX),
             "orderby": "timedesc",
         }
         yanit = _getir(AFAD_URL, params)
@@ -128,10 +134,13 @@ def fetch_usgs(start: str, end: str, minmag: float) -> pd.DataFrame:
     """USGS FDSN CSV yedegi -- AFAD erisilemezse ayni kutu, ayni esik."""
     params = {
         "format": "csv",
-        "starttime": start, "endtime": f"{end}T23:59:59",
+        "starttime": start,
+        "endtime": f"{end}T23:59:59",
         "minmagnitude": str(minmag),
-        "minlatitude": str(LAT_MIN), "maxlatitude": str(LAT_MAX),
-        "minlongitude": str(LON_MIN), "maxlongitude": str(LON_MAX),
+        "minlatitude": str(LAT_MIN),
+        "maxlatitude": str(LAT_MAX),
+        "minlongitude": str(LON_MIN),
+        "maxlongitude": str(LON_MAX),
         "orderby": "time",
     }
     yanit = _getir(USGS_URL, params)
@@ -158,8 +167,10 @@ def main() -> int:
     parser.add_argument("--out", default=str(CIKTI_YOLU), help="Cikti parquet yolu")
     args = parser.parse_args()
 
-    print(f"Deprem katalogu: {args.start} - {args.end}, M>={args.minmag}, "
-          f"kutu lat {LAT_MIN}-{LAT_MAX} lon {LON_MIN}-{LON_MAX}")
+    print(
+        f"Deprem katalogu: {args.start} - {args.end}, M>={args.minmag}, "
+        f"kutu lat {LAT_MIN}-{LAT_MAX} lon {LON_MIN}-{LON_MAX}"
+    )
 
     try:
         tablo = fetch_afad(args.start, args.end, args.minmag)
@@ -173,8 +184,7 @@ def main() -> int:
     tablo = tablo.reset_index(drop=True)
 
     cikti = Path(args.out)
-    cikti.parent.mkdir(parents=True, exist_ok=True)
-    tablo.to_parquet(cikti, index=False)
+    atomic_write_dataframe(tablo, cikti)
 
     print(f"Yazildi: {cikti}")
     print(f"  {len(tablo)} olay, {tablo['tarih'].min()} - {tablo['tarih'].max()}")

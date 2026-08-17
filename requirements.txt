@@ -47,4 +47,7 @@ nbstripout>=0.6        # notebook ciktilarini commit'ten once temizler
 # --- Gelistirme ---
 pytest>=7.4
 pytest-cov>=4.1
+hypothesis>=6.90
 ruff>=0.5
+mypy>=2.3
+uv>=0.12

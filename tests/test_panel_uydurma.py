@@ -33,8 +33,8 @@ def _olay_kaydi(*, saatli: bool, gunluk_olay: int = 1, tohum: int = 0) -> pd.Dat
         for gun in pd.date_range("2024-01-01", periods=60, freq="D"):
             for _ in range(gunluk_olay if gunluk_olay > 1 else int(rng.random() < 0.3)):
                 damga = (
-                    gun + pd.Timedelta(hours=int(rng.integers(0, 24)),
-                                       minutes=int(rng.integers(0, 60)))
+                    gun
+                    + pd.Timedelta(hours=int(rng.integers(0, 24)), minutes=int(rng.integers(0, 60)))
                     if saatli
                     else gun
                 )
@@ -65,9 +65,7 @@ def test_saat_damgali_kayitta_hedef_kutlesi_korunuyor():
     Hata da uyari da yoktu -- model tamamen sifir ogrenirdi.
     """
     olaylar = _olay_kaydi(saatli=True)
-    panel = build_panel(
-        olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False
-    )
+    panel = build_panel(olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False)
     assert panel["sure_dk"].sum() == pytest.approx(olaylar["sure_dk"].sum())
     assert int((panel["sure_dk"] > 0).sum()) == len(olaylar)
 
@@ -75,9 +73,7 @@ def test_saat_damgali_kayitta_hedef_kutlesi_korunuyor():
 def test_gunde_birden_cok_olay_toplanarak_korunuyor():
     """Ayni gunun farkli saatlerindeki kayitlar tek satira TOPLANMALI."""
     olaylar = _olay_kaydi(saatli=True, gunluk_olay=3)
-    panel = build_panel(
-        olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False
-    )
+    panel = build_panel(olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False)
     assert len(panel) == 20 * 60
     assert panel["sure_dk"].sum() == pytest.approx(olaylar["sure_dk"].sum())
 
@@ -118,9 +114,7 @@ def test_metin_kolonlari_panelden_dusmuyor():
     ['ilce','tarih','sure_dk','_dolduruldu'] oluyordu -- 'sebep' sessizce
     yok oluyordu. Arizanin SEBEBI, ariza probleminde en degerli kolondur."""
     olaylar = _olay_kaydi(saatli=False)
-    panel = build_panel(
-        olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False
-    )
+    panel = build_panel(olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False)
     assert "sebep" in panel.columns
     # Gercek satirlarda deger var, uydurulan satirlarda NaN -- sifir DEGIL,
     # cunku o gun bir gozlem yoktur.
@@ -142,9 +136,7 @@ def test_nan_varlik_anahtari_hayalet_satir_uretmiyor(capsys):
     bozuk = olaylar.copy()
     bozuk.loc[bozuk.index[:50], "ilce"] = np.nan
 
-    panel = build_panel(
-        bozuk, entity_columns=["ilce"], time_column="tarih", verbose=False
-    )
+    panel = build_panel(bozuk, entity_columns=["ilce"], time_column="tarih", verbose=False)
     assert int(panel["ilce"].isna().sum()) == 0
     # Kayip SESSIZ olmamali.
     assert "eksik deger" in capsys.readouterr().out
@@ -160,9 +152,7 @@ def test_hedef_kolonu_bos_olan_gercek_satir_sentetik_sayilmiyor():
             "sure_dk": [np.nan, 5.0, 3.0],
         }
     )
-    panel = build_panel(
-        olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False
-    )
+    panel = build_panel(olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False)
     kayit = panel[(panel["ilce"] == "a") & (panel["tarih"] == pd.Timestamp("2024-01-01"))]
     assert int(kayit[PANEL_FLAG_COLUMN].iloc[0]) == 0
 
@@ -179,12 +169,8 @@ def test_doldurma_bayragi_hedefle_ayni_sey_ve_sizinti_raporunda_gorunuyor():
     from gridup.validation import leakage_report
 
     olaylar = _olay_kaydi(saatli=False)
-    panel = build_panel(
-        olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False
-    )
-    ortusme = (
-        panel[PANEL_FLAG_COLUMN] == (panel["sure_dk"] == 0).astype("int8")
-    ).mean()
+    panel = build_panel(olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False)
+    ortusme = (panel[PANEL_FLAG_COLUMN] == (panel["sure_dk"] == 0).astype("int8")).mean()
     assert ortusme == 1.0
 
     rapor = leakage_report(panel.drop(columns=["ilce", "tarih", "sebep"]), "sure_dk")
@@ -224,9 +210,7 @@ def test_panel_turkce_tarih_kolonunu_dogru_cozuyor():
                 )
     olaylar = pd.DataFrame(satirlar)
 
-    panel = build_panel(
-        olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False
-    )
+    panel = build_panel(olaylar, entity_columns=["ilce"], time_column="tarih", verbose=False)
     assert len(panel) == 5 * 120
     assert panel["tarih"].nunique() == 120
     assert panel["sure_dk"].sum() == pytest.approx(olaylar["sure_dk"].sum())
@@ -248,9 +232,7 @@ def test_day_one_kullanicinin_yazdigi_ham_kolon_adini_cozuyor():
 
     import importlib.util
 
-    spec = importlib.util.spec_from_file_location(
-        "gun1_modul", KOK / "scripts" / "day_one.py"
-    )
+    spec = importlib.util.spec_from_file_location("gun1_modul", KOK / "scripts" / "day_one.py")
     modul = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(modul)
 

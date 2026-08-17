@@ -24,23 +24,24 @@ if ($null -eq $pythonCommand) {
 $version = & python --version
 Write-Host "Python: $version"
 
-# --- 2. Bagimliliklar -------------------------------------------------------
+# --- 2. Kilitli bagimliliklar -----------------------------------------------
 Write-Host ""
 Write-Host "Bagimliliklar kuruluyor..." -ForegroundColor Yellow
-& python -m pip install --upgrade pip --quiet
-& python -m pip install -r requirements.txt --quiet
+$uvCommand = Get-Command uv -ErrorAction SilentlyContinue
+if ($null -eq $uvCommand) {
+    Write-Host "uv 0.12.5 kuruluyor..." -ForegroundColor Yellow
+    & python -m pip install --require-hashes -r requirements/uv-bootstrap.txt --quiet
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "HATA: uv kurulumu basarisiz." -ForegroundColor Red
+        exit 1
+    }
+}
+& uv sync --locked --extra full --extra dev
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "HATA: bagimlilik kurulumu basarisiz." -ForegroundColor Red
+    Write-Host "HATA: uv.lock ile tam eslesen ortam kurulamadi." -ForegroundColor Red
     exit 1
 }
-
-# Paketi duzenlenebilir modda kur -- 'from gridup import ...' her yerden calissin.
-& python -m pip install -e . --quiet
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "HATA: paket kurulumu basarisiz." -ForegroundColor Red
-    exit 1
-}
-Write-Host "Bagimliliklar tamam." -ForegroundColor Green
+Write-Host "Kilitli bagimliliklar tamam." -ForegroundColor Green
 
 # --- 3. Dizinler ------------------------------------------------------------
 $directories = @(
@@ -58,7 +59,7 @@ Write-Host "Dizinler hazir." -ForegroundColor Green
 # Notebook ciktilarinin commit'e girmesi hem diff'i okunamaz kilar hem de
 # yarisma verisini kazara repoya sizdirabilir.
 if (Test-Path ".git") {
-    & python -m nbstripout --install 2>$null
+    & uv run python -m nbstripout --install 2>$null
     if ($?) {
         Write-Host "nbstripout kuruldu (notebook ciktilari commit'e girmeyecek)." -ForegroundColor Green
     }
@@ -68,7 +69,7 @@ if (Test-Path ".git") {
 Write-Host ""
 Write-Host "Testler calistiriliyor..." -ForegroundColor Yellow
 $env:PYTHONIOENCODING = "utf-8"
-& python -m pytest -q
+& uv run python -m pytest -q
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "UYARI: bazi testler basarisiz. Devam etmeden once bakin." -ForegroundColor Red

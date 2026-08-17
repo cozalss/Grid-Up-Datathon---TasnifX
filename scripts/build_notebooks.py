@@ -115,7 +115,9 @@ notebook'taki her sayı o provanın çıktısıdır; yanında hangi betikle öl�
 Bu notebook üç karar üretir: **hedef + panel tanımı**, **doğrulama şeması** ve
 **sızıntı duvarı**. Sonraki 12 günün her deneyi bu üç karara yaslanır.
 """),
-    code(_KAGGLE_BOOTSTRAP + """
+    code(
+        _KAGGLE_BOOTSTRAP
+        + """
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -133,7 +135,8 @@ set_global_seed(42)
 # Ortami yazdir -- juri tekrarlanabilirlige bakiyor, bu ucuz bir puan.
 for key, value in environment_report().items():
     print(f"{key:<26} {value}")
-"""),
+"""
+    ),
     markdown("""
 ## 1 · Veriyi oku — neden `read_any`
 
@@ -413,7 +416,7 @@ BASELINE_CELLS = [
 
 Amaç: **en hızlı geçerli submission** — ama rastgele değil, ölçülmüş bir planla.
 Yarışmadan önce, 68.257 gerçek GDZ kesinti kaydında (47 ilçe, 2021-05 → 2022-08)
-hangi feature ailesinin katkı verdiğini ve hangi model reçetesinin kazandığını
+hangi feature ailesinin katkı verdiğini ve model reçetelerinin OOF davranışını
 **aynı purged fold'larda** ölçtük (`scripts/ablation_gercek.py`,
 `scripts/benchmark_gercek.py`). Veri gününde deney değil **icra** yapacağız:
 plan sabittir, sayılar yarışma verisinde yeniden ölçülür.
@@ -421,7 +424,9 @@ plan sabittir, sayılar yarışma verisinde yeniden ölçülür.
 Sıra: fold'lar → feature'lar (ölçülen öncelikle) → model (ölçülen reçete) →
 harman → submission.
 """),
-    code(_KAGGLE_BOOTSTRAP + """
+    code(
+        _KAGGLE_BOOTSTRAP
+        + """
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -432,17 +437,19 @@ from gridup import (
 )
 from gridup.compat import categorical_columns
 from gridup.ensemble import hill_climb_weights, prune_by_correlation, stack_oof
-from gridup.experiment import ExperimentLog, ExperimentRecord
+from gridup.experiment import DataArtifact, ExperimentProvenance, ExperimentRecord
 from gridup.features import (
-    add_calendar_features, add_frequency_encoding, add_lag_features,
+    add_calendar_features, add_lag_features,
     add_neighbour_target_lag, add_physical_derivatives, add_regional_aggregates,
     nearest_neighbours, shared_origin,
 )
-from gridup.metrics import inverse_log_transform, log_transform_target
 from gridup.models import starter_params
+from gridup.pipeline import FoldPlan
+from gridup.recipe import CVRecipe, FeatureRecipe, ModelRecipe, PipelineRecipe
 from gridup.refit import (estimate_full_data_rounds, extract_best_iterations,
                           fold_train_fraction, multi_seed_refit)
 from gridup.selection import null_importance_filter, shap_backward_selection
+from gridup.stores import SQLiteExperimentStore
 from gridup.validation import adversarial_validation, build_splitter, purged_time_series_split
 
 set_global_seed(42)
@@ -464,7 +471,8 @@ LOG_TARGET = False         # metrik RMSLE ise veya hedef çok çarpıksa True
 # shift(1) ile hesaplanan lag'ler CV'de harika görünür, private LB'de çöker.
 # Veri geldiğinde: HORIZON = (test.tarih.max() - test.tarih.min()).days + 1
 HORIZON = 1                # TODO
-"""),
+"""
+    ),
     code("""
 train = read_any(DATA_DIR / "train.csv")
 test  = read_any(DATA_DIR / "test.csv")
@@ -540,11 +548,9 @@ def build_features(frame: pd.DataFrame) -> pd.DataFrame:
     out = frame.copy()
     if TIME_COLUMN:
         out = add_calendar_features(out, TIME_COLUMN, include_year=False, origin=ORIGIN)
-    # categorical_columns: pandas 2.x ve 3.x'te de dogru calisir.
-    # Duz `dtype == object` kontrolu pandas 3.0'da metin kolonlarini KACIRIR.
-    categorical = categorical_columns(out)
-    if categorical:
-        out = add_frequency_encoding(out, categorical[:12])
+    # Dagilim/frekans kodlamasi temporal fold icinde fit edilmedikce kapali.
+    # Tum train veya test uzerinde ayri fit, gelecekteki kategori dagilimini
+    # validasyon ozelliklerine tasir.
     return out
 
 train_features = build_features(train)
@@ -558,7 +564,7 @@ if TIME_COLUMN and GROUP_COLUMN:
     n_train = len(train_features)
     butun = pd.concat([train_features, test_features], ignore_index=True, sort=False)
     butun = add_lag_features(
-        butun, TARGET, [HORIZON, 2 * HORIZON, 3 * HORIZON],
+        butun, TARGET, shifts=[HORIZON, 2 * HORIZON, 3 * HORIZON],
         time_column=TIME_COLUMN, group_columns=[GROUP_COLUMN], horizon=HORIZON,
     )
     train_features = butun.iloc[:n_train].reset_index(drop=True)
@@ -579,7 +585,7 @@ yarıştırdık (`scripts/benchmark_gercek.py` → `experiments/benchmark_gercek
 
 | Reçete | MAE (dk) | Not |
 |---|---|---|
-| **catboost_mae** | **304.89** | Kazanan tekil: 2023 birincisinin reçetesi zirveye çıktı |
+| **catboost_mae** | **304.89** | Görünür OOF lideri; henüz bilimsel kazanan değil |
 | lgb_mae | 310.14 | En iyi LightGBM — kayıp = metrik |
 | iki_asama_medyan | 316.95 | Koşullu merdiven + q\\*=1−0.5/p kuralı |
 | iki_asama (eşikli) | 317.04 | Eşik 0.680; medyan kuralının farkı 0.1 dk'ya indi |
@@ -617,8 +623,6 @@ Dört ölçülmüş ders:
 """),
     code("""
 y = train_features[TARGET].to_numpy()
-if LOG_TARGET:
-    y = log_transform_target(y)
 
 # Kayip = yarisma metrigi. Gercek GDZ olcumu: ayni LightGBM'de l2 -> mae
 # gecisi ~94 dk kazandirdi (experiments/benchmark_gercek.json).
@@ -629,6 +633,8 @@ result = cross_validate(
     train_features[FEATURES], y, folds,
     kind="lightgbm", task_type=TASK, metric=METRIC,
     params=params, test=test_features[FEATURES],
+    target_transform=("log1p" if LOG_TARGET else None),
+    early_stopping_metric=METRIC,
 )
 
 print(result.summary())
@@ -636,11 +642,11 @@ print(result.summary())
     markdown("""
 ## 4 · Harman — ve kapsam maskesi neden şart
 
-Gerçek GDZ ölçümünde en iyi tekil model 304.89; TÜM üyeler üzerinde
-kararlılık-cezalı hill-climb harmanı **302.64** (ağırlık alanlar: catboost_mae
-0.75 + lgb_tweedie 0.25; `stability_penalty=0.5` — tırmanma tek fold'un
-hediyesini değil, fold MAE'lerinin ortalama + 0.5·std'sini kovalar) —
-`scripts/benchmark_gercek.py`. Bir ölçülmüş ders daha: "en iyi 3 üyeyi
+Gerçek GDZ ölçümünde hill-climb harmanı aynı OOF üzerinde tekil modellerden
+daha düşük göründü. Bu yalnızca `apparent_oof_best` sonucudur: ağırlıklar aynı
+OOF'ta seçildiği için bağımsız, eşleştirilmiş en az 6 outer anchor olmadan
+bilimsel kazanan ilan edilmez (`scripts/benchmark_gercek.py`). Bir ölçülmüş ders:
+"en iyi 3 üyeyi
 harmanla" kısayolu bir önceki dalgada 311.83 verdi, çünkü en iyi üçü birbirinin
 kopyası çıktı — harmanı üye kalitesi değil **hata çeşitliliği** taşır; hill-climb
 tüm adayları görünce işe yaramayana zaten 0 ağırlık veriyor (lgb_tweedie tekil
@@ -684,8 +690,6 @@ hatayı gönderMEDEN yakalamak bir submission hakkı kurtarır.
 """),
     code("""
 predictions = result.test_predictions
-if LOG_TARGET:
-    predictions = inverse_log_transform(predictions)
 
 path = write_submission(
     test_features[ID_COLUMN].to_numpy(),
@@ -701,28 +705,60 @@ path = write_submission(
 Submission gönderdikten **sonra** leaderboard skorunu geri yaz:
 
 ```python
-log.record_lb("baseline_lgbm", 12.3456)
-print(log.cv_lb_correlation())
+store.record_lb(record.run_id, 12.3456)
 ```
 
 CV–LB korelasyonu bu yarışmanın en önemli tek sayısıdır. r > 0.8 ise CV'ne
 güven; r < 0.5 ise CV şemanı düzeltmeden devam etme.
 """),
     code("""
-log = ExperimentLog(OUT_DIR.parent / "experiments" / "deneyler.jsonl")
-
-log.add(ExperimentRecord(
+run_recipe = PipelineRecipe(
+    seed=42,
+    # embargo_days ACIKCA yazilir: fold'lar yukarida
+    # embargo=pd.Timedelta(days=max(HORIZON, 30)) ile uretildi. Bu alan
+    # bos birakilirsa provenance kaydi "0 gun ambargo" der ve juriye giden
+    # notebook, gercekte kosandan BASKA bir semayi belgeler.
+    cv=CVRecipe(
+        n_splits=len(folds),
+        splitter="purged_time_series",
+        embargo_days=max(HORIZON, 30),
+    ),
+    features=FeatureRecipe(
+        horizon=HORIZON,
+        target_shifts=(HORIZON, 2 * HORIZON, 3 * HORIZON),
+    ),
+    model=ModelRecipe(
+        kind="lightgbm", metric=METRIC, early_stopping_metric=METRIC,
+    ),
+)
+fold_plan = FoldPlan.from_folds(folds, n_rows=len(train_features))
+provenance = ExperimentProvenance.capture(
+    recipe_fingerprint=run_recipe.fingerprint,
+    data_artifacts=[
+        DataArtifact.from_path(DATA_DIR / "train.csv"),
+        DataArtifact.from_path(DATA_DIR / "test.csv"),
+        DataArtifact.from_path(path),
+    ],
+    feature_names=FEATURES,
+    fold_fingerprint=fold_plan.fingerprint,
+)
+store = SQLiteExperimentStore(OUT_DIR.parent / "experiments" / "experiments.db")
+record = store.add(ExperimentRecord(
     name="baseline_lgbm",
     cv_score=result.overall_score,
     metric=METRIC,
     model_kind="lightgbm",
     n_features=len(FEATURES),
     fold_scores=result.fold_scores,
+    params=params,
+    features=list(FEATURES),
     notes="baseline: takvim + frekans + ufuk-kaydirmali lag",
     submission_path=str(path),
+    provenance=provenance,
 ))
 
-log.leaderboard()
+print("run_id:", record.run_id)
+pd.DataFrame(store.load()).tail()
 """),
     markdown("""
 ## 7 · Dürüst sınırlar — bu sayıların söylemediği şeyler
@@ -758,8 +794,9 @@ Sıra ölçümden geliyor (`experiments/benchmark_gercek.json` → `gun1_recetes
 
 1. **Saat 0–2 · Keşif:** 01 notebook'u — panel, fold'lar, sızıntı duvarı.
    İlk iki saatin sonunda üç karar da verilmiş olmalı.
-2. **İlk submission:** `catboost_mae` — 2023 birincisinin reçetesi, 3. dalga
-   feature'larıyla gerçek GDZ'de kazanan tekil (MAE 304.89; hep-sıfır 366.97).
+2. **İlk submission adayı:** `catboost_mae` — 2023 birincisinin reçetesi,
+   3. dalga feature'larıyla görünür OOF lideri (MAE 304.89; hep-sıfır 366.97),
+   fakat bağımsız outer kanıt olmadan bilimsel kazanan değildir.
    Optimize etmeden önce LB'de bir sayı:
    ```python
    print(zero_baseline_score(y, metric="mae"))   # once bunu gectigini gor

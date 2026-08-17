@@ -29,16 +29,19 @@ SONUC = KOK / "experiments" / "ablasyon_gercek.json"
 AILELER = {"takvim", "tatil", "hava", "gunes", "lag", "komsu", "frekans"}
 
 ZORUNLU_ALANLAR = {
-    "tam_mae", "sifir_baseline", "fold_std",
-    "aileler", "siralama", "gain_top15", "panel",
+    "tam_mae",
+    "sifir_baseline",
+    "fold_std",
+    "aileler",
+    "siralama",
+    "gain_top15",
+    "panel",
 }
 
 
 @pytest.fixture(scope="module")
 def sonuc() -> dict:
-    assert SONUC.exists(), (
-        f"{SONUC} yok -- once betigi kos: python scripts/ablation_gercek.py"
-    )
+    assert SONUC.exists(), f"{SONUC} yok -- once betigi kos: python scripts/ablation_gercek.py"
     return json.loads(SONUC.read_text(encoding="utf-8"))
 
 
@@ -48,9 +51,7 @@ def test_betik_derlenebilir():
 
 
 def test_zorunlu_alanlar_tam(sonuc):
-    assert set(sonuc) >= ZORUNLU_ALANLAR, (
-        f"eksik alan: {ZORUNLU_ALANLAR - set(sonuc)}"
-    )
+    assert set(sonuc) >= ZORUNLU_ALANLAR, f"eksik alan: {ZORUNLU_ALANLAR - set(sonuc)}"
     for alan in ("tam_mae", "sifir_baseline", "fold_std"):
         assert isinstance(sonuc[alan], (int, float)), f"{alan} sayi olmali"
         assert sonuc[alan] >= 0

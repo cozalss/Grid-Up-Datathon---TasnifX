@@ -68,8 +68,12 @@ class TestYapisalDesenler:
     def test_bes_tam_yil_ve_bir_kuyruk_kapsaniyor(self):
         adlar = [kayit["ad"] for kayit in SCHOOL_YEARS]
         assert adlar == [
-            "2020-2021", "2021-2022", "2022-2023",
-            "2023-2024", "2024-2025", "2025-2026",
+            "2020-2021",
+            "2021-2022",
+            "2022-2023",
+            "2023-2024",
+            "2024-2025",
+            "2025-2026",
         ]
         # 2019'dan beri her tam yilda iki ara tatil var; kuyruk kaydinda yok.
         for kayit in SCHOOL_YEARS[1:]:
@@ -156,8 +160,8 @@ class TestDepremYili:
         assert _tur("2023-04-18") == "ara"
 
     def test_bahar_2025_ve_2026_aralari_bayramla_birlesik(self):
-        assert _tur("2025-04-02") == "ara"   # 31 Mar - 4 Nis 2025
-        assert _tur("2026-03-18") == "ara"   # 16-20 Mar 2026
+        assert _tur("2025-04-02") == "ara"  # 31 Mar - 4 Nis 2025
+        assert _tur("2026-03-18") == "ara"  # 16-20 Mar 2026
 
 
 class TestCovidKuyrugu:

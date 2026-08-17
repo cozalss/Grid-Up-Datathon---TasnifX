@@ -121,7 +121,7 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
     "add_lag_features": (
         "temporal",
         lambda m, f: m.add_lag_features(
-            f, "hedef", [1, 7], time_column="tarih", horizon=1, group_columns=["yer"]
+            f, "hedef", shifts=[1, 7], time_column="tarih", horizon=1, group_columns=["yer"]
         ),
     ),
     "add_rolling_features": (
@@ -173,17 +173,23 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
     ),
     "add_regional_aggregates": (
         "weather",
-        lambda m, f: m.add_regional_aggregates(
-            f, time_column="tarih", value_columns=["sicaklik"]
-        ),
+        lambda m, f: m.add_regional_aggregates(f, time_column="tarih", value_columns=["sicaklik"]),
     ),
     "add_physical_derivatives": (
         "weather",
         lambda m, f: m.add_physical_derivatives(
-            f.rename(columns={"sicaklik": "sicaklik_ort", "yagis_mm": "yagis_toplam",
-                              "ruzgar": "ruzgar_max"}),
-            group_columns=["yer"], time_column="tarih",
-            temperature_max=None, temperature_min=None, gust_max=None,
+            f.rename(
+                columns={
+                    "sicaklik": "sicaklik_ort",
+                    "yagis_mm": "yagis_toplam",
+                    "ruzgar": "ruzgar_max",
+                }
+            ),
+            group_columns=["yer"],
+            time_column="tarih",
+            temperature_max=None,
+            temperature_min=None,
+            gust_max=None,
         ),
     ),
     "add_weather_accumulators": (
@@ -208,23 +214,34 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
     "add_neighbour_target_lag": (
         "spatial",
         lambda m, f: m.add_neighbour_target_lag(
-            f, _komsuluk(), key_column="yer", time_column="tarih",
-            target_column="hedef", horizon=1,
+            f,
+            _komsuluk(),
+            key_column="yer",
+            time_column="tarih",
+            target_column="hedef",
+            horizon=1,
         ),
     ),
     "add_neighbour_feature_mean": (
         "spatial",
         lambda m, f: m.add_neighbour_feature_mean(
-            f, _komsuluk(), key_column="yer", time_column="tarih",
-            value_columns=["sicaklik"], target_column=None,
+            f,
+            _komsuluk(),
+            key_column="yer",
+            time_column="tarih",
+            value_columns=["sicaklik"],
+            target_column=None,
         ),
     ),
     # --- solar ---
     "add_solar_features": (
         "solar",
         lambda m, f: m.add_solar_features(
-            f, time_column="tarih", location_column="yer",
-            coordinates=KOORDINATLAR, geometry_only=True,
+            f,
+            time_column="tarih",
+            location_column="yer",
+            coordinates=KOORDINATLAR,
+            geometry_only=True,
         ),
     ),
     "add_clearness_index": (
@@ -303,9 +320,7 @@ def test_her_feature_fonksiyonu_kayitli():
         f"Su feature fonksiyonlari sozlesme testinde KAPSANMIYOR: {eksik}. "
         "tests/test_sozlesme.py icindeki SENARYOLAR sozlugune ekle."
     )
-    assert not fazla, (
-        f"Su senaryolar artik var olmayan fonksiyonlara isaret ediyor: {fazla}."
-    )
+    assert not fazla, f"Su senaryolar artik var olmayan fonksiyonlara isaret ediyor: {fazla}."
 
 
 @pytest.mark.parametrize("fonksiyon_adi", sorted(SENARYOLAR))
@@ -313,7 +328,8 @@ def test_feature_fonksiyonu_girdiyi_degistirmiyor(fonksiyon_adi: str):
     """SOZLESME: feature fonksiyonu girdi frame'ini ASLA degistirmez."""
     modul_adi, cagri = SENARYOLAR[fonksiyon_adi]
     if modul_adi == "temporal" and fonksiyon_adi in {
-        "add_ramadan_features", "add_turkish_holiday_features"
+        "add_ramadan_features",
+        "add_turkish_holiday_features",
     }:
         pytest.importorskip("hijridate" if "ramadan" in fonksiyon_adi else "holidays")
 
@@ -324,7 +340,8 @@ def test_feature_fonksiyonu_girdiyi_degistirmiyor(fonksiyon_adi: str):
     cagri(modul, panel)
 
     pd.testing.assert_frame_equal(
-        panel, onceki,
+        panel,
+        onceki,
         obj=f"{fonksiyon_adi} girdi frame'ini DEGISTIRDI -- sozlesme ihlali",
     )
 
@@ -334,7 +351,8 @@ def test_feature_fonksiyonu_yeni_frame_donduruyor(fonksiyon_adi: str):
     """SOZLESME: donen sey girdiyle AYNI NESNE olmamali."""
     modul_adi, cagri = SENARYOLAR[fonksiyon_adi]
     if modul_adi == "temporal" and fonksiyon_adi in {
-        "add_ramadan_features", "add_turkish_holiday_features"
+        "add_ramadan_features",
+        "add_turkish_holiday_features",
     }:
         pytest.importorskip("hijridate" if "ramadan" in fonksiyon_adi else "holidays")
 
@@ -359,7 +377,8 @@ def test_feature_fonksiyonu_satir_sayisini_korumali(fonksiyon_adi: str):
 
     modul_adi, cagri = SENARYOLAR[fonksiyon_adi]
     if modul_adi == "temporal" and fonksiyon_adi in {
-        "add_ramadan_features", "add_turkish_holiday_features"
+        "add_ramadan_features",
+        "add_turkish_holiday_features",
     }:
         pytest.importorskip("hijridate" if "ramadan" in fonksiyon_adi else "holidays")
 
@@ -385,9 +404,29 @@ _HEDEF_PARAMS = frozenset({"target", "target_column", "y", "y_true", "value_colu
 _FOLD_PARAMS = frozenset({"folds", "fold", "fold_list", "cv"})
 
 HEDEF_MODULLERI = (
-    "features.categorical", "features.aggregate", "features.spatial",
-    "features.temporal", "selection", "two_stage", "ensemble", "models",
-    "refit", "zoo", "tuning", "ablation", "neural", "metrics", "weighting",
+    "features.categorical",
+    "features.aggregate",
+    "features.spatial",
+    "features.temporal",
+    "selection",
+    "two_stage",
+    "ensemble",
+    "models",
+    "refit",
+    "zoo",
+    "tuning",
+    "ablation",
+    "neural",
+    "metrics",
+    "weighting",
+    # 2026-08-16: ``pipeline`` bu listeye SONRADAN eklendi. Modul
+    # ``gridup.features.*`` agacinin DISINDA dogdugu icin kendiliginden buyuyen
+    # tarama ona ulasmiyordu: ``build_paired_history_features`` ve
+    # ``build_paired_distribution_features`` hedef parametresi alip fold almadigi
+    # halde hicbir gerekce yazilmadan geciyordu. Bu, kod duzeyinde degil KAPSAM
+    # MEKANIZMASI duzeyinde bir bosluktu -- yarin pipeline.py'ye eklenecek ucuncu
+    # bir fonksiyon hicbir testi kirmayacakti.
+    "pipeline",
 )
 
 #: Hedefe dokunan ama fold ALMAYAN fonksiyonlar ve bunun NEDEN guvenli oldugu.
@@ -428,6 +467,25 @@ FOLDSUZ_GEREKCE: dict[str, str] = {
     "ensemble.prune_by_correlation": "girdisi OOF tahmin matrisi",
     "two_stage.tune_threshold": "OOF olasiliklar uzerinde esik arar",
     "two_stage.zero_baseline_score": "sabit tahminin skoru, fit yok",
+    # Giris noktalarinin paylastigi asamalar: fit YALNIZCA train uzerinde.
+    "pipeline.build_paired_distribution_features": (
+        "hedeften hicbir sey turetmez: grup istatistigi ve frekans kodlamasi "
+        "yalnizca ``value_columns``/``frequency_columns`` uzerinde hesaplanir ve "
+        "``reference=train`` ile YALNIZCA train'e fit edilip test'e uygulanir. "
+        "``target_column`` burada bir VERI KAYNAGI degil, bir REDDETME kapisidir: "
+        "``add_group_statistics`` icindeki ``_reject_target`` hedefin kazara "
+        "``value_columns``a girmesini engeller. Hedef degeri hicbir ciktiya "
+        "girmediginden fold kavrami uygulanmaz"
+    ),
+    "pipeline.build_paired_history_features": (
+        "``value_column`` hedef OLABILIR, ama ucu birden kapali: (1) kaydirma "
+        "``add_lag_features``/``add_rolling_features``a devredilir ve orada "
+        "``shift >= horizon`` sozlesmesi ValueError ile zorlanir -- yani yalnizca "
+        "gecmise bakar; (2) test hedefi tasiyorsa ACIK ValueError; (3) tasimiyorsa "
+        "NaN yer tutucu konur, boylece hicbir test hedefi lag/rolling penceresine "
+        "giremez. ``target_column`` ``_ZORUNLU`` nobetcisiyle acikca istenir, "
+        "sessiz varsayilani yoktur (test_pipeline_core_contract ile kilitli)"
+    ),
     # Nedensel olarak guvenli: yalnizca GECMISE bakar (shift/horizon).
     "features.temporal.add_lag_features": "shift(horizon) -- yalnizca gecmis, ileri bakmaz",
     "features.temporal.add_rolling_features": "closed='left' -- mevcut satiri DISLAR",
@@ -562,7 +620,8 @@ def test_feature_fonksiyonu_satir_sirasini_da_korumali(fonksiyon_adi: str):
 
     modul_adi, cagri = SENARYOLAR[fonksiyon_adi]
     if modul_adi == "temporal" and fonksiyon_adi in {
-        "add_ramadan_features", "add_turkish_holiday_features"
+        "add_ramadan_features",
+        "add_turkish_holiday_features",
     }:
         pytest.importorskip("hijridate" if "ramadan" in fonksiyon_adi else "holidays")
 
@@ -661,8 +720,11 @@ def test_gunes_tekrarli_indexte_ilceleri_karistirmiyor():
     assert not panel.index.is_unique, "test kurulumu bozuk: index benzersiz olmamali"
 
     cikti = add_solar_features(
-        panel, time_column="tarih", location_column="yer",
-        coordinates=koordinat, geometry_only=True,
+        panel,
+        time_column="tarih",
+        location_column="yer",
+        coordinates=koordinat,
+        geometry_only=True,
     )
 
     kuzey = cikti.loc[cikti.yer == "kuzey", "gun_uzunlugu_saat"].mean()
@@ -688,13 +750,25 @@ def _kucuk_cv():
     X = pd.DataFrame({"a": rng.normal(0, 1, n), "b": rng.normal(0, 1, n)})
     y = (X.a * 3 + rng.normal(0, 1, n)).to_numpy()
     folds = purged_time_series_split(
-        tarih, embargo=pd.Timedelta(days=5), n_splits=2,
-        test_span=pd.Timedelta(days=30), verbose=False,
+        tarih,
+        embargo=pd.Timedelta(days=5),
+        n_splits=2,
+        test_span=pd.Timedelta(days=30),
+        verbose=False,
     )
-    return cross_validate(
-        X, y, folds, kind="lightgbm", metric="rmse",
-        params={"n_estimators": 50, "verbose": -1}, verbose=False,
-    ), y, folds
+    return (
+        cross_validate(
+            X,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="rmse",
+            params={"n_estimators": 50, "verbose": -1},
+            verbose=False,
+        ),
+        y,
+        folds,
+    )
 
 
 @pytest.mark.slow
@@ -736,8 +810,11 @@ def test_maskesiz_cvresult_geriye_uyumlu():
     from gridup.models import CVResult
 
     eski = CVResult(
-        oof_predictions=np.arange(5.0), test_predictions=None, fold_scores=[1.0],
-        overall_score=1.0, feature_importance=pd.DataFrame(),
+        oof_predictions=np.arange(5.0),
+        test_predictions=None,
+        fold_scores=[1.0],
+        overall_score=1.0,
+        feature_importance=pd.DataFrame(),
     )
     indeks, tahminler = eski.covered_predictions()
     assert len(indeks) == 5
@@ -768,9 +845,11 @@ def test_kutuphaneye_ozgu_objective_ezilmiyor():
     """Kullanici acikca kutuphane adi verdiyse cevirmeye kalkmayiz."""
     from gridup.models import starter_params
 
-    assert starter_params("xgboost", "regression", objective="reg:tweedie")[
-        "objective"
-    ] == "reg:tweedie"
-    assert starter_params("catboost", "regression", objective="Huber:delta=1")[
-        "loss_function"
-    ] == "Huber:delta=1"
+    assert (
+        starter_params("xgboost", "regression", objective="reg:tweedie")["objective"]
+        == "reg:tweedie"
+    )
+    assert (
+        starter_params("catboost", "regression", objective="Huber:delta=1")["loss_function"]
+        == "Huber:delta=1"
+    )

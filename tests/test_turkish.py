@@ -119,7 +119,15 @@ class TestTurkishSorting:
         assert sorted(words)[-1] == "şeker"
 
         assert tr_sorted(words) == [
-            "çilek", "güneş", "havuç", "ıspanak", "işlem", "ördek", "şeker", "ütü", "zurna",
+            "çilek",
+            "güneş",
+            "havuç",
+            "ıspanak",
+            "işlem",
+            "ördek",
+            "şeker",
+            "ütü",
+            "zurna",
         ]
 
 

@@ -44,6 +44,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from gridup.io_utils import publish_dataframe, validate_published_dataframe  # noqa: E402
 from gridup.turkish import join_key  # noqa: E402
 
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
@@ -144,9 +145,11 @@ def load_reference_locations(path: str = REFERENCE_PATH) -> dict[str, tuple[floa
     Referanstan okumak ayrica listenin PANELDEN SAPMASINI da engeller:
     yeni bir ilce eklenirse hava verisi de otomatik olarak onu kapsar.
     """
-    import pandas as pd
-
-    frame = pd.read_parquet(path)
+    frame = validate_published_dataframe(
+        path,
+        required_columns=("il", "ilce", "lat", "lon"),
+        min_rows=len(PROVINCE_COORDINATES),
+    )
     eksik = frame[["lat", "lon"]].isna().any(axis=1)
     if eksik.any():
         raise ValueError(
@@ -234,11 +237,14 @@ def fetch_location(
             # uy, vermezse dakika mertebesinde bekle.
             if response.status_code == 429:
                 header = response.headers.get("Retry-After")
-                wait = int(header) if header and header.isdigit() else RATE_LIMIT_BACKOFF[
-                    min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)
-                ]
-                print(f"  {name}: hiz siniri (429); {wait} sn bekleniyor "
-                      f"[deneme {attempt}/{retries}]")
+                wait = (
+                    int(header)
+                    if header and header.isdigit()
+                    else RATE_LIMIT_BACKOFF[min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)]
+                )
+                print(
+                    f"  {name}: hiz siniri (429); {wait} sn bekleniyor [deneme {attempt}/{retries}]"
+                )
                 time.sleep(wait)
                 last_error = requests.HTTPError("429 Too Many Requests")
                 continue
@@ -325,19 +331,28 @@ def main() -> int:
     parser.add_argument("--start", default="2022-01-01", help="Baslangic tarihi (YYYY-AA-GG)")
     parser.add_argument("--end", default="2026-09-01", help="Bitis tarihi (YYYY-AA-GG)")
     parser.add_argument("--hourly", action="store_true", help="Saatlik cozunurluk (buyuk dosya)")
-    parser.add_argument("--districts", action="store_true",
-                        help="Elle yazilmis 15 ilce merkezini de cek (eski, kaba)")
-    parser.add_argument("--all-districts", action="store_true",
-                        help="96 ilcenin TAMAMINI referans tablosundan cek (ONERILEN)")
+    parser.add_argument(
+        "--districts",
+        action="store_true",
+        help="Elle yazilmis 15 ilce merkezini de cek (eski, kaba)",
+    )
+    parser.add_argument(
+        "--all-districts",
+        action="store_true",
+        help="96 ilcenin TAMAMINI referans tablosundan cek (ONERILEN)",
+    )
     parser.add_argument(
         "--out", default="data/external", help="Cikti dizini (varsayilan: data/external)"
     )
     parser.add_argument(
-        "--pause", type=float, default=DEFAULT_PAUSE,
+        "--pause",
+        type=float,
+        default=DEFAULT_PAUSE,
         help=f"Istekler arasi bekleme, sn (varsayilan: {DEFAULT_PAUSE})",
     )
     parser.add_argument(
-        "--fresh", action="store_true",
+        "--fresh",
+        action="store_true",
         help="Mevcut dosyayi yok say ve her konumu bastan indir",
     )
     args = parser.parse_args()
@@ -365,11 +380,20 @@ def main() -> int:
     frames: list[pd.DataFrame] = []
     already: set[str] = set()
 
+    time_column = "tarih" if not args.hourly else "zaman"
     if output_path.exists() and not args.fresh:
-        existing = pd.read_parquet(output_path)
-        covered = set(existing["konum"].unique())
+        try:
+            existing = validate_published_dataframe(
+                output_path,
+                required_columns=("konum", time_column),
+                min_rows=1,
+                source=ARCHIVE_URL,
+            )
+        except (OSError, ValueError) as error:
+            print(f"Mevcut hava cache'i dogrulanamadi; kullanilmayacak: {error}")
+            existing = None
+        covered = set() if existing is None else set(existing["konum"].unique())
         # Yalnizca istenen tarih araligini KAPSAYAN konumlari kabul et.
-        time_column = "tarih" if not args.hourly else "zaman"
         wanted_start, wanted_end = pd.Timestamp(args.start), pd.Timestamp(args.end)
         for name in covered:
             span = existing.loc[existing["konum"] == name, time_column]
@@ -411,12 +435,17 @@ def main() -> int:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     combined = combined.drop_duplicates(subset=["konum", "tarih" if not args.hourly else "zaman"])
-    combined.to_parquet(output_path, index=False)
+    publish_dataframe(
+        combined,
+        output_path,
+        required_columns=("konum", time_column),
+        min_rows=max(1, combined["konum"].nunique()),
+        source=ARCHIVE_URL,
+    )
 
     print(f"\nYazildi: {output_path}")
     print(f"  {len(combined):,} satir x {combined.shape[1]} kolon")
     print(f"  Konumlar: {combined['konum'].nunique()}")
-    time_column = "tarih" if not args.hourly else "zaman"
     print(f"  Tarih araligi: {combined[time_column].min()} - {combined[time_column].max()}")
     print("\n  Join icin: veri setindeki il adini join_key() ile normalize et,")
     print("  sonra 'konum_key' kolonuna merge et. ASLA ham .lower() kullanma.")

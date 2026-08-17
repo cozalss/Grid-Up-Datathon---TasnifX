@@ -72,8 +72,26 @@ OLCULDU (bu makinede, tam kapsam 2021-05-01..2026-08-31 = 1949 gun)
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 import numpy as np
 import pandas as pd
+
+DateRange = tuple[str, str]
+TimestampRange = tuple[pd.Timestamp, pd.Timestamp]
+
+
+class _SchoolYear(TypedDict):
+    ad: str
+    donemler: tuple[DateRange, ...]
+    aralar: tuple[DateRange, ...]
+
+
+class _ResolvedSchoolYear(TypedDict):
+    ad: str
+    donemler: tuple[TimestampRange, ...]
+    aralar: tuple[TimestampRange, ...]
+
 
 __all__ = [
     "COVERAGE_END",
@@ -106,7 +124,7 @@ SCHOOL_DAY_TYPES = ("yok", "hafta_sonu", "ara", "yariyil", "yaz", "bilinmiyor")
 #: arasindaki bosluk yariyil, kayitlar arasi bosluk yaz olarak TURETILIR.
 #: ``aralar``: donem ICINDEKI bes is gunluk ara tatiller (2019'dan beri var).
 #: Tarih dogrulama kaynaklari modul docstring'inde.
-SCHOOL_YEARS: tuple[dict[str, object], ...] = (
+SCHOOL_YEARS: tuple[_SchoolYear, ...] = (
     {
         "ad": "2020-2021",
         # Yalnizca dogrulanmis ikinci donem -- kapsam 2021-05-01'de basladigi
@@ -149,25 +167,20 @@ SCHOOL_YEARS: tuple[dict[str, object], ...] = (
 )
 
 
-def _yillari_coz() -> tuple[dict[str, object], ...]:
+def _yillari_coz() -> tuple[_ResolvedSchoolYear, ...]:
     """``SCHOOL_YEARS``i Timestamp'lere cevirir ve tutarliligi dogrular.
 
     Import aninda calisir: bir yazim hatasi (ters aralik, string bozuklugu)
     modul yuklenirken PATLAR -- sessizce yanlis takvim uretmek yerine.
     """
-    cozulmus = []
+    cozulmus: list[_ResolvedSchoolYear] = []
     for kayit in SCHOOL_YEARS:
-        donemler = tuple(
-            (pd.Timestamp(b), pd.Timestamp(s)) for b, s in kayit["donemler"]
-        )
-        aralar = tuple(
-            (pd.Timestamp(b), pd.Timestamp(s)) for b, s in kayit["aralar"]
-        )
+        donemler = tuple((pd.Timestamp(b), pd.Timestamp(s)) for b, s in kayit["donemler"])
+        aralar = tuple((pd.Timestamp(b), pd.Timestamp(s)) for b, s in kayit["aralar"])
         for baslangic, bitis in (*donemler, *aralar):
             if baslangic > bitis:
                 raise ValueError(
-                    f"SCHOOL_YEARS kaydi bozuk ({kayit['ad']}): "
-                    f"{baslangic.date()} > {bitis.date()}"
+                    f"SCHOOL_YEARS kaydi bozuk ({kayit['ad']}): {baslangic.date()} > {bitis.date()}"
                 )
         cozulmus.append({"ad": kayit["ad"], "donemler": donemler, "aralar": aralar})
     return tuple(cozulmus)
@@ -337,9 +350,7 @@ def add_school_calendar_features(
     # sonrasi tipik durum) hizalama kaymasi yasanmaz.
     tur = times.map(tur_tablosu).where(kapsam_ici, "bilinmiyor")
     acik_mi = times.map(acik_tablosu).where(kapsam_ici, 0).astype("int8")
-    acilisa = (
-        times.map(mesafe_tablosu).where(kapsam_ici, MISSING_OPENING_DISTANCE).astype("int16")
-    )
+    acilisa = times.map(mesafe_tablosu).where(kapsam_ici, MISSING_OPENING_DISTANCE).astype("int16")
 
     return frame.assign(
         **{

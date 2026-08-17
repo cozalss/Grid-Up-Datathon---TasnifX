@@ -110,8 +110,8 @@ def add_group_statistics(
             group_mean = merged[mean_column].to_numpy(dtype="float64")
             row_value = frame[value_column].to_numpy(dtype="float64")
 
-            new_columns[f"{value_column}_{group_label}_fark"] = (
-                (row_value - group_mean).astype("float32")
+            new_columns[f"{value_column}_{group_label}_fark"] = (row_value - group_mean).astype(
+                "float32"
             )
             # Sifira bolme: 0 yerine NaN uret -- 0 yanlis bir "oran yok" sinyali verir.
             with np.errstate(divide="ignore", invalid="ignore"):
@@ -187,19 +187,25 @@ def add_target_free_aggregates(
     missing_train = [column for column in shared if column not in train.columns]
     missing_test = [column for column in shared if column not in test.columns]
     if missing_train or missing_test:
-        raise KeyError(
-            f"Eksik kolonlar -- train: {missing_train}, test: {missing_test}"
-        )
+        raise KeyError(f"Eksik kolonlar -- train: {missing_train}, test: {missing_test}")
 
     reference = pd.concat([train[shared], test[shared]], ignore_index=True)
 
     return (
         add_group_statistics(
-            train, group_columns, value_columns,
-            aggregations=aggregations, reference=reference, target_column=target_column,
+            train,
+            group_columns,
+            value_columns,
+            aggregations=aggregations,
+            reference=reference,
+            target_column=target_column,
         ),
         add_group_statistics(
-            test, group_columns, value_columns,
-            aggregations=aggregations, reference=reference, target_column=target_column,
+            test,
+            group_columns,
+            value_columns,
+            aggregations=aggregations,
+            reference=reference,
+            target_column=target_column,
         ),
     )

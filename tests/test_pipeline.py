@@ -169,9 +169,7 @@ class TestDirtyDataSurvival:
 
     def test_holiday_distance_does_not_mark_broken_dates_as_holidays(self):
         """NaT sentinel'i int16'ya kirpilinca 0'a dusuyordu -> 'tam bayram gunu'."""
-        frame = pd.DataFrame(
-            {"tarih": ["2024-06-15", "bozuk-tarih", "2024-07-04", "2024-03-11"]}
-        )
+        frame = pd.DataFrame({"tarih": ["2024-06-15", "bozuk-tarih", "2024-07-04", "2024-03-11"]})
 
         result = add_turkish_holiday_features(frame, "tarih")
 
@@ -183,21 +181,19 @@ class TestDirtyDataSurvival:
         """np.lexsort ham object dizisinde str/None karsilastirmasiyla cokuyordu."""
         frame = pd.DataFrame(
             {
-                "tarih": pd.to_datetime(
-                    ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04"]
-                ),
+                "tarih": pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04"]),
                 "trafo_id": ["A", None, "A", None],
                 "deger": [10.0, 20.0, 30.0, 40.0],
             }
         )
 
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
+            frame, "deger", shifts=[1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
 
         assert len(result) == 4
         # Eksik grup kendi icinde bir grup olur; A grubunun 2. satiri 10.0 gorur.
-        assert result.loc[2, "deger_lag1"] == pytest.approx(10.0)
+        assert result.loc[2, "deger_shift1"] == pytest.approx(10.0)
 
     def test_lag_features_sort_string_dates_chronologically(self):
         """Sifir dolgusuz metin tarihte sozluksel siralama yanlis lag uretiyordu."""
@@ -210,11 +206,11 @@ class TestDirtyDataSurvival:
         )
 
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
+            frame, "deger", shifts=[1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
 
         # 2024-1-3 (deger 1.5) satirinin lag1'i 2024-1-2'nin degeri = 1.0 olmali
-        assert result.loc[4, "deger_lag1"] == pytest.approx(1.0)
+        assert result.loc[4, "deger_shift1"] == pytest.approx(1.0)
 
 
 class TestVersionSafeStrings:
@@ -230,9 +226,7 @@ class TestVersionSafeStrings:
         assert result.tolist() == ["a", "_EKSIK"]
 
     def test_combination_features_do_not_invent_none_categories(self):
-        frame = pd.DataFrame(
-            {"il": ["izmir", None, "mugla"], "ilce": ["konak", "bornova", None]}
-        )
+        frame = pd.DataFrame({"il": ["izmir", None, "mugla"], "ilce": ["konak", "bornova", None]})
 
         result = add_combination_features(frame, [("il", "ilce")])
         values = result["il__ilce"].astype(object).tolist()
@@ -250,8 +244,8 @@ class TestEncodingDistinguishesMissingFromUnseen:
         result = add_frequency_encoding(frame, ["tip"], reference=reference)
         encoded = result["tip_frekans"]
 
-        assert encoded.iloc[2] == pytest.approx(0.0)   # gorulmemis kategori
-        assert pd.isna(encoded.iloc[3])                 # gercekten eksik
+        assert encoded.iloc[2] == pytest.approx(0.0)  # gorulmemis kategori
+        assert pd.isna(encoded.iloc[3])  # gercekten eksik
 
 
 class TestAggregateTargetGuard:
@@ -268,7 +262,8 @@ class TestSubmissionClippingIsVisible:
             np.array([1, 2, 3, 4]),
             np.array([-5.0, -2.0, 10.0, 20.0]),
             tmp_path / "sub.csv",
-            id_column="ID", target_column="hedef",
+            id_column="ID",
+            target_column="hedef",
         )
 
         output = capsys.readouterr().out
@@ -304,9 +299,7 @@ class TestPanel:
         )
 
         # Act
-        panel = build_panel(
-            events, entity_columns=["ilce"], time_column="tarih", verbose=False
-        )
+        panel = build_panel(events, entity_columns=["ilce"], time_column="tarih", verbose=False)
 
         # Assert -- 2 ilce x 3 gun = 6 satir
         assert len(panel) == 6
@@ -321,9 +314,7 @@ class TestPanel:
                 "kesinti": [2.0, 3.0],
             }
         )
-        panel = build_panel(
-            events, entity_columns=["ilce"], time_column="tarih", verbose=False
-        )
+        panel = build_panel(events, entity_columns=["ilce"], time_column="tarih", verbose=False)
         assert panel["kesinti"].sum() == pytest.approx(5.0)
 
     def test_synthetic_rows_are_flagged(self):
@@ -335,8 +326,11 @@ class TestPanel:
             }
         )
         panel = build_panel(
-            events, entity_columns=["ilce"], time_column="tarih",
-            end="2024-01-03", verbose=False,
+            events,
+            entity_columns=["ilce"],
+            time_column="tarih",
+            end="2024-01-03",
+            verbose=False,
         )
         assert panel["_dolduruldu"].sum() == 2
 
@@ -349,7 +343,7 @@ class TestPanel:
             }
         )
         result = panel_coverage(events, entity_columns=["ilce"], time_column="tarih")
-        assert result["expected_rows"] == 10.0   # 2 varlik x 5 gun
+        assert result["expected_rows"] == 10.0  # 2 varlik x 5 gun
         assert result["coverage"] == pytest.approx(0.2)
 
     def test_missing_entity_column_raises(self):
@@ -364,17 +358,13 @@ class TestPostprocess:
         assert result[0] == 0.0
 
     def test_rounding_for_count_targets(self):
-        result = postprocess_predictions(
-            np.array([2.4, 2.6]), round_to_integer=True, verbose=False
-        )
+        result = postprocess_predictions(np.array([2.4, 2.6]), round_to_integer=True, verbose=False)
         assert result.tolist() == [2.0, 3.0]
 
     def test_upper_bound_caps_absurd_predictions(self):
         """Bir arastirma modellerin musteri sayisindan fazla kesinti tahmin
         ettigini olcmustu (5,2 kat asiri tahmin)."""
-        result = postprocess_predictions(
-            np.array([5.0, 5000.0]), clip_max=100.0, verbose=False
-        )
+        result = postprocess_predictions(np.array([5.0, 5000.0]), clip_max=100.0, verbose=False)
         assert result[1] == 100.0
 
     def test_input_array_is_not_mutated(self):
@@ -475,8 +465,11 @@ class TestSubmissionValidation:
 
     def test_write_submission_clips_negatives_and_validates(self, tmp_path):
         path = write_submission(
-            np.array([1, 2, 3]), np.array([-5.0, 10.0, 20.0]),
-            tmp_path / "sub.csv", id_column="ID", target_column="hedef",
+            np.array([1, 2, 3]),
+            np.array([-5.0, 10.0, 20.0]),
+            tmp_path / "sub.csv",
+            id_column="ID",
+            target_column="hedef",
         )
         written = pd.read_csv(path)
         assert (written["hedef"] >= 0).all()
@@ -592,16 +585,24 @@ class TestEndToEnd:
         # Act
         y = log_transform_target(train[target].to_numpy())
         result = cross_validate(
-            train[columns], y, folds,
-            kind="lightgbm", metric="rmse", params=params,
-            test=test[columns], early_stopping_rounds=30, verbose=False,
+            train[columns],
+            y,
+            folds,
+            kind="lightgbm",
+            metric="rmse",
+            params=params,
+            test=test[columns],
+            early_stopping_rounds=30,
+            verbose=False,
         )
 
         path = write_submission(
             test["id"].to_numpy(),
             inverse_log_transform(result.test_predictions),
             tmp_path / "e2e.csv",
-            id_column="id", target_column=target, validate=True,
+            id_column="id",
+            target_column=target,
+            validate=True,
         )
 
         # Assert
@@ -618,13 +619,17 @@ class TestEndToEnd:
         from gridup.models import CVResult
 
         stable = CVResult(
-            oof_predictions=np.zeros(10), test_predictions=None,
-            fold_scores=[1.00, 1.02, 0.99], overall_score=1.0,
+            oof_predictions=np.zeros(10),
+            test_predictions=None,
+            fold_scores=[1.00, 1.02, 0.99],
+            overall_score=1.0,
             feature_importance=pd.DataFrame({"feature": [], "importance": []}),
         )
         noisy = CVResult(
-            oof_predictions=np.zeros(10), test_predictions=None,
-            fold_scores=[0.5, 1.5, 1.0], overall_score=1.0,
+            oof_predictions=np.zeros(10),
+            test_predictions=None,
+            fold_scores=[0.5, 1.5, 1.0],
+            overall_score=1.0,
             feature_importance=pd.DataFrame({"feature": [], "importance": []}),
         )
 

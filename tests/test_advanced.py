@@ -37,7 +37,7 @@ class TestMaeOptimalQuantile:
 
     def test_known_values_from_derivation(self):
         result = mae_optimal_quantile(np.array([0.6, 0.8, 1.0]))
-        assert result[0] == pytest.approx(1 - 0.5 / 0.6)   # ~0.1667
+        assert result[0] == pytest.approx(1 - 0.5 / 0.6)  # ~0.1667
         assert result[1] == pytest.approx(0.375)
         assert result[2] == pytest.approx(0.5)
 
@@ -140,8 +140,13 @@ class TestQuantileLadder:
         params["n_estimators"] = 80
 
         ladder = fit_quantile_ladder(
-            features, target, folds, quantiles=(0.2, 0.5, 0.8),
-            params=params, early_stopping_rounds=20, verbose=False,
+            features,
+            target,
+            folds,
+            quantiles=(0.2, 0.5, 0.8),
+            params=params,
+            early_stopping_rounds=20,
+            verbose=False,
         )
 
         assert set(ladder) == {0.2, 0.5, 0.8}
@@ -164,8 +169,8 @@ class TestPruneByCorrelation:
         y = base + rng.normal(0, 0.3, 500)
         oof = {
             "a": base,
-            "a_kopya": base + rng.normal(0, 1e-4, 500),   # neredeyse ayni
-            "b": base * 0.5 + rng.normal(0, 1.0, 500),    # farkli
+            "a_kopya": base + rng.normal(0, 1e-4, 500),  # neredeyse ayni
+            "b": base * 0.5 + rng.normal(0, 1.0, 500),  # farkli
         }
 
         kept = prune_by_correlation(oof, y, metric="rmse", max_correlation=0.99)
@@ -200,7 +205,7 @@ class TestStacking:
         y = rng.normal(10, 3, n)
         oof = {
             "m1": y + rng.normal(0, 1.0, n),
-            "m2": y * 1.15 + rng.normal(0, 1.2, n),   # sistematik FAZLA tahmin
+            "m2": y * 1.15 + rng.normal(0, 1.2, n),  # sistematik FAZLA tahmin
             "m3": y + rng.normal(0, 2.0, n),
         }
         folds = [
@@ -292,7 +297,7 @@ class TestReporting:
 
     def test_segment_table_reports_bias(self):
         y = np.zeros(60)
-        pred = np.full(60, 3.0)   # sistematik fazla tahmin
+        pred = np.full(60, 3.0)  # sistematik fazla tahmin
         table = error_by_segment(y, pred, pd.Series(["a"] * 60), min_count=10)
         assert table["yanlilik"].iloc[0] == pytest.approx(3.0)
 
@@ -335,7 +340,7 @@ class TestReporting:
     def test_business_impact_separates_over_and_under(self):
         """Fazla ve eksik tahmin FARKLI is maliyetleridir."""
         y = np.array([5.0, 5.0])
-        pred = np.array([8.0, 2.0])   # biri fazla, biri eksik
+        pred = np.array([8.0, 2.0])  # biri fazla, biri eksik
         result = business_impact(y, pred)
         assert result["fazla_tahmin_toplam"] == pytest.approx(3.0)
         assert result["eksik_tahmin_toplam"] == pytest.approx(3.0)
@@ -364,12 +369,16 @@ class TestModelZoo:
         cat_params["iterations"] = 60
 
         result = make_model_zoo(
-            features, target, folds,
+            features,
+            target,
+            folds,
             entries=[
                 ZooEntry("lgb", "lightgbm", lgb_params),
                 ZooEntry("cat", "catboost", cat_params),
             ],
-            metric="rmse", early_stopping_rounds=20, verbose=False,
+            metric="rmse",
+            early_stopping_rounds=20,
+            verbose=False,
         )
 
         assert set(result.oof_matrix) == {"lgb", "cat"}

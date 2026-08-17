@@ -1,4 +1,4 @@
-"""GERCEK GDZ VERISINDE MODEL KARSILASTIRMA -- hangi recete kazaniyor?
+"""GERCEK GDZ VERISINDE MODEL KARSILASTIRMA -- kanit kazanan icin yeterli mi?
 
 NEDEN BU BETIK VAR
 ------------------
@@ -6,12 +6,14 @@ NEDEN BU BETIK VAR
 yilin verisinde yapildi; elimizde ayni aileden GERCEK bir kayit var: 68.257
 GDZ kesintisi (Izmir+Manisa, 47 ilce, 2021-05..2022-08). Bu betik alti
 receteyi AYNI fold'larda, AYNI feature setiyle ve AYNI agac butcesiyle
-kosturur -- "hangisi kazanir" sorusu tahminle degil olcumle kapanir.
+kosturur. Ayni OOF'taki siralama aday uretir; "kazanan" karari ancak en az 6
+bagimsiz, eslestirilmis outer anchor kanitiyla kapanir.
 
 ADIL KARSILASTIRMA SARTLARI
 ---------------------------
 * Ayni fold'lar : purged_time_series_split(embargo=31g, test_span=31g, 4 bolme)
-  -- provayla (real_data_rehearsal.py) birebir ayni sema.
+  -- provayla (real_data_rehearsal.py) birebir ayni sema. Bunlar IC OOF
+  siralamasi icindir; sayi ve bagimsizlik olarak kazanan kaniti degildir.
 * Ayni feature seti: takvim + tatil + hava + gunes + lag(31/62/93, ufuk=31)
   + frekans + 3. dalga (Hawkes bozunumu 3g/14g + toplu-olay payi, ikisi de
   ufuk=31 kaydirmali). Ayni gunun reason/effectedsubscribers/hourlyloadavg
@@ -51,6 +53,7 @@ from __future__ import annotations
 import json
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -67,20 +70,17 @@ from gridup import (  # noqa: E402
     set_global_seed,
 )
 from gridup.ensemble import hill_climb_weights, stack_oof  # noqa: E402
+from gridup.evaluation import OuterEvidence, paired_model_decision  # noqa: E402
 from gridup.features import (  # noqa: E402
     add_calendar_features,
     add_event_decay_features,
-    add_frequency_encoding,
     add_lag_features,
     add_mass_event_features,
     add_turkish_holiday_features,
 )
 from gridup.features.solar import add_solar_features  # noqa: E402
-from gridup.metrics import (  # noqa: E402
-    get_metric,
-    inverse_sqrt_transform,
-    sqrt_transform_target,
-)
+from gridup.io_utils import atomic_write_bytes  # noqa: E402
+from gridup.metrics import get_metric  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
 from gridup.turkish import join_key, strip_qualifier  # noqa: E402
@@ -107,14 +107,24 @@ AYNI_GUN_KOLONLARI = ("effectedsubscribers", "hourlyloadavg")
 #: dogrudan feature olamaz. build_panel bunlari 'first' ile tasidigi icin
 #: dolgu satirlarinda NaN kalirlar -- yani NaN desenleri _dolduruldu
 #: bayraginin proxy'sidir (id ile olculdu: uyum 1.000000).
-HAM_KOLONLAR = frozenset({
-    "id", "il", "ilce", "date", "starttime", "endtime", "reason",
-    "effectedsubscribers", "hourlyloadavg", "effectedneighbourhoods",
-    "distributioncompanyname",
-})
+HAM_KOLONLAR = frozenset(
+    {
+        "id",
+        "il",
+        "ilce",
+        "date",
+        "starttime",
+        "endtime",
+        "reason",
+        "effectedsubscribers",
+        "hourlyloadavg",
+        "effectedneighbourhoods",
+        "distributioncompanyname",
+    }
+)
 
-UFUK = 31           # test bloğu 31 gun -> lag'ler en az 31 gun geriden gelmeli
-LAGLAR = (31, 62, 93)
+UFUK = 31  # test bloğu 31 gun -> lag'ler en az 31 gun geriden gelmeli
+SHIFT_OFSETLERI = (31, 62, 93)
 ORTAK_BUTCE = 2000  # agac/iterasyon -- TUM modellere ayni; adil karsilastirma sarti
 ERKEN_DURDURMA = 100
 #: Hawkes bozunumunun yari omurleri: 3g = gecen haftanin izleri, 14g = ayin
@@ -124,6 +134,172 @@ YARI_OMURLER = (3.0, 14.0)
 #: objektif = ortalama(fold MAE) + ceza * std(fold MAE). Tek fold'un
 #: hediyesiyle parlayan agirlik LB'de geri teper; 0.5 near-free olculdu.
 KARARLILIK_CEZASI = 0.5
+MIN_OUTER_ANCHORS = 6
+
+
+def _sonucsuz_karar(
+    apparent_oof_best: str,
+    reason: str,
+    *,
+    n_anchors: int = 0,
+    pairwise_decisions: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Eksik/gecersiz kanitta bilimsel karar kapisini kapali tutar."""
+    return {
+        "apparent_oof_best": apparent_oof_best,
+        "winner": None,
+        "statistically_conclusive": False,
+        "decision_reason": reason,
+        "n_anchors": n_anchors,
+        "required_anchors": MIN_OUTER_ANCHORS,
+        "pairwise_decisions": pairwise_decisions or [],
+    }
+
+
+def _outer_anchor_kanitini_dogrula(
+    candidates: set[str],
+    outer_anchor_scores: dict[str, Sequence[float]],
+) -> tuple[dict[str, np.ndarray] | None, int, str | None]:
+    """Outer skorlarini eslesme, kapsam, sayi ve sonluluk acisindan dogrular."""
+    missing = sorted(candidates - set(outer_anchor_scores))
+    if missing:
+        return (
+            None,
+            0,
+            (
+                f"Outer kanit tum adaylari kapsamiyor; eksik adaylar: {missing}. "
+                "Kazanan ilan edilmedi."
+            ),
+        )
+    try:
+        anchors = {
+            name: np.asarray(outer_anchor_scores[name], dtype="float64") for name in candidates
+        }
+    except (TypeError, ValueError):
+        return None, 0, "Outer anchor skorlarinin sayisal oldugu kanitlanamadi."
+    shapes = {values.shape for values in anchors.values()}
+    if len(shapes) != 1 or any(values.ndim != 1 for values in anchors.values()):
+        return (
+            None,
+            0,
+            (
+                "Outer anchor skorlarinin her aday icin ayni uzunlukta 1B ve "
+                "eslestirilmis oldugu kanitlanamadi; kazanan ilan edilmedi."
+            ),
+        )
+    n_anchors = len(next(iter(anchors.values())))
+    if n_anchors < MIN_OUTER_ANCHORS:
+        return (
+            None,
+            n_anchors,
+            (
+                f"Yalnizca {n_anchors} bagimsiz eslestirilmis outer anchor var; "
+                "kazanan icin en az 6 gerekir."
+            ),
+        )
+    if not all(np.isfinite(values).all() for values in anchors.values()):
+        return (
+            None,
+            n_anchors,
+            (
+                "Outer anchor skorlarinda NaN/sonsuz deger var; kanit gecersiz ve "
+                "kazanan ilan edilmedi."
+            ),
+        )
+    return anchors, n_anchors, None
+
+
+def bilimsel_kazanan_karari(
+    oof_scores: dict[str, float],
+    *,
+    outer_evidence: OuterEvidence | None = None,
+    outer_anchor_scores: dict[str, Sequence[float]] | None = None,
+    independent_outer: bool = False,
+    practical_effect: float = 0.0,
+    confidence: float = 0.95,
+    n_bootstrap: int = 10_000,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """OOF siralamasini ancak bagimsiz, eslesmis outer kanitla karara cevirir.
+
+    ``apparent_oof_best`` yalnizca ic OOF'ta onceden secilen adaydir. Ozellikle
+    hill-climb harmani ayni OOF'ta optimize edildigi icin bu skor tek basina
+    kazanan kaniti OLAMAZ. Aday, en az alti bagimsiz outer anchor'da butun
+    rakiplerini eslesmis guven araligiyla gecmedikce ``winner=None`` kalir.
+    Coklu rakiplerde Bonferroni-duzeltilmis guven seviyesi kullanilir.
+
+    ``independent_outer=True`` bir provenance beyanidir: her anchor'da model
+    secimi ve harman agirliklari yalnizca o anchor'in training/inner-CV
+    bolumunde yeniden fit edilmis, outer bolum hicbir ayara dokunmamis olmali.
+    Hazir ayni-OOF tahminini parcalara bolmek bagimsiz outer kanit SAYILMAZ.
+    """
+    if len(oof_scores) < 2:
+        raise ValueError("Bilimsel benchmark karari icin en az iki aday gerekli.")
+    if not all(np.isfinite(float(score)) for score in oof_scores.values()):
+        raise ValueError("OOF skorlarinda NaN veya sonsuz deger olamaz.")
+
+    apparent = min(oof_scores, key=lambda name: (float(oof_scores[name]), name))
+    if outer_evidence is None and outer_anchor_scores is None:
+        return _sonucsuz_karar(
+            apparent,
+            "Ayni OOF uzerinde secilen/optimize edilen aday bilimsel kazanan "
+            "ilan edilmedi: en az 6 bagimsiz, eslestirilmis outer fold/anchor "
+            "kaniti yok.",
+        )
+    if outer_evidence is None:
+        return _sonucsuz_karar(
+            apparent,
+            "Outer skorlar ve independent_outer beyanı structured provenance "
+            "yerine gecmez. OuterEvidence(anchor_id, zaman siniri, recipe/fold "
+            "fingerprint) olmadan bagimsizlik kanitlanamaz.",
+        )
+
+    outer_anchor_scores = outer_evidence.score_map()
+
+    anchors, n_anchors, invalid_reason = _outer_anchor_kanitini_dogrula(
+        set(oof_scores), outer_anchor_scores
+    )
+    if anchors is None:
+        return _sonucsuz_karar(
+            apparent,
+            invalid_reason or "Outer anchor kaniti gecersiz; kazanan ilan edilmedi.",
+            n_anchors=n_anchors,
+        )
+
+    rivals = [name for name in oof_scores if name != apparent]
+    adjusted_confidence = 1.0 - (1.0 - confidence) / len(rivals)
+    comparisons = [
+        paired_model_decision(
+            candidate_scores=anchors[apparent],
+            baseline_scores=anchors[rival],
+            candidate_name=apparent,
+            baseline_name=rival,
+            practical_effect=practical_effect,
+            confidence=adjusted_confidence,
+            n_bootstrap=n_bootstrap,
+            seed=seed + index,
+        )
+        for index, rival in enumerate(rivals)
+    ]
+    serialized = [comparison.to_dict() for comparison in comparisons]
+    if all(comparison.winner == apparent for comparison in comparisons):
+        return {
+            "apparent_oof_best": apparent,
+            "winner": apparent,
+            "statistically_conclusive": True,
+            "decision_reason": ("preselected_oof_candidate_better_on_independent_outer_anchors"),
+            "n_anchors": n_anchors,
+            "required_anchors": MIN_OUTER_ANCHORS,
+            "pairwise_decisions": serialized,
+        }
+    return _sonucsuz_karar(
+        apparent,
+        "Bagimsiz outer anchor guven araliklari OOF'ta secilen adayin tum "
+        "rakiplerini pratik etki esigiyle gectigini gostermiyor; sonuc "
+        "istatistiksel olarak kararsiz.",
+        n_anchors=n_anchors,
+        pairwise_decisions=serialized,
+    )
 
 
 def panel_kur() -> pd.DataFrame:
@@ -145,7 +321,9 @@ def panel_kur() -> pd.DataFrame:
     ham[GRUP] = ham["ilce"].map(lambda x: join_key(strip_qualifier(str(x))))
 
     return build_panel(
-        ham, entity_columns=[GRUP], time_column=ZAMAN,
+        ham,
+        entity_columns=[GRUP],
+        time_column=ZAMAN,
         value_columns=[HEDEF, *AYNI_GUN_KOLONLARI],
         verbose=False,
     )
@@ -162,8 +340,12 @@ def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     # Ayni gunun degeri sizinti; 31+ gun onceki degeri mesru sinyaldir.
     for kolon in (HEDEF, *AYNI_GUN_KOLONLARI):
         ozellik = add_lag_features(
-            ozellik, kolon, LAGLAR,
-            time_column=ZAMAN, horizon=UFUK, group_columns=[GRUP],
+            ozellik,
+            kolon,
+            shifts=SHIFT_OFSETLERI,
+            time_column=ZAMAN,
+            horizon=UFUK,
+            group_columns=[GRUP],
         )
 
     # 3. dalga -- iki aile de hedeften turer ama YALNIZCA ufuk=31 kaydirmali
@@ -172,13 +354,21 @@ def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     # Hawkes bozunumu: art arda ariza kumelenir -- tek basina en buyuk
     # olculmus kazanc (lgb_mae 323.13 -> 309.92).
     ozellik = add_event_decay_features(
-        ozellik, HEDEF, time_column=ZAMAN, horizon=UFUK,
-        group_columns=[GRUP], half_lives=YARI_OMURLER,
+        ozellik,
+        HEDEF,
+        time_column=ZAMAN,
+        horizon=UFUK,
+        group_columns=[GRUP],
+        half_lives=YARI_OMURLER,
     )
     # Toplu-olay payi: firtina gunu ilcelerin buyuk kismi ayni gun kesintili
     # (M5 out-of-stock analogu; tek basina 320.37).
     ozellik = add_mass_event_features(
-        ozellik, HEDEF, time_column=ZAMAN, horizon=UFUK, group_columns=[GRUP],
+        ozellik,
+        HEDEF,
+        time_column=ZAMAN,
+        horizon=UFUK,
+        group_columns=[GRUP],
     )
 
     # include_year=False: test donemi train'den sonra -- yil ekstrapolasyon riski.
@@ -189,8 +379,10 @@ def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     oncesi = len(ozellik)
     ozellik = ozellik.merge(
         hava.drop(columns=[c for c in ("konum", "konum_key", "il_key") if c in hava.columns]),
-        left_on=[GRUP, ZAMAN], right_on=["ilce_key", "tarih"],
-        how="left", validate="many_to_one",
+        left_on=[GRUP, ZAMAN],
+        right_on=["ilce_key", "tarih"],
+        how="left",
+        validate="many_to_one",
     )
     if len(ozellik) != oncesi:
         raise RuntimeError("hava merge satir sayisini degistirdi -- join anahtari bozuk.")
@@ -200,15 +392,17 @@ def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     # modeli onunla buyuk olcude ortusur, geometri ise mevsim sinyalini verir.
     ref = pd.read_parquet(REFERANS)
     koordinatlar = {
-        satir.ilce_key: (float(satir.lat), float(satir.lon))
-        for satir in ref.itertuples()
+        satir.ilce_key: (float(satir.lat), float(satir.lon)) for satir in ref.itertuples()
     }
     ozellik = add_solar_features(
-        ozellik, time_column=ZAMAN, location_column=GRUP,
-        coordinates=koordinatlar, geometry_only=True,
+        ozellik,
+        time_column=ZAMAN,
+        location_column=GRUP,
+        coordinates=koordinatlar,
+        geometry_only=True,
     )
 
-    ozellik = add_frequency_encoding(ozellik, [GRUP])
+    # Dagilim/frekans ailesi temporal fold icinde fit edilmedikce kullanilmaz.
 
     # SIZINTI DUVARI: hedef, HAM OLAY KAYDININ TUM KOLONLARI, panel dolgu
     # bayragi ve anahtar kolonlar feature olamaz. Gerisi sayisal ise feature'dir.
@@ -226,8 +420,7 @@ def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     # ayni gunun bilgisidir ve kara listeye toptan girer.
     dus = {HEDEF, ZAMAN, GRUP, PANEL_FLAG_COLUMN, "tarih", *HAM_KOLONLAR}
     kolonlar = [
-        c for c in ozellik.columns
-        if c not in dus and pd.api.types.is_numeric_dtype(ozellik[c])
+        c for c in ozellik.columns if c not in dus and pd.api.types.is_numeric_dtype(ozellik[c])
     ]
     yasak_kacak = [c for c in kolonlar if c in HAM_KOLONLAR]
     if yasak_kacak:  # pragma: no cover - savunma
@@ -274,9 +467,16 @@ def tek_modelleri_kos(
     for ad, (kind, params) in tarifler.items():
         print(f"  {ad} kosuyor...")
         sonuc = cross_validate(
-            x, y, folds, kind=kind, metric="mae",  # type: ignore[arg-type]
-            params=_butceli(kind, params), sample_weight=agirliklar,
-            early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
+            x,
+            y,
+            folds,
+            kind=kind,
+            metric="mae",  # type: ignore[arg-type]
+            params=_butceli(kind, params),
+            sample_weight=agirliklar,
+            early_stopping_rounds=ERKEN_DURDURMA,
+            early_stopping_metric="mae",
+            verbose=False,
         )
         skorlar[ad] = {
             "mae": float(sonuc.overall_score),
@@ -285,8 +485,10 @@ def tek_modelleri_kos(
         }
         oof[ad] = sonuc.oof_predictions
         kapsam[ad] = sonuc.oof_covered
-        print(f"    mae={sonuc.overall_score:.2f}  fold_std={sonuc.fold_std:.2f}  "
-              f"sure={sonuc.elapsed_seconds:.0f} sn")
+        print(
+            f"    mae={sonuc.overall_score:.2f}  fold_std={sonuc.fold_std:.2f}  "
+            f"sure={sonuc.elapsed_seconds:.0f} sn"
+        )
 
     # sqrt recetesi -- Rohlik Sales v2'nin 2. ve 3.'sunden BAGIMSIZ cifte kanit:
     # sqrt(y) uzayinda L2, ham MAE'yi VE yerli Tweedie'yi gecti. Karsi kanit da
@@ -294,29 +496,29 @@ def tek_modelleri_kos(
     # okunamaz, burada OLCULUR. Skor HAM uzayda: once geri-kare, sonra MAE.
     print("  lgb_sqrt kosuyor...")
     sonuc = cross_validate(
-        x, sqrt_transform_target(y), folds, kind="lightgbm", metric="mae",
+        x,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="mae",
         params=_butceli("lightgbm", starter_params("lightgbm", "regression")),
         sample_weight=agirliklar,
-        early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
+        target_transform="sqrt",
+        early_stopping_rounds=0,
+        verbose=False,
     )
-    geri = inverse_sqrt_transform(sonuc.oof_predictions)
     maske = sonuc.oof_covered
-    mae_fn, _, _ = get_metric("mae")
-    sqrt_mae = float(mae_fn(y[maske], geri[maske]))
-    fold_skorlari = []
-    for _, valid_idx in folds:
-        gecerli = valid_idx[maske[valid_idx]]
-        if gecerli.size:
-            fold_skorlari.append(float(mae_fn(y[gecerli], geri[gecerli])))
     skorlar["lgb_sqrt"] = {
-        "mae": sqrt_mae,
-        "fold_std": float(np.std(fold_skorlari)) if fold_skorlari else 0.0,
+        "mae": float(sonuc.overall_score),
+        "fold_std": float(sonuc.fold_std),
         "sure_sn": float(sonuc.elapsed_seconds),
     }
-    oof["lgb_sqrt"] = geri
+    oof["lgb_sqrt"] = sonuc.oof_predictions
     kapsam["lgb_sqrt"] = maske
-    print(f"    mae={sqrt_mae:.2f}  fold_std={skorlar['lgb_sqrt']['fold_std']:.2f}  "
-          f"sure={sonuc.elapsed_seconds:.0f} sn")
+    print(
+        f"    mae={sonuc.overall_score:.2f}  fold_std={sonuc.fold_std:.2f}  "
+        f"sure={sonuc.elapsed_seconds:.0f} sn"
+    )
     return skorlar, oof, kapsam
 
 
@@ -334,13 +536,18 @@ def iki_asama_kos(
     print("  iki_asama kosuyor...")
     baslangic = time.perf_counter()
     sonuc = fit_two_stage(
-        x, y, folds, kind="lightgbm", metric="mae",
+        x,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="mae",
         classifier_params=_butceli("lightgbm", starter_params("lightgbm", "binary")),
         regressor_params=_butceli(
             "lightgbm", starter_params("lightgbm", "regression", objective="mae")
         ),
         sample_weight=agirliklar,
-        early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
+        early_stopping_rounds=ERKEN_DURDURMA,
+        verbose=False,
     )
     sure = time.perf_counter() - baslangic
 
@@ -358,8 +565,7 @@ def iki_asama_kos(
             fold_skorlari.append(float(mae_fn(y[gecerli], birlesik[gecerli])))
     fold_std = float(np.std(fold_skorlari)) if fold_skorlari else 0.0
 
-    print(f"    mae={mae:.2f}  fold_std={fold_std:.2f}  sure={sure:.0f} sn  "
-          f"(esik={esik:.3f})")
+    print(f"    mae={mae:.2f}  fold_std={fold_std:.2f}  sure={sure:.0f} sn  (esik={esik:.3f})")
     skor = {"mae": mae, "fold_std": fold_std, "sure_sn": float(sure)}
     return skor, birlesik, maske, float((y == 0).mean()), esik, sonuc.oof_probability
 
@@ -389,14 +595,15 @@ def medyan_kurali_kos(
     print("  kosullu kuantil merdiveni egitiliyor (11 seviye x 4 fold)...")
     basla = time.perf_counter()
     merdiven = fit_conditional_quantile_ladder(
-        x, y, folds,
+        x,
+        y,
+        folds,
         params=_butceli("lightgbm", starter_params("lightgbm", "regression")),
         sample_weight=agirliklar,
-        early_stopping_rounds=ERKEN_DURDURMA, verbose=False,
+        early_stopping_rounds=ERKEN_DURDURMA,
+        verbose=False,
     )
-    kalibrasyon = calibrate_positive_probability(
-        olasilik, y, folds, covered=maske, verbose=False
-    )
+    kalibrasyon = calibrate_positive_probability(olasilik, y, folds, covered=maske, verbose=False)
     mae_fn, _, _ = get_metric("mae")
 
     skorlar: dict[str, dict[str, float]] = {}
@@ -428,9 +635,11 @@ def medyan_kurali_kos(
         "brier_sonra": kalibrasyon.brier_after,
         "iyilesti": bool(kalibrasyon.improved),
     }
-    print(f"    kalibrasyon: Brier {kalibrasyon.brier_before:.4f} -> "
-          f"{kalibrasyon.brier_after:.4f} "
-          f"({'iyilesti' if kalibrasyon.improved else 'IYILESMEDI'})")
+    print(
+        f"    kalibrasyon: Brier {kalibrasyon.brier_before:.4f} -> "
+        f"{kalibrasyon.brier_after:.4f} "
+        f"({'iyilesti' if kalibrasyon.improved else 'IYILESMEDI'})"
+    )
     return skorlar, ooflar, kalibrasyon_ozeti
 
 
@@ -479,9 +688,12 @@ def harman_ve_stack(
 
     maskeli = {ad: oof[ad][indeks] for ad in uyeler}
     agirliklar = hill_climb_weights(
-        maskeli, y[indeks], metric="mae",
+        maskeli,
+        y[indeks],
+        metric="mae",
         covered=np.ones(indeks.size, dtype=bool),  # onceden maskelendi
-        stability_penalty=KARARLILIK_CEZASI, fold_slices=dilimler,
+        stability_penalty=KARARLILIK_CEZASI,
+        fold_slices=dilimler,
         verbose=False,
     )
     mae_fn, _, _ = get_metric("mae")
@@ -498,8 +710,13 @@ def harman_ve_stack(
     print(f"  harman: mae={harman['mae']:.2f}  uyeler={harman['uyeler']}")
 
     stack = stack_oof(
-        {ad: oof[ad] for ad in uyeler}, y, folds,
-        base_covered=ortak_maske, meta="ridge", metric="mae", verbose=False,
+        {ad: oof[ad] for ad in uyeler},
+        y,
+        folds,
+        base_covered=ortak_maske,
+        meta="ridge",
+        metric="mae",
+        verbose=False,
     )
     stack_mae = float(stack["score"])
     print(f"  stack : mae={stack_mae:.2f}")
@@ -510,7 +727,8 @@ def recete_yaz(
     modeller: dict[str, dict[str, float]],
     harman: dict[str, Any],
     stack_mae: float,
-    kazanan: str,
+    kazanan: str | None,
+    karar_gerekcesi: str,
     sifir_baseline: float,
     sifir_orani: float,
     esik: float,
@@ -524,17 +742,15 @@ def recete_yaz(
     tek = min(modeller, key=lambda ad: modeller[ad]["mae"])
     tek_mae = modeller[tek]["mae"]
     # "duz" = hurdle olmayan tek modeller; iki_asama TUM varyantlariyla haric.
-    duzler = {
-        ad: bilgi["mae"] for ad, bilgi in modeller.items()
-        if not ad.startswith("iki_asama")
-    }
+    duzler = {ad: bilgi["mae"] for ad, bilgi in modeller.items() if not ad.startswith("iki_asama")}
     duz_ad = min(duzler, key=lambda ad: duzler[ad])
     sira = sorted(modeller, key=lambda ad: modeller[ad]["mae"])
     cat_sira = sira.index("catboost_mae") + 1
     cat_mae = modeller["catboost_mae"]["mae"]
     iki_mae = modeller["iki_asama"]["mae"]
     cat_hukmu = (
-        "recete dogrudan tasinabilir" if cat_sira == 1
+        "ic OOF'ta ilk aday, ama outer kanit olmadan kazanan sayilmaz"
+        if cat_sira == 1
         else "recete iyi bir baslangic ama tek basina kazanmiyor, kor kopyalanmamali"
     )
     iki_kiyas = (
@@ -546,7 +762,8 @@ def recete_yaz(
     esik_notu = (
         f" (optimum esik {esik:.2f} tabana dayandi: siniflandirici fiilen devre "
         "disi, kazanc MAE ile egitilmis buyukluk modelinden geliyor)"
-        if esik <= 0.02 else f" (optimum esik {esik:.2f})"
+        if esik <= 0.02
+        else f" (optimum esik {esik:.2f})"
     )
     medyan_mae = modeller["iki_asama_medyan"]["mae"]
     kalibre_mae = modeller["iki_asama_medyan_kalibre"]["mae"]
@@ -554,6 +771,11 @@ def recete_yaz(
     # Harmanin agirlik verdigi DIGER uyeler onerilir; kazanan zaten baslangic.
     ek_uyeler = [ad for ad in harman["uyeler"] if ad != tek]
     ek_metin = " ve ".join(ek_uyeler) if ek_uyeler else "catboost_mae ve lgb_tweedie"
+    kazanan_metni = (
+        f"Bagimsiz outer kanitla genel kazanan '{kazanan}'."
+        if kazanan is not None
+        else f"Bilimsel kazanan ilan edilmedi: {karar_gerekcesi}"
+    )
     return (
         f"Veri gununde ilk kosulacak tek model {tek} (MAE {tek_mae:.2f}; hep-sifir "
         f"baseline {sifir_baseline:.2f}, sifir orani %{sifir_orani * 100:.1f}). "
@@ -564,7 +786,7 @@ def recete_yaz(
         f"{sqrt_mae:.2f}. Tum uyeler uzerinde hill-climb harmani MAE "
         f"{harman['mae']:.2f} (agirlik alan uyeler: {', '.join(harman['uyeler'])}), "
         f"ridge stacking {stack_mae:.2f} (purged semada ilk "
-        f"fold'lar meta-egitim kapsami disinda kaliyor); genel kazanan '{kazanan}'. "
+        f"fold'lar meta-egitim kapsami disinda kaliyor). {kazanan_metni} "
         f"Oneri: gun-1'de {tek} ile basla, ayni fold'larda {ek_metin} uyelerini "
         f"ekleyip hill-climb harmanini kur; stacking'e fold kapsami "
         f"genislemeden donme."
@@ -573,8 +795,10 @@ def recete_yaz(
 
 def main() -> int:
     if not VERI.exists():
-        print(f"HATA: {VERI} yok. Indir: kaggle datasets download -d "
-              "tmlalper/manisa-izmir-plansiz-elektrik-kesintileri --unzip")
+        print(
+            f"HATA: {VERI} yok. Indir: kaggle datasets download -d "
+            "tmlalper/manisa-izmir-plansiz-elektrik-kesintileri --unzip"
+        )
         return 1
 
     set_global_seed(42)
@@ -595,12 +819,14 @@ def main() -> int:
     agirliklar = None
 
     folds = purged_time_series_split(
-        ozellik[ZAMAN], embargo=pd.Timedelta(days=UFUK),
-        n_splits=4, test_span=pd.Timedelta(days=UFUK), verbose=False,
+        ozellik[ZAMAN],
+        embargo=pd.Timedelta(days=UFUK),
+        n_splits=4,
+        test_span=pd.Timedelta(days=UFUK),
+        verbose=False,
     )
 
-    print("2/4 tek modeller (ortak butce: "
-          f"{ORTAK_BUTCE} agac, erken durdurma {ERKEN_DURDURMA})...")
+    print(f"2/4 tek modeller (ortak butce: {ORTAK_BUTCE} agac, erken durdurma {ERKEN_DURDURMA})...")
     modeller, oof, kapsam = tek_modelleri_kos(ozellik[kolonlar], y, folds, agirliklar)
 
     print("3/4 iki asamali model...")
@@ -629,13 +855,21 @@ def main() -> int:
     adaylar = {ad: bilgi["mae"] for ad, bilgi in modeller.items()}
     adaylar["harman"] = harman["mae"]
     adaylar["stack"] = stack_mae
-    kazanan = min(adaylar, key=lambda ad: adaylar[ad])
+    # Bu kosuda harman agirliklari ve aday sirasi AYNI OOF uzerinden geliyor;
+    # dolayisiyla minimum skor, ozellikle harman icin, dis kanit degildir.
+    # Nested/rolling outer anchor kosusu henuz yok: karar kapisi bilincli olarak
+    # kapali kalir ve OOF minimumu yalnizca ``apparent_oof_best`` diye kaydedilir.
+    karar = bilimsel_kazanan_karari(adaylar)
+    kazanan = karar["winner"]
 
     sonuc = {
         "modeller": modeller,
         "harman": harman,
         "stack_mae": stack_mae,
         "kazanan": kazanan,
+        "statistically_conclusive": karar["statistically_conclusive"],
+        "decision_reason": karar["decision_reason"],
+        "benchmark_decision": karar,
         "sifir_baseline": sifir_baseline,
         "sifir_orani": sifir_orani,
         # Feature listesi JSON'a yazilir ki test 'yasak kolon sizdi mi'
@@ -644,16 +878,34 @@ def main() -> int:
         "feature_kolonlari": list(kolonlar),
         "kalibrasyon": kalibrasyon_ozeti,
         "gun1_recetesi": recete_yaz(
-            modeller, harman, stack_mae, kazanan, sifir_baseline, sifir_orani, esik
+            modeller,
+            harman,
+            stack_mae,
+            kazanan,
+            karar["decision_reason"],
+            sifir_baseline,
+            sifir_orani,
+            esik,
         ),
     }
     CIKTI.parent.mkdir(parents=True, exist_ok=True)
-    CIKTI.write_text(
-        json.dumps(sonuc, ensure_ascii=False, indent=2), encoding="utf-8"
+    atomic_write_bytes(
+        CIKTI,
+        (json.dumps(sonuc, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
     )
 
-    print(f"\nKAZANAN: {kazanan}  (mae={adaylar[kazanan]:.2f}, "
-          f"hep-sifir {sifir_baseline:.2f}, sifir orani %{sifir_orani * 100:.1f})")
+    if kazanan is None:
+        print(f"\nKAZANAN: YOK -- {karar['decision_reason']}")
+        print(
+            f"OOF'ta gorunen en iyi: {karar['apparent_oof_best']} "
+            f"(mae={adaylar[karar['apparent_oof_best']]:.2f})"
+        )
+    else:
+        print(
+            f"\nKAZANAN: {kazanan}  (mae={adaylar[kazanan]:.2f}, "
+            f"hep-sifir {sifir_baseline:.2f}, "
+            f"sifir orani %{sifir_orani * 100:.1f})"
+        )
     print(f"Sonuc: {CIKTI}")
     print(f"Toplam sure: {time.perf_counter() - baslangic:.0f} sn")
     return 0

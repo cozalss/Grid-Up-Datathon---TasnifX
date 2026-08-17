@@ -48,9 +48,9 @@ def _betigi_yukle():
 DOKTOR = _betigi_yukle()
 
 VERI_HAZIR = all((KOK / gorece).is_file() for gorece, _ in DOKTOR.VERI_VARLIKLARI)
-KAGGLE_YOLU = Path(
-    os.environ.get("KAGGLE_CONFIG_DIR", str(Path.home() / ".kaggle"))
-) / "kaggle.json"
+KAGGLE_YOLU = (
+    Path(os.environ.get("KAGGLE_CONFIG_DIR", str(Path.home() / ".kaggle"))) / "kaggle.json"
+)
 
 KONTROL_BASLIKLARI = (
     "1) python surumu",
@@ -67,8 +67,14 @@ def _betigi_kos(ek_ortam: dict[str, str] | None = None) -> subprocess.CompletedP
     ortam = {**os.environ, "PYTHONIOENCODING": "utf-8", **(ek_ortam or {})}
     return subprocess.run(
         [sys.executable, str(KOK / "scripts" / "ekip_kontrol.py")],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
-        cwd=str(KOK), timeout=300, check=False, env=ortam,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(KOK),
+        timeout=300,
+        check=False,
+        env=ortam,
     )
 
 
@@ -86,8 +92,18 @@ def test_paket_listesi_pyprojecttan_turetiliyor():
     paketler = DOKTOR.paket_listesi(KOK / "pyproject.toml")
     adlar = [ad for ad, _ in paketler]
 
-    for zorunlu in ("numpy", "pandas", "scikit-learn", "lightgbm", "xgboost",
-                    "catboost", "optuna", "shap", "pvlib", "hijridate"):
+    for zorunlu in (
+        "numpy",
+        "pandas",
+        "scikit-learn",
+        "lightgbm",
+        "xgboost",
+        "catboost",
+        "optuna",
+        "shap",
+        "pvlib",
+        "hijridate",
+    ):
         assert zorunlu in adlar, f"{zorunlu} pyproject'ten okunmali"
     assert "torch" not in adlar, "neural grubu bilincli olarak kontrol disi"
     assert "matplotlib" not in adlar, "viz grubu bilincli olarak kontrol disi"
@@ -140,8 +156,7 @@ def test_veri_kontrol_eksik_dosyada_indirme_komutu_basiyor(tmp_path):
     kontrol = DOKTOR.veri_kontrol(varliklar=varliklar, kok=tmp_path)
 
     assert not kontrol.gecti
-    assert any("EKSIK" in satir and "SAHTE_INDIRME_KOMUTU" in satir
-               for satir in kontrol.satirlar)
+    assert any("EKSIK" in satir and "SAHTE_INDIRME_KOMUTU" in satir for satir in kontrol.satirlar)
     assert kontrol.duzeltme is not None
 
 

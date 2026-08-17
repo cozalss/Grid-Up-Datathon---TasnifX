@@ -40,7 +40,11 @@ def _toplanan_test_sayisi() -> int:
     """
     sonuc = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q"],
-        capture_output=True, text=True, cwd=KOK, timeout=300, check=False,
+        capture_output=True,
+        text=True,
+        cwd=KOK,
+        timeout=300,
+        check=False,
     )
     # Once ozet satirini dene (baska pytest surumleri onu basar).
     ozet = re.search(r"(\d+)\s+tests? collected", sonuc.stdout)
@@ -73,8 +77,7 @@ def test_belgedeki_test_sayisi_gercegi_yansitiyor(belge: Path):
     # tolerans birakiyoruz ama BUYUK kaymayi yakaliyoruz.
     for iddia in iddialar:
         assert abs(iddia - gercek) <= 5, (
-            f"{belge.name}: '{iddia} test' yaziyor ama gercek {gercek}. "
-            "Belgeyi guncelle."
+            f"{belge.name}: '{iddia} test' yaziyor ama gercek {gercek}. Belgeyi guncelle."
         )
 
 
@@ -86,7 +89,8 @@ def test_readme_olcek_provasi_iddiasi_dosyayla_ortusuyor():
 
     veri = json.loads(yol.read_text(encoding="utf-8"))
     olculen = {
-        int(k) for k, v in veri.items()
+        int(k)
+        for k, v in veri.items()
         if not (v.get("olcumler") and v["olcumler"][0].get("tahmin"))
     }
     metin = README.read_text(encoding="utf-8")
@@ -94,7 +98,8 @@ def test_readme_olcek_provasi_iddiasi_dosyayla_ortusuyor():
     # baslik veya duz cumle). Ilk surum yalnizca "Ölçek provası" iceren
     # satira bakiyordu ve README yeniden yazilinca SESSIZCE atlandi.
     ilgili = [
-        s for s in metin.splitlines()
+        s
+        for s in metin.splitlines()
         if re.search(r"\d+k\s+satır", s) and ("ölç" in s.lower() or "prova" in s.lower())
     ]
     if not ilgili:
@@ -116,8 +121,11 @@ def test_veri_gunu_hava_konum_sayisi_dogru():
 
     gercek = pd.read_parquet(parquet)["konum"].nunique()
     satir = next(
-        (s for s in VERI_GUNU.read_text(encoding="utf-8").splitlines()
-         if "hava_gunluk.parquet" in s and "|" in s),
+        (
+            s
+            for s in VERI_GUNU.read_text(encoding="utf-8").splitlines()
+            if "hava_gunluk.parquet" in s and "|" in s
+        ),
         "",
     )
     if not satir:
@@ -126,9 +134,7 @@ def test_veri_gunu_hava_konum_sayisi_dogru():
     sayilar = [int(m) for m in re.findall(r"\*\*(\d+)\s*(?:ilçe|konum)\*\*", satir)]
     sayilar += [int(m) for m in re.findall(r"(\d+)\s*(?:ilçe|konum)", satir)]
     assert sayilar, f"belgede konum sayisi bulunamadi: {satir[:80]}"
-    assert gercek in sayilar, (
-        f"docs/07 {sayilar} konum diyor, gercek {gercek}. Belgeyi guncelle."
-    )
+    assert gercek in sayilar, f"docs/07 {sayilar} konum diyor, gercek {gercek}. Belgeyi guncelle."
 
 
 def test_readme_bahsettigi_betikler_var():

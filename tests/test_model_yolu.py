@@ -38,10 +38,12 @@ def _ortusme_ciktisi(train: pd.DataFrame, test: pd.DataFrame | None) -> str:
 
 def _ilce_frame(degerler: list[str], seed: int = 0) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
-    return pd.DataFrame({
-        "ilce": degerler,
-        "sicaklik": rng.normal(15, 5, len(degerler)),
-    })
+    return pd.DataFrame(
+        {
+            "ilce": degerler,
+            "sicaklik": rng.normal(15, 5, len(degerler)),
+        }
+    )
 
 
 # --------------------------------------------------------------------------
@@ -180,9 +182,9 @@ def test_lightgbm_onemi_modelin_importance_type_ini_dinlemez_gain_dondurur(sinya
 
     frame, hedef = sinyal_ve_gurultu
     kolonlar = list(frame.columns)
-    model = lgb.LGBMRegressor(
-        n_estimators=1000, learning_rate=0.05, verbose=-1, n_jobs=-1
-    ).fit(frame, hedef)
+    model = lgb.LGBMRegressor(n_estimators=1000, learning_rate=0.05, verbose=-1, n_jobs=-1).fit(
+        frame, hedef
+    )
 
     assert model.importance_type == "split", "kurgu bozuldu: model zaten gain veriyor"
 
@@ -269,10 +271,12 @@ def test_null_importance_filter_gain_ile_de_gercek_sinyali_tutuyor():
 
     rng = np.random.default_rng(5)
     n = 1200
-    frame = pd.DataFrame({
-        "gercek_a": rng.normal(size=n),
-        "gercek_b": rng.normal(size=n),
-    })
+    frame = pd.DataFrame(
+        {
+            "gercek_a": rng.normal(size=n),
+            "gercek_b": rng.normal(size=n),
+        }
+    )
     for i in range(6):
         frame[f"gurultu_{i}"] = rng.normal(size=n)
     hedef = (4 * frame["gercek_a"] - 3 * frame["gercek_b"] + rng.normal(0, 0.3, n)).to_numpy()
@@ -312,7 +316,11 @@ def test_cross_validate_erken_durdurma_yanliligini_raporluyor():
     folds = list(KFold(n_splits=3, shuffle=True, random_state=0).split(X))
 
     sonuc = cross_validate(
-        X, y, folds, kind="lightgbm", metric="rmse",
+        X,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="rmse",
         params={"n_estimators": 400, "learning_rate": 0.05, "verbose": -1},
         verbose=False,
     )

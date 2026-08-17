@@ -97,14 +97,10 @@ class TestSubmissionKolonSayisi:
         OLCULDU: 2 kolonlu ornekle yazilan dosya 3 satir, kolonlar
         ['ID', 'Dagitilan Enerji (MWh)'] -- duzeltmeden once de sonra da ayni.
         """
-        ornek = pd.DataFrame(
-            {"ID": ["a", "b", "c"], "Dagitilan Enerji (MWh)": [0.0, 0.0, 0.0]}
-        )
+        ornek = pd.DataFrame({"ID": ["a", "b", "c"], "Dagitilan Enerji (MWh)": [0.0, 0.0, 0.0]})
         hedef = tmp_path / "gonderim.csv"
 
-        write_submission(
-            np.array(["a", "b", "c"]), np.array([1.0, 2.0, 3.0]), hedef, sample=ornek
-        )
+        write_submission(np.array(["a", "b", "c"]), np.array([1.0, 2.0, 3.0]), hedef, sample=ornek)
 
         yazilan = pd.read_csv(hedef)
         assert list(yazilan.columns) == ["ID", "Dagitilan Enerji (MWh)"]
@@ -250,9 +246,7 @@ class TestTemporalTekAyristirmaKurali:
         Bir ISO satiri gorulunce toplanan gun-once kaniti artik cope
         atilmiyor; iki bicim birlikteyse "belirsiz" denir ve hata firlatilir.
         """
-        frame = pd.DataFrame(
-            {"tarih": ["2024-03-01", "2024-03-02", "15.03.2024", "2024-03-04"]}
-        )
+        frame = pd.DataFrame({"tarih": ["2024-03-01", "2024-03-02", "15.03.2024", "2024-03-04"]})
 
         with pytest.raises(ValueError, match="BELIRSIZ"):
             add_calendar_features(frame, "tarih")

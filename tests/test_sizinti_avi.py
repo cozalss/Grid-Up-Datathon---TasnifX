@@ -45,23 +45,25 @@ def test_hedef_kodlama_enjekte_edilen_sizintiyi_engelliyor():
     frame = pd.DataFrame({"kat": kategori})
 
     folds = purged_time_series_split(
-        zaman, embargo=pd.Timedelta(days=5), n_splits=3,
-        test_span=pd.Timedelta(days=30), verbose=False,
+        zaman,
+        embargo=pd.Timedelta(days=5),
+        n_splits=3,
+        test_span=pd.Timedelta(days=30),
+        verbose=False,
     )
-    kodlanmis, _ = oof_target_encode(frame, hedef, ["kat"], folds, smoothing=0.0)
+    kodlanmis, _ = oof_target_encode(
+        frame, hedef, ["kat"], folds, smoothing=0.0, uncovered_policy="nan"
+    )
     kolon = [c for c in kodlanmis.columns if c not in frame.columns][0]
 
     gecerli = _kapsam(n, folds) & kodlanmis[kolon].notna().to_numpy()
     fold_disi = abs(
-        np.corrcoef(
-            kodlanmis[kolon].to_numpy()[gecerli], hedef.to_numpy()[gecerli]
-        )[0, 1]
+        np.corrcoef(kodlanmis[kolon].to_numpy()[gecerli], hedef.to_numpy()[gecerli])[0, 1]
     )
 
     # KASTEN SIZINTILI referans: tum veriden kategori ortalamasi.
     sizintili = (
-        pd.DataFrame({"kat": kategori, "y": hedef})
-        .groupby("kat")["y"].transform("mean").to_numpy()
+        pd.DataFrame({"kat": kategori, "y": hedef}).groupby("kat")["y"].transform("mean").to_numpy()
     )
     naif = abs(np.corrcoef(sizintili[gecerli], hedef.to_numpy()[gecerli])[0, 1])
 
@@ -84,21 +86,27 @@ def test_hedef_kodlamada_prior_da_fold_icinden():
     hedef = pd.Series(rng.normal(0, 1, n))
     frame = pd.DataFrame({"kat": kategori})
     folds = purged_time_series_split(
-        zaman, embargo=pd.Timedelta(days=5), n_splits=3,
-        test_span=pd.Timedelta(days=30), verbose=False,
+        zaman,
+        embargo=pd.Timedelta(days=5),
+        n_splits=3,
+        test_span=pd.Timedelta(days=30),
+        verbose=False,
     )
 
     for yumusatma in (0.0, 20.0, 200.0):
         kodlanmis, _ = oof_target_encode(
-            frame, hedef, ["kat"], folds, smoothing=yumusatma
+            frame,
+            hedef,
+            ["kat"],
+            folds,
+            smoothing=yumusatma,
+            uncovered_policy="nan",
         )
         kolon = [c for c in kodlanmis.columns if c not in frame.columns][0]
         gecerli = _kapsam(n, folds) & kodlanmis[kolon].notna().to_numpy()
         if gecerli.sum() < 10:
             continue
-        r = abs(
-            np.corrcoef(kodlanmis[kolon].to_numpy()[gecerli], hedef.to_numpy()[gecerli])[0, 1]
-        )
+        r = abs(np.corrcoef(kodlanmis[kolon].to_numpy()[gecerli], hedef.to_numpy()[gecerli])[0, 1])
         assert r < 0.15, f"smoothing={yumusatma} icin sizinti: korelasyon {r:.3f}"
 
 
@@ -213,8 +221,11 @@ def test_panel_doldurma_semantigini_acikca_soyluyor(capsys):
             kayit.append({"tarih": tarih, "trafo": "B", "deger": 50.0})
 
     build_panel(
-        pd.DataFrame(kayit), entity_columns=["trafo"], time_column="tarih",
-        value_columns=["deger"], verbose=True,
+        pd.DataFrame(kayit),
+        entity_columns=["trafo"],
+        time_column="tarih",
+        value_columns=["deger"],
+        verbose=True,
     )
 
     cikti = capsys.readouterr().out
@@ -235,12 +246,19 @@ def test_panel_nan_doldurma_ortalamayi_bozmuyor():
     frame = pd.DataFrame(kayit)
 
     sifirli = build_panel(
-        frame, entity_columns=["trafo"], time_column="tarih",
-        value_columns=["tuketim"], verbose=False,
+        frame,
+        entity_columns=["trafo"],
+        time_column="tarih",
+        value_columns=["tuketim"],
+        verbose=False,
     )
     nanli = build_panel(
-        frame, entity_columns=["trafo"], time_column="tarih",
-        value_columns=["tuketim"], fill_value=np.nan, verbose=False,
+        frame,
+        entity_columns=["trafo"],
+        time_column="tarih",
+        value_columns=["tuketim"],
+        fill_value=np.nan,
+        verbose=False,
     )
 
     b_sifir = sifirli.loc[sifirli.trafo == "B", "tuketim"].mean()
@@ -253,11 +271,16 @@ def test_panel_nan_doldurma_ortalamayi_bozmuyor():
 def test_dolduruldu_bayragi_sentetik_satirlari_isaretliyor():
     from gridup.panel import build_panel
 
-    kayit = [{"tarih": pd.Timestamp("2025-01-01"), "trafo": "A", "deger": 1.0},
-             {"tarih": pd.Timestamp("2025-01-03"), "trafo": "A", "deger": 3.0}]
+    kayit = [
+        {"tarih": pd.Timestamp("2025-01-01"), "trafo": "A", "deger": 1.0},
+        {"tarih": pd.Timestamp("2025-01-03"), "trafo": "A", "deger": 3.0},
+    ]
     panel = build_panel(
-        pd.DataFrame(kayit), entity_columns=["trafo"], time_column="tarih",
-        value_columns=["deger"], verbose=False,
+        pd.DataFrame(kayit),
+        entity_columns=["trafo"],
+        time_column="tarih",
+        value_columns=["deger"],
+        verbose=False,
     )
     assert len(panel) == 3
     assert int(panel["_dolduruldu"].sum()) == 1
@@ -275,9 +298,7 @@ def _kapsamsiz_kurulum(n: int = 3000, m: int = 2000, tohum: int = 3):
     """TimeSeriesSplit benzeri: ilk blok hicbir fold'un valid tarafinda DEGIL."""
     rng = np.random.default_rng(tohum)
     blok = n // 5
-    folds = [
-        (np.arange(0, i * blok), np.arange(i * blok, (i + 1) * blok)) for i in range(1, 5)
-    ]
+    folds = [(np.arange(0, i * blok), np.arange(i * blok, (i + 1) * blok)) for i in range(1, 5)]
     kapsam = np.zeros(n, dtype=bool)
     for _, valid in folds:
         kapsam[valid] = True
@@ -357,8 +378,13 @@ def test_stacking_base_covered_maskesini_kabul_ediyor():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         sonuc = stack_oof(
-            uyeler, y, folds, test_predictions=test, base_covered=kapsam,
-            metric="rmse", verbose=False,
+            uyeler,
+            y,
+            folds,
+            test_predictions=test,
+            base_covered=kapsam,
+            metric="rmse",
+            verbose=False,
         )
     assert np.isfinite(sonuc["score"])
 
@@ -377,8 +403,7 @@ def test_stacking_hic_kapsam_yoksa_acik_hata():
     n = 400
     folds = [(np.arange(0, 200), np.arange(200, 400))]
     uyeler = {ad: np.zeros(n) for ad in ("a", "b")}
-    with pytest.raises(ValueError, match="kullanilabilir fold kalmadi"), \
-            warnings.catch_warnings():
+    with pytest.raises(ValueError, match="kullanilabilir fold kalmadi"), warnings.catch_warnings():
         warnings.simplefilter("ignore")
         stack_oof(uyeler, np.arange(float(n)), folds, verbose=False)
 
@@ -401,9 +426,9 @@ def test_lightgbm_onem_olcusu_gain():
     assert "importance_type" in INFRASTRUCTURE_KEYS["lightgbm"], (
         "params verilince onem olcusu kaybolur"
     )
-    assert merge_infrastructure_params("lightgbm", {"n_estimators": 100})[
-        "importance_type"
-    ] == "gain"
+    assert (
+        merge_infrastructure_params("lightgbm", {"n_estimators": 100})["importance_type"] == "gain"
+    )
 
 
 @pytest.mark.slow
@@ -420,8 +445,11 @@ def test_onem_tablosu_gercek_sinyali_ustte_gosteriyor():
     y = (sum(0.5 * X[f"gercek_{i}"] for i in range(3)) + rng.normal(0, 1, n)).to_numpy()
 
     folds = purged_time_series_split(
-        zaman, embargo=pd.Timedelta(days=5), n_splits=2,
-        test_span=pd.Timedelta(days=40), verbose=False,
+        zaman,
+        embargo=pd.Timedelta(days=5),
+        n_splits=2,
+        test_span=pd.Timedelta(days=40),
+        verbose=False,
     )
     sonuc = cross_validate(X, y, folds, kind="lightgbm", metric="rmse", verbose=False)
     ilk_uc = set(sonuc.feature_importance.head(3)["feature"])
@@ -444,8 +472,7 @@ def test_null_importance_agac_sayisi_gercekten_uygulaniyor():
     kaynak = inspect.getsource(null_importance_filter)
     # "setdefault" kelimesi aciklama yorumunda gecebilir; CAGRI kalibini ariyoruz.
     assert ".setdefault(" not in kaynak, (
-        "setdefault CAGRISI geri geldi -- starter_params zaten deger verdigi "
-        "icin bu OLU KODDUR"
+        "setdefault CAGRISI geri geldi -- starter_params zaten deger verdigi icin bu OLU KODDUR"
     )
     assert "NULL_IMPORTANCE_TREES" in kaynak
 
@@ -490,9 +517,7 @@ def test_datetime_kolonu_da_hala_bulunuyor():
     """Duzeltme dtype tabanli tespiti BOZMAMALI."""
     from gridup.profiling import profile
 
-    frame = pd.DataFrame(
-        {"tarih": pd.date_range("2025-01-01", periods=50), "y": np.arange(50.0)}
-    )
+    frame = pd.DataFrame({"tarih": pd.date_range("2025-01-01", periods=50), "y": np.arange(50.0)})
     assert "tarih" in profile(frame, None, target="y").time_columns
 
 
@@ -517,8 +542,12 @@ def test_submission_basligi_orijinal_adlari_kullaniyor(tmp_path):
     assert list(okunan.columns) == ["id", "dagitilan_enerji_mwh"]
 
     yol = write_submission(
-        np.arange(5), np.arange(5.0), tmp_path / "sub.csv",
-        sample=okunan, id_column="id", target_column="dagitilan_enerji_mwh",
+        np.arange(5),
+        np.arange(5.0),
+        tmp_path / "sub.csv",
+        sample=okunan,
+        id_column="id",
+        target_column="dagitilan_enerji_mwh",
     )
     baslik = yol.read_text(encoding="utf-8").splitlines()[0]
     assert baslik == "ID,Dağıtılan Enerji (MWh)", f"baslik yanlis: {baslik}"
@@ -534,8 +563,13 @@ def test_submission_orijinal_baslik_kapatilabiliyor(tmp_path):
     okunan = read_any(ornek)
 
     yol = write_submission(
-        np.arange(5), np.arange(5.0), tmp_path / "sub.csv", sample=okunan,
-        id_column="id", target_column="hedef_kolon", original_header=False,
+        np.arange(5),
+        np.arange(5.0),
+        tmp_path / "sub.csv",
+        sample=okunan,
+        id_column="id",
+        target_column="hedef_kolon",
+        original_header=False,
     )
     assert yol.read_text(encoding="utf-8").splitlines()[0] == "id,hedef_kolon"
 
@@ -545,7 +579,10 @@ def test_ornek_verilmezse_baslik_degismiyor(tmp_path):
     from gridup.submission import write_submission
 
     yol = write_submission(
-        np.arange(5), np.arange(5.0), tmp_path / "sub.csv",
-        id_column="ID", target_column="hedef",
+        np.arange(5),
+        np.arange(5.0),
+        tmp_path / "sub.csv",
+        id_column="ID",
+        target_column="hedef",
     )
     assert yol.read_text(encoding="utf-8").splitlines()[0] == "ID,hedef"

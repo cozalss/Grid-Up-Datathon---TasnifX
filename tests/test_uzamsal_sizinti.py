@@ -62,9 +62,7 @@ def _panel(satir_gun: int, tohum: int = 7) -> pd.DataFrame:
 
 @pytest.fixture
 def komsuluk() -> pd.DataFrame:
-    return nearest_neighbours(
-        _koordinatlar(), key_column=ANAHTAR, k=3, max_distance_km=120
-    )
+    return nearest_neighbours(_koordinatlar(), key_column=ANAHTAR, k=3, max_distance_km=120)
 
 
 @pytest.fixture
@@ -98,8 +96,13 @@ def test_tekrarli_ilce_gun_paneli_reddediliyor(
 
     with pytest.raises(ValueError, match="SATIR kaydirir, GUN degil"):
         add_neighbour_target_lag(
-            frame, komsuluk, key_column=ANAHTAR, time_column=ZAMAN,
-            target_column=HEDEF, horizon=horizon, statistics=("mean",),
+            frame,
+            komsuluk,
+            key_column=ANAHTAR,
+            time_column=ZAMAN,
+            target_column=HEDEF,
+            horizon=horizon,
+            statistics=("mean",),
         )
 
 
@@ -109,8 +112,12 @@ def test_tekrar_hatasi_hangi_anahtarin_tekrarladigini_soyluyor(komsuluk):
 
     with pytest.raises(ValueError) as bilgi:
         add_neighbour_target_lag(
-            frame, komsuluk, key_column=ANAHTAR, time_column=ZAMAN,
-            target_column=HEDEF, horizon=7,
+            frame,
+            komsuluk,
+            key_column=ANAHTAR,
+            time_column=ZAMAN,
+            target_column=HEDEF,
+            horizon=7,
         )
 
     mesaj = str(bilgi.value)
@@ -127,8 +134,13 @@ def test_gunluk_toplanmis_panel_hala_calisiyor(komsuluk, gunluk_panel):
     Yani duzeltme dogru kullanimi kirmiyor; yalnizca tekrarli girdiyi kesiyor.
     """
     sonuc = add_neighbour_target_lag(
-        gunluk_panel, komsuluk, key_column=ANAHTAR, time_column=ZAMAN,
-        target_column=HEDEF, horizon=30, statistics=("mean",),
+        gunluk_panel,
+        komsuluk,
+        key_column=ANAHTAR,
+        time_column=ZAMAN,
+        target_column=HEDEF,
+        horizon=30,
+        statistics=("mean",),
     )
 
     assert len(sonuc) == len(gunluk_panel)
@@ -152,8 +164,13 @@ def test_komsunun_gecmisi_kullaniliyor_bugunu_degil(komsuluk):
     yakin = pd.DataFrame([{ANAHTAR: "ILCE_00", "komsu": "ILCE_01", "mesafe_km": 10.0}])
 
     sonuc = add_neighbour_target_lag(
-        frame, yakin, key_column=ANAHTAR, time_column=ZAMAN,
-        target_column=HEDEF, horizon=1, statistics=("max",),
+        frame,
+        yakin,
+        key_column=ANAHTAR,
+        time_column=ZAMAN,
+        target_column=HEDEF,
+        horizon=1,
+        statistics=("max",),
     )
 
     ilce = sonuc[sonuc[ANAHTAR] == "ILCE_00"].sort_values(ZAMAN)
@@ -176,8 +193,12 @@ def test_komsu_ortalamasi_hedefi_reddediyor(komsuluk, gunluk_panel):
     """
     with pytest.raises(ValueError, match="value_columns icinde"):
         add_neighbour_feature_mean(
-            gunluk_panel, komsuluk, key_column=ANAHTAR, time_column=ZAMAN,
-            value_columns=[HEDEF], target_column=HEDEF,
+            gunluk_panel,
+            komsuluk,
+            key_column=ANAHTAR,
+            time_column=ZAMAN,
+            value_columns=[HEDEF],
+            target_column=HEDEF,
         )
 
 
@@ -189,7 +210,10 @@ def test_target_column_verilmezse_calismiyor(komsuluk, gunluk_panel):
     """
     with pytest.raises(TypeError, match="target_column ACIKCA verilmelidir"):
         add_neighbour_feature_mean(
-            gunluk_panel, komsuluk, key_column=ANAHTAR, time_column=ZAMAN,
+            gunluk_panel,
+            komsuluk,
+            key_column=ANAHTAR,
+            time_column=ZAMAN,
             value_columns=[HEDEF],
         )
 
@@ -204,8 +228,13 @@ def test_masum_hava_kolonu_engellenmiyor(komsuluk, gunluk_panel):
     hava = gunluk_panel.assign(sicaklik=np.linspace(10, 30, len(gunluk_panel)))
 
     sonuc = add_neighbour_feature_mean(
-        hava, komsuluk, key_column=ANAHTAR, time_column=ZAMAN,
-        value_columns=["sicaklik"], target_column=HEDEF, statistics=("mean",),
+        hava,
+        komsuluk,
+        key_column=ANAHTAR,
+        time_column=ZAMAN,
+        value_columns=["sicaklik"],
+        target_column=HEDEF,
+        statistics=("mean",),
     )
 
     assert "komsu_sicaklik_mean" in sonuc.columns
@@ -218,8 +247,13 @@ def test_hedef_yokken_none_bilincli_karar_olarak_kabul_ediliyor(komsuluk, gunluk
     hava = gunluk_panel.drop(columns=[HEDEF]).assign(ruzgar=1.0)
 
     sonuc = add_neighbour_feature_mean(
-        hava, komsuluk, key_column=ANAHTAR, time_column=ZAMAN,
-        value_columns=["ruzgar"], target_column=None, statistics=("mean",),
+        hava,
+        komsuluk,
+        key_column=ANAHTAR,
+        time_column=ZAMAN,
+        value_columns=["ruzgar"],
+        target_column=None,
+        statistics=("mean",),
     )
 
     assert "komsu_ruzgar_mean" in sonuc.columns
@@ -241,8 +275,13 @@ def test_komsu_toplami_bilgi_yokken_nan_kaliyor(komsuluk, gunluk_panel):
     ``horizon`` gununde sistematik hata olusur.
     """
     sonuc = add_neighbour_target_lag(
-        gunluk_panel, komsuluk, key_column=ANAHTAR, time_column=ZAMAN,
-        target_column=HEDEF, horizon=1, statistics=("mean", "sum"),
+        gunluk_panel,
+        komsuluk,
+        key_column=ANAHTAR,
+        time_column=ZAMAN,
+        target_column=HEDEF,
+        horizon=1,
+        statistics=("mean", "sum"),
     )
 
     ilk_gun = sonuc[sonuc[ZAMAN] == sonuc[ZAMAN].min()]
@@ -269,13 +308,16 @@ def test_komsuda_gercek_sifir_varken_toplam_sifir_kaliyor():
     yakin = pd.DataFrame([{ANAHTAR: "ILCE_00", "komsu": "ILCE_01", "mesafe_km": 10.0}])
 
     sonuc = add_neighbour_target_lag(
-        frame, yakin, key_column=ANAHTAR, time_column=ZAMAN,
-        target_column=HEDEF, horizon=1, statistics=("sum",),
+        frame,
+        yakin,
+        key_column=ANAHTAR,
+        time_column=ZAMAN,
+        target_column=HEDEF,
+        horizon=1,
+        statistics=("sum",),
     )
 
-    ikinci_gun = sonuc[
-        (sonuc[ANAHTAR] == "ILCE_00") & (sonuc[ZAMAN] == pd.Timestamp("2024-01-02"))
-    ]
+    ikinci_gun = sonuc[(sonuc[ANAHTAR] == "ILCE_00") & (sonuc[ZAMAN] == pd.Timestamp("2024-01-02"))]
     assert ikinci_gun[f"komsu_{HEDEF}_ufuk1_sum"].iloc[0] == 0.0
 
 
@@ -298,12 +340,15 @@ def test_kismi_nan_grupta_toplam_mevcut_degerleri_topluyor():
     )
 
     sonuc = add_neighbour_target_lag(
-        frame, yakin, key_column=ANAHTAR, time_column=ZAMAN,
-        target_column=HEDEF, horizon=1, statistics=("sum",),
+        frame,
+        yakin,
+        key_column=ANAHTAR,
+        time_column=ZAMAN,
+        target_column=HEDEF,
+        horizon=1,
+        statistics=("sum",),
     )
 
-    ikinci_gun = sonuc[
-        (sonuc[ANAHTAR] == "ILCE_00") & (sonuc[ZAMAN] == pd.Timestamp("2024-01-02"))
-    ]
+    ikinci_gun = sonuc[(sonuc[ANAHTAR] == "ILCE_00") & (sonuc[ZAMAN] == pd.Timestamp("2024-01-02"))]
     # ILCE_01'in dunu 4.0, ILCE_02'nin dunu NaN -> toplam 4.0 (NaN yutulur)
     assert ikinci_gun[f"komsu_{HEDEF}_ufuk1_sum"].iloc[0] == pytest.approx(4.0)

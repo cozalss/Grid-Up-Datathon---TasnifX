@@ -35,8 +35,11 @@ def _veri(n_gun: int = 120, n_varlik: int = 4):
     )
     hedef = (frame.a * 3 + frame.b * 2 + rng.normal(0, 1, n)).to_numpy()
     folds = purged_time_series_split(
-        tarih, embargo=pd.Timedelta(days=5), n_splits=2,
-        test_span=pd.Timedelta(days=20), verbose=False,
+        tarih,
+        embargo=pd.Timedelta(days=5),
+        n_splits=2,
+        test_span=pd.Timedelta(days=20),
+        verbose=False,
     )
     return frame, hedef, folds
 
@@ -84,8 +87,13 @@ def test_xgboost_kategorik_kolonla_params_verilerek_calisiyor():
     X, y, folds = _veri()
     X["k"] = X["k"].astype("category")
     sonuc = cross_validate(
-        X, y, folds, kind="xgboost", metric="rmse",
-        params={"n_estimators": 40, "learning_rate": 0.1}, verbose=False,
+        X,
+        y,
+        folds,
+        kind="xgboost",
+        metric="rmse",
+        params={"n_estimators": 40, "learning_rate": 0.1},
+        verbose=False,
     )
     assert np.isfinite(sonuc.overall_score)
 
@@ -111,9 +119,7 @@ def test_ayni_tohumla_ayni_tahmin(kind, params):
 
     def kos():
         set_global_seed(42)
-        return cross_validate(
-            X, y, folds, kind=kind, metric="rmse", params=params, verbose=False
-        )
+        return cross_validate(X, y, folds, kind=kind, metric="rmse", params=params, verbose=False)
 
     a, b = kos(), kos()
     assert np.array_equal(a.oof_predictions, b.oof_predictions)
@@ -131,8 +137,13 @@ def test_sinir_agi_ayni_tohumla_ayni_tahmin():
     def kos():
         set_global_seed(42)
         return neural_cross_validate(
-            X, y, folds, cat_columns=["k"], metric="rmse",
-            config=NeuralConfig(max_epochs=15, patience=4), verbose=False,
+            X,
+            y,
+            folds,
+            cat_columns=["k"],
+            metric="rmse",
+            config=NeuralConfig(max_epochs=15, patience=4),
+            verbose=False,
         )
 
     a, b = kos(), kos()
@@ -147,10 +158,19 @@ def test_farkli_tohum_farkli_sonuc_veriyor():
     def kos(tohum):
         set_global_seed(tohum)
         return cross_validate(
-            X, y, folds, kind="lightgbm", metric="rmse",
-            params={"n_estimators": 60, "learning_rate": 0.1,
-                    "subsample": 0.7, "subsample_freq": 1,
-                    "colsample_bytree": 0.7, "random_state": tohum},
+            X,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="rmse",
+            params={
+                "n_estimators": 60,
+                "learning_rate": 0.1,
+                "subsample": 0.7,
+                "subsample_freq": 1,
+                "colsample_bytree": 0.7,
+                "random_state": tohum,
+            },
             verbose=False,
         )
 
@@ -180,8 +200,13 @@ def test_shap_onemi_dogrulama_satirlarindan_hesaplaniyor():
     X = X.drop(columns=["k"])
 
     sonuc = cross_validate(
-        X, y, folds, kind="lightgbm", metric="rmse",
-        params={"n_estimators": 60, "learning_rate": 0.1}, verbose=False,
+        X,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="rmse",
+        params={"n_estimators": 60, "learning_rate": 0.1},
+        verbose=False,
     )
     tablo = fold_shap_importance(sonuc.models, X, folds, sample_per_fold=200)
 
@@ -201,8 +226,13 @@ def test_shap_onemi_model_ve_fold_sayisi_uyusmazliginda_patliyor():
     X, y, folds = _veri()
     X = X.drop(columns=["k"])
     sonuc = cross_validate(
-        X, y, folds, kind="lightgbm", metric="rmse",
-        params={"n_estimators": 30}, verbose=False,
+        X,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="rmse",
+        params={"n_estimators": 30},
+        verbose=False,
     )
     with pytest.raises((ValueError, AssertionError)):
         fold_shap_importance(sonuc.models[:1], X, folds, sample_per_fold=50)
@@ -260,9 +290,7 @@ def test_sabit_kodlanmis_kimlik_bilgisi_yok():
     from gridup import epias
 
     kaynak = inspect.getsource(epias)
-    kalip = re.compile(
-        r"(password|api_key|secret|token)\s*=\s*[\"'][^\"']{8,}[\"']", re.IGNORECASE
-    )
+    kalip = re.compile(r"(password|api_key|secret|token)\s*=\s*[\"'][^\"']{8,}[\"']", re.IGNORECASE)
     bulunan = [
         m.group(0)
         for m in kalip.finditer(kaynak)
@@ -291,8 +319,13 @@ def test_cross_validate_bozuk_hedefi_reddediyor(bozuk):
 
     with pytest.raises(ValueError, match="NaN/sonsuz"):
         cross_validate(
-            X, kirli, folds, kind="lightgbm", metric="rmse",
-            params={"n_estimators": 20}, verbose=False,
+            X,
+            kirli,
+            folds,
+            kind="lightgbm",
+            metric="rmse",
+            params={"n_estimators": 20},
+            verbose=False,
         )
 
 
@@ -302,12 +335,23 @@ def test_saglikli_hedef_ve_siniflandirma_etkilenmiyor():
     X = X.drop(columns=["k"])
 
     regresyon = cross_validate(
-        X, y, folds, kind="lightgbm", metric="rmse",
-        params={"n_estimators": 20}, verbose=False,
+        X,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="rmse",
+        params={"n_estimators": 20},
+        verbose=False,
     )
     ikili = cross_validate(
-        X, (X.a > 0).astype(int).to_numpy(), folds, kind="lightgbm",
-        task_type="binary", metric="auc", params={"n_estimators": 20}, verbose=False,
+        X,
+        (X.a > 0).astype(int).to_numpy(),
+        folds,
+        kind="lightgbm",
+        task_type="binary",
+        metric="auc",
+        params={"n_estimators": 20},
+        verbose=False,
     )
     assert np.isfinite(regresyon.overall_score)
     assert np.isfinite(ikili.overall_score)
@@ -327,8 +371,14 @@ def test_sayisal_olmayan_hedefte_koruma_patlamiyor():
     assert not np.issubdtype(etiket.dtype, np.number)
     with pytest.raises(Exception) as hata:
         cross_validate(
-            X, etiket, folds, kind="lightgbm", task_type="binary",
-            metric="accuracy", params={"n_estimators": 20}, verbose=False,
+            X,
+            etiket,
+            folds,
+            kind="lightgbm",
+            task_type="binary",
+            metric="accuracy",
+            params={"n_estimators": 20},
+            verbose=False,
         )
     # Hata LightGBM'den gelmeli, bizim NaN korumamizdan DEGIL.
     assert "NaN/sonsuz" not in str(hata.value)

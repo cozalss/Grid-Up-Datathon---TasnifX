@@ -7,8 +7,8 @@ ve sonucu experiments/benchmark_gercek.json'a yazar. Koşu dakikalar surer;
 testler koşuyu TEKRARLAMAZ. Bunun yerine urunun SOZLESMESINI dogrular:
 
   * sema tam mi (alan adlari, tipler) -- json'u okuyan otomasyon buna guvenir
-  * sayilar ic tutarli mi -- harman uyelerinden kotu olamaz, kazanan gercekten
-    en dusuk MAE'de mi, model hep-sifir baseline'i geciyor mu
+  * sayilar ic tutarli mi -- harman uyelerinden kotu olamaz, OOF'ta gorunen
+    en iyi aday dogru mu, bagimsiz kanit yokken kazanan kapisi kapali mi
   * sizinti kokusu var mi -- MAE sifira yakinsa ayni gunun bilgisi sizmistir
 
 Sayilarin KENDISI test edilmez (veri guncellenince degisir); ILISKILERI
@@ -26,13 +26,29 @@ import pytest
 SONUC_YOLU = Path(__file__).resolve().parents[1] / "experiments" / "benchmark_gercek.json"
 
 BEKLENEN_MODELLER = {
-    "lgb_l2", "lgb_mae", "lgb_tweedie", "lgb_sqrt", "catboost_mae", "xgb",
-    "iki_asama", "iki_asama_medyan", "iki_asama_medyan_kalibre",
+    "lgb_l2",
+    "lgb_mae",
+    "lgb_tweedie",
+    "lgb_sqrt",
+    "catboost_mae",
+    "xgb",
+    "iki_asama",
+    "iki_asama_medyan",
+    "iki_asama_medyan_kalibre",
 }
 BEKLENEN_ALANLAR = {
-    "modeller", "harman", "stack_mae", "kazanan",
-    "sifir_baseline", "sifir_orani", "gun1_recetesi",
-    "feature_kolonlari", "kalibrasyon",
+    "modeller",
+    "harman",
+    "stack_mae",
+    "kazanan",
+    "sifir_baseline",
+    "sifir_orani",
+    "gun1_recetesi",
+    "feature_kolonlari",
+    "kalibrasyon",
+    "statistically_conclusive",
+    "decision_reason",
+    "benchmark_decision",
 }
 
 
@@ -71,23 +87,30 @@ def test_skorlar_makul_aralikta(sonuc: dict) -> None:
     assert 0.0 < sonuc["sifir_orani"] < 1.0
 
 
-def test_kazanan_gercekten_en_dusuk_mae(sonuc: dict) -> None:
-    """'kazanan' etiketi elle degil olcumden gelmeli."""
+def test_oof_minimumu_yalnizca_gorunen_en_iyi_olarak_etiketleniyor(sonuc: dict) -> None:
+    """Ayni OOF'ta secilen minimum bilimsel kazanan diye sunulamaz."""
     adaylar = {ad: bilgi["mae"] for ad, bilgi in sonuc["modeller"].items()}
     adaylar["harman"] = sonuc["harman"]["mae"]
     adaylar["stack"] = sonuc["stack_mae"]
-    assert sonuc["kazanan"] in adaylar
-    en_dusuk = min(adaylar.values())
-    assert adaylar[sonuc["kazanan"]] == pytest.approx(en_dusuk)
+    karar = sonuc["benchmark_decision"]
+    gorunen = karar["apparent_oof_best"]
+
+    assert adaylar[gorunen] == pytest.approx(min(adaylar.values()))
+    assert sonuc["kazanan"] is None
+    assert karar["winner"] is None
+    assert sonuc["statistically_conclusive"] is False
+    assert karar["statistically_conclusive"] is False
+    assert karar["n_anchors"] < karar["required_anchors"]
+    assert sonuc["decision_reason"] == karar["decision_reason"]
 
 
-def test_kazanan_baseline_i_geciyor(sonuc: dict) -> None:
-    """Model hep-sifir baseline'i gecmiyorsa problem modelde degil yaklasimda --
-    o durumda benchmark 'kazanan' ilan edemez."""
+def test_oof_ta_gorunen_en_iyi_baseline_i_geciyor(sonuc: dict) -> None:
+    """Gorunen en iyi aday baseline'i gecse bile bagimsiz kanit kapisi ayridir."""
     adaylar = {ad: bilgi["mae"] for ad, bilgi in sonuc["modeller"].items()}
     adaylar["harman"] = sonuc["harman"]["mae"]
     adaylar["stack"] = sonuc["stack_mae"]
-    assert adaylar[sonuc["kazanan"]] < sonuc["sifir_baseline"]
+    gorunen = sonuc["benchmark_decision"]["apparent_oof_best"]
+    assert adaylar[gorunen] < sonuc["sifir_baseline"]
 
 
 def test_harman_ic_tutarli(sonuc: dict) -> None:
@@ -108,10 +131,11 @@ def test_harman_ic_tutarli(sonuc: dict) -> None:
 
 
 def test_gun1_recetesi_olculen_sayilarla_konusuyor(sonuc: dict) -> None:
-    """Recete bos bir slogan degil, karar cumlesi olmali: kazanani adiyla anar."""
+    """Recete bos slogan degil; kanit sinirini ve baslangic adayini soylemeli."""
     recete = sonuc["gun1_recetesi"]
     assert isinstance(recete, str) and len(recete) > 100
-    assert sonuc["kazanan"] in recete
+    assert "Bilimsel kazanan ilan edilmedi" in recete
+    assert sonuc["decision_reason"] in recete
     # 2023 birinci recetesinin hukmu (tasinir mi, tasinamaz mi) yazili olmali.
     assert "catboost_mae" in recete
 
@@ -129,9 +153,18 @@ def test_yasak_ham_kolonlar_feature_listesine_sizmamis(sonuc: dict) -> None:
     feature listesinin KENDISINE bakar -- sizinti skora yansimadan yakalanir.
     """
     yasak = {
-        "id", "il", "ilce", "date", "starttime", "endtime", "reason",
-        "effectedsubscribers", "hourlyloadavg", "effectedneighbourhoods",
-        "distributioncompanyname", "_dolduruldu",
+        "id",
+        "il",
+        "ilce",
+        "date",
+        "starttime",
+        "endtime",
+        "reason",
+        "effectedsubscribers",
+        "hourlyloadavg",
+        "effectedneighbourhoods",
+        "distributioncompanyname",
+        "_dolduruldu",
     }
     kolonlar = sonuc.get("feature_kolonlari")
     assert kolonlar, "JSON feature_kolonlari tasimali -- sizinti denetimi makinelesir"

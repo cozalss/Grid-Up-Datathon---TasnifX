@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "target": {
+    "platform": "manylinux2014_x86_64",
+    "python_version": "3.11",
+    "abi": "none"
+  },
+  "policy": "Every wheel must match exact name, version, filename and SHA256 before packaging or install.",
+  "wheels": [
+    {
+      "name": "hijridate",
+      "version": "2.6.0",
+      "filename": "hijridate-2.6.0-py3-none-any.whl",
+      "sha256": "290db60c7780acc2a7e2112fada70847e3c11c0030b998606db77ecf126c305b"
+    },
+    {
+      "name": "pvlib",
+      "version": "0.15.2",
+      "filename": "pvlib-0.15.2-py3-none-any.whl",
+      "sha256": "42035b063cc692bc3ece9480246297ccf211c835f1151faa752acac9584f6bb5"
+    },
+    {
+      "name": "rtdl-num-embeddings",
+      "version": "0.0.12",
+      "filename": "rtdl_num_embeddings-0.0.12-py3-none-any.whl",
+      "sha256": "87fd61270118915cf40888f2164f3a1f0353edf702f15fd91e71a147d23c930d"
+    },
+    {
+      "name": "tabm",
+      "version": "0.0.3",
+      "filename": "tabm-0.0.3-py3-none-any.whl",
+      "sha256": "6cabed3cb436fef5e8a45f46097fd745f51b3e16be16d555b9af16cffda7f944"
+    }
+  ]
+}

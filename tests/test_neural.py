@@ -43,8 +43,11 @@ def _panel(n_gun: int = 200, n_ilce: int = 8, seed: int = 3):
         150 + np.array([etki[i] for i in ilce]) + 2.0 * frame.sicaklik + rng.normal(0, 4, n)
     ).to_numpy()
     folds = purged_time_series_split(
-        tarih, embargo=pd.Timedelta(days=7), n_splits=2,
-        test_span=pd.Timedelta(days=30), verbose=False,
+        tarih,
+        embargo=pd.Timedelta(days=7),
+        n_splits=2,
+        test_span=pd.Timedelta(days=30),
+        verbose=False,
     )
     return frame, hedef, folds
 
@@ -68,9 +71,7 @@ def test_olcekleyici_yalnizca_egitim_tarafindan_ogreniliyor():
 
 
 def test_hedef_istatistikleri_egitimden_geliyor():
-    on = _FoldPreprocessor([], ["x"]).fit(
-        pd.DataFrame({"x": [1.0, 2.0]}), np.array([100.0, 200.0])
-    )
+    on = _FoldPreprocessor([], ["x"]).fit(pd.DataFrame({"x": [1.0, 2.0]}), np.array([100.0, 200.0]))
     assert on.target_mean == pytest.approx(150.0)
     # Olcekle-tersine cevir kimlik olmali.
     ham = np.array([100.0, 150.0, 200.0])
@@ -110,9 +111,7 @@ def test_nan_ortalamaya_dusuyor_sonsuz_uretmiyor():
 
 
 def test_sabit_hedefte_std_sifira_bolmuyor():
-    on = _FoldPreprocessor([], ["x"]).fit(
-        pd.DataFrame({"x": [1.0, 2.0]}), np.array([7.0, 7.0])
-    )
+    on = _FoldPreprocessor([], ["x"]).fit(pd.DataFrame({"x": [1.0, 2.0]}), np.array([7.0, 7.0]))
     assert on.target_std == 1.0
     assert np.isfinite(on.scale_target(np.array([7.0, 7.0]))).all()
 
@@ -126,8 +125,13 @@ def test_sabit_hedefte_std_sifira_bolmuyor():
 def test_cvresult_donduruyor_ve_alanlari_dolu():
     X, y, folds = _panel()
     sonuc = neural_cross_validate(
-        X, y, folds, cat_columns=["ilce", "haftagun"], metric="mape",
-        config=HIZLI, verbose=False,
+        X,
+        y,
+        folds,
+        cat_columns=["ilce", "haftagun"],
+        metric="mape",
+        config=HIZLI,
+        verbose=False,
     )
     assert isinstance(sonuc, CVResult)
     assert sonuc.model_kind == "neural"
@@ -156,8 +160,13 @@ def test_test_tahminleri_fold_ortalamasi():
     X, y, folds = _panel()
     test = X.iloc[:50].copy()
     sonuc = neural_cross_validate(
-        X, y, folds, cat_columns=["ilce", "haftagun"], test=test,
-        config=HIZLI, verbose=False,
+        X,
+        y,
+        folds,
+        cat_columns=["ilce", "haftagun"],
+        test=test,
+        config=HIZLI,
+        verbose=False,
     )
     assert sonuc.test_predictions is not None
     assert len(sonuc.test_predictions) == len(test)
@@ -175,12 +184,22 @@ def test_gbdt_ile_ayni_foldlarda_harmanlanabiliyor():
         Xg[kolon] = Xg[kolon].astype("category")
 
     agac = cross_validate(
-        Xg, y, folds, kind="lightgbm", metric="mape",
-        params={"n_estimators": 80, "learning_rate": 0.1, "verbose": -1}, verbose=False,
+        Xg,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="mape",
+        params={"n_estimators": 80, "learning_rate": 0.1, "verbose": -1},
+        verbose=False,
     )
     sinir = neural_cross_validate(
-        X, y, folds, cat_columns=["ilce", "haftagun"], metric="mape",
-        config=HIZLI, verbose=False,
+        X,
+        y,
+        folds,
+        cat_columns=["ilce", "haftagun"],
+        metric="mape",
+        config=HIZLI,
+        verbose=False,
     )
 
     kapsam = np.zeros(len(y), dtype=bool)
@@ -280,8 +299,11 @@ def test_egitim_hic_iyilesmezse_uyariyor():
         torch_mod.nn.MSELoss = _SabitKayip
         try:
             _train_one_fold(
-                ag, (kodlar, sayisal, hedef), (kodlar, sayisal, hedef),
-                yapilandirma, torch_mod,
+                ag,
+                (kodlar, sayisal, hedef),
+                (kodlar, sayisal, hedef),
+                yapilandirma,
+                torch_mod,
             )
         finally:
             torch_mod.nn.MSELoss = orijinal

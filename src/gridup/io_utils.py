@@ -23,8 +23,15 @@ anlamazsin. Bu modul tespiti ACIKCA yapar ve ne buldugunu raporlar.
 from __future__ import annotations
 
 import csv
-from collections.abc import Sequence
-from dataclasses import dataclass
+import errno
+import hashlib
+import json
+import os
+import tempfile
+import warnings
+from collections.abc import Callable, Sequence
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +45,16 @@ __all__ = [
     "sniff_dialect_shared",
     "read_table",
     "read_any",
+    "PublicationMetadata",
+    "atomic_write_bytes",
+    "atomic_write_dataframe",
+    "metadata_path",
+    "publish_bytes",
+    "publish_dataframe",
+    "sha256_file",
     "to_parquet_cache",
+    "validate_cached_file",
+    "validate_published_dataframe",
 ]
 
 # Sira ONEMLI: utf-8 cp1254 girdide GURULTULU basarisiz olur (iyi).
@@ -51,6 +67,322 @@ _DELIMITER_CANDIDATES = (";", ",", "\t", "|")
 # Ondalik isaretini bu kadar satira bakarak karar veriyoruz. Buyuk dosyada
 # tamamini okumak anlamsiz; ilk birkac KB kararı vermeye yeter.
 _SNIFF_BYTES = 64 * 1024
+
+_PUBLICATION_SCHEMA_VERSION = 1
+
+
+@dataclass(frozen=True)
+class PublicationMetadata:
+    """Atomik yayinin tekrar kullanilabilmesi icin gereken kanit."""
+
+    schema_version: int
+    sha256: str
+    bytes: int
+    rows: int | None
+    columns: tuple[str, ...]
+    source: str
+    created_at_utc: str
+    format: str
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> PublicationMetadata:
+        """Yan dosyayi tipleri acikca dogrulayarak metadata'ya cevirir."""
+        required = {
+            "schema_version",
+            "sha256",
+            "bytes",
+            "rows",
+            "columns",
+            "source",
+            "created_at_utc",
+            "format",
+        }
+        missing = sorted(required - raw.keys())
+        if missing:
+            raise ValueError(f"Yayin metadata'sinda alan eksik: {missing}")
+        if raw["schema_version"] != _PUBLICATION_SCHEMA_VERSION:
+            raise ValueError(
+                "Desteklenmeyen yayin metadata surumu: "
+                f"{raw['schema_version']} (beklenen {_PUBLICATION_SCHEMA_VERSION})"
+            )
+        columns = raw["columns"]
+        if not isinstance(columns, list) or not all(isinstance(item, str) for item in columns):
+            raise ValueError("Yayin metadata'sinda columns bir metin listesi olmali.")
+        return cls(
+            schema_version=int(raw["schema_version"]),
+            sha256=str(raw["sha256"]),
+            bytes=int(raw["bytes"]),
+            rows=None if raw["rows"] is None else int(raw["rows"]),
+            columns=tuple(columns),
+            source=str(raw["source"]),
+            created_at_utc=str(raw["created_at_utc"]),
+            format=str(raw["format"]),
+        )
+
+
+def metadata_path(path: str | Path) -> Path:
+    """Bir yayin dosyasinin fail-closed dogrulama yan dosyasi."""
+    resolved = Path(path)
+    return resolved.with_name(f"{resolved.name}.metadata.json")
+
+
+def sha256_file(path: str | Path, *, chunk_size: int = 1024 * 1024) -> str:
+    """Dosyayi bellekte toplamazdan SHA-256 ozetini hesaplar."""
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        while chunk := handle.read(chunk_size):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _fsync_file(path: Path) -> None:
+    # Windows salt-okunur taniticiya fsync uygulandiginda EBADF dondurur.
+    with path.open("r+b") as handle:
+        os.fsync(handle.fileno())
+
+
+#: Dizin fsync'inin PLATFORMCA desteklenmedigi errno'lar. Bunlar beklenen ve
+#: zararsizdir (Windows dizin tanimlayicisi acmaya izin vermez). Bunlarin
+#: DISINDAKI her hata gercek bir I/O sorunudur ve sessiz kalmamalidir.
+_FSYNC_DESTEKLENMIYOR = frozenset(
+    kod
+    for kod in (
+        getattr(errno, "EACCES", None),
+        getattr(errno, "EINVAL", None),
+        getattr(errno, "EISDIR", None),
+        getattr(errno, "ENOSYS", None),
+        getattr(errno, "ENOTSUP", None),
+        getattr(errno, "EOPNOTSUPP", None),
+        getattr(errno, "EPERM", None),
+    )
+    if kod is not None
+)
+
+
+def _fsync_directory(path: Path) -> None:
+    """POSIX'te dizin girdisini kalici kilar; Windows bunu desteklemeyebilir.
+
+    DESTEKLENMEME ile ARIZA ayirt edilir. Onceki hali her ``OSError``i sessizce
+    yutuyordu: ENOSPC, EIO gibi gercek disk hatalari da "Windows desteklemiyor"
+    ile ayni kefeye giriyor ve hicbir iz birakmiyordu. O durumda ``os.replace``
+    ile yayinlanan dosyanin ICERIGI dogru olur ama dizin girdisinin kaliciligi
+    garanti edilmez -- yani modulun "atomik yayin" iddiasi sessizce zayiflar ve
+    kullanici bunu asla fark etmez, cunku veri dogru gorunur.
+    """
+    flags = getattr(os, "O_DIRECTORY", 0) | os.O_RDONLY
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as hata:
+        if hata.errno not in _FSYNC_DESTEKLENMIYOR:
+            warnings.warn(
+                f"Dizin fsync'i icin acilamadi ({path}): {hata!r}. Yayin ICERIK "
+                "olarak dogru, ancak dizin girdisinin kaliciligi garanti edilemedi.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        return
+    try:
+        os.fsync(descriptor)
+    except OSError as hata:
+        if hata.errno not in _FSYNC_DESTEKLENMIYOR:
+            warnings.warn(
+                f"Dizin fsync'i basarisiz ({path}): {hata!r}. Yayin ICERIK olarak "
+                "dogru, ancak dizin girdisinin kaliciligi garanti edilemedi.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+    finally:
+        os.close(descriptor)
+
+
+def _atomic_publish(path: Path, writer: Callable[[Path], None]) -> Path:
+    """Ayni dosya sisteminde temp yazip tek ``os.replace`` ile yayinlar."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
+    )
+    os.close(descriptor)
+    temporary = Path(temporary_name)
+    try:
+        writer(temporary)
+        _fsync_file(temporary)
+        os.replace(temporary, path)  # noqa: PTH105 -- istenen atomik primitive
+        _fsync_directory(path.parent)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return path
+
+
+def atomic_write_bytes(path: str | Path, content: bytes) -> Path:
+    """Baytlari temp+flush+fsync+replace ile atomik yayinlar."""
+    target = Path(path)
+
+    def write(temporary: Path) -> None:
+        with temporary.open("wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+    return _atomic_publish(target, write)
+
+
+def _validate_frame(frame: pd.DataFrame, *, required_columns: Sequence[str], min_rows: int) -> None:
+    if min_rows < 0:
+        raise ValueError("min_rows negatif olamaz.")
+    missing = sorted(set(required_columns) - set(frame.columns))
+    if missing:
+        raise ValueError(f"Yayin gerekli kolonlari icermiyor: {missing}")
+    if len(frame) < min_rows:
+        raise ValueError(f"Yayin {len(frame)} satir; en az {min_rows} satir gerekli.")
+
+
+def atomic_write_dataframe(
+    frame: pd.DataFrame,
+    path: str | Path,
+    *,
+    csv_encoding: str = "utf-8",
+) -> Path:
+    """CSV, parquet veya JSON tabloyu atomik olarak yayinlar."""
+    target = Path(path)
+    suffix = target.suffix.lower()
+    if suffix not in {".csv", ".parquet", ".pq", ".json"}:
+        raise ValueError(f"Atomik tablo yayini icin desteklenmeyen uzanti: {suffix}")
+
+    def write(temporary: Path) -> None:
+        if suffix == ".csv":
+            frame.to_csv(temporary, index=False, encoding=csv_encoding)
+        elif suffix in {".parquet", ".pq"}:
+            frame.to_parquet(temporary, index=False)
+        else:
+            frame.to_json(temporary, orient="records", force_ascii=False, date_format="iso")
+
+    return _atomic_publish(target, write)
+
+
+def _metadata_for(
+    path: Path,
+    *,
+    source: str,
+    rows: int | None,
+    columns: Sequence[str] = (),
+) -> PublicationMetadata:
+    return PublicationMetadata(
+        schema_version=_PUBLICATION_SCHEMA_VERSION,
+        sha256=sha256_file(path),
+        bytes=path.stat().st_size,
+        rows=rows,
+        columns=tuple(str(column) for column in columns),
+        source=source,
+        created_at_utc=datetime.now(timezone.utc).isoformat(),
+        format=path.suffix.lower().lstrip(".") or "binary",
+    )
+
+
+def _write_metadata(path: Path, metadata: PublicationMetadata) -> None:
+    payload = json.dumps(asdict(metadata), ensure_ascii=False, sort_keys=True, indent=2)
+    atomic_write_bytes(metadata_path(path), f"{payload}\n".encode())
+
+
+def publish_dataframe(
+    frame: pd.DataFrame,
+    path: str | Path,
+    *,
+    required_columns: Sequence[str],
+    min_rows: int,
+    source: str,
+    csv_encoding: str = "utf-8",
+) -> PublicationMetadata:
+    """Dogrulanmis tabloyu atomik yayinlar ve hash/sema kanitini kaydeder."""
+    _validate_frame(frame, required_columns=required_columns, min_rows=min_rows)
+    target = atomic_write_dataframe(frame, path, csv_encoding=csv_encoding)
+    metadata = _metadata_for(target, source=source, rows=len(frame), columns=tuple(frame.columns))
+    _write_metadata(target, metadata)
+    return metadata
+
+
+def publish_bytes(
+    content: bytes,
+    path: str | Path,
+    *,
+    source: str,
+    min_bytes: int = 1,
+) -> PublicationMetadata:
+    """Mutable ikili indirmeyi boyut+hash metadata'siyla atomik yayinlar."""
+    if len(content) < min_bytes:
+        raise ValueError(f"Indirme {len(content)} bayt; en az {min_bytes} bayt gerekli.")
+    target = atomic_write_bytes(path, content)
+    metadata = _metadata_for(target, source=source, rows=None)
+    _write_metadata(target, metadata)
+    return metadata
+
+
+def _load_and_verify_metadata(path: Path, *, source: str | None = None) -> PublicationMetadata:
+    sidecar = metadata_path(path)
+    if not sidecar.is_file():
+        raise ValueError(f"{path}: dogrulama metadata dosyasi yok ({sidecar.name}).")
+    try:
+        raw = json.loads(sidecar.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"{path}: yayin metadata'si okunamadi: {error}") from error
+    if not isinstance(raw, dict):
+        raise ValueError(f"{path}: yayin metadata'si JSON nesnesi olmali.")
+    metadata = PublicationMetadata.from_dict(raw)
+    if metadata.bytes != path.stat().st_size:
+        raise ValueError(f"{path}: dosya boyutu metadata ile uyusmuyor.")
+    actual_hash = sha256_file(path)
+    if metadata.sha256 != actual_hash:
+        raise ValueError(f"{path}: SHA-256 metadata ile uyusmuyor.")
+    if source is not None and metadata.source != source:
+        raise ValueError(
+            f"{path}: kaynak metadata ile uyusmuyor ({metadata.source!r} != {source!r})."
+        )
+    return metadata
+
+
+def validate_cached_file(
+    path: str | Path, *, min_bytes: int = 1, source: str | None = None
+) -> PublicationMetadata:
+    """Mutable ikili cache'i metadata, kaynak, boyut ve hash ile dogrular."""
+    target = Path(path)
+    if not target.is_file():
+        raise ValueError(f"Cache dosyasi yok: {target}")
+    metadata = _load_and_verify_metadata(target, source=source)
+    if target.stat().st_size < min_bytes:
+        size = target.stat().st_size
+        raise ValueError(f"{target}: cache {size} bayt; en az {min_bytes} gerekli.")
+    return metadata
+
+
+def _read_published_dataframe(path: Path) -> pd.DataFrame:
+    suffix = path.suffix.lower()
+    if suffix == ".csv":
+        return pd.read_csv(path)
+    if suffix in {".parquet", ".pq"}:
+        return pd.read_parquet(path)
+    if suffix == ".json":
+        return pd.read_json(path, orient="records")
+    raise ValueError(f"Dogrulanmis tablo icin desteklenmeyen uzanti: {suffix}")
+
+
+def validate_published_dataframe(
+    path: str | Path,
+    *,
+    required_columns: Sequence[str],
+    min_rows: int,
+    source: str | None = None,
+) -> pd.DataFrame:
+    """Yayini hash'ten semaya kadar dogrular; sorun varsa cache'i reddeder."""
+    target = Path(path)
+    if not target.is_file():
+        raise ValueError(f"Yayin dosyasi yok: {target}")
+    metadata = _load_and_verify_metadata(target, source=source)
+    frame = _read_published_dataframe(target)
+    _validate_frame(frame, required_columns=required_columns, min_rows=min_rows)
+    if metadata.rows != len(frame):
+        raise ValueError(f"{target}: satir sayisi metadata ile uyusmuyor.")
+    if metadata.columns != tuple(str(column) for column in frame.columns):
+        raise ValueError(f"{target}: kolon semasi metadata ile uyusmuyor.")
+    return frame
 
 
 @dataclass(frozen=True)
@@ -491,6 +823,4 @@ def to_parquet_cache(frame: pd.DataFrame, cache_path: str | Path) -> Path:
     parquet'ten oku. 12 gunluk bir yarismada bu, yuzlerce dakika kazandirir.
     """
     cache_path = Path(cache_path)
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_parquet(cache_path, index=False)
-    return cache_path
+    return atomic_write_dataframe(frame, cache_path)

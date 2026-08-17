@@ -125,7 +125,7 @@ def mae_optimal_quantile(positive_probability: np.ndarray) -> np.ndarray:
 
 
 def zero_baseline_score(y_true: np.ndarray, *, metric: str = "mae") -> float:
-    """"Her zaman 0 tahmin et" baseline'inin skoru.
+    """ "Her zaman 0 tahmin et" baseline'inin skoru.
 
     BUNU HER ZAMAN HESAPLA. Sifir-siskin veride bu baseline sasirtici derecede
     gucludur; modelin onu gectigini DOGRULAMADAN ilerleme. Gecmiyorsa problem
@@ -203,9 +203,7 @@ def calibrate_positive_probability(
     prob = np.asarray(probability, dtype="float64")
     y_bin = (np.asarray(target).ravel() > 0).astype("float64")
     if len(prob) != len(y_bin):
-        raise ValueError(
-            f"Olasilik ({len(prob)}) ve hedef ({len(y_bin)}) uzunluklari farkli."
-        )
+        raise ValueError(f"Olasilik ({len(prob)}) ve hedef ({len(y_bin)}) uzunluklari farkli.")
     mask = np.ones(len(prob), dtype=bool) if covered is None else np.asarray(covered, dtype=bool)
 
     notes: list[str] = []
@@ -214,8 +212,12 @@ def calibrate_positive_probability(
         notes.append("Kapsanan satirlarda tek sinif var; kalibrasyon atlandi.")
         brier = float(np.mean((prob[mask] - y_bin[mask]) ** 2)) if mask.any() else float("nan")
         return CalibrationResult(
-            calibrated=prob.copy(), brier_before=brier, brier_after=brier,
-            improved=False, calibrator=None, notes=tuple(notes),
+            calibrated=prob.copy(),
+            brier_before=brier,
+            brier_after=brier,
+            improved=False,
+            calibrator=None,
+            notes=tuple(notes),
         )
 
     def _yeni_izotonik() -> Any:
@@ -227,9 +229,7 @@ def calibrate_positive_probability(
         # Capraz-uydurma: fold k'ye, DIGER fold'larla fit edilmis harita uygulanir.
         fold_list = list(folds)
         for konum, (_, valid_idx) in enumerate(fold_list):
-            digerleri = [
-                idx for baska, (_, idx) in enumerate(fold_list) if baska != konum
-            ]
+            digerleri = [idx for baska, (_, idx) in enumerate(fold_list) if baska != konum]
             if not digerleri:
                 continue
             egitim = np.concatenate(digerleri)
@@ -264,14 +264,20 @@ def calibrate_positive_probability(
     final.fit(prob[mask], y_bin[mask])
 
     if verbose:
-        print(f"[kalibrasyon] Brier {brier_before:.6f} -> {brier_after:.6f}"
-              f"  ({'iyilesti' if improved else 'IYILESMEDI'})")
+        print(
+            f"[kalibrasyon] Brier {brier_before:.6f} -> {brier_after:.6f}"
+            f"  ({'iyilesti' if improved else 'IYILESMEDI'})"
+        )
         for not_satiri in notes:
             print(f"[kalibrasyon] {not_satiri}")
 
     return CalibrationResult(
-        calibrated=calibrated, brier_before=brier_before, brier_after=brier_after,
-        improved=improved, calibrator=final, notes=tuple(notes),
+        calibrated=calibrated,
+        brier_before=brier_before,
+        brier_after=brier_after,
+        improved=improved,
+        calibrator=final,
+        notes=tuple(notes),
     )
 
 
@@ -313,8 +319,10 @@ class TwoStageResult:
         edildi" diye puanlarsin.
         """
         return _combine(
-            self.oof_probability, self.oof_magnitude,
-            mode=mode, threshold=self.best_threshold,
+            self.oof_probability,
+            self.oof_magnitude,
+            mode=mode,
+            threshold=self.best_threshold,
         )
 
     def summary(self) -> str:
@@ -380,8 +388,11 @@ def tune_threshold(
     thresholds = np.linspace(0.01, 0.99, n_steps)
     scores = np.array(
         [
-            float(metric_fn(y_true, _combine(probability, magnitude,
-                                             mode="thresholded", threshold=value)))
+            float(
+                metric_fn(
+                    y_true, _combine(probability, magnitude, mode="thresholded", threshold=value)
+                )
+            )
             for value in thresholds
         ]
     )
@@ -391,8 +402,7 @@ def tune_threshold(
         "best_threshold": float(thresholds[best_index]),
         "best_score": float(scores[best_index]),
         "score_at_half": float(
-            metric_fn(y_true, _combine(probability, magnitude,
-                                       mode="thresholded", threshold=0.5))
+            metric_fn(y_true, _combine(probability, magnitude, mode="thresholded", threshold=0.5))
         ),
         "score_expected": float(
             metric_fn(y_true, _combine(probability, magnitude, mode="expected", threshold=None))
@@ -442,10 +452,16 @@ def fit_quantile_ladder(
             print(f"  kuantil {level:.2f} egitiliyor...")
 
         ladder[float(level)] = cross_validate(
-            train, target, folds,
-            kind="lightgbm", task_type="regression", metric="mae",
-            params=level_params, test=test,
-            early_stopping_rounds=early_stopping_rounds, verbose=False,
+            train,
+            target,
+            folds,
+            kind="lightgbm",
+            task_type="regression",
+            metric="mae",
+            params=level_params,
+            test=test,
+            early_stopping_rounds=early_stopping_rounds,
+            verbose=False,
         )
 
     return ladder
@@ -455,7 +471,17 @@ def fit_quantile_ladder(
 #: 0.5 USTU seviyeler MAE-optimal yolda HIC kullanilmaz -- egitilirlerse
 #: CV kosusu bosa gider. Varsayilan merdiven bu araligi sikca orneklemeli.
 CONDITIONAL_LADDER_LEVELS: tuple[float, ...] = (
-    0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+    0.02,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
 )
 
 
@@ -516,9 +542,7 @@ def fit_conditional_quantile_ladder(
         raise ValueError("Pozitif satir yok; kosullu merdiven egitilemez.")
 
     # Fold'lari POZITIF alt kumesinin konumsal indekslerine cevir.
-    yeniden: dict[int, int] = {
-        int(eski): yeni for yeni, eski in enumerate(positive_index)
-    }
+    yeniden: dict[int, int] = {int(eski): yeni for yeni, eski in enumerate(positive_index)}
     positive_folds: list[tuple[np.ndarray, np.ndarray]] = []
     source_folds: list[int] = []
     for konum, (train_idx, valid_idx) in enumerate(fold_list):
@@ -530,8 +554,7 @@ def fit_conditional_quantile_ladder(
         source_folds.append(konum)
     if not positive_folds:
         raise ValueError(
-            "Hicbir fold'da hem egitim hem dogrulama pozitifi yok; "
-            "kosullu merdiven kurulamaz."
+            "Hicbir fold'da hem egitim hem dogrulama pozitifi yok; kosullu merdiven kurulamaz."
         )
 
     base = dict(params) if params else starter_params(kind, "regression")
@@ -545,8 +568,12 @@ def fit_conditional_quantile_ladder(
             print(f"  kosullu kuantil {level:.2f} egitiliyor...")
 
         result = cross_validate(
-            train.iloc[positive_index], y[positive_index], positive_folds,
-            kind=kind, task_type="regression", metric="mae",
+            train.iloc[positive_index],
+            y[positive_index],
+            positive_folds,
+            kind=kind,
+            task_type="regression",
+            metric="mae",
             params=level_params,
             sample_weight=(weights[positive_index] if weights is not None else None),
             early_stopping_rounds=early_stopping_rounds,
@@ -604,8 +631,7 @@ def conditional_quantile_from_hurdle(
     probability = np.asarray(positive_probability, dtype="float64")
     if len(probability) != matrix.shape[0]:
         raise ValueError(
-            f"Olasilik ({len(probability)}) ve tahmin ({matrix.shape[0]}) "
-            "uzunluklari farkli."
+            f"Olasilik ({len(probability)}) ve tahmin ({matrix.shape[0]}) uzunluklari farkli."
         )
 
     _merdiven_uyarilari(levels, matrix, probability, verbose=verbose)
@@ -707,9 +733,7 @@ def _stage2_predictions_everywhere(
 
     for model, fold_position in zip(regressor.models, source_folds, strict=True):
         _, valid_idx = fold_list[fold_position]
-        predictions[valid_idx] = _predict(
-            model, prepared.iloc[valid_idx], needs_proba=False
-        )
+        predictions[valid_idx] = _predict(model, prepared.iloc[valid_idx], needs_proba=False)
 
     # Hicbir fold'un dogrulamadigi satirlar kalabilir -- TimeSeriesSplit ilk
     # donemi hic valid yapmaz. Bu satirlarda 1. asama da (cross_validate) 0
@@ -833,10 +857,17 @@ def fit_two_stage(
 
     classifier_config = classifier_params or starter_params(kind, "binary")
     classifier = cross_validate(
-        train, positive.astype(int), fold_list,
-        kind=kind, task_type="binary", metric="auc",
-        params=classifier_config, test=test, sample_weight=weights,
-        early_stopping_rounds=early_stopping_rounds, verbose=verbose,
+        train,
+        positive.astype(int),
+        fold_list,
+        kind=kind,
+        task_type="binary",
+        metric="auc",
+        params=classifier_config,
+        test=test,
+        sample_weight=weights,
+        early_stopping_rounds=early_stopping_rounds,
+        verbose=verbose,
     )
 
     # --- 2. asama: kac tane ------------------------------------------------
@@ -867,11 +898,17 @@ def fit_two_stage(
 
     regressor_config = regressor_params or starter_params(kind, "regression", objective="mae")
     regressor = cross_validate(
-        train.iloc[positive_index], y[positive_index], positive_folds,
-        kind=kind, task_type="regression", metric=magnitude_metric,
-        params=regressor_config, test=test,
+        train.iloc[positive_index],
+        y[positive_index],
+        positive_folds,
+        kind=kind,
+        task_type="regression",
+        metric=magnitude_metric,
+        params=regressor_config,
+        test=test,
         sample_weight=(weights[positive_index] if weights is not None else None),
-        early_stopping_rounds=early_stopping_rounds, verbose=verbose,
+        early_stopping_rounds=early_stopping_rounds,
+        verbose=verbose,
     )
 
     magnitude_oof = _stage2_predictions_everywhere(
@@ -904,8 +941,12 @@ def fit_two_stage(
     )
 
     diagnostics = _teshis_tablosu(
-        tuning, zero_share=zero_share, metric=metric,
-        covered=covered, n_rows=len(y), verbose=verbose,
+        tuning,
+        zero_share=zero_share,
+        metric=metric,
+        covered=covered,
+        n_rows=len(y),
+        verbose=verbose,
     )
 
     return TwoStageResult(

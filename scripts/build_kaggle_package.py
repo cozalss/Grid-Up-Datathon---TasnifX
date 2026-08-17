@@ -34,16 +34,26 @@ Yukleme icin ``~/.kaggle/kaggle.json`` gerekir (zaten var).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
+from security.verify_sources import verify_manifest
+
 CIKTI = ROOT / "kaggle_paket"
+WHEEL_MANIFEST = ROOT / "security" / "wheel-manifest.json"
+SOURCE_MANIFEST = ROOT / "data" / "sources.yml"
 
 #: Dataset icine kopyalanacak veri dosyalari. Eksik olan SESSIZ atlanmaz,
 #: raporlanir -- yarisma gunu "veri neden yok" diye aramak istemeyiz.
@@ -54,10 +64,10 @@ VERI_DOSYALARI = (
     "data/reference/ilceler_gdz_adm.csv",
     # Harici veri 2. dalga (kaynaklar docs/10 bolum 5'te; fetch betikleri
     # scripts/fetch_hourly_weather.py, fetch_deprem.py, fetch_turizm.py):
-    "data/external/hava_saatlik_turev.parquet",   # basinc + esik-ustu ruzgar saatleri
-    "data/external/depremler.parquet",            # AFAD M>=4 Ege katalogu
-    "data/external/yanginlar.parquet",            # NASA FIRMS sicak-nokta tespitleri
-    "data/external/turizm_geceleme.parquet",      # KTB ilce konaklama 2023-25
+    "data/external/hava_saatlik_turev.parquet",  # basinc + esik-ustu ruzgar saatleri
+    "data/external/depremler.parquet",  # AFAD M>=4 Ege katalogu
+    "data/external/yanginlar.parquet",  # NASA FIRMS sicak-nokta tespitleri
+    "data/external/turizm_geceleme.parquet",  # KTB ilce konaklama 2023-25
 )
 
 #: Kaggle imajinda OLMAYAN, bizim kullandigimiz paketler. Bunlarin wheel'ini
@@ -83,6 +93,132 @@ KAGGLE_DA_MEVCUT = ("numpy", "pandas", "scipy", "requests", "h5py", "pytz", "six
 
 DATASET_SLUG = "gridup-offline-paket"
 DATASET_BASLIK = "Grid Up Offline Paket"
+
+
+class SupplyChainError(RuntimeError):
+    """Dogrulanmamis artifact veya provenance yayin/kurulumu durdurdu."""
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _json_oku(path: Path) -> dict:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise SupplyChainError(f"Manifest okunamadi: {path} ({type(error).__name__})") from error
+    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+        raise SupplyChainError(f"Manifest schema_version=1 olmali: {path}")
+    return payload
+
+
+def _wheel_specs(manifest_path: Path = WHEEL_MANIFEST) -> list[dict[str, str]]:
+    payload = _json_oku(manifest_path)
+    specs = payload.get("wheels")
+    if not isinstance(specs, list) or not specs:
+        raise SupplyChainError(f"Wheel manifesti bos: {manifest_path}")
+    return specs
+
+
+def dogrula_wheel_manifesti(wheels: list[Path], manifest_path: Path = WHEEL_MANIFEST) -> list[Path]:
+    """Wheel kumesini tam dosya adi, surum ve SHA256 ile fail-closed dogrular."""
+    specs = _wheel_specs(manifest_path)
+    expected: dict[str, dict[str, str]] = {}
+    for spec in specs:
+        name = str(spec.get("name", "")).strip()
+        version = str(spec.get("version", "")).strip()
+        filename = str(spec.get("filename", "")).strip()
+        digest = str(spec.get("sha256", "")).strip().lower()
+        if digest == "unverified" or not digest:
+            raise SupplyChainError(f"dogrulanmamis wheel hash'i: {filename or name}")
+        if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise SupplyChainError(f"gecersiz SHA256: {filename or name}")
+        normalized = filename.lower().replace("-", "_")
+        prefix = f"{name.lower().replace('-', '_')}_{version.lower().replace('-', '_')}"
+        if not name or not version or not filename or not normalized.startswith(prefix):
+            raise SupplyChainError(f"gecersiz wheel ad/surum sozlesmesi: {filename}")
+        if filename in expected:
+            raise SupplyChainError(f"tekrarlanan wheel manifest girdisi: {filename}")
+        expected[filename] = spec
+
+    actual = {path.name: path for path in wheels}
+    missing = sorted(set(expected) - set(actual))
+    extra = sorted(set(actual) - set(expected))
+    if missing or extra:
+        raise SupplyChainError(f"Wheel kumesi manifestle uyusmuyor; eksik={missing}, fazla={extra}")
+
+    for filename, spec in expected.items():
+        actual_digest = _sha256(actual[filename])
+        if actual_digest != spec["sha256"].lower():
+            raise SupplyChainError(
+                f"SHA256 uyusmazligi: {filename}; beklenen={spec['sha256']}, gercek={actual_digest}"
+            )
+    return [actual[name] for name in sorted(actual)]
+
+
+def offline_manifest_yaz(gridup_wheel: Path, dependency_wheels: list[Path], output: Path) -> Path:
+    """Dogrulanmis ucuncu taraf + yeni uretilen gridup wheel'i icin manifest yazar."""
+    if dependency_wheels:
+        dependency_wheels = dogrula_wheel_manifesti(dependency_wheels)
+    static = {spec["filename"]: spec for spec in _wheel_specs()}
+    entries: list[dict[str, str]] = []
+    for wheel in sorted(dependency_wheels):
+        spec = static[wheel.name]
+        entries.append({**spec, "path": f"tekerlekler/{wheel.name}"})
+
+    match = re.match(r"(?P<name>.+)-(?P<version>\d[^-]*)-", gridup_wheel.name)
+    if match is None:
+        raise SupplyChainError(f"gridup wheel adi taninamadi: {gridup_wheel.name}")
+    entries.append(
+        {
+            "name": match.group("name"),
+            "version": match.group("version"),
+            "filename": gridup_wheel.name,
+            "path": gridup_wheel.name,
+            "sha256": _sha256(gridup_wheel),
+        }
+    )
+    output.write_text(
+        json.dumps({"schema_version": 1, "wheels": entries}, indent=2),
+        encoding="utf-8",
+    )
+    return output
+
+
+def yayin_kapisini_dogrula(manifest_path: Path = SOURCE_MANIFEST, *, root: Path = ROOT) -> None:
+    """Kanonik verifier ile hash, sema, lisans ve immutable kaynagi zorlar."""
+    result = verify_manifest(
+        manifest_path,
+        root=root,
+        publication=True,
+        check_files=True,
+    )
+    if result.errors:
+        raise SupplyChainError("yayin kapisi reddetti: " + "; ".join(result.errors))
+
+
+def atomik_dizin_yayinla(staging: Path, target: Path) -> None:
+    """Tam hazir staging dizinini geri alinabilir bir dizin takasiyla yayinlar."""
+    if not staging.is_dir():
+        raise FileNotFoundError(f"staging dizini yok: {staging}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    backup = target.with_name(f".{target.name}.backup-{uuid.uuid4().hex}")
+    had_target = target.exists()
+    if had_target:
+        os.replace(target, backup)  # noqa: PTH105 -- atomik dizin primitive'i
+    try:
+        os.replace(staging, target)  # noqa: PTH105 -- atomik dizin primitive'i
+    except BaseException:
+        if had_target and backup.exists() and not target.exists():
+            os.replace(backup, target)  # noqa: PTH105 -- rollback ayni primitive
+        raise
+    if backup.exists():
+        shutil.rmtree(backup)
 
 
 def _kos(komut: list[str], *, aciklama: str) -> subprocess.CompletedProcess[str]:
@@ -139,25 +275,33 @@ def bagimlilik_wheel_indir(hedef: Path) -> int:
     """
     print("\n[2/4] Kaggle'da olmayan paketlerin wheel'leri indiriliyor")
     hedef.mkdir(parents=True, exist_ok=True)
+    specs = _wheel_specs()
+    pinned = [f"{spec['name']}=={spec['version']}" for spec in specs]
     sonuc = _kos(
         [
-            sys.executable, "-m", "pip", "download",
-            *EKSIK_PAKETLER,
-            "--dest", str(hedef),
+            sys.executable,
+            "-m",
+            "pip",
+            "download",
+            *pinned,
+            "--dest",
+            str(hedef),
             "--only-binary=:all:",
             "--no-deps",
-            "--platform", "manylinux2014_x86_64",
-            "--python-version", "311",
+            "--platform",
+            "manylinux2014_x86_64",
+            "--python-version",
+            "311",
         ],
         aciklama="wheel indirme",
     )
-    adet = len(list(hedef.glob("*.whl")))
-    if sonuc.returncode == 0:
-        print(f"  OK: {adet} wheel (bagimliliklar KASITLI atlandi)")
-        print(f"     Kaggle'da hazir varsayilanlar: {', '.join(KAGGLE_DA_MEVCUT)}")
-    else:
-        print(f"  Kismi: {adet} wheel indirildi. Eksikler internetsiz calismaz.")
-    return adet
+    if sonuc.returncode != 0:
+        raise SupplyChainError("Wheel indirme basarisiz; kismi artifact yayinlanmayacak.")
+    wheels = list(hedef.glob("*.whl"))
+    verified = dogrula_wheel_manifesti(wheels)
+    print(f"  OK: {len(verified)} wheel; tam surum + SHA256 dogrulandi")
+    print(f"     Kaggle'da hazir varsayilanlar: {', '.join(KAGGLE_DA_MEVCUT)}")
+    return len(verified)
 
 
 def veri_kopyala(hedef: Path) -> tuple[int, list[str]]:
@@ -186,7 +330,10 @@ def metadata_yaz(klasor: Path, kullanici: str) -> Path:
             {
                 "title": DATASET_BASLIK,
                 "id": f"{kullanici}/{DATASET_SLUG}",
-                "licenses": [{"name": "CC0-1.0"}],
+                # Paket farkli lisanslara sahip veri snapshot'lari tasir. Kaggle
+                # metadata'sinda tek ve yanlis bir CC0 iddiasi yerine provenance
+                # dosyasina yonlendiren fail-safe sinif kullanilir.
+                "licenses": [{"name": "other"}],
             },
             indent=2,
             ensure_ascii=False,
@@ -207,26 +354,42 @@ def kaggle_kullanici() -> str | None:
         return None
 
 
-BOOTSTRAP = '''# ==== KAGGLE INTERNETSIZ BOOTSTRAP -- notebook'un ILK hucresi ====
+BOOTSTRAP = """# ==== KAGGLE INTERNETSIZ BOOTSTRAP -- notebook'un ILK hucresi ====
 # Dataset'i notebook'a "Add Input" ile ekledikten sonra bu hucre yeter.
 # Her adim SESSIZ BASARISIZ OLMAZ: ne kurulduğunu ve neyin eksik oldugunu yazar.
-import importlib, os, subprocess, sys
+import hashlib, importlib, json, os, subprocess, sys
 from pathlib import Path
 
 GIRDI = "/kaggle/input/{slug}"
 assert os.path.isdir(GIRDI), f"Dataset bagli degil: {{GIRDI}} -- 'Add Input' ile ekle."
 
-# 0) Paketledigimiz wheel'ler bu paketlerin Kaggle'da HAZIR oldugunu varsayar.
+# 0) Hicbir wheel glob ile guvenilir sayilmaz. Manifest tam dosya adi ve
+#    SHA256'i dogrulamadan pip CALISMAZ.
+manifest_yolu = Path(GIRDI, "wheel-manifest.json")
+assert manifest_yolu.is_file(), "wheel-manifest.json yok; kurulum fail-closed durdu."
+manifest = json.loads(manifest_yolu.read_text(encoding="utf-8"))
+assert manifest.get("schema_version") == 1, "wheel manifest semasi desteklenmiyor."
+dogrulanmis = []
+for kayit in manifest.get("wheels", []):
+    wheel = Path(GIRDI, kayit["path"])
+    beklenen = kayit.get("sha256", "")
+    assert len(beklenen) == 64 and beklenen != "unverified", f"hash dogrulanmamis: {{wheel.name}}"
+    assert wheel.is_file(), f"manifest wheel'i yok: {{wheel}}"
+    gercek = hashlib.sha256(wheel.read_bytes()).hexdigest()
+    assert gercek == beklenen, f"wheel SHA256 uyusmazligi: {{wheel.name}}"
+    dogrulanmis.append(wheel)
+
+# 1) Paketledigimiz wheel'ler bu paketlerin Kaggle'da HAZIR oldugunu varsayar.
 #    Varsayim yanlissa simdi ogrenmek, model egitiminin ortasinda ogrenmekten iyidir.
 eksik_temel = [m for m in {kaggle_da_mevcut!r} if importlib.util.find_spec(m) is None]
 if eksik_temel:
     print("UYARI: Kaggle'da bekledigimiz paketler yok:", eksik_temel)
     print("       Ilgili feature aileleri calismayabilir.")
 
-# 1) Kaggle'da olmayan paketler -- yerel wheel'den, bagimlilik COZMEDEN.
+# 2) Kaggle'da olmayan paketler -- yerel wheel'den, bagimlilik COZMEDEN.
 #    --no-deps sart: aksi halde pip numpy/scipy'yi yukseltmeye calisir ve
 #    onlara karsi derlenmis lightgbm/catboost bozulur.
-tekerlekler = sorted(str(w) for w in Path(GIRDI, "tekerlekler").glob("*.whl"))
+tekerlekler = sorted(str(w) for w in dogrulanmis if w.parent.name == "tekerlekler")
 if tekerlekler:
     r = subprocess.run([sys.executable, "-m", "pip", "install", "--no-index", "--no-deps",
                         *tekerlekler, "-q"], capture_output=True, text=True)
@@ -235,9 +398,13 @@ if tekerlekler:
     if r.returncode != 0:
         print(r.stderr[:400])
 
-# 2) gridup paketi
-gridup_whl = sorted(str(w) for w in Path(GIRDI).glob("gridup-*.whl"))
-assert gridup_whl, "gridup wheel'i dataset'te yok."
+# 3) gridup paketi -- o da ayni manifest dogrulamasindan gecmistir.
+gridup_whl = [
+    str(w)
+    for w in dogrulanmis
+    if w.parent == Path(GIRDI) and w.name.startswith("gridup-")
+]
+assert len(gridup_whl) == 1, "manifestte tam bir gridup wheel'i olmali."
 r = subprocess.run([sys.executable, "-m", "pip", "install", "--no-index", "--no-deps",
                     gridup_whl[0], "-q"], capture_output=True, text=True)
 assert r.returncode == 0, f"gridup kurulamadi: {{r.stderr[:400]}}"
@@ -245,58 +412,75 @@ assert r.returncode == 0, f"gridup kurulamadi: {{r.stderr[:400]}}"
 import gridup
 print("gridup", gridup.__version__, "hazir")
 
-# 3) Harici veri -- internet YOK, API cagirma; parquet'ten oku
+# 4) Harici veri -- internet YOK, API cagirma; parquet'ten oku
 import pandas as pd
 HAVA    = pd.read_parquet(os.path.join(GIRDI, "hava_gunluk.parquet"))
 GUNES   = pd.read_parquet(os.path.join(GIRDI, "gunes_gunluk.parquet"))
 ILCELER = pd.read_parquet(os.path.join(GIRDI, "ilceler_gdz_adm.parquet"))
 print(f"hava={{HAVA.shape}} gunes={{GUNES.shape}} ilceler={{ILCELER.shape}}")
 # ==== BOOTSTRAP SONU ====
-'''
+"""
 
 
-def main() -> int:
-    ayristirici = argparse.ArgumentParser(description=__doc__)
-    ayristirici.add_argument("--wheels", action="store_true",
-                             help="Kaggle'da olmayan paketlerin wheel'lerini de indir")
-    ayristirici.add_argument("--upload", action="store_true",
-                             help="Hazirlandiktan sonra Kaggle'a yukle")
-    args = ayristirici.parse_args()
-
-    print("=" * 68)
-    print("KAGGLE INTERNETSIZ PAKET HAZIRLIGI")
-    print("=" * 68)
-
-    if CIKTI.exists():
-        shutil.rmtree(CIKTI)
-    CIKTI.mkdir(parents=True)
-
+def _staging_paketi_hazirla(
+    paket: Path, *, wheels: bool
+) -> tuple[Path, int, int, list[str]] | None:
+    """Paketi hedefe dokunmadan staging dizininde eksiksiz hazirlar."""
     wheel = wheel_uret()
     if wheel is None:
-        return 1
-    shutil.copy2(wheel, CIKTI / wheel.name)
+        return None
+    shutil.copy2(wheel, paket / wheel.name)
 
-    wheel_adedi = bagimlilik_wheel_indir(CIKTI / "tekerlekler") if args.wheels else 0
-    if not args.wheels:
+    wheel_adedi = bagimlilik_wheel_indir(paket / "tekerlekler") if wheels else 0
+    if not wheels:
         print("\n[2/4] Bagimlilik wheel'leri ATLANDI (--wheels ile indirilir)")
         print(f"      Etkilenen feature aileleri: {', '.join(EKSIK_PAKETLER)}")
 
-    kopyalanan, eksik = veri_kopyala(CIKTI)
+    kopyalanan, eksik = veri_kopyala(paket)
 
     print("\n[4/4] Metadata ve bootstrap")
     kullanici = kaggle_kullanici()
     if kullanici is None:
         print("  ~/.kaggle/kaggle.json okunamadi -- metadata KULLANICI_ADI ile yazildi.")
         kullanici = "KULLANICI_ADI"
-    metadata_yaz(CIKTI, kullanici)
+    metadata_yaz(paket, kullanici)
     print(f"  + dataset-metadata.json  (id: {kullanici}/{DATASET_SLUG})")
 
-    bootstrap_yolu = CIKTI / "notebook_bootstrap.py"
+    dependency_wheels = sorted((paket / "tekerlekler").glob("*.whl"))
+    offline_manifest_yaz(paket / wheel.name, dependency_wheels, paket / "wheel-manifest.json")
+    shutil.copy2(SOURCE_MANIFEST, paket / "sources.yml")
+    print("  + wheel-manifest.json  (tam surum + SHA256)")
+    print("  + sources.yml          (kaynak/lisans/provenance)")
+
+    bootstrap_yolu = paket / "notebook_bootstrap.py"
     bootstrap_yolu.write_text(
         BOOTSTRAP.format(slug=DATASET_SLUG, kaggle_da_mevcut=list(KAGGLE_DA_MEVCUT)),
         encoding="utf-8",
     )
     print(f"  + {bootstrap_yolu.name}")
+    return wheel, wheel_adedi, kopyalanan, eksik
+
+
+def main() -> int:
+    ayristirici = argparse.ArgumentParser(description=__doc__)
+    ayristirici.add_argument(
+        "--wheels", action="store_true", help="Kaggle'da olmayan paketlerin wheel'lerini de indir"
+    )
+    ayristirici.add_argument(
+        "--upload", action="store_true", help="Hazirlandiktan sonra Kaggle'a yukle"
+    )
+    args = ayristirici.parse_args()
+
+    print("=" * 68)
+    print("KAGGLE INTERNETSIZ PAKET HAZIRLIGI")
+    print("=" * 68)
+
+    with tempfile.TemporaryDirectory(prefix=f".{CIKTI.name}.staging-", dir=ROOT) as staging:
+        hazirlanan = _staging_paketi_hazirla(Path(staging), wheels=args.wheels)
+        if hazirlanan is None:
+            return 1
+        wheel, wheel_adedi, kopyalanan, eksik = hazirlanan
+        atomik_dizin_yayinla(Path(staging), CIKTI)
 
     toplam_mb = sum(p.stat().st_size for p in CIKTI.rglob("*") if p.is_file()) / 1024 / 1024
 
@@ -311,6 +495,13 @@ def main() -> int:
     print("=" * 68)
 
     if args.upload:
+        if eksik:
+            raise SupplyChainError(f"yayin kapisi: eksik veri artifactleri: {eksik}")
+        if wheel_adedi != len(_wheel_specs()):
+            raise SupplyChainError(
+                "yayin kapisi: tum dogrulanmis dependency wheel'leri --wheels ile paketlenmeli"
+            )
+        yayin_kapisini_dogrula()
         print("\nKaggle'a yukleniyor...")
         sonuc = _kos(
             ["kaggle", "datasets", "create", "-p", str(CIKTI), "--dir-mode", "zip"],
@@ -319,11 +510,26 @@ def main() -> int:
         if sonuc.returncode == 0:
             print("  OK. Notebook'ta 'Add Input' ile bagla.")
         else:
-            print("  Dataset zaten varsa guncelle:")
-            print(f"    kaggle datasets version -p {CIKTI} -m 'guncelleme' --dir-mode zip")
+            print("  Dataset olusturulamadi; ayni dogrulanmis paket surumleniyor...")
+            guncelleme = _kos(
+                [
+                    "kaggle",
+                    "datasets",
+                    "version",
+                    "-p",
+                    str(CIKTI),
+                    "-m",
+                    "dogrulanmis guncelleme",
+                    "--dir-mode",
+                    "zip",
+                ],
+                aciklama="dataset guncelleme",
+            )
+            if guncelleme.returncode != 0:
+                print("  HATA: Kaggle create ve version islemleri basarisiz.")
+                return 1
     else:
-        print("\nYUKLEME (hazir oldugunda):")
-        print(f"  kaggle datasets create -p {CIKTI} --dir-mode zip")
+        print("\nYUKLEME: Tum yayin kapilari icin betigi --wheels --upload ile yeniden calistir.")
         print("\nSonra notebook'un ilk hucresine notebook_bootstrap.py icerigini yapistir.")
 
     return 0

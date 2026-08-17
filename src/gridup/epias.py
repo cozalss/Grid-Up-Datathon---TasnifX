@@ -37,6 +37,7 @@ Kod icine gomulmez, log'a yazilmaz, hata mesajinda gorunmez. ``.env`` dosyasi
 
 from __future__ import annotations
 
+import hashlib
 import os
 import time
 from dataclasses import dataclass, field
@@ -72,7 +73,18 @@ class EpiasAuthError(RuntimeError):
 
 
 class EpiasRequestError(RuntimeError):
-    """Istek basarisiz. Mesaj yanit govdesinin bir kismini icerebilir."""
+    """Istek basarisiz; mesaj uzak yanit govdesini asla ifsa etmez."""
+
+
+def _remote_response_summary(response: requests.Response) -> str:
+    """Uzak govdeyi ifsa etmeden hata korelasyonu icin ozetler.
+
+    API yanitlari kimlik, operasyon veya altyapi ayrintisi tasiyabilir. Hata
+    metnine govde kopyalamak yerine bayt sayisi ve SHA256 parmak izi yazilir.
+    """
+    body = response.text.encode("utf-8", errors="replace")
+    digest = hashlib.sha256(body).hexdigest()
+    return f"govde=<redacted bytes={len(body)} sha256={digest}>"
 
 
 def load_env_file(path: str | Path = ".env") -> dict[str, str]:
@@ -167,9 +179,7 @@ class EpiasClient:
         errors: list[str] = []
         for url in (TGT_URL, TGT_URL_FALLBACK):
             try:
-                response = requests.post(
-                    url, data=payload, headers=headers, timeout=self.timeout
-                )
+                response = requests.post(url, data=payload, headers=headers, timeout=self.timeout)
             except requests.RequestException as error:
                 errors.append(f"{url}: baglanti hatasi ({type(error).__name__})")
                 continue
@@ -181,14 +191,14 @@ class EpiasClient:
                 errors.append(f"{url}: {response.status_code} ama bos govde")
                 continue
 
-            # Yanit govdesini KISALTARAK ekle; sifre zaten govdede degil ama
-            # yine de uzun HTML dokumu log'u kirletmesin.
-            snippet = response.text[:200].replace("\n", " ")
-            errors.append(f"{url}: HTTP {response.status_code} -- {snippet}")
+            errors.append(
+                f"{url}: HTTP {response.status_code} -- {_remote_response_summary(response)}"
+            )
 
         raise EpiasAuthError(
-            "TGT alinamadi. Denenen adresler:\n  " + "\n  ".join(errors) +
-            "\n\nKontrol: kullanici adi e-posta adresin mi? Hesap aktivasyonu "
+            "TGT alinamadi. Denenen adresler:\n  "
+            + "\n  ".join(errors)
+            + "\n\nKontrol: kullanici adi e-posta adresin mi? Hesap aktivasyonu "
             "tamamlandi mi? Sifrede kopyalama sirasinda bosluk kalmis olabilir mi?"
         )
 
@@ -223,32 +233,36 @@ class EpiasClient:
             "Accept": "application/json",
         }
 
-        try:
-            response = requests.post(
-                url, json=body or {}, headers=headers, timeout=self.timeout
-            )
-        except requests.RequestException as error:
-            raise EpiasRequestError(f"{url}: baglanti hatasi -- {error}") from error
+        for attempt in range(2):
+            try:
+                response = requests.post(
+                    url, json=body or {}, headers=headers, timeout=self.timeout
+                )
+            except requests.RequestException as error:
+                # Exception metni proxy URL'leri, header'lari veya uzak govdeyi
+                # tasiyabilir. Tipi teshis icin yeterli; ham metin loglanmaz.
+                raise EpiasRequestError(
+                    f"{url}: baglanti hatasi ({type(error).__name__})"
+                ) from error
 
-        if response.status_code == 401:
-            # TGT suresi dolmus olabilir; bir kez yenileyip tekrar dene.
+            if response.status_code != 401 or attempt == 1:
+                break
+
+            # TGT suresi dolmus olabilir; bir kez yenileyip tekrar dene. Ikinci
+            # cagri da ilk cagriyla AYNI requests hata sozlesmesinin icindedir.
             self._tgt = None
             headers["TGT"] = self.tgt
-            response = requests.post(
-                url, json=body or {}, headers=headers, timeout=self.timeout
-            )
 
         if not response.ok:
-            snippet = response.text[:400].replace("\n", " ")
             raise EpiasRequestError(
-                f"{url}: HTTP {response.status_code} -- {snippet}"
+                f"{url}: HTTP {response.status_code} -- {_remote_response_summary(response)}"
             )
 
         try:
             return response.json()
         except ValueError as error:
             raise EpiasRequestError(
-                f"{url}: yanit JSON degil -- {response.text[:200]}"
+                f"{url}: yanit JSON degil -- {_remote_response_summary(response)}"
             ) from error
 
     @staticmethod
@@ -288,9 +302,7 @@ class EpiasClient:
         GDZ ve ADM'nin ``id`` degerlerini buradan al -- kesinti sorgularinda
         filtre olarak gerekiyor.
         """
-        return self.to_frame(
-            self.post("consumption/data/get-distribution-companies")
-        )
+        return self.to_frame(self.post("consumption/data/get-distribution-companies"))
 
     def distribution_regions(self) -> pd.DataFrame:
         """Dagitim bolgeleri (il listesi).
@@ -299,7 +311,6 @@ class EpiasClient:
         anahtarini buna gore kur.
         """
         return self.to_frame(self.post("consumption/data/distribution-region"))
-
 
     def realtime_consumption(self, *, start: str, end: str) -> pd.DataFrame:
         """Turkiye geneli SAATLIK gerceklesen tuketim.
@@ -417,8 +428,7 @@ class EpiasClient:
                 errors.append(f"period={candidate!r}: {error}")
 
         raise EpiasRequestError(
-            "Plansiz kesinti sorgusu hicbir donem biciminde calismadi:\n  "
-            + "\n  ".join(errors)
+            "Plansiz kesinti sorgusu hicbir donem biciminde calismadi:\n  " + "\n  ".join(errors)
         )
 
 
@@ -442,4 +452,9 @@ def _period_variants(period: str) -> list[str]:
 
     # Tekrarlari koru-sirali sekilde temizle
     seen: set[str] = set()
-    return [item for item in variants if not (item in seen or seen.add(item))]
+    unique: list[str] = []
+    for item in variants:
+        if item not in seen:
+            seen.add(item)
+            unique.append(item)
+    return unique

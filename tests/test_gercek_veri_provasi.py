@@ -96,19 +96,24 @@ def test_saat_damgali_olay_kaydi_gunluk_panele_kutle_kaybetmeden_oturuyor():
             # Gunlerin ucte ikisinde kayit yok (seyrek), olan gunlerde saat damgasi
             if gun.day % 3 == 0:
                 continue
-            kayitlar.append({
-                "ilce_key": ilce,
-                "gun": gun + pd.Timedelta(hours=gun.day % 24),
-                "kesinti_dk": float(gun.day * 7),
-            })
+            kayitlar.append(
+                {
+                    "ilce_key": ilce,
+                    "gun": gun + pd.Timedelta(hours=gun.day % 24),
+                    "kesinti_dk": float(gun.day * 7),
+                }
+            )
     olaylar = pd.DataFrame(kayitlar)
 
     kapsam = panel_coverage(olaylar, entity_columns=["ilce_key"], time_column="gun")
     assert kapsam["coverage"] <= 1.0
 
     panel = build_panel(
-        olaylar, entity_columns=["ilce_key"], time_column="gun",
-        value_columns=["kesinti_dk"], verbose=False,
+        olaylar,
+        entity_columns=["ilce_key"],
+        time_column="gun",
+        value_columns=["kesinti_dk"],
+        verbose=False,
     )
     # Izgara ILK kayittan SON kayda uzanir; son gun (30) atlandigi icin
     # 1..29 = 29 gun x 3 ilce.

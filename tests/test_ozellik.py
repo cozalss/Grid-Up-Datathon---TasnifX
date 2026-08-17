@@ -212,7 +212,8 @@ def test_mae_optimal_kuantil_gecerli_aralikta(olasiliklar: list[float]):
 @given(
     st.lists(
         st.floats(min_value=-1e12, max_value=1e12, allow_nan=False, allow_infinity=False),
-        min_size=1, max_size=60,
+        min_size=1,
+        max_size=60,
     )
 )
 def test_downcast_degeri_bagil_olarak_koruyor(degerler: list[float]):
@@ -259,8 +260,11 @@ def test_foldlar_asla_cakismaz(n_gun, n_varlik, n_splits, ambargo_gun, pencere_g
 
     try:
         folds = purged_time_series_split(
-            zaman, embargo=pd.Timedelta(days=ambargo_gun), n_splits=n_splits,
-            test_span=pd.Timedelta(days=pencere_gun), verbose=False,
+            zaman,
+            embargo=pd.Timedelta(days=ambargo_gun),
+            n_splits=n_splits,
+            test_span=pd.Timedelta(days=pencere_gun),
+            verbose=False,
         )
     except ValueError:
         # Ambargo/pencere veri araligina sigmiyor -- ACIK hata, kabul.
@@ -287,8 +291,11 @@ def test_ambargo_her_zaman_korunuyor(n_gun, n_varlik, n_splits, ambargo_gun, pen
 
     try:
         folds = purged_time_series_split(
-            zaman, embargo=ambargo, n_splits=n_splits,
-            test_span=pd.Timedelta(days=pencere_gun), verbose=False,
+            zaman,
+            embargo=ambargo,
+            n_splits=n_splits,
+            test_span=pd.Timedelta(days=pencere_gun),
+            verbose=False,
         )
     except ValueError:
         return
@@ -312,8 +319,11 @@ def test_foldlar_gecmisten_gelecege_egitiliyor(n_gun, n_varlik, pencere_gun):
 
     try:
         folds = purged_time_series_split(
-            zaman, embargo=pd.Timedelta(days=1), n_splits=2,
-            test_span=pd.Timedelta(days=pencere_gun), verbose=False,
+            zaman,
+            embargo=pd.Timedelta(days=1),
+            n_splits=2,
+            test_span=pd.Timedelta(days=pencere_gun),
+            verbose=False,
         )
     except ValueError:
         return
@@ -339,7 +349,9 @@ def panel(draw):
     yerler = draw(
         st.lists(
             st.sampled_from(["zeytinburnu", "aliaga", "menemen", "bornova", "efeler"]),
-            min_size=1, max_size=5, unique=True,
+            min_size=1,
+            max_size=5,
+            unique=True,
         )
     )
     baslangic = draw(st.sampled_from(["2024-01-01", "2025-06-15", "2026-02-01"]))
@@ -348,7 +360,8 @@ def panel(draw):
     degerler = draw(
         st.lists(
             st.floats(min_value=-1e4, max_value=1e4, allow_nan=False, allow_infinity=False),
-            min_size=n_gun * len(yerler), max_size=n_gun * len(yerler),
+            min_size=n_gun * len(yerler),
+            max_size=n_gun * len(yerler),
         )
     )
     frame = pd.DataFrame(
@@ -380,7 +393,7 @@ def test_takvim_feature_girdiyi_degistirmiyor(frame: pd.DataFrame):
 def test_lag_satir_sayisini_ve_sirasini_koruyor(frame: pd.DataFrame):
     """OZELLIK: lag ekleme satir SAYISINI ve SIRASINI korur."""
     cikti = add_lag_features(
-        frame, "hedef", [1], time_column="tarih", horizon=1, group_columns=["yer"]
+        frame, "hedef", shifts=[1], time_column="tarih", horizon=1, group_columns=["yer"]
     )
     assert len(cikti) == len(frame)
     assert list(cikti["yer"]) == list(frame["yer"])

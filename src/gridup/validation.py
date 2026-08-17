@@ -112,8 +112,7 @@ def assert_folds_align(n_rows: int, folds: Sequence[tuple[np.ndarray, np.ndarray
     """
     if not folds:
         raise ValueError(
-            "Fold listesi bos. validation.build_splitter veya "
-            "purged_time_series_split ile uret."
+            "Fold listesi bos. validation.build_splitter veya purged_time_series_split ile uret."
         )
 
     for index, (train_idx, valid_idx) in enumerate(folds, start=1):
@@ -254,9 +253,7 @@ def parse_time_series(times: pd.Series, *, strict: bool = True) -> pd.Series:
                 "yani yanlis secim SESSIZ kalir. Kolonu once kendin cevir:\n"
                 "    df['TARIH'] = pd.to_datetime(df['TARIH'], dayfirst=True)"
             )
-        parsed = pd.to_datetime(
-            times, errors="coerce", format="mixed", dayfirst=(sira == "gun")
-        )
+        parsed = pd.to_datetime(times, errors="coerce", format="mixed", dayfirst=(sira == "gun"))
 
     if parsed.isna().all():
         raise ValueError("Zaman kolonu ayristirilamadi -- kronolojik bolme yapilamaz.")
@@ -275,9 +272,7 @@ def parse_time_series(times: pd.Series, *, strict: bool = True) -> pd.Series:
 def _detect_time_columns(frame: pd.DataFrame) -> list[str]:
     """Datetime kolonlarini bulur; metin olarak saklanmis tarihleri de dener."""
     found = [
-        column
-        for column in frame.columns
-        if pd.api.types.is_datetime64_any_dtype(frame[column])
+        column for column in frame.columns if pd.api.types.is_datetime64_any_dtype(frame[column])
     ]
     if found:
         return found
@@ -412,8 +407,9 @@ def suggest_scheme(
                 dislanan.extend(f"{c} (test'te yok)" for c in yok)
         if dislanan:
             warnings.append(
-                "Grup adayligindan cikarilanlar: " + ", ".join(dislanan) +
-                ". Grup kolonu tahmin aninda VAR OLMALIDIR."
+                "Grup adayligindan cikarilanlar: "
+                + ", ".join(dislanan)
+                + ". Grup kolonu tahmin aninda VAR OLMALIDIR."
             )
 
     time_column = time_columns[0] if time_columns else None
@@ -473,9 +469,7 @@ def suggest_scheme(
     return SchemeSuggestion(scheme, reason, None, None, stratify, tuple(warnings))
 
 
-def build_splitter(
-    scheme: str, *, n_splits: int = 5, seed: int = 42, **kwargs: Any
-) -> Any:
+def build_splitter(scheme: str, *, n_splits: int = 5, seed: int = 42, **kwargs: Any) -> Any:
     """Sema adindan sklearn bolucusu uretir."""
     builders = {
         "KFold": lambda: KFold(n_splits=n_splits, shuffle=True, random_state=seed),
@@ -524,9 +518,7 @@ def _fixed_span_windows(
         start = int(np.searchsorted(sorted_times, lower, side="right"))
         end = int(np.searchsorted(sorted_times, upper, side="right"))
         if start >= end:
-            skipped.append(
-                f"fold {fold + 1}: {test_span} uzunlugunda pencerede hic satir yok"
-            )
+            skipped.append(f"fold {fold + 1}: {test_span} uzunlugunda pencerede hic satir yok")
             continue
         windows.append((start, end))
 
@@ -663,18 +655,14 @@ def purged_time_series_split(
         valid_idx = order[valid_start:valid_end]
 
         if len(train_idx) == 0:
-            skipped.append(
-                f"fold {fold + 1}: ambargo ({embargo}) train tarafini tamamen bosaltti"
-            )
+            skipped.append(f"fold {fold + 1}: ambargo ({embargo}) train tarafini tamamen bosaltti")
             continue
         folds.append((train_idx, valid_idx))
 
     # Dusen fold'lari SESSIZ birakmayiz: "5 istedim, 3 aldim" farki, skorlarin
     # neden beklenenden gurultulu oldugunu acikladigi halde gorunmez kalir.
     if verbose and len(folds) != n_splits:
-        print(
-            f"[purged_time_series_split] {n_splits} fold istendi, {len(folds)} uretildi."
-        )
+        print(f"[purged_time_series_split] {n_splits} fold istendi, {len(folds)} uretildi.")
         for reason in skipped:
             print(f"  atlandi -- {reason}")
 
@@ -733,8 +721,7 @@ def adversarial_validation(
     notlar: list[str] = []
     if dusen:
         notlar.append(
-            f"Istenen {len(dusen)} kolon train+test'te ortak degil, kullanilmadi: "
-            f"{dusen[:10]}"
+            f"Istenen {len(dusen)} kolon train+test'te ortak degil, kullanilmadi: {dusen[:10]}"
         )
 
     combined = pd.concat(
@@ -754,9 +741,7 @@ def adversarial_validation(
     for column in zaman_kolonlari:
         combined[column] = combined[column].astype("int64")
     if zaman_kolonlari:
-        notlar.append(
-            f"Datetime kolonlari epoch'a cevrildi: {zaman_kolonlari[:10]}"
-        )
+        notlar.append(f"Datetime kolonlari epoch'a cevrildi: {zaman_kolonlari[:10]}")
 
     # Surumden bagimsiz kategorik tespiti: pandas 3.0'da metin 'str' dtype'indadir
     # ve is_object_dtype onu GORMEZ -- bkz. compat.is_categorical_like.
@@ -769,8 +754,11 @@ def adversarial_validation(
 
     for train_idx, valid_idx in splitter.split(combined, labels):
         model = lgb.LGBMClassifier(
-            n_estimators=200, learning_rate=0.1, num_leaves=31,
-            random_state=seed, verbose=-1,
+            n_estimators=200,
+            learning_rate=0.1,
+            num_leaves=31,
+            random_state=seed,
+            verbose=-1,
             # 'split' (varsayilan) kac kez BOLUNDUGUNU sayar, ne kadar
             # AYIRDIGINI degil. Olculdu: gercek ayirici kolonun split onemi
             # 896.7, gurultununki 413.0 (2.2 kat); gain'de 4008.7'ye 8.1
@@ -782,9 +770,7 @@ def adversarial_validation(
         importances += model.feature_importances_ / n_splits
 
     auc = float(roc_auc_score(labels, oof))
-    ranked = sorted(
-        zip(columns, importances, strict=True), key=lambda pair: pair[1], reverse=True
-    )
+    ranked = sorted(zip(columns, importances, strict=True), key=lambda pair: pair[1], reverse=True)
 
     # Agirliklarin KAC satiri gercekten tasidigini olc (Kish etkin ornek
     # buyuklugu). AUC 1.0'a yakinken model train satirlarinin neredeyse
@@ -800,8 +786,7 @@ def adversarial_validation(
         verdict = "Dagilimlar benzer. Rastgele CV guvenli."
     elif auc < 0.8:
         verdict = (
-            "Orta duzey kayma. Ilk siradaki feature'lari incele; "
-            "ambargo/zaman bazli CV dusun."
+            "Orta duzey kayma. Ilk siradaki feature'lari incele; ambargo/zaman bazli CV dusun."
         )
     elif ess_orani < 0.05:
         verdict = (
@@ -1037,9 +1022,7 @@ def check_train_test_overlap(
     zorunludur. Her ikisi de bilmen gereken seydir.
     """
     columns = [
-        column
-        for column in key_columns
-        if column in train.columns and column in test.columns
+        column for column in key_columns if column in train.columns and column in test.columns
     ]
     if not columns:
         return {"overlap": 0, "note": "Ortak anahtar kolonu yok."}

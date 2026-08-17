@@ -66,11 +66,11 @@ def rmsle(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     SESSIZ DEGIL -- cok sayida negatif tahmin varsa modelin yanlis olcekte
     calistiginin isaretidir.
     """
-    y_pred_clipped = np.clip(y_pred, 0, None)
-    y_true_clipped = np.clip(y_true, 0, None)
-    return float(
-        np.sqrt(np.mean((np.log1p(y_pred_clipped) - np.log1p(y_true_clipped)) ** 2))
-    )
+    y_true_values = np.asarray(y_true, dtype="float64")
+    if np.any(y_true_values < 0):
+        raise ValueError("RMSLE negatif gercek hedeflerde tanimsizdir; hedef olcegini kontrol et.")
+    y_pred_clipped = np.clip(np.asarray(y_pred, dtype="float64"), 0, None)
+    return float(np.sqrt(np.mean((np.log1p(y_pred_clipped) - np.log1p(y_true_values)) ** 2)))
 
 
 #: MAPE'de disarida birakilan sifir satirlarinin orani bunu asarsa uyaririz.
@@ -128,8 +128,17 @@ def smape(y_true: np.ndarray, y_pred: np.ndarray, *, epsilon: float = 1e-9) -> f
     y_true = np.asarray(y_true, dtype="float64")
     y_pred = np.asarray(y_pred, dtype="float64")
     denominator = (np.abs(y_true) + np.abs(y_pred)) / 2
-    denominator = np.where(denominator < epsilon, np.nan, denominator)
-    return float(np.nanmean(np.abs(y_true - y_pred) / denominator) * 100)
+    # sMAPE'nin standart sinir degeri: gercek=tahmin=0 satirinin hatasi 0'dir.
+    # NaN'e cevirip nanmean kullanmak bu satirlari paydadan cikardigi gibi tum
+    # satirlar 0/0 oldugunda RuntimeWarning + NaN uretiyordu.
+    terms = np.zeros_like(denominator, dtype="float64")
+    np.divide(
+        np.abs(y_true - y_pred),
+        denominator,
+        out=terms,
+        where=denominator >= epsilon,
+    )
+    return float(np.mean(terms) * 100)
 
 
 METRIC_REGISTRY: dict[str, dict[str, object]] = {
@@ -395,9 +404,7 @@ def tune_final_multiplier(
     y_true = np.asarray(y_true, dtype="float64").ravel()
     y_pred = np.asarray(y_pred, dtype="float64").ravel()
     if len(y_true) != len(y_pred):
-        raise ValueError(
-            f"y_true ({len(y_true)}) ve y_pred ({len(y_pred)}) uzunluklari farkli."
-        )
+        raise ValueError(f"y_true ({len(y_true)}) ve y_pred ({len(y_pred)}) uzunluklari farkli.")
     if covered is not None:
         maske = np.asarray(covered, dtype=bool).ravel()
         if len(maske) != len(y_true):
@@ -413,9 +420,7 @@ def tune_final_multiplier(
     carpanlar = np.unique(np.round(np.concatenate([kaynak.ravel(), [1.0]]), 6))
 
     metric_fn, greater_is_better, _ = get_metric(metric)
-    skorlar = np.array(
-        [float(metric_fn(y_true, carpan * y_pred)) for carpan in carpanlar]
-    )
+    skorlar = np.array([float(metric_fn(y_true, carpan * y_pred)) for carpan in carpanlar])
     tablo = pd.DataFrame({"carpan": carpanlar, "skor": skorlar})
 
     best_index = int(np.argmax(skorlar) if greater_is_better else np.argmin(skorlar))
@@ -479,9 +484,7 @@ def soften_outliers(
     else:
         etiketler = np.asarray(groups).ravel()
         if len(etiketler) != len(values):
-            raise ValueError(
-                f"groups ({len(etiketler)}) ve y ({len(values)}) uzunluklari farkli."
-            )
+            raise ValueError(f"groups ({len(etiketler)}) ve y ({len(values)}) uzunluklari farkli.")
         kodlar, _ = pd.factorize(etiketler, use_na_sentinel=False)
         tavanlar = np.empty_like(values)
         for kod in np.unique(kodlar):

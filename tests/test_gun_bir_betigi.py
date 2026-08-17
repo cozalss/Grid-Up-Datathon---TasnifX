@@ -31,12 +31,24 @@ from gridup.validation import parse_time_series, purged_time_series_split  # noq
 
 def _betigi_yukle():
     """``scripts/day_one.py``yi modul olarak yukler (paket disinda duruyor)."""
-    spec = importlib.util.spec_from_file_location(
-        "gun_bir_betigi", KOK / "scripts" / "day_one.py"
-    )
+    spec = importlib.util.spec_from_file_location("gun_bir_betigi", KOK / "scripts" / "day_one.py")
     modul = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(modul)
     return modul
+
+
+def test_explicit_task_is_never_overwritten_by_profile_inference():
+    report_summary = {"gorev_tahmini": "regression"}
+
+    assert GUN1.resolve_task("binary", report_summary) == "binary"
+    assert GUN1.resolve_task(None, report_summary) == "regression"
+
+
+def test_official_metric_is_required_fail_closed():
+    with pytest.raises(ValueError, match="resmi metrik"):
+        GUN1.require_official_metric(None)
+
+    assert GUN1.require_official_metric("MAE") == "mae"
 
 
 GUN1 = _betigi_yukle()
@@ -69,9 +81,7 @@ def test_latest_train_dosyasi_test_olarak_secilmiyor(tmp_path):
     kelime = "latest"
     assert "test" in kelime, "bulgunun dayanagi: alt dizgi gercekten esliyor"
 
-    dizin = _dizin_kur(
-        tmp_path / "s2", ["latest_train.csv", "test.csv", "sample_submission.csv"]
-    )
+    dizin = _dizin_kur(tmp_path / "s2", ["latest_train.csv", "test.csv", "sample_submission.csv"])
     bulunan = _adlar(dizin)
 
     assert bulunan["train"] == "latest_train.csv"
@@ -156,9 +166,7 @@ def test_ikinci_test_adayi_sessizce_atilmiyor(tmp_path, capsys):
       ONCE : test=test_features.csv, test_labels.csv SESSIZCE yok sayildi
       SONRA: ayni secim + "yok sayilanlar: test_labels.csv" satiri basiliyor
     """
-    dizin = _dizin_kur(
-        tmp_path / "s6", ["train.csv", "test_features.csv", "test_labels.csv"]
-    )
+    dizin = _dizin_kur(tmp_path / "s6", ["train.csv", "test_features.csv", "test_labels.csv"])
     bulunan = _adlar(dizin)
     cikti = capsys.readouterr().out
 
@@ -236,9 +244,7 @@ def test_baseline_yalnizca_kapsanan_satirlarda_olculuyor():
     kapsam[600:] = True  # yalnizca sifirlarin oldugu blok kapsanmis
 
     sonuc = _sahte_sonuc(np.zeros(len(y)), kapsam, skor=0.5)
-    baseline = GUN1.baseline_karsilastir(
-        y, sonuc, metric="mae", zero_share=0.4, log_uzayinda=False
-    )
+    baseline = GUN1.baseline_karsilastir(y, sonuc, metric="mae", zero_share=0.4, log_uzayinda=False)
 
     assert baseline == pytest.approx(0.0), "kapsanan satirlarin hepsi sifir"
     assert float(np.mean(np.abs(y))) == pytest.approx(6.0), "tum veride 6.0 olurdu"
@@ -255,9 +261,7 @@ def test_ham_uzayda_kosuda_baseline_ham_kalir_ve_gecen_model_gecti_der(capsys):
     kapsam = np.ones(len(y), dtype=bool)
 
     sonuc = _sahte_sonuc(np.zeros(len(y)), kapsam, skor=1.0)
-    baseline = GUN1.baseline_karsilastir(
-        y, sonuc, metric="mae", zero_share=0.5, log_uzayinda=False
-    )
+    baseline = GUN1.baseline_karsilastir(y, sonuc, metric="mae", zero_share=0.5, log_uzayinda=False)
     cikti = capsys.readouterr().out
 
     assert baseline == pytest.approx(4.0)
@@ -286,9 +290,7 @@ def test_buyuk_daha_iyi_metrikte_karsilastirma_yonu_ters_cevriliyor(capsys):
     kapsam = np.ones(len(y), dtype=bool)
 
     sonuc = _sahte_sonuc(np.zeros(len(y)), kapsam, skor=0.75)
-    baseline = GUN1.baseline_karsilastir(
-        y, sonuc, metric="r2", zero_share=0.5, log_uzayinda=False
-    )
+    baseline = GUN1.baseline_karsilastir(y, sonuc, metric="r2", zero_share=0.5, log_uzayinda=False)
     cikti = capsys.readouterr().out
 
     assert baseline < 0.75, "hep-sifir tahmininin r2'si modelinkinden dusuk"
@@ -309,13 +311,15 @@ def _kucuk_veri(dizin: Path, *, sizintili: bool) -> Path:
     satirlar = []
     for sira, gun in enumerate(gunler):
         for ilce in ilceler:
-            satirlar.append({
-                "ID": f"R{len(satirlar):05d}",
-                "TARIH": f"{gun.day:02d}.{gun.month:02d}.{gun.year} 08:{sira % 60:02d}",
-                "ILCE": ilce,
-                "SICAKLIK": float(rng.normal(18.0, 5.0)),
-                "HEDEF": float(rng.gamma(2.0, 20.0)),
-            })
+            satirlar.append(
+                {
+                    "ID": f"R{len(satirlar):05d}",
+                    "TARIH": f"{gun.day:02d}.{gun.month:02d}.{gun.year} 08:{sira % 60:02d}",
+                    "ILCE": ilce,
+                    "SICAKLIK": float(rng.normal(18.0, 5.0)),
+                    "HEDEF": float(rng.gamma(2.0, 20.0)),
+                }
+            )
     frame = pd.DataFrame(satirlar)
     egitim = frame.iloc[: len(frame) - 40].copy()
     deneme = frame.iloc[len(frame) - 40 :].copy()
@@ -329,13 +333,32 @@ def _kucuk_veri(dizin: Path, *, sizintili: bool) -> Path:
 
 def _betigi_kos(dizin: Path, ek: list[str]) -> subprocess.CompletedProcess:
     komut = [
-        sys.executable, str(KOK / "scripts" / "day_one.py"),
-        "--data", str(dizin), "--target", "HEDEF", "--id", "ID",
-        "--time", "TARIH", "--group", "ILCE", "--metric", "mae", "--yes", *ek,
+        sys.executable,
+        str(KOK / "scripts" / "day_one.py"),
+        "--data",
+        str(dizin),
+        "--target",
+        "HEDEF",
+        "--id",
+        "ID",
+        "--time",
+        "TARIH",
+        "--group",
+        "ILCE",
+        "--metric",
+        "mae",
+        "--yes",
+        *ek,
     ]
     return subprocess.run(
-        komut, capture_output=True, text=True, encoding="utf-8",
-        errors="replace", cwd=str(KOK), timeout=600, check=False,
+        komut,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(KOK),
+        timeout=600,
+        check=False,
     )
 
 
@@ -405,11 +428,13 @@ def test_metin_tarih_kolonu_profil_tarafindan_goruluyor():
     boluyor -- sessiz bir ZAMAN SIZINTISI.
     """
     gunler = pd.date_range("2025-01-01", periods=120, freq="D")
-    frame = pd.DataFrame({
-        "tarih": [f"{g.day:02d}.{g.month:02d}.{g.year} 08:30" for g in gunler],
-        "ilce": ["ILCE_01", "ILCE_02"] * 60,
-        "hedef": np.linspace(1.0, 50.0, 120),
-    })
+    frame = pd.DataFrame(
+        {
+            "tarih": [f"{g.day:02d}.{g.month:02d}.{g.year} 08:30" for g in gunler],
+            "ilce": ["ILCE_01", "ILCE_02"] * 60,
+            "hedef": np.linspace(1.0, 50.0, 120),
+        }
+    )
 
     rapor = profile(frame, target="hedef")
 

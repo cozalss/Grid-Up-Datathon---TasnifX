@@ -10,13 +10,34 @@ Kaggle'in "Submission Scoring Error" mesaji sana hicbir sey soylemez.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from .io_utils import atomic_write_bytes
+
 __all__ = ["SubmissionCheck", "validate_submission", "write_submission", "blend_submissions"]
+
+_MISSING_ID = ("__gridup_missing_id__",)
+
+
+def _id_key(value: object) -> object:
+    """NaN/NA kimliklerini de cokluk ve sira karsilastirmasinda esit sayar."""
+    missing = pd.isna(value)
+    if isinstance(missing, (bool, np.bool_)) and missing:
+        return _MISSING_ID
+    try:
+        hash(value)
+    except TypeError:
+        return repr(value)
+    return value
+
+
+def _id_keys(values: pd.Series | np.ndarray) -> list[object]:
+    return [_id_key(value) for value in np.asarray(values, dtype=object).ravel()]
 
 
 @dataclass(frozen=True)
@@ -58,7 +79,8 @@ def validate_submission(
     Args:
         submission: Uretilen submission.
         sample: ``sample_submission.csv``. Verilirse kolon adlari, satir sayisi
-            ve ID kumesi ONA GORE kontrol edilir -- en guvenilir dogrulama budur.
+            ve ID sirasi/coklugu ONA GORE kontrol edilir -- en guvenilir
+            dogrulama budur.
         allow_negative: Negatif tahminlere izin ver. Kesinti suresi, tuketim,
             abone sayisi gibi fiziksel buyuklukler icin ``False`` birak.
 
@@ -72,28 +94,49 @@ def validate_submission(
         id_column = sample.columns[0]
         target_column = sample.columns[-1]
 
-        missing_columns = [column for column in sample.columns if column not in submission.columns]
+        sample_columns = list(sample.columns)
+        submission_columns = list(submission.columns)
+        missing_columns = [column for column in sample_columns if column not in submission_columns]
+        extra_columns = [column for column in submission_columns if column not in sample_columns]
         if missing_columns:
             errors.append(
-                f"Eksik kolon(lar): {missing_columns}. "
-                f"Beklenen kolonlar: {list(sample.columns)}"
+                f"Eksik kolon(lar): {missing_columns}. Beklenen kolonlar: {sample_columns}"
+            )
+        if extra_columns:
+            errors.append(
+                f"Fazladan kolon(lar): {extra_columns}. Beklenen kolonlar: {sample_columns}"
+            )
+        if not missing_columns and not extra_columns and submission_columns != sample_columns:
+            errors.append(
+                "Kolon sirasi sample submission ile birebir uyusmuyor: "
+                f"submission={submission_columns}, beklenen={sample_columns}."
             )
 
         if len(submission) != len(sample):
             errors.append(
-                f"Satir sayisi uyusmuyor: submission={len(submission)}, "
-                f"beklenen={len(sample)}"
+                f"Satir sayisi uyusmuyor: submission={len(submission)}, beklenen={len(sample)}"
             )
 
         if id_column in submission.columns and id_column in sample.columns:
-            submission_ids = set(submission[id_column])
-            sample_ids = set(sample[id_column])
-            missing_ids = sample_ids - submission_ids
-            extra_ids = submission_ids - sample_ids
-            if missing_ids:
-                errors.append(f"{len(missing_ids)} ID eksik. Ornek: {list(missing_ids)[:5]}")
-            if extra_ids:
-                errors.append(f"{len(extra_ids)} fazladan ID var. Ornek: {list(extra_ids)[:5]}")
+            submission_ids = _id_keys(submission[id_column])
+            sample_ids = _id_keys(sample[id_column])
+            submission_counts = Counter(submission_ids)
+            sample_counts = Counter(sample_ids)
+            missing_ids = sample_counts - submission_counts
+            extra_ids = submission_counts - sample_counts
+            if missing_ids or extra_ids:
+                missing_count = sum(missing_ids.values())
+                extra_count = sum(extra_ids.values())
+                errors.append(
+                    "ID cokluk uyusmazligi: "
+                    f"{missing_count} ID eksik (ornek: {list(missing_ids)[:5]}), "
+                    f"{extra_count} fazladan ID var (ornek: {list(extra_ids)[:5]})."
+                )
+            elif submission_ids != sample_ids:
+                errors.append(
+                    "ID sirasi sample submission ile birebir uyusmuyor. "
+                    "Tahmin-ID ciftlerini koruyarak acik align_to_sample=True kullan."
+                )
 
     if expected_rows is not None and len(submission) != expected_rows:
         errors.append(f"Satir sayisi {len(submission)}, beklenen {expected_rows}")
@@ -105,9 +148,7 @@ def validate_submission(
 
         nan_count = int(predictions.isna().sum())
         if nan_count:
-            errors.append(
-                f"{nan_count} NaN/sayisal olmayan tahmin var. Kaggle bunu reddeder."
-            )
+            errors.append(f"{nan_count} NaN/sayisal olmayan tahmin var. Kaggle bunu reddeder.")
 
         infinite_count = int(np.isinf(predictions.dropna()).sum())
         if infinite_count:
@@ -215,6 +256,44 @@ def _iki_kolon_sartini_dogrula(sample: pd.DataFrame | None) -> None:
     )
 
 
+def _sample_sirasina_hizala(
+    identifiers: np.ndarray,
+    predictions: np.ndarray,
+    sample: pd.DataFrame,
+    id_column: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Tahmin-ID ciftini bozmadan sample sirasina getirir.
+
+    Tekrarlanan ID'lerde hangi tahminin hangi ornek satirina ait oldugu ek bir
+    anahtar olmadan bilinemez. Bu durumda tahmin uydurmak yerine kapali hata
+    veririz.
+    """
+    if len(identifiers) != len(predictions):
+        raise ValueError(
+            f"ID ({len(identifiers)}) ve tahmin ({len(predictions)}) uzunluklari farkli."
+        )
+    sample_ids = np.asarray(sample[id_column]).ravel()
+    input_keys = _id_keys(identifiers)
+    sample_keys = _id_keys(sample_ids)
+    if len(set(input_keys)) != len(input_keys) or len(set(sample_keys)) != len(sample_keys):
+        raise ValueError(
+            "align_to_sample icin ID'ler benzersiz olmali; tekrar eden ID'ler "
+            "tahmin eslesmesini belirsiz yapar."
+        )
+    input_counts = Counter(input_keys)
+    sample_counts = Counter(sample_keys)
+    if input_counts != sample_counts:
+        missing = sample_counts - input_counts
+        extra = input_counts - sample_counts
+        raise ValueError(
+            "align_to_sample ID cokluk uyusmazligi: "
+            f"{sum(missing.values())} eksik, {sum(extra.values())} fazladan."
+        )
+    prediction_by_id = dict(zip(input_keys, predictions, strict=True))
+    aligned = np.asarray([prediction_by_id[key] for key in sample_keys], dtype="float64")
+    return sample_ids, aligned
+
+
 def write_submission(
     ids: np.ndarray | pd.Series,
     predictions: np.ndarray,
@@ -226,6 +305,7 @@ def write_submission(
     clip_negative: bool = True,
     float_format: str = "%.6f",
     validate: bool = True,
+    align_to_sample: bool = False,
     original_header: bool = True,
 ) -> Path:
     """Submission dosyasini dogrulayarak yazar ve yolunu dondurur.
@@ -236,7 +316,8 @@ def write_submission(
 
     Raises:
         ValueError: Ornek submission 2 kolondan genisse (``validate``
-            bayragindan bagimsiz) veya dogrulama basarisizsa.
+            bayragindan bagimsiz), guvenli hizalama mumkun degilse veya
+            dogrulama basarisizsa.
     """
     _iki_kolon_sartini_dogrula(sample)
 
@@ -250,6 +331,12 @@ def write_submission(
         target_column = sample.columns[-1]
 
     identifiers = np.asarray(ids).ravel()
+    if align_to_sample:
+        if sample is None:
+            raise ValueError("align_to_sample=True icin sample submission zorunlu.")
+        identifiers, raw_values = _sample_sirasina_hizala(
+            identifiers, raw_values, sample, id_column
+        )
 
     # DOGRULAMA KIRPMADAN ONCE yapilir. Once kirpip sonra dogrulamak,
     # "negatif tahmin var" uyarisini ASLA tetiklenemez hale getirir -- yani
@@ -288,12 +375,11 @@ def write_submission(
     if original_header:
         ham_id, ham_hedef = _orijinal_basliklar(sample, id_column, target_column)
         if (ham_id, ham_hedef) != (id_column, target_column):
-            submission = submission.rename(
-                columns={id_column: ham_id, target_column: ham_hedef}
-            )
+            submission = submission.rename(columns={id_column: ham_id, target_column: ham_hedef})
             print(f"  Baslik orijinale cevrildi: {ham_id!r}, {ham_hedef!r}")
 
-    submission.to_csv(path, index=False, float_format=float_format, encoding="utf-8")
+    csv_content = submission.to_csv(index=False, float_format=float_format).encode("utf-8")
+    atomic_write_bytes(path, csv_content)
     print(f"Yazildi: {path}  ({len(submission)} satir)")
     return path
 
@@ -347,15 +433,14 @@ def blend_submissions(
     else:
         raise ValueError(f"Bilinmeyen yontem '{method}'. 'mean' veya 'rank' kullan.")
 
-    blended = sum(
-        weight * column for weight, column in zip(normalized, columns, strict=True)
-    )
+    blended = sum(weight * column for weight, column in zip(normalized, columns, strict=True))
     result = pd.DataFrame({id_column: reference_ids, target_column: blended})
 
     if output_path:
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
-        result.to_csv(output, index=False, float_format="%.6f", encoding="utf-8")
+        csv_content = result.to_csv(index=False, float_format="%.6f").encode("utf-8")
+        atomic_write_bytes(output, csv_content)
         shown = [round(weight, 3) for weight in normalized]
         print(f"Harmanlandi -> {output}  ({method}, agirliklar={shown})")
 

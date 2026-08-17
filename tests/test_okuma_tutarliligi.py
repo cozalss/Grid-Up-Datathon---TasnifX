@@ -91,9 +91,7 @@ def test_ortak_bicim_karariyla_train_ve_test_ayni_dtype_veriyor(tmp_path):
 
     ortak_kolonlar = [kolon for kolon in test_frame.columns if kolon in train_frame.columns]
     uyusmayan = [
-        kolon
-        for kolon in ortak_kolonlar
-        if train_frame[kolon].dtype != test_frame[kolon].dtype
+        kolon for kolon in ortak_kolonlar if train_frame[kolon].dtype != test_frame[kolon].dtype
     ]
     assert uyusmayan == []
     assert train_frame["trafo_kodu"].dtype == test_frame["trafo_kodu"].dtype
@@ -111,9 +109,7 @@ def test_ortak_bicim_kanit_dagilimi_farkli_ciftte_de_tutuyor(tmp_path):
         "enlem;hedef\n" + "".join(f"38.4{i:03d};1,5\n" for i in range(40)),
         encoding="cp1254",
     )
-    test_yol.write_text(
-        "enlem\n" + "".join(f"38.4{i:03d}\n" for i in range(40)), encoding="cp1254"
-    )
+    test_yol.write_text("enlem\n" + "".join(f"38.4{i:03d}\n" for i in range(40)), encoding="cp1254")
 
     bagimsiz_train = read_table(train_yol, verbose=False)
     bagimsiz_test = read_table(test_yol, verbose=False)

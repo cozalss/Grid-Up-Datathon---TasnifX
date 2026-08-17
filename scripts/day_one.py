@@ -3,7 +3,7 @@
 21 Agustos'ta veri geldiginde calistirilacak ilk sey budur. Amac ilk saatte
 leaderboard'da bir skor gormek -- iyi bir skor degil, CALISAN bir hat.
 
-    python scripts/day_one.py --data data/raw --target HEDEF --id ID
+    python scripts/day_one.py --data data/raw --target HEDEF --id ID --metric MAE
 
 Betik yedi asamada ilerler ve her asamada DURUP ne bulduğunu soyler. Bir
 asama karar gerektiriyorsa (CV semasi, hedef tipi) onerisini yazar ve
@@ -30,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from gridup import (  # noqa: E402
     build_panel,
     cross_validate,
+    default_pipeline_recipe,
     environment_report,
     leakage_report,
     panel_coverage,
@@ -42,16 +43,22 @@ from gridup import (  # noqa: E402
     write_submission,
     zero_baseline_score,
 )
-from gridup.compat import categorical_columns  # noqa: E402
+from gridup.experiment import (  # noqa: E402
+    DataArtifact,
+    ExperimentProvenance,
+    ExperimentRecord,
+)
 from gridup.features import (  # noqa: E402
     add_calendar_features,
-    add_frequency_encoding,
     add_turkish_holiday_features,
     shared_origin,
 )
 from gridup.metrics import get_metric  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
+from gridup.pipeline import FoldPlan, runtime_recipe_fingerprint  # noqa: E402
+from gridup.recipe import CVRecipe, FeatureRecipe, ModelRecipe, PipelineRecipe  # noqa: E402
+from gridup.stores import SQLiteExperimentStore  # noqa: E402
 from gridup.turkish import join_key, normalize_columns  # noqa: E402
 from gridup.validation import (  # noqa: E402
     build_splitter,
@@ -72,6 +79,24 @@ def confirm(question: str, *, auto: bool) -> bool:
         return True
     answer = input(f"  -> {question} [E/h] ").strip().lower()
     return answer in ("", "e", "evet", "y", "yes")
+
+
+def require_official_metric(metric: str | None) -> str:
+    """Resmi metrik bilinmeden sessiz bir varsayimla model kurmayi reddet."""
+    if metric is None or not metric.strip():
+        raise ValueError("resmi metrik zorunlu; --metric ile acikca belirt")
+    normalized = metric.strip().lower()
+    get_metric(normalized)
+    return normalized
+
+
+def resolve_task(explicit: str | None, target_summary: dict[str, Any]) -> str:
+    """Acik kullanici secimini koru; yoksa profil tahminini kullan."""
+    inferred = target_summary.get("gorev_tahmini")
+    resolved = explicit or inferred or "regression"
+    if resolved not in {"regression", "binary", "multiclass"}:
+        raise ValueError(f"desteklenmeyen gorev tipi: {resolved}")
+    return str(resolved)
 
 
 def _kolonu_coz(ad: str | None, frame: pd.DataFrame) -> str | None:
@@ -159,12 +184,16 @@ def find_files(data_dir: Path) -> dict[str, Path]:
         found[key] = kalan[0]
         kullanilan.add(kalan[0])
         if not kelime_eslesmesi:
-            print(f"  UYARI: '{key}' icin kelime eslesmesi yok; "
-                  f"'{kalan[0].name}' ALT DIZGI ile secildi -- dogru dosya mi kontrol et.")
+            print(
+                f"  UYARI: '{key}' icin kelime eslesmesi yok; "
+                f"'{kalan[0].name}' ALT DIZGI ile secildi -- dogru dosya mi kontrol et."
+            )
         if len(kalan) > 1:
             digerleri = ", ".join(path.name for path in kalan[1:])
-            print(f"  UYARI: '{key}' icin {len(kalan)} aday var. "
-                  f"'{kalan[0].name}' secildi, yok sayilanlar: {digerleri}")
+            print(
+                f"  UYARI: '{key}' icin {len(kalan)} aday var. "
+                f"'{kalan[0].name}' secildi, yok sayilanlar: {digerleri}"
+            )
     return found
 
 
@@ -229,20 +258,26 @@ def main() -> int:
     parser.add_argument("--id", dest="id_column", help="ID kolonu")
     parser.add_argument("--time", dest="time_column", help="Zaman kolonu")
     parser.add_argument("--group", dest="group_column", help="Grup/varlik kolonu")
-    parser.add_argument("--metric", default="rmse", help="Resmi metrik")
-    parser.add_argument("--task", default="regression",
-                        choices=("regression", "binary", "multiclass"))
-    parser.add_argument("--yes", action="store_true",
-                        help="Rutin onaylari otomatik gec (KRITIK sizinti kapisi HARIC)")
-    parser.add_argument("--sizintiyi-kabul-ediyorum", dest="accept_leakage",
-                        action="store_true",
-                        help="Kritik sizinti bulgusuna RAGMEN devam et. Ayri bayrak, "
-                             "cunku --yes 'onaylari gec' demektir, 'sizintiyi gormezden "
-                             "gel' demek degil.")
+    parser.add_argument("--metric", help="Resmi metrik (zorunlu; sessiz varsayim yok)")
+    parser.add_argument("--task", default=None, choices=("regression", "binary", "multiclass"))
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Rutin onaylari otomatik gec (KRITIK sizinti kapisi HARIC)",
+    )
+    parser.add_argument(
+        "--sizintiyi-kabul-ediyorum",
+        dest="accept_leakage",
+        action="store_true",
+        help="Kritik sizinti bulgusuna RAGMEN devam et. Ayri bayrak, "
+        "cunku --yes 'onaylari gec' demektir, 'sizintiyi gormezden "
+        "gel' demek degil.",
+    )
     args = parser.parse_args()
 
     started = time.perf_counter()
-    set_global_seed(42)
+    recipe = default_pipeline_recipe()
+    set_global_seed(recipe.seed)
 
     # ---------------------------------------------------------------- 0
     banner("0/7", "ORTAM")
@@ -270,8 +305,7 @@ def main() -> int:
     # kolon train'de float64, test'te str olabilir (olculdu). Metin dosyalarinin
     # basliklarini havuzlayip TEK karar veriyoruz.
     metin_yollari = [
-        yol for yol in files.values()
-        if yol.suffix.lower() in {".csv", ".tsv", ".txt", ".dat", ""}
+        yol for yol in files.values() if yol.suffix.lower() in {".csv", ".tsv", ".txt", ".dat", ""}
     ]
     ortak = sniff_dialect_shared(metin_yollari) if len(metin_yollari) > 1 else None
     if ortak is not None:
@@ -317,7 +351,18 @@ def main() -> int:
     report = profile(train, test, target=args.target)
     print(report.report())
 
-    target_kind = report.target_summary.get("gorev_tahmini", args.task)
+    inferred_task = report.target_summary.get("gorev_tahmini")
+    target_kind = resolve_task(args.task, report.target_summary)
+    if args.task is not None and inferred_task not in (None, args.task):
+        print(
+            f"  UYARI: profil gorevi {inferred_task!r} tahmin etti; "
+            f"acik --task={args.task!r} korunuyor."
+        )
+    try:
+        args.metric = require_official_metric(args.metric)
+    except ValueError as error:
+        print(f"\n  HATA: {error}")
+        return 1
     zero_share = float(report.target_summary.get("sifir_orani", 0.0) or 0.0)
     skew = float(report.target_summary.get("carpiklik", 0.0) or 0.0)
 
@@ -360,9 +405,7 @@ def main() -> int:
         print(f"  Gercek satir:   {coverage.get('actual_rows', 0):,.0f}")
         print(f"  Doluluk:        %{ratio * 100:.1f}")
         if ratio < 0.95 and confirm("Panel seyrek. Sifirla doldurulsun mu?", auto=args.yes):
-            train = build_panel(
-                train, entity_columns=[args.group_column], time_column=time_column
-            )
+            train = build_panel(train, entity_columns=[args.group_column], time_column=time_column)
             print(f"  Panel kuruldu: {train.shape}")
     else:
         print("  Zaman veya grup kolonu verilmedi -- panel kontrolu atlandi.")
@@ -371,8 +414,11 @@ def main() -> int:
     # ---------------------------------------------------------------- 5
     banner("5/7", "CV SEMASI")
     suggestion = suggest_scheme(
-        train, target=args.target, task_type=target_kind,
-        known_time=time_column, known_group=args.group_column,
+        train,
+        target=args.target,
+        task_type=target_kind,
+        known_time=time_column,
+        known_group=args.group_column,
     )
     print(suggestion)
 
@@ -383,6 +429,9 @@ def main() -> int:
         print(f"\n  Tahmin ufku (test blok uzunlugu): {horizon} gun")
         print("  -> lag/rolling feature'lari bu ufka gore kaydirilmali")
 
+    splitter_name: str
+    test_span_days: int | None = None
+    embargo_days = 0
     if time_column:
         train[time_column] = parse_time_series(train[time_column])
         embargo = pd.Timedelta(days=max(horizon, 30))
@@ -396,18 +445,23 @@ def main() -> int:
         # 20 ilcelik bir "ay" 620 satirdir ve fold uzunlugu veri yogunluguna
         # gore kayar. test_span zamana gore boler, satira gore degil.
         test_span = pd.Timedelta(days=horizon) if horizon else None
-        # n_splits=4: ablasyon, benchmark ve notebook'lar ayni veride 4 ile
-        # olculdu -- fold sayisi farkli olursa skorlar KARSILASTIRILAMAZ
-        # (denetim bulgusu). Sema degisecekse her yerde birden degisir.
+        splitter_name = "purged_time_series"
+        test_span_days = horizon
+        embargo_days = max(horizon, 30)
         folds = purged_time_series_split(
-            train[time_column], n_splits=4, embargo=embargo, test_span=test_span
+            train[time_column],
+            n_splits=recipe.cv.n_splits,
+            embargo=embargo,
+            test_span=test_span,
         )
     elif args.group_column:
-        splitter = build_splitter("GroupKFold", n_splits=5)
+        splitter_name = "GroupKFold"
+        splitter = build_splitter("GroupKFold", n_splits=recipe.cv.n_splits)
         folds = list(splitter.split(train, groups=train[args.group_column]))
     else:
         scheme = "StratifiedKFold" if target_kind != "regression" else "KFold"
-        splitter = build_splitter(scheme, n_splits=5, seed=42)
+        splitter_name = scheme
+        splitter = build_splitter(scheme, n_splits=recipe.cv.n_splits, seed=recipe.seed)
         stratify = train[args.target] if target_kind != "regression" else None
         folds = list(splitter.split(train, stratify))
 
@@ -422,18 +476,18 @@ def main() -> int:
         origin = shared_origin(train, test, time_column=time_column)
         print(f"  Ortak zaman baslangici: {origin.date()}")
 
-    def build(frame: pd.DataFrame) -> pd.DataFrame:
+    def build_base(frame: pd.DataFrame) -> pd.DataFrame:
         out = frame.copy()
         if time_column:
             out = add_calendar_features(out, time_column, include_year=False, origin=origin)
             out = add_turkish_holiday_features(out, time_column)
-        categorical = [c for c in categorical_columns(out) if c != args.target]
-        if categorical:
-            out = add_frequency_encoding(out, categorical[:15])
         return out
 
-    train_features = build(train)
-    test_features = build(test) if test is not None else None
+    train_features = build_base(train)
+    test_features = build_base(test) if test is not None else None
+    # Global frekans sayimi CV'den once yapilirsa erken temporal fold'lar
+    # validation doneminin kategori dagilimini gorur. Fold-ici transformer
+    # kurulana kadar day-one bu aileyi bilincli olarak kullanmaz.
 
     # PANEL_FLAG_COLUMN feature OLAMAZ: fill_value=0 iken hedefin sifir
     # olmasiyla birebir ayni seydir (olculdu: %100 ortusme, Spearman -0.9810).
@@ -441,30 +495,40 @@ def main() -> int:
     # giriyordu -- adiyla dislamak tek guvenilir yol.
     drop = {args.target, args.id_column, time_column, PANEL_FLAG_COLUMN} - {None}
     columns = [
-        c for c in train_features.columns
+        c
+        for c in train_features.columns
         if c not in drop and (test_features is None or c in test_features.columns)
     ]
     print(f"  {len(columns)} feature")
 
     y = train_features[args.target].to_numpy()
-    use_log = target_kind == "regression" and skew > 2
+    use_log = target_kind == "regression" and args.metric.lower() == "rmsle"
+    target_transform = "log1p" if use_log else None
     if use_log:
-        from gridup.metrics import log_transform_target
-
-        print(f"  Hedef carpikligi {skew:.2f} -> log1p donusumu uygulaniyor")
-        y = log_transform_target(y)
+        print(
+            f"  Hedef carpikligi {skew:.2f} -> model log1p uzayinda egitilecek; "
+            f"{args.metric} HAM hedef uzayinda olculecek"
+        )
 
     params = starter_params("lightgbm", target_kind)
     result = cross_validate(
-        train_features[columns], y, folds,
-        kind="lightgbm", task_type=target_kind, metric=args.metric,
-        params=params, test=test_features[columns] if test_features is not None else None,
+        train_features[columns],
+        y,
+        folds,
+        kind="lightgbm",
+        task_type=target_kind,
+        metric=args.metric,
+        params=params,
+        test=test_features[columns] if test_features is not None else None,
+        target_transform=target_transform,
+        early_stopping_metric=args.metric,
+        early_stopping_rounds=200,
     )
     print("\n" + result.summary())
 
     if target_kind == "regression" and zero_share > 0.4:
         baseline_karsilastir(
-            y, result, metric=args.metric, zero_share=zero_share, log_uzayinda=use_log
+            y, result, metric=args.metric, zero_share=zero_share, log_uzayinda=False
         )
 
     # ---------------------------------------------------------------- 7
@@ -474,31 +538,91 @@ def main() -> int:
         return 0
 
     predictions = result.test_predictions
-    if use_log:
-        from gridup.metrics import inverse_log_transform
-
-        predictions = inverse_log_transform(predictions)
 
     predictions = postprocess_predictions(
         predictions,
-        round_to_integer=(args.metric == "mae" and float(np.mod(
-            train_features[args.target].dropna(), 1
-        ).max()) == 0.0),
+        round_to_integer=(
+            args.metric == "mae"
+            and float(np.mod(train_features[args.target].dropna(), 1).max()) == 0.0
+        ),
         clip_min=0.0,
     )
 
     path = write_submission(
-        test_features[args.id_column].to_numpy(), predictions,
+        test_features[args.id_column].to_numpy(),
+        predictions,
         ROOT / "submissions" / "gun1_baseline.csv",
-        sample=sample, id_column=args.id_column, target_column=args.target,
+        sample=sample,
+        id_column=args.id_column,
+        target_column=args.target,
     )
+
+    fold_plan = FoldPlan.from_folds(folds, n_rows=len(train_features))
+    run_recipe = PipelineRecipe(
+        seed=recipe.seed,
+        cv=CVRecipe(
+            n_splits=len(folds),
+            splitter=splitter_name,
+            test_span_days=test_span_days,
+            embargo_days=embargo_days,
+        ),
+        features=FeatureRecipe(
+            horizon=horizon,
+            target_shifts=(),
+            rolling_windows=(),
+            families=("calendar", "holiday") if time_column else (),
+        ),
+        model=ModelRecipe(
+            kind="lightgbm",
+            objective=str(params.get("objective", target_kind)),
+            metric=args.metric,
+            early_stopping_metric=args.metric,
+            n_estimators=int(params.get("n_estimators", 2000)),
+            early_stopping_rounds=200,
+        ),
+        execution=recipe.execution,
+    )
+    run_fingerprint = runtime_recipe_fingerprint(
+        run_recipe.to_dict(),
+        target_transform=target_transform,
+        splitter=splitter_name,
+        estimator="lightgbm",
+        n_estimators=int(params.get("n_estimators", 2000)),
+        early_stopping_rounds=200,
+    )
+    artifacts = [
+        DataArtifact.from_path(files[role]) for role in ("train", "test", "sample") if role in files
+    ]
+    artifacts.append(DataArtifact.from_path(path))
+    provenance = ExperimentProvenance.capture(
+        recipe_fingerprint=run_fingerprint,
+        data_artifacts=artifacts,
+        feature_names=columns,
+        fold_fingerprint=fold_plan.fingerprint,
+    )
+    record = SQLiteExperimentStore(ROOT / "experiments" / "experiments.db").add(
+        ExperimentRecord(
+            name=f"day_one_lightgbm_{run_fingerprint[:8]}",
+            cv_score=result.overall_score,
+            metric=args.metric,
+            model_kind="lightgbm",
+            n_features=len(columns),
+            fold_scores=list(result.fold_scores),
+            params=dict(params),
+            features=list(columns),
+            notes=f"day_one; score_space={result.score_space}; horizon={horizon}",
+            submission_path=str(path),
+            provenance=provenance,
+        )
+    )
+    print(f"  Deney kaniti: experiments/experiments.db  run_id={record.run_id}")
 
     elapsed = time.perf_counter() - started
     banner("TAMAM", f"{elapsed / 60:.1f} dakika")
     print(f"  Submission: {path}")
     print("\n  SIRADAKI ADIMLAR:")
     print("   1. Bu dosyayi Kaggle'a gonder -- format dogru mu gor")
-    print("   2. LB skorunu deney defterine yaz: log.record_lb(...)")
+    print(f"   2. LB skorunu run_id={record.run_id} icin SQLite deposuna yaz")
     print("   3. adversarial_validation ile train/test kaymasini olc")
     print(f"   4. Ufuk-farkindalikli lag/rolling ekle (horizon={horizon})")
     print("   5. Hava verisini birlestir (data/external/hava_gunluk.parquet)")

@@ -105,18 +105,30 @@ def test_ceza_parametre_hatalari():
         hill_climb_weights(oof, y, metric="mae", stability_penalty=0.5, verbose=False)
     with pytest.raises(ValueError, match="en az 2 dilim"):
         hill_climb_weights(
-            oof, y, metric="mae", stability_penalty=0.5,
-            fold_slices=[np.arange(100)], verbose=False,
+            oof,
+            y,
+            metric="mae",
+            stability_penalty=0.5,
+            fold_slices=[np.arange(100)],
+            verbose=False,
         )
     with pytest.raises(ValueError, match="bos"):
         hill_climb_weights(
-            oof, y, metric="mae", stability_penalty=0.5,
-            fold_slices=[np.arange(100), np.array([])], verbose=False,
+            oof,
+            y,
+            metric="mae",
+            stability_penalty=0.5,
+            fold_slices=[np.arange(100), np.array([])],
+            verbose=False,
         )
     with pytest.raises(ValueError, match="disina tasiyor"):
         hill_climb_weights(
-            oof, y, metric="mae", stability_penalty=0.5,
-            fold_slices=[np.arange(100), np.array([500])], verbose=False,
+            oof,
+            y,
+            metric="mae",
+            stability_penalty=0.5,
+            fold_slices=[np.arange(100), np.array([500])],
+            verbose=False,
         )
 
 
@@ -133,16 +145,12 @@ def test_kuvvet_p1_agirlikli_aritmetige_bit_esit():
     tahminler = {"a": np.array([-2.0, 3.0, 7.5]), "b": np.array([4.0, -1.0, 2.5])}
     agirlik = {"a": 0.3, "b": 0.7}
     beklenen = 0.3 * tahminler["a"] + 0.7 * tahminler["b"]
-    np.testing.assert_array_equal(
-        power_mean_blend(tahminler, agirlik, p=1.0), beklenen
-    )
+    np.testing.assert_array_equal(power_mean_blend(tahminler, agirlik, p=1.0), beklenen)
 
 
 def test_kuvvet_p0_geometrik_ortalama():
     """p=0 log-uzayda geometrik: sqrt(1*9)=3, sqrt(4*16)=8."""
-    np.testing.assert_allclose(
-        power_mean_blend(_KUVVET_TAHMIN, _KUVVET_AGIRLIK, p=0.0), [3.0, 8.0]
-    )
+    np.testing.assert_allclose(power_mean_blend(_KUVVET_TAHMIN, _KUVVET_AGIRLIK, p=0.0), [3.0, 8.0])
 
 
 def test_kuvvet_p2_el_hesabi():
@@ -179,9 +187,7 @@ def test_kuvvet_agirlik_hatalari():
     with pytest.raises(ValueError, match="toplami sifir"):
         power_mean_blend(_KUVVET_TAHMIN, {"a": 0.0, "b": 0.0})
     with pytest.raises(ValueError, match="uzunlukta"):
-        power_mean_blend(
-            {"a": np.ones(3), "b": np.ones(4)}, _KUVVET_AGIRLIK
-        )
+        power_mean_blend({"a": np.ones(3), "b": np.ones(4)}, _KUVVET_AGIRLIK)
 
 
 def test_tune_kuvvet_dogru_p_yi_buluyor():
@@ -198,9 +204,7 @@ def test_tune_kuvvet_dogru_p_yi_buluyor():
 def test_tune_kuvvet_p1_daima_izgarada():
     """p=1 izgarada olmasa bile eklenir: 'dogrusal harman' hep denenir."""
     y = np.array([5.0, 10.0])
-    _, _, tablo = tune_power_mean(
-        _KUVVET_TAHMIN, y, weights=_KUVVET_AGIRLIK, p_grid=(0.5, 2.0)
-    )
+    _, _, tablo = tune_power_mean(_KUVVET_TAHMIN, y, weights=_KUVVET_AGIRLIK, p_grid=(0.5, 2.0))
     assert 1.0 in set(np.round(tablo["p"], 6))
     assert len(tablo) == 3
 
@@ -215,9 +219,7 @@ def test_tune_kuvvet_kapsam_maskesine_uyuyor():
     y_bozuk = y.copy()
     y_bozuk[:2] = 999.0  # dolgu bolgesi
     maske = np.array([False, False, True, True])
-    en_iyi, skor, _ = tune_power_mean(
-        tahminler, y_bozuk, weights=_KUVVET_AGIRLIK, covered=maske
-    )
+    en_iyi, skor, _ = tune_power_mean(tahminler, y_bozuk, weights=_KUVVET_AGIRLIK, covered=maske)
     assert en_iyi == pytest.approx(2.0)
     assert skor == pytest.approx(0.0, abs=1e-12)
 
@@ -227,12 +229,16 @@ def test_tune_kuvvet_giris_hatalari():
         tune_power_mean(_KUVVET_TAHMIN, np.ones(5), weights=_KUVVET_AGIRLIK)
     with pytest.raises(ValueError, match="uzunluklari"):
         tune_power_mean(
-            _KUVVET_TAHMIN, np.ones(2), weights=_KUVVET_AGIRLIK,
+            _KUVVET_TAHMIN,
+            np.ones(2),
+            weights=_KUVVET_AGIRLIK,
             covered=np.ones(5, dtype=bool),
         )
     with pytest.raises(ValueError, match="kalmadi"):
         tune_power_mean(
-            _KUVVET_TAHMIN, np.ones(2), weights=_KUVVET_AGIRLIK,
+            _KUVVET_TAHMIN,
+            np.ones(2),
+            weights=_KUVVET_AGIRLIK,
             covered=np.zeros(2, dtype=bool),
         )
 
@@ -249,8 +255,11 @@ def _cv_verisi():
     x = pd.DataFrame({"a": rng.normal(0, 1, n), "b": rng.normal(0, 1, n)})
     y = (x.a * 3 + rng.normal(0, 0.5, n)).to_numpy()
     folds = purged_time_series_split(
-        tarih, embargo=pd.Timedelta(days=5), n_splits=2,
-        test_span=pd.Timedelta(days=30), verbose=False,
+        tarih,
+        embargo=pd.Timedelta(days=5),
+        n_splits=2,
+        test_span=pd.Timedelta(days=30),
+        verbose=False,
     )
     return x, y, folds
 
@@ -266,8 +275,14 @@ def test_offset_kimlik_linkte_tahmine_geri_ekleniyor(kind):
     x, y, folds = _cv_verisi()
     params = {"n_estimators": 80} if kind == "xgboost" else {"n_estimators": 80, "verbose": -1}
     sonuc = cross_validate(
-        x, y, folds, kind=kind, metric="mae", params=params,
-        init_score=np.full(len(x), 1000.0), verbose=False,
+        x,
+        y,
+        folds,
+        kind=kind,
+        metric="mae",
+        params=params,
+        init_score=np.full(len(x), 1000.0),
+        verbose=False,
     )
     assert sonuc.overall_score < 50.0, (
         f"MAE {sonuc.overall_score:.1f}: offset tahmine geri eklenmemis olabilir"
@@ -288,15 +303,20 @@ def test_offset_poisson_maruziyet_kazanci():
     params = {"n_estimators": 80, "verbose": -1, "objective": "poisson"}
 
     offsetli = cross_validate(
-        x, y, folds, kind="lightgbm", metric="mae", params=params,
-        init_score=np.log(maruziyet), verbose=False,
+        x,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="mae",
+        params=params,
+        init_score=np.log(maruziyet),
+        verbose=False,
     )
     offsetsiz = cross_validate(
         x, y, folds, kind="lightgbm", metric="mae", params=params, verbose=False
     )
     assert offsetli.overall_score < offsetsiz.overall_score * 0.8, (
-        f"offset'li {offsetli.overall_score:.2f} >= offset'siz "
-        f"{offsetsiz.overall_score:.2f} * 0.8"
+        f"offset'li {offsetli.overall_score:.2f} >= offset'siz {offsetsiz.overall_score:.2f} * 0.8"
     )
     # Poisson tahmini exp ile geri gelmeli: negatif tahmin imkansiz.
     kapsanan = offsetli.oof_predictions[offsetli.oof_covered]
@@ -307,8 +327,13 @@ def test_offset_catboost_acikca_reddediliyor():
     x, y, folds = _cv_verisi()
     with pytest.raises(NotImplementedError, match="CatBoost"):
         cross_validate(
-            x, y, folds, kind="catboost", metric="mae",
-            init_score=np.zeros(len(x)), verbose=False,
+            x,
+            y,
+            folds,
+            kind="catboost",
+            metric="mae",
+            init_score=np.zeros(len(x)),
+            verbose=False,
         )
 
 
@@ -317,9 +342,14 @@ def test_offset_siniflandirma_objektifi_reddediliyor():
     x, y, folds = _cv_verisi()
     with pytest.raises(NotImplementedError, match="regresyon|link"):
         cross_validate(
-            x, (y > 0).astype(int), folds, kind="lightgbm", metric="mae",
+            x,
+            (y > 0).astype(int),
+            folds,
+            kind="lightgbm",
+            metric="mae",
             params={"n_estimators": 20, "verbose": -1, "objective": "binary"},
-            init_score=np.zeros(len(x)), verbose=False,
+            init_score=np.zeros(len(x)),
+            verbose=False,
         )
 
 
@@ -327,15 +357,25 @@ def test_offset_giris_hatalari():
     x, y, folds = _cv_verisi()
     with pytest.raises(ValueError, match="init_score"):
         cross_validate(
-            x, y, folds, kind="lightgbm", metric="mae",
-            init_score=np.zeros(3), verbose=False,
+            x,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="mae",
+            init_score=np.zeros(3),
+            verbose=False,
         )
     bozuk = np.zeros(len(x))
     bozuk[0] = np.nan
     with pytest.raises(ValueError, match="NaN"):
         cross_validate(
-            x, y, folds, kind="lightgbm", metric="mae",
-            init_score=bozuk, verbose=False,
+            x,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="mae",
+            init_score=bozuk,
+            verbose=False,
         )
 
 
@@ -345,18 +385,36 @@ def test_offset_test_tutarliligi_zorunlu():
     test = x.head(10).copy()
     with pytest.raises(ValueError, match="test_init_score yok"):
         cross_validate(
-            x, y, folds, kind="lightgbm", metric="mae", test=test,
-            init_score=np.zeros(len(x)), verbose=False,
+            x,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="mae",
+            test=test,
+            init_score=np.zeros(len(x)),
+            verbose=False,
         )
     with pytest.raises(ValueError, match="init_score yok"):
         cross_validate(
-            x, y, folds, kind="lightgbm", metric="mae", test=test,
-            test_init_score=np.zeros(10), verbose=False,
+            x,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="mae",
+            test=test,
+            test_init_score=np.zeros(10),
+            verbose=False,
         )
     with pytest.raises(ValueError, match="test frame'i yok"):
         cross_validate(
-            x, y, folds, kind="lightgbm", metric="mae",
-            init_score=np.zeros(len(x)), test_init_score=np.zeros(10), verbose=False,
+            x,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="mae",
+            init_score=np.zeros(len(x)),
+            test_init_score=np.zeros(10),
+            verbose=False,
         )
 
 
@@ -369,11 +427,13 @@ _UFUK = 3
 
 def _bozunum_paneli() -> pd.DataFrame:
     """Tek grup, 8 gun, olaylar 0/3/7. Yari omur 1 gun -> alpha = 0.5."""
-    return pd.DataFrame({
-        "gun": pd.date_range("2024-03-01", periods=8, freq="D"),
-        "ilce": "bornova",
-        "kesinti": [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 4.0],
-    })
+    return pd.DataFrame(
+        {
+            "gun": pd.date_range("2024-03-01", periods=8, freq="D"),
+            "ilce": "bornova",
+            "kesinti": [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 4.0],
+        }
+    )
 
 
 def test_bozunum_el_hesabi_ve_ufuk_kaydirmasi():
@@ -385,8 +445,12 @@ def test_bozunum_el_hesabi_ve_ufuk_kaydirmasi():
     Ilk 3 satirda gorulebilir gecmis yok -> NaN.
     """
     sonuc = add_event_decay_features(
-        _bozunum_paneli(), "kesinti", time_column="gun", horizon=_UFUK,
-        group_columns=["ilce"], half_lives=(1.0,),
+        _bozunum_paneli(),
+        "kesinti",
+        time_column="gun",
+        horizon=_UFUK,
+        group_columns=["ilce"],
+        half_lives=(1.0,),
     )
     deger = sonuc[f"kesinti_ufuk{_UFUK}_bozunum1g_deger"].to_numpy()
     olay = sonuc[f"kesinti_ufuk{_UFUK}_bozunum1g_olay"].to_numpy()
@@ -404,12 +468,20 @@ def test_bozunum_son_ufuk_gunleri_feature_i_degistirmiyor():
     bozuk.loc[bozuk.index[-_UFUK:], "kesinti"] = 999.0  # "gelecek" kurcalandi
 
     temiz = add_event_decay_features(
-        panel, "kesinti", time_column="gun", horizon=_UFUK,
-        group_columns=["ilce"], half_lives=(1.0, 14.0),
+        panel,
+        "kesinti",
+        time_column="gun",
+        horizon=_UFUK,
+        group_columns=["ilce"],
+        half_lives=(1.0, 14.0),
     )
     kurcalanmis = add_event_decay_features(
-        bozuk, "kesinti", time_column="gun", horizon=_UFUK,
-        group_columns=["ilce"], half_lives=(1.0, 14.0),
+        bozuk,
+        "kesinti",
+        time_column="gun",
+        horizon=_UFUK,
+        group_columns=["ilce"],
+        half_lives=(1.0, 14.0),
     )
     for kolon in temiz.filter(like="bozunum").columns:
         np.testing.assert_array_equal(
@@ -420,18 +492,31 @@ def test_bozunum_son_ufuk_gunleri_feature_i_degistirmiyor():
 def test_bozunum_gruplar_bagimsiz_ve_sira_korunuyor():
     """Iki grup + karisik satir sirasi: bozunum grup ICINDEN, satir sirasinda."""
     gunler = pd.date_range("2024-03-01", periods=5, freq="D")
-    panel = pd.concat([
-        pd.DataFrame({"gun": gunler, "ilce": "b", "y": [8.0, 0.0, 0.0, 0.0, 0.0]}),
-        pd.DataFrame({"gun": gunler, "ilce": "a", "y": [0.0, 4.0, 0.0, 0.0, 0.0]}),
-    ], ignore_index=True).sample(frac=1, random_state=5).reset_index(drop=True)
+    panel = (
+        pd.concat(
+            [
+                pd.DataFrame({"gun": gunler, "ilce": "b", "y": [8.0, 0.0, 0.0, 0.0, 0.0]}),
+                pd.DataFrame({"gun": gunler, "ilce": "a", "y": [0.0, 4.0, 0.0, 0.0, 0.0]}),
+            ],
+            ignore_index=True,
+        )
+        .sample(frac=1, random_state=5)
+        .reset_index(drop=True)
+    )
 
     sonuc = add_event_decay_features(
         panel, "y", time_column="gun", horizon=1, group_columns=["ilce"], half_lives=(1.0,)
     )
     assert list(sonuc["gun"]) == list(panel["gun"])  # sira korundu
     beklenen = {
-        ("b", 1): 8.0, ("b", 2): 4.0, ("b", 3): 2.0, ("b", 4): 1.0,
-        ("a", 1): 0.0, ("a", 2): 4.0, ("a", 3): 2.0, ("a", 4): 1.0,
+        ("b", 1): 8.0,
+        ("b", 2): 4.0,
+        ("b", 3): 2.0,
+        ("b", 4): 1.0,
+        ("a", 1): 0.0,
+        ("a", 2): 4.0,
+        ("a", 3): 2.0,
+        ("a", 4): 1.0,
     }
     for _, satir in sonuc.iterrows():
         gun_no = (satir["gun"] - gunler[0]).days
@@ -444,11 +529,19 @@ def test_bozunum_gruplar_bagimsiz_ve_sira_korunuyor():
 
 def test_bozunum_ufuk1_kolon_adi_etiketsiz():
     sonuc = add_event_decay_features(
-        _bozunum_paneli(), "kesinti", time_column="gun", horizon=1,
-        group_columns=["ilce"], half_lives=(3.0, 14.0),
+        _bozunum_paneli(),
+        "kesinti",
+        time_column="gun",
+        horizon=1,
+        group_columns=["ilce"],
+        half_lives=(3.0, 14.0),
     )
-    for ad in ("kesinti_bozunum3g_olay", "kesinti_bozunum3g_deger",
-               "kesinti_bozunum14g_olay", "kesinti_bozunum14g_deger"):
+    for ad in (
+        "kesinti_bozunum3g_olay",
+        "kesinti_bozunum3g_deger",
+        "kesinti_bozunum14g_olay",
+        "kesinti_bozunum14g_deger",
+    ):
         assert ad in sonuc.columns
 
 
@@ -460,13 +553,21 @@ def test_bozunum_parametre_hatalari():
         )
     with pytest.raises(ValueError, match="yari omur"):
         add_event_decay_features(
-            panel, "kesinti", time_column="gun", horizon=1,
-            group_columns=["ilce"], half_lives=(),
+            panel,
+            "kesinti",
+            time_column="gun",
+            horizon=1,
+            group_columns=["ilce"],
+            half_lives=(),
         )
     with pytest.raises(ValueError, match="pozitif"):
         add_event_decay_features(
-            panel, "kesinti", time_column="gun", horizon=1,
-            group_columns=["ilce"], half_lives=(3.0, -1.0),
+            panel,
+            "kesinti",
+            time_column="gun",
+            horizon=1,
+            group_columns=["ilce"],
+            half_lives=(3.0, -1.0),
         )
     with pytest.raises(KeyError, match="yok"):
         add_event_decay_features(
@@ -487,7 +588,10 @@ def test_son_olay_el_hesabi_ve_ufuk_kaydirmasi():
       i=7: son olay gun 3 -> 4 (7. gunun KENDI olayi gorunmez -- sizinti olurdu)
     """
     sonuc = add_days_since_event_features(
-        _bozunum_paneli(), "kesinti", time_column="gun", horizon=_UFUK,
+        _bozunum_paneli(),
+        "kesinti",
+        time_column="gun",
+        horizon=_UFUK,
         group_columns=["ilce"],
     )
     gecen = sonuc[f"kesinti_ufuk{_UFUK}_son_olaydan_gun"].to_numpy()
@@ -519,11 +623,13 @@ def test_son_olay_son_ufuk_gunleri_feature_i_degistirmiyor():
 
 def test_son_olay_hic_olaysiz_grup():
     """Hic olay gormemis grup: deger NaN, bayrak 1 -- '0 gun once' ile karismaz."""
-    panel = pd.DataFrame({
-        "gun": pd.date_range("2024-03-01", periods=6, freq="D"),
-        "ilce": "sessiz",
-        "kesinti": 0.0,
-    })
+    panel = pd.DataFrame(
+        {
+            "gun": pd.date_range("2024-03-01", periods=6, freq="D"),
+            "ilce": "sessiz",
+            "kesinti": 0.0,
+        }
+    )
     sonuc = add_days_since_event_features(
         panel, "kesinti", time_column="gun", horizon=1, group_columns=["ilce"]
     )
@@ -533,10 +639,13 @@ def test_son_olay_hic_olaysiz_grup():
 
 def test_son_olay_gruplar_bagimsiz():
     gunler = pd.date_range("2024-03-01", periods=4, freq="D")
-    panel = pd.concat([
-        pd.DataFrame({"gun": gunler, "ilce": "b", "y": [5.0, 0.0, 0.0, 0.0]}),
-        pd.DataFrame({"gun": gunler, "ilce": "a", "y": [0.0, 0.0, 7.0, 0.0]}),
-    ], ignore_index=True)
+    panel = pd.concat(
+        [
+            pd.DataFrame({"gun": gunler, "ilce": "b", "y": [5.0, 0.0, 0.0, 0.0]}),
+            pd.DataFrame({"gun": gunler, "ilce": "a", "y": [0.0, 0.0, 7.0, 0.0]}),
+        ],
+        ignore_index=True,
+    )
     sonuc = add_days_since_event_features(
         panel, "y", time_column="gun", horizon=1, group_columns=["ilce"]
     )
@@ -568,17 +677,22 @@ def test_son_olay_parametre_hatalari():
 def _komsu_paneli() -> tuple[pd.DataFrame, pd.DataFrame]:
     """3 varlik, 2 gun; 'a'nin komsulari b (10 km) ve c (40 km)."""
     gunler = pd.date_range("2024-05-01", periods=2, freq="D")
-    panel = pd.concat([
-        pd.DataFrame({"gun": gunler, "yer": "a", "deger": [1.0, 5.0]}),
-        pd.DataFrame({"gun": gunler, "yer": "b", "deger": [2.0, 6.0]}),
-        pd.DataFrame({"gun": gunler, "yer": "c", "deger": [10.0, 30.0]}),
-    ], ignore_index=True)
-    komsular = pd.DataFrame([
-        {"yer": "a", "komsu": "b", "mesafe_km": 10.0, "komsu_sirasi": 1},
-        {"yer": "a", "komsu": "c", "mesafe_km": 40.0, "komsu_sirasi": 2},
-        {"yer": "b", "komsu": "a", "mesafe_km": 10.0, "komsu_sirasi": 1},
-        {"yer": "c", "komsu": "a", "mesafe_km": 40.0, "komsu_sirasi": 1},
-    ])
+    panel = pd.concat(
+        [
+            pd.DataFrame({"gun": gunler, "yer": "a", "deger": [1.0, 5.0]}),
+            pd.DataFrame({"gun": gunler, "yer": "b", "deger": [2.0, 6.0]}),
+            pd.DataFrame({"gun": gunler, "yer": "c", "deger": [10.0, 30.0]}),
+        ],
+        ignore_index=True,
+    )
+    komsular = pd.DataFrame(
+        [
+            {"yer": "a", "komsu": "b", "mesafe_km": 10.0, "komsu_sirasi": 1},
+            {"yer": "a", "komsu": "c", "mesafe_km": 40.0, "komsu_sirasi": 2},
+            {"yer": "b", "komsu": "a", "mesafe_km": 10.0, "komsu_sirasi": 1},
+            {"yer": "c", "komsu": "a", "mesafe_km": 40.0, "komsu_sirasi": 1},
+        ]
+    )
     return panel, komsular
 
 
@@ -586,18 +700,16 @@ def test_agirliksiz_varsayilan_eski_davranisla_ayni():
     """GERIYE UYUM: bayrak verilmemis ve False cagrilari bit-esit; mean duz."""
     panel, komsular = _komsu_paneli()
     ortak = {
-        "key_column": "yer", "time_column": "gun",
-        "value_columns": ["deger"], "target_column": None,
+        "key_column": "yer",
+        "time_column": "gun",
+        "value_columns": ["deger"],
+        "target_column": None,
     }
     varsayilan = add_neighbour_feature_mean(panel, komsular, **ortak)
-    kapali = add_neighbour_feature_mean(
-        panel, komsular, **ortak, weight_by_distance=False
-    )
+    kapali = add_neighbour_feature_mean(panel, komsular, **ortak, weight_by_distance=False)
     pd.testing.assert_frame_equal(varsayilan, kapali)
     # a'nin 1. gun duz ortalamasi: (2 + 10) / 2 = 6.
-    a_gun1 = varsayilan[
-        (varsayilan["yer"] == "a") & (varsayilan["gun"] == "2024-05-01")
-    ]
+    a_gun1 = varsayilan[(varsayilan["yer"] == "a") & (varsayilan["gun"] == "2024-05-01")]
     assert a_gun1["komsu_deger_mean"].iloc[0] == pytest.approx(6.0)
 
 
@@ -605,8 +717,13 @@ def test_mesafe_agirlikli_ortalama_el_hesabi():
     """a: w_b = 1/10, w_c = 1/40 -> (0.1*2 + 0.025*10) / 0.125 = 3.6."""
     panel, komsular = _komsu_paneli()
     sonuc = add_neighbour_feature_mean(
-        panel, komsular, key_column="yer", time_column="gun",
-        value_columns=["deger"], target_column=None, weight_by_distance=True,
+        panel,
+        komsular,
+        key_column="yer",
+        time_column="gun",
+        value_columns=["deger"],
+        target_column=None,
+        weight_by_distance=True,
     )
     a = sonuc[sonuc["yer"] == "a"].sort_values("gun")["komsu_deger_mean"].to_numpy()
     np.testing.assert_allclose(a, [3.6, (0.1 * 6.0 + 0.025 * 30.0) / 0.125])
@@ -619,12 +736,17 @@ def test_mesafe_agirlikli_hedef_lag_gecmisten_geliyor():
     """Agirlikli komsu HEDEF ortalamasi da ufuk kadar geriden gelmeli."""
     panel, komsular = _komsu_paneli()
     sonuc = add_neighbour_target_lag(
-        panel, komsular, key_column="yer", time_column="gun",
-        target_column="deger", horizon=1, statistics=("mean",),
+        panel,
+        komsular,
+        key_column="yer",
+        time_column="gun",
+        target_column="deger",
+        horizon=1,
+        statistics=("mean",),
         weight_by_distance=True,
     )
     a = sonuc[sonuc["yer"] == "a"].sort_values("gun")["komsu_deger_ufuk1_mean"]
-    assert np.isnan(a.iloc[0])          # 1. gun: komsularin gecmisi yok
+    assert np.isnan(a.iloc[0])  # 1. gun: komsularin gecmisi yok
     assert a.iloc[1] == pytest.approx(3.6)  # 2. gun: 1. gunun agirlikli ortalamasi
 
 
@@ -634,8 +756,13 @@ def test_sifir_mesafe_epsilon_korumasi():
     sifirli = komsular.copy()
     sifirli.loc[0, "mesafe_km"] = 0.0
     sonuc = add_neighbour_feature_mean(
-        panel, sifirli, key_column="yer", time_column="gun",
-        value_columns=["deger"], target_column=None, weight_by_distance=True,
+        panel,
+        sifirli,
+        key_column="yer",
+        time_column="gun",
+        value_columns=["deger"],
+        target_column=None,
+        weight_by_distance=True,
     )
     degerler = sonuc["komsu_deger_mean"].to_numpy()
     assert np.isfinite(degerler[~np.isnan(degerler)]).all()
@@ -649,8 +776,12 @@ def test_genis_komsu_istatistikleri_el_hesabi():
     """KDD Cup 2018 deseni: min/max/std bolgesel gradyani yakalar."""
     panel, komsular = _komsu_paneli()
     sonuc = add_neighbour_feature_mean(
-        panel, komsular, key_column="yer", time_column="gun",
-        value_columns=["deger"], target_column=None,
+        panel,
+        komsular,
+        key_column="yer",
+        time_column="gun",
+        value_columns=["deger"],
+        target_column=None,
         statistics=("mean", "min", "max", "std"),
     )
     a_gun1 = sonuc[(sonuc["yer"] == "a") & (sonuc["gun"] == "2024-05-01")]
@@ -664,15 +795,24 @@ def test_mesafe_agirlik_parametre_hatalari():
     panel, komsular = _komsu_paneli()
     with pytest.raises(ValueError, match="mesafe_km"):
         add_neighbour_feature_mean(
-            panel, komsular.drop(columns=["mesafe_km"]), key_column="yer",
-            time_column="gun", value_columns=["deger"], target_column=None,
+            panel,
+            komsular.drop(columns=["mesafe_km"]),
+            key_column="yer",
+            time_column="gun",
+            value_columns=["deger"],
+            target_column=None,
             weight_by_distance=True,
         )
     with pytest.raises(ValueError, match="mean"):
         add_neighbour_feature_mean(
-            panel, komsular, key_column="yer", time_column="gun",
-            value_columns=["deger"], target_column=None,
-            statistics=("max",), weight_by_distance=True,
+            panel,
+            komsular,
+            key_column="yer",
+            time_column="gun",
+            value_columns=["deger"],
+            target_column=None,
+            statistics=("max",),
+            weight_by_distance=True,
         )
 
 
@@ -718,9 +858,7 @@ def test_monoton_kisit_lightgbm_gercekten_uyguluyor():
     y = 3.0 * x["a"].to_numpy() + rng.normal(0, 0.3, n)
 
     kisit = monotone_constraints_for(["a", "b"], increasing=("a",))
-    model = lgb.LGBMRegressor(
-        n_estimators=60, verbose=-1, monotone_constraints=kisit["lightgbm"]
-    )
+    model = lgb.LGBMRegressor(n_estimators=60, verbose=-1, monotone_constraints=kisit["lightgbm"])
     model.fit(x, y)
 
     izgara = pd.DataFrame({"a": np.linspace(0, 1, 50), "b": 0.0})

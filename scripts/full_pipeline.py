@@ -36,15 +36,16 @@ from gridup import (  # noqa: E402
     write_submission,
     zero_baseline_score,
 )
+from gridup.experiment import (  # noqa: E402
+    DataArtifact,
+    ExperimentProvenance,
+    ExperimentRecord,
+)
 from gridup.features import (  # noqa: E402
     add_calendar_features,
-    add_frequency_encoding,
-    add_group_statistics,
-    add_lag_features,
     add_neighbour_target_lag,
     add_physical_derivatives,
     add_regional_aggregates,
-    add_rolling_features,
     add_turkish_holiday_features,
     nearest_neighbours,
     oof_target_encode,
@@ -53,6 +54,12 @@ from gridup.features import (  # noqa: E402
 from gridup.features.outage_reason import add_reason_features, reason_family_report  # noqa: E402
 from gridup.metrics import inverse_log_transform, log_transform_target, rmsle  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
+from gridup.pipeline import (  # noqa: E402
+    FoldPlan,
+    build_paired_history_features,
+    runtime_recipe_fingerprint,
+)
+from gridup.recipe import CVRecipe, FeatureRecipe, ModelRecipe, PipelineRecipe  # noqa: E402
 from gridup.refit import (  # noqa: E402
     estimate_full_data_rounds,
     extract_best_iterations,
@@ -68,6 +75,7 @@ from gridup.reporting import (  # noqa: E402
     prediction_vs_actual_table,
 )
 from gridup.selection import null_importance_filter, shap_backward_selection  # noqa: E402
+from gridup.stores import SQLiteExperimentStore  # noqa: E402
 from gridup.synthetic import SyntheticSpec, make_distribution_dataset  # noqa: E402
 from gridup.turkish import join_key, normalize_columns  # noqa: E402
 from gridup.validation import adversarial_validation, purged_time_series_split  # noqa: E402
@@ -118,8 +126,10 @@ def main() -> int:
 
     # Panel: sentetik veri zaten tam ama fonksiyonun calistigini dogrula
     panel = build_panel(
-        train[[GROUP, TIME, TARGET]], entity_columns=[GROUP],
-        time_column=TIME, verbose=False,
+        train[[GROUP, TIME, TARGET]],
+        entity_columns=[GROUP],
+        time_column=TIME,
+        verbose=False,
     )
     check("build_panel", len(panel) >= len(train), f"{len(panel):,} satir")
 
@@ -142,11 +152,18 @@ def main() -> int:
     if districts_ok:
         districts = pd.read_parquet(DISTRICTS)
         neighbours = nearest_neighbours(
-            districts, key_column="ilce_key", latitude_column="lat",
-            longitude_column="lon", k=3, max_distance_km=120,
+            districts,
+            key_column="ilce_key",
+            latitude_column="lat",
+            longitude_column="lon",
+            k=3,
+            max_distance_km=120,
         )
-        check("komsuluk grafigi", len(neighbours) > 0,
-              f"{neighbours['ilce_key'].nunique()} ilce, {len(neighbours)} baglanti")
+        check(
+            "komsuluk grafigi",
+            len(neighbours) > 0,
+            f"{neighbours['ilce_key'].nunique()} ilce, {len(neighbours)} baglanti",
+        )
     else:
         check("ilce tablosu", False, "data/reference/ilceler_gdz_adm.parquet yok")
 
@@ -156,11 +173,16 @@ def main() -> int:
             weather, group_columns=["konum_key"], time_column="tarih"
         )
         weather = add_regional_aggregates(
-            weather, time_column="tarih",
-            value_columns=["ruzgar_max", "sicaklik_ort"], quantiles=(0.9,),
+            weather,
+            time_column="tarih",
+            value_columns=["ruzgar_max", "sicaklik_ort"],
+            quantiles=(0.9,),
         )
-        check("hava turevleri", "islak_ruzgar" in weather.columns,
-              f"{len(weather):,} satir, {weather.shape[1]} kolon")
+        check(
+            "hava turevleri",
+            "islak_ruzgar" in weather.columns,
+            f"{len(weather):,} satir, {weather.shape[1]} kolon",
+        )
     else:
         check("hava verisi", False, "data/external/hava_gunluk.parquet yok")
 
@@ -170,22 +192,9 @@ def main() -> int:
     horizon = int((test[TIME].max() - test[TIME].min()).days) + 1
     print(f"  ortak origin={origin.date()}  ufuk={horizon} gun")
 
-    def build(frame: pd.DataFrame) -> pd.DataFrame:
+    def build_base(frame: pd.DataFrame) -> pd.DataFrame:
         out = add_calendar_features(frame, TIME, include_year=False, origin=origin)
         out = add_turkish_holiday_features(out, TIME)
-        out = add_group_statistics(
-            out, ["ilce"], ["tuketim_kwh", "sicaklik_c"],
-            aggregations=("mean", "std"), target_column=TARGET,
-        )
-        out = add_frequency_encoding(out, ["ilce", "il", "fider_no", "abone_grubu"])
-        out = add_lag_features(
-            out, "tuketim_kwh", [1, 7], time_column=TIME,
-            group_columns=[GROUP], horizon=horizon,
-        )
-        out = add_rolling_features(
-            out, "tuketim_kwh", [7], time_column=TIME, group_columns=[GROUP],
-            horizon=horizon, aggregations=("mean", "std"),
-        )
         # Gercek hava verisini join et -- IL bazinda, join_key ile.
         #
         # DIKKAT: hava verisi artik ILCE cozunurlugunde (tarih basina 96
@@ -197,20 +206,20 @@ def main() -> int:
         # Cozum iki parcali: (a) hava verisine il_key/ilce_key kolonlari
         # eklendi, (b) burada il duzeyine indirgeniyor.
         if weather_ok:
-            hava_kolonlari = ["isitma_derece_gun", "sogutma_derece_gun",
-                              "bolge_ruzgar_max_q90"]
+            hava_kolonlari = ["isitma_derece_gun", "sogutma_derece_gun", "bolge_ruzgar_max_q90"]
             mevcut = [k for k in hava_kolonlari if k in weather.columns]
             il_havasi = (
-                weather.groupby(["il_key", "tarih"], observed=True)[mevcut]
-                .mean()
-                .reset_index()
+                weather.groupby(["il_key", "tarih"], observed=True)[mevcut].mean().reset_index()
             )
             onceki_satir = len(out)
             out = out.assign(_il_key=out["il"].map(join_key))
             out = out.merge(
                 il_havasi,
-                left_on=["_il_key", TIME], right_on=["il_key", "tarih"],
-                how="left", suffixes=("", "_hava"), validate="many_to_one",
+                left_on=["_il_key", TIME],
+                right_on=["il_key", "tarih"],
+                how="left",
+                suffixes=("", "_hava"),
+                validate="many_to_one",
             ).drop(columns=["_il_key", "il_key"], errors="ignore")
             if len(out) != onceki_satir:
                 raise AssertionError(
@@ -218,8 +227,26 @@ def main() -> int:
                 )
         return out
 
-    train_features = build(train)
-    test_features = build(test)
+    train_base = build_base(train)
+    test_base = build_base(test)
+    # Temporal CV'den once tum train uzerinde grup/frekans mapping'i fit
+    # etmiyoruz: erken fold'lar gelecekteki validation dagilimini gorurdu.
+    # Bu aile ancak fold-ici stateful transformer ile geri eklenebilir.
+    history = build_paired_history_features(
+        train_base,
+        test_base,
+        value_column="tuketim_kwh",
+        time_column=TIME,
+        group_columns=[GROUP],
+        horizon=horizon,
+        shifts=[horizon, horizon + 6],
+        rolling_windows=[7],
+        rolling_aggregations=("mean", "std"),
+        # ACIKCA veriliyor: bu history hedef degil kovaryat ("tuketim_kwh")
+        # uzerinde. Nobetci, ikisinin ayni olmadigini dogrular.
+        target_column=TARGET,
+    )
+    train_features, test_features = history.train, history.test
 
     if weather_ok:
         matched = train_features["isitma_derece_gun"].notna().mean()
@@ -229,38 +256,57 @@ def main() -> int:
     if neighbours is not None:
         district_daily = (
             train_features.assign(_ilce=train_features["ilce"].map(join_key))
-            .groupby(["_ilce", TIME], observed=True)[TARGET].sum().reset_index()
+            .groupby(["_ilce", TIME], observed=True)[TARGET]
+            .sum()
+            .reset_index()
             .rename(columns={"_ilce": "ilce_key"})
         )
         district_daily = add_neighbour_target_lag(
-            district_daily, neighbours, key_column="ilce_key", time_column=TIME,
-            target_column=TARGET, horizon=horizon, statistics=("mean",),
+            district_daily,
+            neighbours,
+            key_column="ilce_key",
+            time_column=TIME,
+            target_column=TARGET,
+            horizon=horizon,
+            statistics=("mean",),
         )
         neighbour_column = f"komsu_{TARGET}_ufuk{horizon}_mean"
-        check("komsu sinyali", neighbour_column in district_daily.columns,
-              f"{district_daily[neighbour_column].notna().mean():.1%} dolu")
+        check(
+            "komsu sinyali",
+            neighbour_column in district_daily.columns,
+            f"{district_daily[neighbour_column].notna().mean():.1%} dolu",
+        )
 
     print(f"  train {train_features.shape}   test {test_features.shape}")
 
     # ------------------------------------------------------------------ 5
     banner("5/9", "CV + SIZINTI KONTROLU")
     folds = purged_time_series_split(
-        train_features[TIME], n_splits=3 if args.hizli else 4,
-        embargo=pd.Timedelta(days=max(horizon, 30)), verbose=False,
+        train_features[TIME],
+        n_splits=3 if args.hizli else 4,
+        embargo=pd.Timedelta(days=max(horizon, 30)),
+        verbose=False,
     )
     check("fold uretimi", len(folds) >= 2, f"{len(folds)} fold")
 
     drop = {TARGET, "ariza_var_mi", "ariza_tipi", ID, TIME, "tarih_hava"}
     columns = [
-        c for c in train_features.columns
-        if c not in drop and c in test_features.columns
+        c
+        for c in train_features.columns
+        if c not in drop
+        and c in test_features.columns
         and pd.api.types.is_numeric_dtype(train_features[c])
     ]
 
     y = train_features[TARGET].to_numpy(dtype="float64")
     train_encoded, test_encoded = oof_target_encode(
-        train_features, pd.Series(y), ["ilce"], folds,
-        test=test_features, smoothing=30.0,
+        train_features,
+        pd.Series(y),
+        ["ilce"],
+        folds,
+        test=test_features,
+        smoothing=30.0,
+        uncovered_policy="nan",
     )
     columns = columns + ["ilce_hedef_kod"]
     check("OOF hedef kodlama", "ilce_hedef_kod" in train_encoded.columns)
@@ -282,29 +328,54 @@ def main() -> int:
     null_result = null_importance_filter(
         train_encoded[columns], y_log, params=dict(params), n_runs=2, verbose=False
     )
-    check("null importance", len(null_result["keep"]) > 0,
-          f"{len(null_result['keep'])} tutuldu / {len(null_result['drop'])} atildi")
+    check(
+        "null importance",
+        len(null_result["keep"]) > 0,
+        f"{len(null_result['keep'])} tutuldu / {len(null_result['drop'])} atildi",
+    )
 
     selected = null_result["keep"] or columns
 
     selection = shap_backward_selection(
-        train_encoded[selected], y_log, folds, metric="rmse", params=dict(params),
-        drop_per_step=5, min_features=8, max_steps=2 if args.hizli else 3,
-        patience=2, shap_sample=800, progress=None,
+        train_encoded[selected],
+        y_log,
+        folds,
+        metric="rmse",
+        params=dict(params),
+        drop_per_step=5,
+        min_features=8,
+        max_steps=2 if args.hizli else 3,
+        patience=2,
+        shap_sample=800,
+        progress=None,
     )
-    check("SHAP geri eleme", len(selection.best_features) > 0,
-          f"{len(selected)} -> {len(selection.best_features)} feature")
+    check(
+        "SHAP geri eleme",
+        len(selection.best_features) > 0,
+        f"{len(selected)} -> {len(selection.best_features)} feature",
+    )
     final_columns = selection.best_features
 
     # ------------------------------------------------------------------ 7
     banner("7/9", "EGITIM + TAM VERI REFIT")
     result = cross_validate(
-        train_encoded[final_columns], y_log, folds,
-        kind="lightgbm", metric="rmse", params=dict(params),
-        test=test_encoded[final_columns], verbose=False,
+        train_encoded[final_columns],
+        y,
+        folds,
+        kind="lightgbm",
+        metric="rmsle",
+        params=dict(params),
+        test=test_encoded[final_columns],
+        verbose=False,
+        target_transform="log1p",
+        early_stopping_metric="rmsle",
+        early_stopping_rounds=200,
     )
-    check("cross_validate", np.isfinite(result.overall_score),
-          f"CV rmse(log1p)={result.overall_score:.5f}")
+    check(
+        "cross_validate",
+        np.isfinite(result.overall_score),
+        f"CV RMSLE (ham hedef)={result.overall_score:.5f}",
+    )
 
     # mean_train_fraction OLCULEREK veriliyor: purged_time_series_split
     # genisleyen pencere kullanir, yani (k-1)/k varsayimi bu repoda YANLIS
@@ -315,32 +386,106 @@ def main() -> int:
         mean_train_fraction=fold_train_fraction(folds, len(train_encoded)),
     )
     refit = multi_seed_refit(
-        train_encoded[final_columns], y_log, test_encoded[final_columns],
-        params=dict(params), n_estimators=rounds,
-        seeds=(0, 1, 2), verbose=False,
+        train_encoded[final_columns],
+        y_log,
+        test_encoded[final_columns],
+        params=dict(params),
+        n_estimators=rounds,
+        seeds=(0, 1, 2),
+        verbose=False,
     )
-    check("multi_seed_refit", refit.per_seed_predictions.shape[0] == 3,
-          f"{rounds} agac, tohum sapmasi {refit.seed_disagreement:.5f}")
+    check(
+        "multi_seed_refit",
+        refit.per_seed_predictions.shape[0] == 3,
+        f"{rounds} agac, tohum sapmasi {refit.seed_disagreement:.5f}",
+    )
 
     # ------------------------------------------------------------------ 8
     banner("8/9", "SUBMISSION + HOLDOUT")
-    blended = 0.5 * result.test_predictions + 0.5 * refit.predictions
-    predictions = postprocess_predictions(
-        inverse_log_transform(blended), clip_min=0.0, verbose=False
-    )
+    refit_raw = inverse_log_transform(refit.predictions)
+    blended = 0.5 * result.test_predictions + 0.5 * refit_raw
+    predictions = postprocess_predictions(blended, clip_min=0.0, verbose=False)
     path = write_submission(
-        test_encoded[ID].to_numpy(), predictions,
+        test_encoded[ID].to_numpy(),
+        predictions,
         ROOT / "submissions" / "tam_pipeline.csv",
-        id_column=ID, target_column=TARGET, validate=True,
+        id_column=ID,
+        target_column=TARGET,
+        validate=True,
     )
+
+    fold_plan = FoldPlan.from_folds(folds, n_rows=len(train_encoded))
+    run_recipe = PipelineRecipe(
+        seed=42,
+        cv=CVRecipe(
+            n_splits=len(folds),
+            splitter="purged_time_series",
+            embargo_days=max(horizon, 30),
+        ),
+        features=FeatureRecipe(
+            horizon=horizon,
+            target_shifts=(),
+            rolling_windows=(),
+            history_value_columns=("tuketim_kwh",),
+            history_shifts=(horizon, horizon + 6),
+            history_rolling_windows=(7,),
+            history_rolling_aggregations=("mean", "std"),
+            families=(
+                "calendar",
+                "holiday",
+                "consumption_history",
+                "oof_target_encoding",
+            )
+            + (("weather",) if weather_ok else ()),
+        ),
+        model=ModelRecipe(
+            kind="lightgbm",
+            objective=str(params.get("objective", "regression")),
+            metric="rmsle",
+            early_stopping_metric="rmsle",
+            n_estimators=int(params["n_estimators"]),
+            early_stopping_rounds=200,
+        ),
+    )
+    run_fingerprint = runtime_recipe_fingerprint(
+        run_recipe.to_dict(),
+        target_transform="log1p",
+        refit_rounds=rounds,
+        refit_seeds=(0, 1, 2),
+    )
+    provenance = ExperimentProvenance.capture(
+        recipe_fingerprint=run_fingerprint,
+        data_artifacts=[DataArtifact.from_path(path)],
+        feature_names=final_columns,
+        fold_fingerprint=fold_plan.fingerprint,
+    )
+    record = SQLiteExperimentStore(ROOT / "experiments" / "experiments.db").add(
+        ExperimentRecord(
+            name=f"tam_pipeline_lightgbm_{run_fingerprint[:8]}",
+            cv_score=result.overall_score,
+            metric="rmsle",
+            model_kind="lightgbm",
+            n_features=len(final_columns),
+            fold_scores=list(result.fold_scores),
+            params=dict(params),
+            features=list(final_columns),
+            notes="full_pipeline; score_space=raw; target_transform=log1p",
+            submission_path=str(path),
+            provenance=provenance,
+        )
+    )
+    check("deney provenance", bool(record.run_id), f"run_id={record.run_id}")
 
     merged = pd.read_csv(path).merge(solution, on=ID, suffixes=("_p", "_g"))
     truth = merged[f"{TARGET}_g"].to_numpy()
     score = rmsle(truth, merged[f"{TARGET}_p"].to_numpy())
     baseline = rmsle(truth, np.full_like(truth, float(np.median(y))))
     gain = (baseline - score) / baseline * 100
-    check("holdout baseline'i geciyor", score < baseline,
-          f"RMSLE {score:.5f} vs {baseline:.5f}  (%{gain:.1f} kazanc)")
+    check(
+        "holdout baseline'i geciyor",
+        score < baseline,
+        f"RMSLE {score:.5f} vs {baseline:.5f}  (%{gain:.1f} kazanc)",
+    )
 
     zero_base = zero_baseline_score(truth, metric="mae")
     print(f"  'hep sifir' MAE baseline: {zero_base:.4f}")
@@ -358,9 +503,7 @@ def main() -> int:
     print("\n  En kotu segmentler:")
     print(segment_table.tail(3).to_string(index=False))
 
-    calibration = prediction_vs_actual_table(
-        truth, merged[f"{TARGET}_p"].to_numpy(), bins=5
-    )
+    calibration = prediction_vs_actual_table(truth, merged[f"{TARGET}_p"].to_numpy(), bins=5)
     check("kalibrasyon tablosu", len(calibration) > 0)
 
     families_table = feature_importance_table(
@@ -371,8 +514,11 @@ def main() -> int:
     print(families_table.to_string(index=False))
 
     footprint = model_footprint(result.models, elapsed_seconds=result.elapsed_seconds)
-    check("model ayak izi", footprint["toplam_boyut_mb"] >= 0,
-          f"{footprint['toplam_boyut_mb']} MB, {footprint['toplam_agac']} agac")
+    check(
+        "model ayak izi",
+        footprint["toplam_boyut_mb"] >= 0,
+        f"{footprint['toplam_boyut_mb']} MB, {footprint['toplam_agac']} agac",
+    )
 
     impact = business_impact(truth, merged[f"{TARGET}_p"].to_numpy(), unit_label="dakika")
     print(f"\n  Is degeri: {impact['ozet']}")
@@ -380,8 +526,9 @@ def main() -> int:
     # ------------------------------------------------------------------
     elapsed = time.perf_counter() - started
     failed = [name for name, ok, _ in checks if not ok]
-    banner("SONUC", f"{len(checks) - len(failed)}/{len(checks)} kontrol gecti"
-                    f"  ({elapsed / 60:.1f} dk)")
+    banner(
+        "SONUC", f"{len(checks) - len(failed)}/{len(checks)} kontrol gecti  ({elapsed / 60:.1f} dk)"
+    )
     if failed:
         print("  BASARISIZ:")
         for name in failed:

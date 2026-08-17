@@ -56,7 +56,7 @@ __all__ = [
 _INK = "#13202D"
 _MUTED = "#6B7A88"
 _RULE = "#D2D8DE"
-_ACCENT = "#B57A0B"       # sebeke uyari kehribari
+_ACCENT = "#B57A0B"  # sebeke uyari kehribari
 _GOOD = "#1B6A57"
 _BAD = "#9E2C1E"
 
@@ -169,9 +169,7 @@ def worst_segments(
     min_count: int = 20,
 ) -> pd.DataFrame:
     """En kotu ``top`` segment. Hata analizi bolumunun cekirdegi."""
-    table = error_by_segment(
-        y_true, y_pred, segments, metric=metric, min_count=min_count
-    )
+    table = error_by_segment(y_true, y_pred, segments, metric=metric, min_count=min_count)
     _, greater_is_better, _ = get_metric(metric)
     return table.tail(top) if greater_is_better else table.tail(top)
 
@@ -353,12 +351,14 @@ def plot_fold_scores(result: Any, *, title: str = "Fold bazli CV skoru", ax: Any
     mean = float(np.mean(scores))
 
     ax.bar(positions, scores, color=_ACCENT, alpha=0.85, width=0.6)
-    ax.axhline(mean, color=_INK, linestyle="--", linewidth=1.2,
-               label=f"ortalama {mean:.4f}")
+    ax.axhline(mean, color=_INK, linestyle="--", linewidth=1.2, label=f"ortalama {mean:.4f}")
     ax.fill_between(
         [0.4, len(scores) + 0.6],
-        mean - np.std(scores), mean + np.std(scores),
-        color=_INK, alpha=0.07, label=f"±1 std ({np.std(scores):.4f})",
+        mean - np.std(scores),
+        mean + np.std(scores),
+        color=_INK,
+        alpha=0.07,
+        label=f"±1 std ({np.std(scores):.4f})",
     )
 
     ax.set_xticks(list(positions))
@@ -391,11 +391,9 @@ def plot_error_by_segment(
     colors = [_BAD if value > threshold else _MUTED for value in values]
 
     ax.barh(labels, values, color=colors, alpha=0.9)
-    ax.axvline(threshold, color=_INK, linestyle="--", linewidth=1,
-               label=f"medyan {threshold:.3f}")
+    ax.axvline(threshold, color=_INK, linestyle="--", linewidth=1, label=f"medyan {threshold:.3f}")
     ax.set_xlabel(metric)
-    ax.set_title("Segment bazli hata (en kotu üstte)", fontsize=12,
-                 fontweight="bold", pad=12)
+    ax.set_title("Segment bazli hata (en kotu üstte)", fontsize=12, fontweight="bold", pad=12)
     ax.legend(frameon=False, fontsize=9, labelcolor=_MUTED)
     _style(ax)
     ax.grid(axis="x", alpha=0.25)
@@ -433,11 +431,14 @@ def plot_prediction_timeline(
     series = frame.set_index("tarih").resample(aggregate).mean()
 
     ax.plot(series.index, series["gercek"], color=_INK, linewidth=1.6, label="gerçek")
-    ax.plot(series.index, series["tahmin"], color=_ACCENT, linewidth=1.6,
-            label="tahmin", alpha=0.9)
+    ax.plot(series.index, series["tahmin"], color=_ACCENT, linewidth=1.6, label="tahmin", alpha=0.9)
     ax.fill_between(
-        series.index, series["gercek"], series["tahmin"],
-        color=_BAD, alpha=0.12, label="hata",
+        series.index,
+        series["gercek"],
+        series["tahmin"],
+        color=_BAD,
+        alpha=0.12,
+        label="hata",
     )
 
     ax.set_ylabel("ortalama")
@@ -461,10 +462,21 @@ def plot_selection_curve(selection_result: Any, *, ax: Any = None):
     curve = selection_result.curve()
     best_count = len(selection_result.best_features)
 
-    ax.plot(curve["feature_sayisi"], curve["skor"], color=_MUTED,
-            linewidth=1.5, marker="o", markersize=4)
-    ax.axvline(best_count, color=_GOOD, linestyle="--", linewidth=1.4,
-               label=f"secilen: {best_count} feature")
+    ax.plot(
+        curve["feature_sayisi"],
+        curve["skor"],
+        color=_MUTED,
+        linewidth=1.5,
+        marker="o",
+        markersize=4,
+    )
+    ax.axvline(
+        best_count,
+        color=_GOOD,
+        linestyle="--",
+        linewidth=1.4,
+        label=f"secilen: {best_count} feature",
+    )
 
     ax.set_xlabel("feature sayısı")
     ax.set_ylabel("CV skoru")

@@ -133,15 +133,16 @@ def test_eksik_koordinat_sessiz_gecmiyor():
     )
     with pytest.raises(KeyError, match="koordinati yok"):
         add_solar_features(
-            panel, time_column="tarih", location_column="yer",
-            coordinates={"a": IZMIR}, geometry_only=True,
+            panel,
+            time_column="tarih",
+            location_column="yer",
+            coordinates={"a": IZMIR},
+            geometry_only=True,
         )
 
 
 def test_berraklik_endeksi_sifir_boleni_nan_yapiyor():
-    frame = pd.DataFrame(
-        {"olculen": [3.0, 4.0, 5.0], "gunes_ghi_gunluk": [5.0, 0.0, 6.0]}
-    )
+    frame = pd.DataFrame({"olculen": [3.0, 4.0, 5.0], "gunes_ghi_gunluk": [5.0, 0.0, 6.0]})
     out = add_clearness_index(frame, observed_column="olculen")
     assert out["berraklik_endeksi"].iloc[0] == pytest.approx(0.6)
     assert np.isnan(out["berraklik_endeksi"].iloc[1])
@@ -241,8 +242,11 @@ def _panel_times(n_days: int = 400, n_units: int = 96) -> pd.Series:
 def test_test_span_tum_foldlari_ayni_zaman_uzunlugunda_yapiyor():
     times = _panel_times()
     folds = purged_time_series_split(
-        times, embargo=pd.Timedelta(days=30), n_splits=3,
-        test_span=pd.Timedelta(days=31), verbose=False,
+        times,
+        embargo=pd.Timedelta(days=30),
+        n_splits=3,
+        test_span=pd.Timedelta(days=31),
+        verbose=False,
     )
     assert len(folds) == 3
     values = times.to_numpy()
@@ -256,8 +260,11 @@ def test_test_span_tum_foldlari_ayni_zaman_uzunlugunda_yapiyor():
 def test_test_span_foldlari_kronolojik_sirada_donduruyor():
     times = _panel_times()
     folds = purged_time_series_split(
-        times, embargo=pd.Timedelta(days=7), n_splits=3,
-        test_span=pd.Timedelta(days=31), verbose=False,
+        times,
+        embargo=pd.Timedelta(days=7),
+        n_splits=3,
+        test_span=pd.Timedelta(days=31),
+        verbose=False,
     )
     values = times.to_numpy()
     baslangiclar = [pd.Timestamp(values[v].min()) for _, v in folds]
@@ -267,8 +274,11 @@ def test_test_span_foldlari_kronolojik_sirada_donduruyor():
 def test_son_fold_veri_sonuna_capali():
     times = _panel_times()
     folds = purged_time_series_split(
-        times, embargo=pd.Timedelta(days=7), n_splits=3,
-        test_span=pd.Timedelta(days=31), verbose=False,
+        times,
+        embargo=pd.Timedelta(days=7),
+        n_splits=3,
+        test_span=pd.Timedelta(days=31),
+        verbose=False,
     )
     values = times.to_numpy()
     assert pd.Timestamp(values[folds[-1][1]].max()) == pd.Timestamp(values.max())
@@ -289,8 +299,11 @@ def test_test_span_ambargoyu_koruyor():
 def test_test_span_foldlari_cakismiyor():
     times = _panel_times()
     folds = purged_time_series_split(
-        times, embargo=pd.Timedelta(days=7), n_splits=3,
-        test_span=pd.Timedelta(days=31), verbose=False,
+        times,
+        embargo=pd.Timedelta(days=7),
+        n_splits=3,
+        test_span=pd.Timedelta(days=31),
+        verbose=False,
     )
     assert_folds_align(len(times), folds)
     hepsi = np.concatenate([v for _, v in folds])
@@ -300,8 +313,10 @@ def test_test_span_foldlari_cakismiyor():
 def test_negatif_test_span_reddediliyor():
     with pytest.raises(ValueError, match="pozitif olmali"):
         purged_time_series_split(
-            _panel_times(50, 2), embargo=pd.Timedelta(0),
-            test_span=pd.Timedelta(days=-1), verbose=False,
+            _panel_times(50, 2),
+            embargo=pd.Timedelta(0),
+            test_span=pd.Timedelta(days=-1),
+            verbose=False,
         )
 
 
@@ -334,8 +349,11 @@ def _ablasyon_verisi(seed: int = 7):
     )
     y = 120 + 3 * X.hava_sicaklik + 8 * X.lag_1 + rng.normal(0, 4, n)
     folds = purged_time_series_split(
-        tarih, embargo=pd.Timedelta(days=14), n_splits=2,
-        test_span=pd.Timedelta(days=60), verbose=False,
+        tarih,
+        embargo=pd.Timedelta(days=14),
+        n_splits=2,
+        test_span=pd.Timedelta(days=60),
+        verbose=False,
     )
     return X, y.to_numpy(), folds
 
@@ -377,7 +395,11 @@ def test_gruplanmamis_kolon_cekirdek_sayiliyor():
 def test_ablasyon_ic_ice_varyantlar_uretiyor():
     X, y, folds = _ablasyon_verisi()
     sonuc = ablation_ensemble(
-        X, y, folds, groups=_gruplar(), metric="mape",
+        X,
+        y,
+        folds,
+        groups=_gruplar(),
+        metric="mape",
         params={"n_estimators": 120, "learning_rate": 0.1, "verbose": -1},
         verbose=False,
     )
@@ -392,7 +414,11 @@ def test_ablasyon_harman_uyarisi_kotu_varyanti_yakaliyor():
     """Esit agirlik, varyantlar denk degilken harmanı bozar -- sessiz kalmamali."""
     X, y, folds = _ablasyon_verisi()
     sonuc = ablation_ensemble(
-        X, y, folds, groups=_gruplar(), metric="mape",
+        X,
+        y,
+        folds,
+        groups=_gruplar(),
+        metric="mape",
         params={"n_estimators": 120, "learning_rate": 0.1, "verbose": -1},
         verbose=False,
     )
@@ -409,9 +435,12 @@ def test_ablasyon_tek_risk_katmaninda_hata_veriyor():
     X, y, folds = _ablasyon_verisi()
     with pytest.raises(ValueError, match="en az IKI farkli risk"):
         ablation_ensemble(
-            X, y, folds,
+            X,
+            y,
+            folds,
             groups=[FeatureGroup("hepsi", tuple(X.columns), risk="cekirdek")],
-            metric="mape", verbose=False,
+            metric="mape",
+            verbose=False,
         )
 
 
@@ -430,7 +459,11 @@ def test_logo_gercek_sinyali_gurultuden_ayiriyor():
     """hava gercek sinyal, deneysel saf gurultu -- LOGO bunu ayirt etmeli."""
     X, y, folds = _ablasyon_verisi()
     tablo = leave_one_group_out(
-        X, y, folds, groups=_gruplar(), metric="mape",
+        X,
+        y,
+        folds,
+        groups=_gruplar(),
+        metric="mape",
         params={"n_estimators": 120, "learning_rate": 0.1, "verbose": -1},
         verbose=False,
     )
@@ -533,8 +566,11 @@ def _gecici_log(tmp_path):
     for i in range(5):
         log.add(
             ExperimentRecord(
-                name=f"deney{i}", cv_score=1.0 + i, metric="mape",
-                model_kind="lightgbm", n_features=10,
+                name=f"deney{i}",
+                cv_score=1.0 + i,
+                metric="mape",
+                model_kind="lightgbm",
+                n_features=10,
             )
         )
     return log
@@ -584,8 +620,15 @@ def test_eski_kayit_timestamp_e_dusuyor(tmp_path):
     yol = tmp_path / "eski.jsonl"
     yol.write_text(
         json.dumps(
-            {"name": "eski", "cv_score": 1.0, "metric": "mape", "model_kind": "lightgbm",
-             "n_features": 5, "lb_score": 1.2, "timestamp": "2026-08-22T12:00:00+00:00"},
+            {
+                "name": "eski",
+                "cv_score": 1.0,
+                "metric": "mape",
+                "model_kind": "lightgbm",
+                "n_features": 5,
+                "lb_score": 1.2,
+                "timestamp": "2026-08-22T12:00:00+00:00",
+            },
             ensure_ascii=False,
         )
         + "\n",

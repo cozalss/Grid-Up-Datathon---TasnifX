@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -106,7 +107,43 @@ def _uyar_kapsam_disi(
     )
 
 
-def correlation_matrix(predictions: dict[str, np.ndarray]) -> pd.DataFrame:
+def _prediction_matrix(
+    predictions: dict[str, np.ndarray], function: str
+) -> tuple[list[str], np.ndarray]:
+    """Harman girdilerini tek, uzunlugu dogrulanmis matrise cevirir."""
+    if not predictions:
+        raise ValueError(f"{function}: en az bir tahmin dizisi gerekli.")
+    names = list(predictions)
+    arrays = [np.asarray(predictions[name], dtype="float64").ravel() for name in names]
+    lengths = {len(values) for values in arrays}
+    if len(lengths) != 1:
+        raise ValueError(f"{function}: tahmin dizilerinin uzunluklari ayni olmali.")
+    return names, np.column_stack(arrays)
+
+
+def _coverage_mask(
+    predictions: dict[str, np.ndarray],
+    covered: np.ndarray | None,
+    function: str,
+    n_rows: int,
+) -> np.ndarray:
+    """Olculmus OOF kapsam maskesini dogrular; yoksa eski uyariyi korur."""
+    if covered is None:
+        _uyar_kapsam_disi(predictions, function)
+        return np.ones(n_rows, dtype=bool)
+    mask = np.asarray(covered, dtype=bool).ravel()
+    if len(mask) != n_rows:
+        raise ValueError(
+            f"{function}: covered ({len(mask)}) ve tahminler ({n_rows}) uzunluklari farkli."
+        )
+    if not mask.any():
+        raise ValueError(f"{function}: covered uygulandiktan sonra hic satir kalmadi.")
+    return mask
+
+
+def correlation_matrix(
+    predictions: dict[str, np.ndarray], *, covered: np.ndarray | None = None
+) -> pd.DataFrame:
     """Model tahminleri arasindaki korelasyon matrisi.
 
     OKUMA KILAVUZU:
@@ -114,7 +151,9 @@ def correlation_matrix(predictions: dict[str, np.ndarray]) -> pd.DataFrame:
       0.90-0.98 -> saglikli cesitlilik, harmanlama ise yarar
       < 0.85  -> cok farkli; biri belirgin kotuyse harmanlamak zarar verebilir
     """
-    frame = pd.DataFrame(predictions)
+    names, matrix = _prediction_matrix(predictions, "correlation_matrix")
+    mask = _coverage_mask(predictions, covered, "correlation_matrix", len(matrix))
+    frame = pd.DataFrame(matrix[mask], columns=names)
     return frame.corr()
 
 
@@ -148,6 +187,24 @@ def _fold_dilimlerini_dogrula(
                 f"(uzunluk {n_rows}, gorulen aralik [{dilim.min()}, {dilim.max()}])."
             )
     return dilimler
+
+
+def _covered_fold_slices(
+    fold_slices: Sequence[np.ndarray] | None,
+    stability_penalty: float,
+    n_rows: int,
+    covered: np.ndarray,
+) -> list[np.ndarray] | None:
+    """Fold dilimlerini dogrular ve OOF kapsami ile kesistirir."""
+    slices = _fold_dilimlerini_dogrula(fold_slices, stability_penalty, n_rows)
+    if slices is None:
+        return None
+    covered_slices = [fold_slice[covered[fold_slice]] for fold_slice in slices]
+    if any(fold_slice.size == 0 for fold_slice in covered_slices):
+        raise ValueError(
+            "hill_climb_weights: covered uygulandiktan sonra en az bir fold'da hic satir kalmadi."
+        )
+    return covered_slices
 
 
 def hill_climb_weights(
@@ -196,14 +253,16 @@ def hill_climb_weights(
         ValueError: ``stability_penalty < 0``; ceza pozitifken ``fold_slices``
             verilmemis, bos, tek dilimli veya indeksleri dizinin disindaysa.
     """
-    _uyar_kapsam_disi(oof_predictions, "hill_climb_weights", covered)
     metric_fn, greater_is_better, _ = get_metric(metric)
 
-    names = list(oof_predictions)
-    matrix = np.column_stack([oof_predictions[name] for name in names])
+    names, matrix = _prediction_matrix(oof_predictions, "hill_climb_weights")
+    y_values = np.asarray(y_true).ravel()
+    if len(y_values) != len(matrix):
+        raise ValueError("hill_climb_weights: y_true ve tahmin uzunluklari ayni olmali.")
+    mask = _coverage_mask(oof_predictions, covered, "hill_climb_weights", len(matrix))
     weights = np.zeros(len(names))
 
-    dilimler = _fold_dilimlerini_dogrula(fold_slices, stability_penalty, len(matrix))
+    dilimler = _covered_fold_slices(fold_slices, stability_penalty, len(matrix), mask)
 
     def score_of(weight_vector: np.ndarray) -> float:
         total = weight_vector.sum()
@@ -211,10 +270,8 @@ def hill_climb_weights(
             return -np.inf if greater_is_better else np.inf
         blended = matrix @ (weight_vector / total)
         if dilimler is None:
-            return float(metric_fn(y_true, blended))
-        fold_skorlari = [
-            float(metric_fn(y_true[dilim], blended[dilim])) for dilim in dilimler
-        ]
+            return float(metric_fn(y_values[mask], blended[mask]))
+        fold_skorlari = [float(metric_fn(y_values[dilim], blended[dilim])) for dilim in dilimler]
         ortalama = float(np.mean(fold_skorlari))
         sapma = float(np.std(fold_skorlari))
         # Kucuk-iyi metrikte ceza EKLENIR; buyuk-iyi metrikte CIKARILIR --
@@ -234,7 +291,7 @@ def hill_climb_weights(
 
     if dilimler is None:
         single_scores = [
-            float(metric_fn(y_true, matrix[:, index])) for index in range(len(names))
+            float(metric_fn(y_values[mask], matrix[mask, index])) for index in range(len(names))
         ]
     else:
         single_scores = [_tekil(index) for index in range(len(names))]
@@ -410,15 +467,12 @@ def tune_power_mean(
     if covered is not None:
         maske = np.asarray(covered, dtype=bool).ravel()
         if len(maske) != len(y):
-            raise ValueError(
-                f"covered ({len(maske)}) ve y_true ({len(y)}) uzunluklari farkli."
-            )
+            raise ValueError(f"covered ({len(maske)}) ve y_true ({len(y)}) uzunluklari farkli.")
     if not maske.any():
         raise ValueError("Skorlanacak satir kalmadi (bos kapsam maskesi).")
 
     kapsanan = {
-        name: np.asarray(dizi, dtype="float64").ravel()[maske]
-        for name, dizi in predictions.items()
+        name: np.asarray(dizi, dtype="float64").ravel()[maske] for name, dizi in predictions.items()
     }
     metric_fn, greater_is_better, _ = get_metric(metric)
 
@@ -426,10 +480,12 @@ def tune_power_mean(
     kuvvetler = np.unique(
         np.round(np.concatenate([np.asarray(p_grid, dtype="float64").ravel(), [1.0]]), 6)
     )
-    skorlar = np.array([
-        float(metric_fn(y[maske], power_mean_blend(kapsanan, weights, p=float(p))))
-        for p in kuvvetler
-    ])
+    skorlar = np.array(
+        [
+            float(metric_fn(y[maske], power_mean_blend(kapsanan, weights, p=float(p))))
+            for p in kuvvetler
+        ]
+    )
     tablo = pd.DataFrame({"p": kuvvetler, "skor": skorlar})
 
     best_index = int(np.argmax(skorlar) if greater_is_better else np.argmin(skorlar))
@@ -454,12 +510,17 @@ def greedy_forward_selection(
     Az sayida modelle (3-6) tepe tirmanma yeterlidir; 10+ modelde bu yontem
     daha kararli sonuc verir.
     """
-    _uyar_kapsam_disi(oof_predictions, "greedy_forward_selection", covered)
     metric_fn, greater_is_better, _ = get_metric(metric)
 
-    names = list(oof_predictions)
+    names, matrix = _prediction_matrix(oof_predictions, "greedy_forward_selection")
+    y_values = np.asarray(y_true).ravel()
+    if len(y_values) != len(matrix):
+        raise ValueError("greedy_forward_selection: y_true ve tahmin uzunluklari ayni olmali.")
+    mask = _coverage_mask(oof_predictions, covered, "greedy_forward_selection", len(matrix))
+    covered_predictions = {name: matrix[mask, index] for index, name in enumerate(names)}
+    covered_y = y_values[mask]
     selected: list[str] = []
-    running_sum = np.zeros_like(y_true, dtype="float64")
+    running_sum = np.zeros_like(covered_y, dtype="float64")
     best_score = -np.inf if greater_is_better else np.inf
 
     for step in range(max_models):
@@ -469,8 +530,8 @@ def greedy_forward_selection(
 
         scores = []
         for name in candidates:
-            trial = (running_sum + oof_predictions[name]) / (len(selected) + 1)
-            scores.append(float(metric_fn(y_true, trial)))
+            trial = (running_sum + covered_predictions[name]) / (len(selected) + 1)
+            scores.append(float(metric_fn(covered_y, trial)))
 
         index = int(np.argmax(scores) if greater_is_better else np.argmin(scores))
         improved = scores[index] > best_score if greater_is_better else scores[index] < best_score
@@ -480,7 +541,7 @@ def greedy_forward_selection(
             break
 
         selected.append(candidates[index])
-        running_sum = running_sum + oof_predictions[candidates[index]]
+        running_sum = running_sum + covered_predictions[candidates[index]]
         best_score = scores[index]
 
     if not selected:
@@ -522,16 +583,20 @@ def prune_by_correlation(
     Returns:
         Tutulacak model adlari, en iyiden baslayarak.
     """
-    _uyar_kapsam_disi(oof_predictions, "prune_by_correlation", covered)
     metric_fn, greater_is_better, _ = get_metric(metric)
 
+    names, matrix = _prediction_matrix(oof_predictions, "prune_by_correlation")
+    y_values = np.asarray(y_true).ravel()
+    if len(y_values) != len(matrix):
+        raise ValueError("prune_by_correlation: y_true ve tahmin uzunluklari ayni olmali.")
+    mask = _coverage_mask(oof_predictions, covered, "prune_by_correlation", len(matrix))
+    covered_y = y_values[mask]
     scores = {
-        name: float(metric_fn(y_true, prediction))
-        for name, prediction in oof_predictions.items()
+        name: float(metric_fn(covered_y, matrix[mask, index])) for index, name in enumerate(names)
     }
     order = sorted(scores, key=lambda name: scores[name], reverse=greater_is_better)
 
-    frame = pd.DataFrame(oof_predictions)
+    frame = pd.DataFrame(matrix[mask], columns=names)
     correlations = frame.corr()
 
     kept: list[str] = []
@@ -650,7 +715,7 @@ def stack_oof(
     meta_oof = np.zeros(len(y), dtype="float64")
     covered = np.zeros(len(y), dtype=bool)
     coefficient_rows: list[np.ndarray] = []
-    fold_models: list[object] = []
+    fold_models: list[Any] = []
     atlanan: list[int] = []
 
     for fold_index, (train_idx, valid_idx) in enumerate(folds, start=1):
@@ -693,11 +758,11 @@ def stack_oof(
     # Karsilastirma: hill climbing ne veriyordu?
     weights = hill_climb_weights(
         {name: oof_predictions[name][covered] for name in names},
-        y[covered], metric=metric, verbose=False,
+        y[covered],
+        metric=metric,
+        verbose=False,
     )
-    hill_blend = sum(
-        weights[name] * oof_predictions[name][covered] for name in names
-    )
+    hill_blend = sum(weights[name] * oof_predictions[name][covered] for name in names)
     hill_score = float(metric_fn(y[covered], hill_blend))
 
     stacking_wins = score > hill_score if greater_is_better else score < hill_score
@@ -706,21 +771,20 @@ def stack_oof(
     if test_predictions:
         test_features = pd.DataFrame({name: test_predictions[name] for name in names})
         # Fold modellerinin ortalamasi -- tek model yerine, varyansi dusurur.
-        test_blend = np.mean(
-            [model.predict(test_features) for model in fold_models], axis=0
-        )
+        test_blend = np.mean([model.predict(test_features) for model in fold_models], axis=0)
 
     coefficients = (
-        dict(zip(names, np.mean(coefficient_rows, axis=0), strict=True))
-        if coefficient_rows else {}
+        dict(zip(names, np.mean(coefficient_rows, axis=0), strict=True)) if coefficient_rows else {}
     )
 
     if verbose:
         print(f"Stacking ({meta}) {metric}: {score:.6f}")
         print(f"Hill climbing  {metric}: {hill_score:.6f}")
         print(
-            "  -> " + (
-                "stacking kazandi" if stacking_wins
+            "  -> "
+            + (
+                "stacking kazandi"
+                if stacking_wins
                 else "hill climbing kazandi (daha aciklanabilir, onu tercih et)"
             )
         )
@@ -745,7 +809,7 @@ def stack_oof(
     }
 
 
-def _build_meta(meta: str, seed: int) -> object:
+def _build_meta(meta: str, seed: int) -> Any:
     """Meta-model orneği kurar."""
     if meta == "ridge":
         from sklearn.linear_model import Ridge
@@ -756,8 +820,12 @@ def _build_meta(meta: str, seed: int) -> object:
         import lightgbm as lgb
 
         return lgb.LGBMRegressor(
-            n_estimators=200, learning_rate=0.05, num_leaves=7,
-            min_child_samples=50, verbose=-1, random_state=seed,
+            n_estimators=200,
+            learning_rate=0.05,
+            num_leaves=7,
+            min_child_samples=50,
+            verbose=-1,
+            random_state=seed,
         )
 
     raise ValueError(f"Bilinmeyen meta model '{meta}'. 'ridge' veya 'lgbm'.")
@@ -784,6 +852,4 @@ def rank_average(
         raise ValueError("Agirlik sayisi tahmin sayisiyla uyusmuyor.")
 
     total = sum(weights)
-    return sum(
-        (weight / total) * column for weight, column in zip(weights, ranked, strict=True)
-    )
+    return sum((weight / total) * column for weight, column in zip(weights, ranked, strict=True))

@@ -126,9 +126,7 @@ def safe_str(series: pd.Series, *, missing: str | None = None) -> pd.Series:
     """
     was_missing = series.isna()
     converted = series.astype("object").astype(str)
-    return converted.mask(was_missing) if missing is None else converted.mask(
-        was_missing, missing
-    )
+    return converted.mask(was_missing) if missing is None else converted.mask(was_missing, missing)
 
 
 def environment_report() -> dict[str, Any]:

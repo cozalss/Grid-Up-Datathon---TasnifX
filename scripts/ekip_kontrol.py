@@ -40,6 +40,13 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from packaging.requirements import InvalidRequirement, Requirement
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
+
 KOK = Path(__file__).resolve().parents[1]
 PYPROJECT = KOK / "pyproject.toml"
 CONFTEST = KOK / "tests" / "conftest.py"
@@ -104,8 +111,6 @@ def paket_listesi(pyproject_yolu: Path) -> list[tuple[str, str | None]]:
     kaynagi pyproject'tir. Cekirdek bagimliliklar + ZORUNLU_GRUPLAR okunur
     (olculdu: 13 paket).
     """
-    import tomllib
-
     veri = tomllib.loads(pyproject_yolu.read_text(encoding="utf-8"))
     girisler = list(veri["project"].get("dependencies", []))
     gruplar = veri["project"].get("optional-dependencies", {})
@@ -115,11 +120,20 @@ def paket_listesi(pyproject_yolu: Path) -> list[tuple[str, str | None]]:
     paketler: list[tuple[str, str | None]] = []
     gorulen: set[str] = set()
     for giris in girisler:
-        eslesme = re.match(r"\s*([A-Za-z0-9_.-]+)\s*(?:>=\s*([0-9][0-9.]*))?", giris)
-        if eslesme is None or eslesme.group(1) in gorulen:
+        try:
+            requirement = Requirement(giris)
+        except InvalidRequirement:
             continue
-        gorulen.add(eslesme.group(1))
-        paketler.append((eslesme.group(1), eslesme.group(2)))
+        if requirement.marker is not None and not requirement.marker.evaluate():
+            continue
+        if requirement.name in gorulen:
+            continue
+        gorulen.add(requirement.name)
+        lower_bound = next(
+            (item.version for item in requirement.specifier if item.operator == ">="),
+            None,
+        )
+        paketler.append((requirement.name, lower_bound))
     return paketler
 
 
@@ -128,8 +142,6 @@ def gelistirme_araclari(pyproject_yolu: Path, conftest_yolu: Path) -> list[str]:
     hypothesis conftest.py'nin import'undan. Bunlar pyproject bagimliligi DEGIL
     cunku Kaggle imajina kurulmazlar -- ama testleri kosacak ekip uyesine sart.
     """
-    import tomllib
-
     veri = tomllib.loads(pyproject_yolu.read_text(encoding="utf-8"))
     araclar = [ad for ad in ("pytest", "ruff") if ad in veri.get("tool", {})]
     if conftest_yolu.is_file() and "hypothesis" in conftest_yolu.read_text(encoding="utf-8"):
@@ -323,8 +335,14 @@ def duman_kontrol() -> Kontrol:
 
     try:
         sonuc = cross_validate(
-            ozellikler, hedef, [fold], kind="lightgbm", metric="mae",
-            params=params, early_stopping_rounds=25, verbose=False,
+            ozellikler,
+            hedef,
+            [fold],
+            kind="lightgbm",
+            metric="mae",
+            params=params,
+            early_stopping_rounds=25,
+            verbose=False,
         )
     except Exception as hata:  # doktor cokmemeli: her hata teshise donusur
         return Kontrol(ad, gecti=False, detay=f"cross_validate patladi: {hata!r}")
@@ -367,9 +385,7 @@ def encoding_kontrol(
     utf8_aktif = utf8_modu or "utf" in ortam.lower() or "utf" in stdout_kodlamasi.lower()
     satirlar: list[str] = []
     if tercih.lower().startswith("cp125"):
-        satirlar.append(
-            f"locale {tercih}: Turkce karakterli dosya/altsurec ciktisi bozulabilir"
-        )
+        satirlar.append(f"locale {tercih}: Turkce karakterli dosya/altsurec ciktisi bozulabilir")
     return Kontrol(
         ad="7) konsol encoding",
         gecti=utf8_aktif,

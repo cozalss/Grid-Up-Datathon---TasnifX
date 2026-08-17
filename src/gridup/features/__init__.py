@@ -11,13 +11,15 @@ Bu sozlesme sayesinde fonksiyonlar zincirlenebilir::
         raw
         .pipe(add_calendar_features, time_column="tarih")
         .pipe(add_turkish_holiday_features, time_column="tarih")
-        .pipe(add_lag_features, "tuketim", [1, 7], time_column="tarih",
-              group_columns=["trafo_id"])
+        .pipe(add_lag_features, "tuketim", shifts=[1, 7], time_column="tarih",
+              horizon=1, group_columns=["trafo_id"])
     )
 """
 
 from .aggregate import add_group_statistics, add_ratio_features, add_target_free_aggregates
 from .categorical import (
+    FrequencyEncoder,
+    TargetEncodingResult,
     add_combination_features,
     add_count_encoding,
     add_frequency_encoding,
@@ -70,6 +72,8 @@ __all__ = [
     "add_previous_month_features",
     "add_upcoming_holiday_features",
     "shared_origin",
+    "FrequencyEncoder",
+    "TargetEncodingResult",
     "add_frequency_encoding",
     "add_count_encoding",
     "oof_target_encode",

@@ -265,9 +265,7 @@ def add_solar_features(
     if location_column not in frame.columns:
         raise KeyError(f"Konum kolonu '{location_column}' frame'de yok.")
     if not isinstance(coordinates, Mapping):
-        raise TypeError(
-            "location_column verildiginde coordinates bir esleme (dict) olmali."
-        )
+        raise TypeError("location_column verildiginde coordinates bir esleme (dict) olmali.")
 
     keys = result[location_column].astype(str)
     missing = sorted(set(keys.unique()) - set(coordinates))
@@ -300,9 +298,7 @@ def add_solar_features(
     for key, group_times in times.groupby(keys):
         latitude, longitude = coordinates[key]
         altitude = (
-            float(altitudes.get(key, 0.0))
-            if isinstance(altitudes, Mapping)
-            else float(altitudes)
+            float(altitudes.get(key, 0.0)) if isinstance(altitudes, Mapping) else float(altitudes)
         )
         table = _solar_table(latitude, longitude, group_times, altitude, geometry_only)
         aligned = table.reindex(group_times.to_numpy())

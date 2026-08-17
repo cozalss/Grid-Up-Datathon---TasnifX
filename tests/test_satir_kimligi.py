@@ -62,12 +62,7 @@ def _panel(n_gun: int = 30) -> pd.DataFrame:
 
 
 def _komsuluk() -> pd.DataFrame:
-    satir = [
-        {"yer": a, "komsu": b, "mesafe_km": 40.0}
-        for a in YERLER
-        for b in YERLER
-        if a != b
-    ]
+    satir = [{"yer": a, "komsu": b, "mesafe_km": 40.0} for a in YERLER for b in YERLER if a != b]
     return pd.DataFrame(satir)
 
 
@@ -75,7 +70,7 @@ def _zincir(frame: pd.DataFrame) -> pd.DataFrame:
     """Gercek bir feature boru hatti -- yarisma gunu kurulacak sirayla."""
     cikti = add_calendar_features(frame, "tarih")
     cikti = add_lag_features(
-        cikti, "hedef", [1, 7], time_column="tarih", horizon=1, group_columns=["yer"]
+        cikti, "hedef", shifts=[1, 7], time_column="tarih", horizon=1, group_columns=["yer"]
     )
     cikti = add_rolling_features(
         cikti, "hedef", [3, 7], time_column="tarih", horizon=1, group_columns=["yer"]
@@ -87,12 +82,20 @@ def _zincir(frame: pd.DataFrame) -> pd.DataFrame:
         cikti, group_columns=["yer"], time_column="tarih", value_columns=["yagis_toplam"]
     )
     cikti = add_physical_derivatives(
-        cikti, group_columns=["yer"], time_column="tarih",
-        temperature_max=None, temperature_min=None, gust_max=None,
+        cikti,
+        group_columns=["yer"],
+        time_column="tarih",
+        temperature_max=None,
+        temperature_min=None,
+        gust_max=None,
     )
     return add_neighbour_feature_mean(
-        cikti, _komsuluk(), key_column="yer", time_column="tarih",
-        value_columns=["sicaklik_ort"], target_column="hedef",
+        cikti,
+        _komsuluk(),
+        key_column="yer",
+        time_column="tarih",
+        value_columns=["sicaklik_ort"],
+        target_column="hedef",
     )
 
 
@@ -115,7 +118,9 @@ def test_girdi_sirasi_ciktiyi_degistirmiyor(tohum: int):
 
     assert list(a.columns) == list(b.columns)
     pd.testing.assert_frame_equal(
-        a, b, check_like=False,
+        a,
+        b,
+        check_like=False,
         obj=f"tohum={tohum}: girdi sirasi ciktiyi DEGISTIRDI -- satir kimligi kayboldu",
     )
 
@@ -190,13 +195,12 @@ def test_lag_ufkun_otesini_gormuyor(ufuk: int):
     """
     n = 60
     frame = pd.DataFrame(
-        {"tarih": pd.date_range("2025-01-01", periods=n), "yer": "a",
-         "hedef": np.arange(float(n))}
+        {"tarih": pd.date_range("2025-01-01", periods=n), "yer": "a", "hedef": np.arange(float(n))}
     )
     cikti = add_lag_features(
-        frame, "hedef", [1], time_column="tarih", group_columns=["yer"], horizon=ufuk
+        frame, "hedef", shifts=[ufuk], time_column="tarih", group_columns=["yer"], horizon=ufuk
     )
-    kolon = [c for c in cikti.columns if "lag1" in c][0]
+    kolon = [c for c in cikti.columns if f"shift{ufuk}" in c][0]
     assert float(cikti[kolon].iloc[-1]) == float(n - 1 - ufuk)
 
 
@@ -210,12 +214,15 @@ def test_genisleyen_pencere_ufkun_otesini_gormuyor(ufuk: int):
     """
     n = 60
     frame = pd.DataFrame(
-        {"tarih": pd.date_range("2025-01-01", periods=n), "yer": "a",
-         "hedef": np.arange(float(n))}
+        {"tarih": pd.date_range("2025-01-01", periods=n), "yer": "a", "hedef": np.arange(float(n))}
     )
     cikti = add_expanding_features(
-        frame, "hedef", time_column="tarih", group_columns=["yer"],
-        horizon=ufuk, aggregations=("max",),
+        frame,
+        "hedef",
+        time_column="tarih",
+        group_columns=["yer"],
+        horizon=ufuk,
+        aggregations=("max",),
     )
     assert float(cikti["hedef_genisleyen_max"].iloc[-1]) == float(n - 1 - ufuk)
 
@@ -242,8 +249,7 @@ def test_horizon_zorunlu(fonksiyon: str):
 def test_sifir_horizon_reddediliyor():
     """horizon=0 mevcut satirin KENDI degerini pencereye sokar."""
     frame = pd.DataFrame(
-        {"tarih": pd.date_range("2025-01-01", periods=10), "yer": "a",
-         "hedef": np.arange(10.0)}
+        {"tarih": pd.date_range("2025-01-01", periods=10), "yer": "a", "hedef": np.arange(10.0)}
     )
     with pytest.raises(ValueError, match="en az 1"):
         add_expanding_features(

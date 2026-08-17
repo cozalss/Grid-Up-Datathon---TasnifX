@@ -37,6 +37,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from gridup.io_utils import publish_dataframe  # noqa: E402
 from gridup.turkish import join_key, tr_sorted  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,8 +46,11 @@ OUTPUT_DIR = ROOT / "data" / "reference"
 # GDZ = Izmir, Manisa | ADM = Aydin, Denizli, Mugla
 TARGET_PROVINCES = {"izmir", "manisa", "aydin", "denizli", "mugla"}
 COMPANY_OF = {
-    "izmir": "GDZ", "manisa": "GDZ",
-    "aydin": "ADM", "denizli": "ADM", "mugla": "ADM",
+    "izmir": "GDZ",
+    "manisa": "GDZ",
+    "aydin": "ADM",
+    "denizli": "ADM",
+    "mugla": "ADM",
 }
 
 # Aday kaynaklar. Her biri (ad, url, ayristirici) uclusu.
@@ -100,7 +104,8 @@ def fetch_districts(timeout: int = 60) -> tuple[pd.DataFrame, str]:
         return frame, name
 
     raise RuntimeError(
-        "Ilce verisi hicbir kaynaktan alinamadi:\n  " + "\n  ".join(errors)
+        "Ilce verisi hicbir kaynaktan alinamadi:\n  "
+        + "\n  ".join(errors)
         + "\n\nEksik bir tabloyla devam etmek komsuluk grafigini sessizce bozar."
     )
 
@@ -123,11 +128,11 @@ GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
 #
 # (lat_min, lat_max, lon_min, lon_max)
 PROVINCE_BOUNDS: dict[str, tuple[float, float, float, float]] = {
-    "izmir":   (37.5, 39.4, 26.0, 28.5),
-    "manisa":  (38.0, 39.4, 27.0, 29.4),
-    "aydin":   (37.1, 38.3, 26.9, 29.0),
+    "izmir": (37.5, 39.4, 26.0, 28.5),
+    "manisa": (38.0, 39.4, 27.0, 29.4),
+    "aydin": (37.1, 38.3, 26.9, 29.0),
     "denizli": (36.9, 38.5, 28.2, 30.1),
-    "mugla":   (36.1, 37.7, 27.0, 29.7),
+    "mugla": (36.1, 37.7, 27.0, 29.7),
 }
 
 
@@ -141,10 +146,10 @@ PROVINCE_BOUNDS: dict[str, tuple[float, float, float, float]] = {
 # eski ilce adlarini tasiyabilir. Veri geldiginde ilce adi kumesini bu
 # tabloyla karsilastir.
 MANUAL_COORDINATES: dict[str, tuple[float, float]] = {
-    "aydin|efeler":      (37.8560, 27.8416),   # Aydin merkez
-    "manisa|sehzadeler": (38.6191, 27.4289),   # Manisa merkez (dogu)
-    "manisa|yunusemre":  (38.6350, 27.3650),   # Manisa merkez (bati)
-    "mugla|seydikemer":  (36.6333, 29.3167),   # Fethiye dogusu
+    "aydin|efeler": (37.8560, 27.8416),  # Aydin merkez
+    "manisa|sehzadeler": (38.6191, 27.4289),  # Manisa merkez (dogu)
+    "manisa|yunusemre": (38.6350, 27.3650),  # Manisa merkez (bati)
+    "mugla|seydikemer": (36.6333, 29.3167),  # Fethiye dogusu
 }
 
 
@@ -246,12 +251,17 @@ def geocode_districts(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--all-turkey", action="store_true",
-                        help="5 il yerine 81 ilin tamamini kaydet")
-    parser.add_argument("--no-geocode", action="store_true",
-                        help="Koordinat aramayi atla (hizli, ama komsuluk kurulamaz)")
-    parser.add_argument("--pause", type=float, default=0.4,
-                        help="Geocoding istekleri arasi bekleme (sn)")
+    parser.add_argument(
+        "--all-turkey", action="store_true", help="5 il yerine 81 ilin tamamini kaydet"
+    )
+    parser.add_argument(
+        "--no-geocode",
+        action="store_true",
+        help="Koordinat aramayi atla (hizli, ama komsuluk kurulamaz)",
+    )
+    parser.add_argument(
+        "--pause", type=float, default=0.4, help="Geocoding istekleri arasi bekleme (sn)"
+    )
     args = parser.parse_args()
 
     print("Ilce verisi indiriliyor...")
@@ -277,8 +287,10 @@ def main() -> int:
         }
     )
     for target, source_column in (
-        ("lat", lat_column), ("lon", lon_column),
-        ("nufus", population_column), ("alan_km2", area_column),
+        ("lat", lat_column),
+        ("lon", lon_column),
+        ("nufus", population_column),
+        ("alan_km2", area_column),
     ):
         if source_column:
             frame[target] = pd.to_numeric(raw[source_column], errors="coerce")
@@ -304,9 +316,31 @@ def main() -> int:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     suffix = "turkiye" if args.all_turkey else "gdz_adm"
     path = OUTPUT_DIR / f"ilceler_{suffix}.parquet"
-    frame.to_parquet(path, index=False)
     csv_path = path.with_suffix(".csv")
-    frame.to_csv(csv_path, index=False, encoding="utf-8")
+    required_columns = ("ilce", "il", "il_key", "ilce_key", "anahtar")
+    minimum_rows = 81 if args.all_turkey else len(TARGET_PROVINCES)
+    province_count = frame["il_key"].nunique()
+    expected_provinces = 81 if args.all_turkey else len(TARGET_PROVINCES)
+    if province_count < expected_provinces:
+        raise ValueError(
+            f"Ilce kaynagi {province_count} il kapsiyor; en az {expected_provinces} gerekli."
+        )
+    source_url = dict(SOURCES)[source]
+    publish_dataframe(
+        frame,
+        path,
+        required_columns=required_columns,
+        min_rows=minimum_rows,
+        source=source_url,
+    )
+    publish_dataframe(
+        frame,
+        csv_path,
+        required_columns=required_columns,
+        min_rows=minimum_rows,
+        source=source_url,
+        csv_encoding="utf-8",
+    )
 
     print(f"\nYazildi: {path}")
     print(f"         {csv_path}")

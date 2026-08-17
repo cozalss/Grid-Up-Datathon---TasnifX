@@ -25,9 +25,7 @@ def _grup_verisi(n: int = 2000, tohum: int = 0):
     ilce = rng.choice([f"i{k:02d}" for k in range(20)], n)
     etki = pd.Series(ilce).map({f"i{k:02d}": k * 3.0 for k in range(20)}).to_numpy()
     hedef = etki + rng.normal(0, 5, n)
-    frame = pd.DataFrame(
-        {"ilce": ilce, "nufus": rng.normal(size=n), "hedef": hedef}
-    )
+    frame = pd.DataFrame({"ilce": ilce, "nufus": rng.normal(size=n), "hedef": hedef})
     return frame, hedef
 
 
@@ -58,17 +56,13 @@ def test_add_group_statistics_target_column_olmadan_calismiyor():
 def test_hedef_value_columns_icindeyse_hala_reddediliyor():
     frame, _ = _grup_verisi()
     with pytest.raises(ValueError, match="fold-disi DEGILDIR"):
-        add_group_statistics(
-            frame, ["ilce"], ["nufus", "hedef"], target_column="hedef"
-        )
+        add_group_statistics(frame, ["ilce"], ["nufus", "hedef"], target_column="hedef")
 
 
 def test_hedef_yok_diye_bilincli_karar_verilirse_calisiyor():
     """``target_column=None`` bilincli bir karardir ve gecmelidir."""
     frame, _ = _grup_verisi()
-    sonuc = add_group_statistics(
-        frame, ["ilce"], ["nufus"], target_column=None
-    )
+    sonuc = add_group_statistics(frame, ["ilce"], ["nufus"], target_column=None)
     assert len(sonuc.columns) > len(frame.columns)
     assert sonuc["nufus"].equals(frame["nufus"]), "girdi degistirilmemeli"
 
@@ -138,8 +132,14 @@ def test_patience_ile_durunca_son_adim_history_ye_yaziliyor():
     """
     frame, y, folds = _secim_verisi()
     sonuc = shap_backward_selection(
-        frame, y, folds, drop_per_step=5, min_features=20, max_steps=8,
-        patience=1, progress=None,
+        frame,
+        y,
+        folds,
+        drop_per_step=5,
+        min_features=20,
+        max_steps=8,
+        patience=1,
+        progress=None,
     )
     assert [adim.n_features for adim in sonuc.history] == [60, 55, 50]
     assert f"Toplam {len(sonuc.history)} adim" in sonuc.summary()
@@ -149,15 +149,19 @@ def test_history_deki_her_adim_gercek_bir_cv_kosusuna_karsilik_geliyor():
     """Egri, odenen isin TAMAMINI gostermeli -- eksigi de fazlasi da olmamali."""
     frame, y, folds = _secim_verisi()
     sonuc = shap_backward_selection(
-        frame, y, folds, drop_per_step=10, min_features=20, max_steps=8,
-        patience=2, progress=None,
+        frame,
+        y,
+        folds,
+        drop_per_step=10,
+        min_features=20,
+        max_steps=8,
+        patience=2,
+        progress=None,
     )
     egri = sonuc.curve()
     assert len(egri) == len(sonuc.history)
     # best_score history'de GERCEKTEN bulunmali (aksi halde nereden geldigi belirsiz)
-    assert any(
-        abs(adim.score - sonuc.best_score) < 1e-12 for adim in sonuc.history
-    )
+    assert any(abs(adim.score - sonuc.best_score) < 1e-12 for adim in sonuc.history)
 
 
 # --------------------------------------------------------------------------
@@ -175,8 +179,14 @@ def test_secim_yanliligi_acikca_raporlaniyor():
     """
     frame, y, folds = _secim_verisi()
     sonuc = shap_backward_selection(
-        frame, y, folds, drop_per_step=10, min_features=20, max_steps=8,
-        patience=2, progress=None,
+        frame,
+        y,
+        folds,
+        drop_per_step=10,
+        min_features=20,
+        max_steps=8,
+        patience=2,
+        progress=None,
     )
     assert len(sonuc.history) >= 2
     assert sonuc.selection_optimism > 0.0
@@ -189,8 +199,14 @@ def test_tek_adimda_yanlilik_uyarisi_cikmiyor():
     """Yanlis pozitif korumasi: tek deneme yapildiysa secim yanliligi yoktur."""
     frame, y, folds = _secim_verisi(n_feature=25)
     sonuc = shap_backward_selection(
-        frame, y, folds, drop_per_step=10, min_features=20, max_steps=1,
-        patience=1, progress=None,
+        frame,
+        y,
+        folds,
+        drop_per_step=10,
+        min_features=20,
+        max_steps=1,
+        patience=1,
+        progress=None,
     )
     assert len(sonuc.history) == 1
     assert sonuc.selection_optimism == 0.0

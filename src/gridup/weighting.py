@@ -92,10 +92,12 @@ def recency_activity_weights(
     groups = list(group_columns or [])
     degerler = pd.to_numeric(frame[value_column], errors="coerce")
 
-    calisma = pd.DataFrame({
-        "_zaman": parse_time_series(frame[time_column], strict=False),
-        "_olayli": (degerler > 0).astype("float64"),
-    })
+    calisma = pd.DataFrame(
+        {
+            "_zaman": parse_time_series(frame[time_column], strict=False),
+            "_olayli": (degerler > 0).astype("float64"),
+        }
+    )
     for column in groups:
         calisma[column] = frame[column].to_numpy()
     calisma["_sira"] = np.arange(len(calisma))
@@ -108,20 +110,22 @@ def recency_activity_weights(
         grup = sirali.groupby(groups, observed=True, sort=False)
         boyut = grup["_olayli"].transform("size").to_numpy(dtype="float64")
         konum = grup.cumcount().to_numpy(dtype="float64")
-        aktiflik = grup["_olayli"].transform(
-            lambda s: s.rolling(activity_window, min_periods=1).mean()
-        ).to_numpy(dtype="float64")
+        aktiflik = (
+            grup["_olayli"]
+            .transform(lambda s: s.rolling(activity_window, min_periods=1).mean())
+            .to_numpy(dtype="float64")
+        )
     else:
         boyut = np.full(len(sirali), float(len(sirali)))
         konum = np.arange(len(sirali), dtype="float64")
         aktiflik = (
-            sirali["_olayli"].rolling(activity_window, min_periods=1).mean()
+            sirali["_olayli"]
+            .rolling(activity_window, min_periods=1)
+            .mean()
             .to_numpy(dtype="float64")
         )
 
-    rampa = np.where(
-        boyut > 1, start + (end - start) * konum / np.maximum(boyut - 1.0, 1.0), end
-    )
+    rampa = np.where(boyut > 1, start + (end - start) * konum / np.maximum(boyut - 1.0, 1.0), end)
     carpan = activity_floor + (1.0 - activity_floor) * aktiflik
     agirlik = rampa * carpan
 

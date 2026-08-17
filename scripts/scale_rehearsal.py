@@ -209,32 +209,65 @@ def olcek_kos(n_satir: int, *, tam: bool, tekrar: int = 1) -> OlcekSonucu:
 
     X, y, tarih = panel_uret(n_satir)
     sonuc = OlcekSonucu(satir=len(X), kolon=X.shape[1])
-    print(f"  panel: {len(X):,} satir x {X.shape[1]} kolon "
-          f"({X.memory_usage(deep=True).sum() / 1024 / 1024:.0f} MB)")
+    print(
+        f"  panel: {len(X):,} satir x {X.shape[1]} kolon "
+        f"({X.memory_usage(deep=True).sum() / 1024 / 1024:.0f} MB)"
+    )
 
     folds = purged_time_series_split(
-        tarih, embargo=pd.Timedelta(days=30), n_splits=3,
-        test_span=pd.Timedelta(days=31), verbose=False,
+        tarih,
+        embargo=pd.Timedelta(days=30),
+        n_splits=3,
+        test_span=pd.Timedelta(days=31),
+        verbose=False,
     )
     print(f"  fold: {len(folds)} x {len(folds[0][1]):,} valid satir\n")
 
     hizli = {"n_estimators": 500, "learning_rate": 0.05, "verbose": -1}
 
-    lgbm = olc("LightGBM tek CV (500 agac)", sonuc=sonuc, tekrar=tekrar,
-               islem=lambda: cross_validate(X, y, folds, kind="lightgbm", metric="mape",
-                                            params=hizli, verbose=False))
+    lgbm = olc(
+        "LightGBM tek CV (500 agac)",
+        sonuc=sonuc,
+        tekrar=tekrar,
+        islem=lambda: cross_validate(
+            X, y, folds, kind="lightgbm", metric="mape", params=hizli, verbose=False
+        ),
+    )
 
-    cat = olc("CatBoost tek CV (500 iter)", sonuc=sonuc, tekrar=tekrar,
-              islem=lambda: cross_validate(
-                  X, y, folds, kind="catboost", metric="mape",
-                  params={"iterations": 500, "learning_rate": 0.05, "verbose": 0,
-                          "allow_writing_files": False},
-                  verbose=False))
+    cat = olc(
+        "CatBoost tek CV (500 iter)",
+        sonuc=sonuc,
+        tekrar=tekrar,
+        islem=lambda: cross_validate(
+            X,
+            y,
+            folds,
+            kind="catboost",
+            metric="mape",
+            params={
+                "iterations": 500,
+                "learning_rate": 0.05,
+                "verbose": 0,
+                "allow_writing_files": False,
+            },
+            verbose=False,
+        ),
+    )
 
-    nn = olc("Sinir agi CV (60 epok)", sonuc=sonuc, tekrar=tekrar,
-             islem=lambda: neural_cross_validate(
-                 X, y, folds, cat_columns=["ilce"], metric="mape",
-                 config=NeuralConfig(max_epochs=60, patience=8), verbose=False))
+    nn = olc(
+        "Sinir agi CV (60 epok)",
+        sonuc=sonuc,
+        tekrar=tekrar,
+        islem=lambda: neural_cross_validate(
+            X,
+            y,
+            folds,
+            cat_columns=["ilce"],
+            metric="mape",
+            config=NeuralConfig(max_epochs=60, patience=8),
+            verbose=False,
+        ),
+    )
 
     # Harman icin IKI ayri gorunum gerekiyor:
     #   * hill_climb yalnizca OOF kapsamindaki satirlari ister (skor orada olculur)
@@ -249,26 +282,48 @@ def olcek_kos(n_satir: int, *, tam: bool, tekrar: int = 1) -> OlcekSonucu:
     }
     kapsamli = {ad: dizi[kapsam] for ad, dizi in tam.items()}
 
-    olc("hill_climb_weights (3 uye)", sonuc=sonuc, tekrar=tekrar,
-        islem=lambda: hill_climb_weights(kapsamli, y[kapsam], metric="mape", verbose=False))
+    olc(
+        "hill_climb_weights (3 uye)",
+        sonuc=sonuc,
+        tekrar=tekrar,
+        islem=lambda: hill_climb_weights(kapsamli, y[kapsam], metric="mape", verbose=False),
+    )
 
-    olc("stack_oof (meta model)", sonuc=sonuc, tekrar=tekrar,
-        islem=lambda: stack_oof(tam, y, folds, metric="mape", verbose=False))
+    olc(
+        "stack_oof (meta model)",
+        sonuc=sonuc,
+        tekrar=tekrar,
+        islem=lambda: stack_oof(tam, y, folds, metric="mape", verbose=False),
+    )
 
-    olc("SHAP onem (fold basi 2000)", sonuc=sonuc, tekrar=tekrar,
-        islem=lambda: fold_shap_importance(lgbm.models, X, folds, sample_per_fold=2000))
+    olc(
+        "SHAP onem (fold basi 2000)",
+        sonuc=sonuc,
+        tekrar=tekrar,
+        islem=lambda: fold_shap_importance(lgbm.models, X, folds, sample_per_fold=2000),
+    )
 
     if tam:
-        olc("model zoo (3 model x 3 fold)", sonuc=sonuc, tekrar=tekrar,
+        olc(
+            "model zoo (3 model x 3 fold)",
+            sonuc=sonuc,
+            tekrar=tekrar,
             not_="zoo = lgbm + xgb + cat, ayni fold'lar",
-            islem=lambda: make_model_zoo(X, y, folds, metric="mape", verbose=False))
+            islem=lambda: make_model_zoo(X, y, folds, metric="mape", verbose=False),
+        )
 
     # Optuna: TEK deneme olculur, kullanici deneme sayisiyla carpar.
     from gridup.tuning import tune_with_optuna
 
-    olc("Optuna TEK deneme", sonuc=sonuc, tekrar=tekrar, not_="n_trials ile carp",
-        islem=lambda: tune_with_optuna(X, y, folds, kind="lightgbm", metric="mape",
-                                       n_trials=1, verbose=False))
+    olc(
+        "Optuna TEK deneme",
+        sonuc=sonuc,
+        tekrar=tekrar,
+        not_="n_trials ile carp",
+        islem=lambda: tune_with_optuna(
+            X, y, folds, kind="lightgbm", metric="mape", n_trials=1, verbose=False
+        ),
+    )
 
     return sonuc
 
@@ -310,9 +365,7 @@ def butce_raporu(sonuclar: dict[int, OlcekSonucu], hedef_olcek: int) -> str:
     hesap_limiti = int(hesap_saniye / lgbm_tek)
     geri_bildirim = YARISMA_GUNU * GUNLUK_SUBMISSION
 
-    baglayan, deger = min(
-        [("INSAN", insan_limiti), ("HESAP", hesap_limiti)], key=lambda p: p[1]
-    )
+    baglayan, deger = min([("INSAN", insan_limiti), ("HESAP", hesap_limiti)], key=lambda p: p[1])
 
     satirlar = [
         "",
@@ -369,9 +422,7 @@ def butce_raporu(sonuclar: dict[int, OlcekSonucu], hedef_olcek: int) -> str:
     return "\n".join(satirlar)
 
 
-def _us_ile_kestir(
-    kucuk: OlcekSonucu, buyuk: OlcekSonucu, hedef_satir: int
-) -> OlcekSonucu:
+def _us_ile_kestir(kucuk: OlcekSonucu, buyuk: OlcekSonucu, hedef_satir: int) -> OlcekSonucu:
     """Iki olculen noktadan guc yasasi cikarip ucuncuyu kestirir.
 
     ``t(n) = t0 * (n/n0)^k``. Us ``k`` her islem icin AYRI hesaplanir cunku
@@ -423,9 +474,11 @@ def main() -> int:
     ayristirici.add_argument("--hizli", action="store_true", help="sadece 100k olc")
     ayristirici.add_argument("--agir", action="store_true", help="2.5M'i da gercekten olc")
     ayristirici.add_argument(
-        "--tekrar", type=int, default=VARSAYILAN_TEKRAR,
+        "--tekrar",
+        type=int,
+        default=VARSAYILAN_TEKRAR,
         help="her islemi kac kez kos (en kisasi alinir). 1 hizli ama gurultulu; "
-             "guvenilir us icin >=3.",
+        "guvenilir us icin >=3.",
     )
     args = ayristirici.parse_args()
 
@@ -486,8 +539,12 @@ def main() -> int:
                     "satir": v.satir,
                     "kolon": v.kolon,
                     "olcumler": [
-                        {"ad": o.ad, "saniye": o.saniye, "bellek_mb": o.bellek_mb,
-                         "tahmin": o.tahmin}
+                        {
+                            "ad": o.ad,
+                            "saniye": o.saniye,
+                            "bellek_mb": o.bellek_mb,
+                            "tahmin": o.tahmin,
+                        }
                         for o in v.olcumler
                     ],
                 }

@@ -70,15 +70,20 @@ class TestHourlyAggregation:
 
     def test_produces_one_row_per_day(self, hourly):
         daily = aggregate_hourly_to_daily(
-            hourly, time_column="zaman", group_columns=["konum_key"],
+            hourly,
+            time_column="zaman",
+            group_columns=["konum_key"],
             value_columns=["sicaklik"],
         )
         assert len(daily) == 2
 
     def test_keeps_quantiles_not_just_mean(self, hourly):
         daily = aggregate_hourly_to_daily(
-            hourly, time_column="zaman", group_columns=["konum_key"],
-            value_columns=["sicaklik"], quantiles=(0.1, 0.9),
+            hourly,
+            time_column="zaman",
+            group_columns=["konum_key"],
+            value_columns=["sicaklik"],
+            quantiles=(0.1, 0.9),
         )
         assert "sicaklik_q10" in daily.columns
         assert "sicaklik_q90" in daily.columns
@@ -88,8 +93,11 @@ class TestHourlyAggregation:
 
     def test_direction_columns_become_sin_cos(self, hourly):
         daily = aggregate_hourly_to_daily(
-            hourly, time_column="zaman", group_columns=["konum_key"],
-            value_columns=["sicaklik"], direction_columns=["ruzgar_yonu"],
+            hourly,
+            time_column="zaman",
+            group_columns=["konum_key"],
+            value_columns=["sicaklik"],
+            direction_columns=["ruzgar_yonu"],
         )
         assert "ruzgar_yonu_sin" in daily.columns
         assert "ruzgar_yonu_cos" in daily.columns
@@ -131,33 +139,27 @@ class TestPhysicalDerivatives:
                 "konum_key": "izmir",
                 "sicaklik_ort": np.full(20, 28.0),
                 "sicaklik_max": np.full(20, 34.0),
-                "sicaklik_min": np.full(20, 24.0),   # tropik gece (>22)
+                "sicaklik_min": np.full(20, 24.0),  # tropik gece (>22)
                 "yagis_toplam": np.concatenate([np.zeros(15), [25.0], np.zeros(4)]),
                 "firtina_max": np.full(20, 40.0),
             }
         )
 
     def test_cooling_degree_days_when_hot(self, daily):
-        result = add_physical_derivatives(
-            daily, group_columns=["konum_key"], time_column="tarih"
-        )
+        result = add_physical_derivatives(daily, group_columns=["konum_key"], time_column="tarih")
         expected = 28.0 - NEUTRAL_TEMPERATURE_C
         assert result["sogutma_derece_gun"].iloc[0] == pytest.approx(expected)
         assert result["isitma_derece_gun"].iloc[0] == 0.0
 
     def test_consecutive_tropical_nights_accumulate(self, daily):
-        result = add_physical_derivatives(
-            daily, group_columns=["konum_key"], time_column="tarih"
-        )
+        result = add_physical_derivatives(daily, group_columns=["konum_key"], time_column="tarih")
         assert result["ardisik_sicak_gece"].iloc[0] == 1
         assert result["ardisik_sicak_gece"].iloc[19] == 20
 
     def test_drought_counter_resets_on_rain(self, daily):
-        result = add_physical_derivatives(
-            daily, group_columns=["konum_key"], time_column="tarih"
-        )
-        assert result["kuraklik_gunu"].iloc[14] == 15   # 15 gun yagissiz
-        assert result["kuraklik_gunu"].iloc[15] == 0    # yagmur gunu
+        result = add_physical_derivatives(daily, group_columns=["konum_key"], time_column="tarih")
+        assert result["kuraklik_gunu"].iloc[14] == 15  # 15 gun yagissiz
+        assert result["kuraklik_gunu"].iloc[15] == 0  # yagmur gunu
 
     def test_first_rain_after_drought_is_flagged_once(self, daily):
         result = add_physical_derivatives(
@@ -168,9 +170,7 @@ class TestPhysicalDerivatives:
         assert flags.iloc[15] == 1
 
     def test_wet_wind_index_exists_when_both_present(self, daily):
-        result = add_physical_derivatives(
-            daily, group_columns=["konum_key"], time_column="tarih"
-        )
+        result = add_physical_derivatives(daily, group_columns=["konum_key"], time_column="tarih")
         assert "islak_ruzgar" in result.columns
 
     def test_input_not_mutated(self, daily):
@@ -189,8 +189,12 @@ class TestWeatherAccumulators:
             }
         )
         result = add_weather_accumulators(
-            frame, group_columns=["konum_key"], time_column="tarih",
-            value_columns=["ruzgar"], windows=(3,), horizon=0,
+            frame,
+            group_columns=["konum_key"],
+            time_column="tarih",
+            value_columns=["ruzgar"],
+            windows=(3,),
+            horizon=0,
         )
         # horizon=0 -> bugun dahil; 2. satirin 3'luk max'i {10, 50, 20} = 50
         assert result["ruzgar_geri3_max"].iloc[2] == pytest.approx(50.0)
@@ -204,8 +208,13 @@ class TestWeatherAccumulators:
             }
         )
         result = add_weather_accumulators(
-            frame, group_columns=["konum_key"], time_column="tarih",
-            value_columns=["ruzgar"], windows=(), lead_windows=(3,), horizon=0,
+            frame,
+            group_columns=["konum_key"],
+            time_column="tarih",
+            value_columns=["ruzgar"],
+            windows=(),
+            lead_windows=(3,),
+            horizon=0,
         )
         # 1. satirdan itibaren 3 gunluk ileri max: {12, 15, 80} = 80
         assert result["ruzgar_ileri3_max"].iloc[1] == pytest.approx(80.0)
@@ -223,9 +232,7 @@ class TestSpatial:
         )
 
     def test_haversine_beats_euclidean_at_turkish_latitudes(self, coordinates):
-        distances = haversine_matrix(
-            coordinates["lat"].to_numpy(), coordinates["lon"].to_numpy()
-        )
+        distances = haversine_matrix(coordinates["lat"].to_numpy(), coordinates["lon"].to_numpy())
         # Izmir-Manisa gercekte ~33 km
         assert 25 < distances[0, 1] < 45
         assert distances[0, 0] == 0.0
@@ -248,9 +255,7 @@ class TestSpatial:
         assert (neighbours["mesafe_km"] <= 40).all()
 
     def test_duplicate_key_raises(self):
-        frame = pd.DataFrame(
-            {"konum_key": ["a", "a"], "lat": [1.0, 2.0], "lon": [1.0, 2.0]}
-        )
+        frame = pd.DataFrame({"konum_key": ["a", "a"], "lat": [1.0, 2.0], "lon": [1.0, 2.0]})
         with pytest.raises(ValueError, match="tekrarlayan"):
             nearest_neighbours(frame, key_column="konum_key")
 
@@ -265,8 +270,12 @@ class TestSpatial:
         )
         with pytest.raises(ValueError, match="sizinti"):
             add_neighbour_target_lag(
-                frame, neighbours, key_column="konum_key", time_column="tarih",
-                target_column="kesinti", horizon=0,
+                frame,
+                neighbours,
+                key_column="konum_key",
+                time_column="tarih",
+                target_column="kesinti",
+                horizon=0,
             )
 
     def test_neighbour_target_lag_uses_neighbours_past(self, coordinates):
@@ -284,8 +293,13 @@ class TestSpatial:
         )
 
         result = add_neighbour_target_lag(
-            frame, neighbours, key_column="konum_key", time_column="tarih",
-            target_column="kesinti", horizon=1, statistics=("max",),
+            frame,
+            neighbours,
+            key_column="konum_key",
+            time_column="tarih",
+            target_column="kesinti",
+            horizon=1,
+            statistics=("max",),
         )
 
         column = "komsu_kesinti_ufuk1_max"
@@ -305,8 +319,13 @@ class TestSpatial:
         )
 
         result = add_neighbour_feature_mean(
-            frame, neighbours, key_column="konum_key", time_column="tarih",
-            value_columns=["ruzgar"], target_column=None, statistics=("max",),
+            frame,
+            neighbours,
+            key_column="konum_key",
+            time_column="tarih",
+            value_columns=["ruzgar"],
+            target_column=None,
+            statistics=("max",),
         )
 
         izmir = result[result["konum_key"] == "izmir"].iloc[0]
@@ -340,8 +359,10 @@ class TestOnRealWeatherData:
     def test_regional_aggregates_work_on_real_data(self, real_weather):
         subset = real_weather[real_weather["tarih"] >= "2025-01-01"]
         result = add_regional_aggregates(
-            subset, time_column="tarih",
-            value_columns=["ruzgar_max", "sicaklik_ort"], quantiles=(0.9,),
+            subset,
+            time_column="tarih",
+            value_columns=["ruzgar_max", "sicaklik_ort"],
+            quantiles=(0.9,),
         )
         assert "bolge_ruzgar_max_q90" in result.columns
         assert len(result) == len(subset)
@@ -349,9 +370,7 @@ class TestOnRealWeatherData:
 
     def test_physical_derivatives_work_on_real_data(self, real_weather):
         subset = real_weather[real_weather["tarih"] >= "2025-01-01"].copy()
-        result = add_physical_derivatives(
-            subset, group_columns=["konum_key"], time_column="tarih"
-        )
+        result = add_physical_derivatives(subset, group_columns=["konum_key"], time_column="tarih")
         # Ege yazi: tropik gece ve kuraklik serisi gercekten olusmali
         assert result["ardisik_sicak_gece"].max() > 5
         assert result["kuraklik_gunu"].max() > 10

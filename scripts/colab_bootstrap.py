@@ -76,6 +76,7 @@ def _calistir(argv: list[str], *, aciklama: str) -> subprocess.CompletedProcess[
 
 # ---------------------------------------------------------------- 1. teshis
 
+
 def ortam_teshisi() -> bool:
     """Surumleri yazar, Kaggle hedefinden sapmalari UYARI olarak isaretler."""
     colab_mi = importlib.util.find_spec("google.colab") is not None
@@ -109,12 +110,12 @@ def ortam_teshisi() -> bool:
 
 # ---------------------------------------------------------------- 2. kurulum
 
+
 def gridup_kur(repo_dizini: Path) -> None:
     """Repoyu editable kurar. Bagimliliklari COZDURMUYORUZ -- neden asagida."""
     if not (repo_dizini / "pyproject.toml").is_file():
         raise SystemExit(
-            f"Repo bulunamadi: {repo_dizini}\n"
-            f"Once klonla:  !git clone -q {REPO_URL} {repo_dizini}"
+            f"Repo bulunamadi: {repo_dizini}\nOnce klonla:  !git clone -q {REPO_URL} {repo_dizini}"
         )
 
     # --no-deps SART: Colab'in numpy/pandas'ini pip'in yukseltmesine izin verirsek
@@ -148,6 +149,7 @@ def gridup_kur(repo_dizini: Path) -> None:
 
 # ------------------------------------------------------------ 3. harici veri
 
+
 def harici_veri_indir(hedef: Path) -> Path | None:
     """Kaggle dataset'inden hava/gunes/ilceler tablolarini ceker.
 
@@ -171,8 +173,18 @@ def harici_veri_indir(hedef: Path) -> Path | None:
 
     hedef.mkdir(parents=True, exist_ok=True)
     sonuc = _calistir(
-        [sys.executable, "-m", "kaggle", "datasets", "download", "-d", KAGGLE_DATASET,
-         "-p", str(hedef), "--unzip"],
+        [
+            sys.executable,
+            "-m",
+            "kaggle",
+            "datasets",
+            "download",
+            "-d",
+            KAGGLE_DATASET,
+            "-p",
+            str(hedef),
+            "--unzip",
+        ],
         aciklama=f"dataset indirme ({KAGGLE_DATASET})",
     )
     if sonuc.returncode != 0:
@@ -184,6 +196,7 @@ def harici_veri_indir(hedef: Path) -> Path | None:
 
 
 # ------------------------------------------------------------- 4. dogrulama
+
 
 def dogrula(veri_dizini: Path | None) -> None:
     """gridup gercekten import ediliyor mu ve veri okunuyor mu -- kanit."""

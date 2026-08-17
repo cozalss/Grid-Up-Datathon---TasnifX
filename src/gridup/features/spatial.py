@@ -52,9 +52,7 @@ __all__ = [
 EARTH_RADIUS_KM = 6371.0088
 
 
-def haversine_matrix(
-    latitudes: np.ndarray, longitudes: np.ndarray
-) -> np.ndarray:
+def haversine_matrix(latitudes: np.ndarray, longitudes: np.ndarray) -> np.ndarray:
     """Tum nokta ciftleri arasi buyuk daire mesafesi (km). NxN matris dondurur.
 
     Duz Oklid mesafesi Turkiye enleminde ciddi hata verir: 1 derece boylam
@@ -74,8 +72,7 @@ def haversine_matrix(
 
     inner = (
         np.sin(delta_lat / 2) ** 2
-        + np.cos(latitude_rad)[:, None] * np.cos(latitude_rad)[None, :]
-        * np.sin(delta_lon / 2) ** 2
+        + np.cos(latitude_rad)[:, None] * np.cos(latitude_rad)[None, :] * np.sin(delta_lon / 2) ** 2
     )
     return 2 * EARTH_RADIUS_KM * np.arcsin(np.sqrt(np.clip(inner, 0, 1)))
 
@@ -265,9 +262,7 @@ def _neighbour_aggregate(
         payda = pay_kaynak["_agirlik"].sum().reindex(aggregated.index)
         payda_np = payda.to_numpy(dtype="float64")
         guvenli = np.where(payda_np > 0, payda_np, 1.0)
-        aggregated["mean"] = np.where(
-            payda_np > 0, pay.to_numpy(dtype="float64") / guvenli, np.nan
-        )
+        aggregated["mean"] = np.where(payda_np > 0, pay.to_numpy(dtype="float64") / guvenli, np.nan)
 
     aggregated = aggregated.reset_index()
     aggregated.columns = [key_column, time_column] + [
@@ -276,9 +271,7 @@ def _neighbour_aggregate(
     return aggregated
 
 
-def _tek_satir_dogrula(
-    frame: pd.DataFrame, *, key_column: str, time_column: str
-) -> None:
+def _tek_satir_dogrula(frame: pd.DataFrame, *, key_column: str, time_column: str) -> None:
     """Girdi ``(varlik, gun)`` bazinda tek satir degilse hata firlatir.
 
     ``shift(horizon)`` SATIR kaydirir, GUN degil. Ilce basina gunde birden cok
@@ -357,9 +350,9 @@ def add_neighbour_target_lag(
 
     # Once her varligin KENDI hedefini kaydir, sonra komsulara dagit.
     working = working.sort_values([key_column, time_column])
-    working["_kaydirilmis"] = working.groupby(key_column, observed=True)[
-        target_column
-    ].shift(horizon)
+    working["_kaydirilmis"] = working.groupby(key_column, observed=True)[target_column].shift(
+        horizon
+    )
 
     shifted = working[[key_column, time_column, "_kaydirilmis"]]
     aggregated = _neighbour_aggregate(

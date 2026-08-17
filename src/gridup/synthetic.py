@@ -40,7 +40,12 @@ GDZ_ADM_DISTRICTS: dict[str, tuple[str, ...]] = {
 }
 
 _FAULT_TYPES = (
-    "Kablo Arızası", "Trafo Arızası", "Ağaç Teması", "Aşırı Yük", "Yıldırım", "3. Şahıs",
+    "Kablo Arızası",
+    "Trafo Arızası",
+    "Ağaç Teması",
+    "Aşırı Yük",
+    "Yıldırım",
+    "3. Şahıs",
 )
 _CUSTOMER_GROUPS = ("Mesken", "Ticarethane", "Sanayi", "Tarımsal Sulama", "Aydınlatma")
 _VOLTAGE_LEVELS = ("OG", "AG")
@@ -200,11 +205,8 @@ def make_distribution_dataset(
             0.0,
         )
 
-        fault_type = np.where(
-            has_fault,
-            rng.choice(_FAULT_TYPES, size=len(dates)),
-            None,
-        )
+        fault_type = np.full(len(dates), None, dtype=object)
+        fault_type[has_fault] = rng.choice(_FAULT_TYPES, size=int(has_fault.sum()))
 
         frames.append(
             pd.DataFrame(

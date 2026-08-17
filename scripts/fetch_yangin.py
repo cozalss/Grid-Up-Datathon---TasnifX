@@ -56,6 +56,8 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from gridup.io_utils import atomic_write_dataframe  # noqa: E402
+
 FIRMS_URL = (
     "https://firms.modaps.eosdis.nasa.gov/data/country/{sensor}/{yil}/{sensor}_{yil}_Turkey.csv"
 )
@@ -79,7 +81,8 @@ def fetch_firms_yil(sensor: str, yil: int) -> pd.DataFrame | None:
     for deneme in range(1, RETRIES + 1):
         try:
             yanit = requests.get(
-                url, timeout=TIMEOUT_S,
+                url,
+                timeout=TIMEOUT_S,
                 headers={"User-Agent": "Mozilla/5.0 (datathon veri toplayici)"},
             )
             if yanit.status_code == 404:
@@ -101,8 +104,7 @@ def _sadelestir(ham: pd.DataFrame, sensor: str) -> pd.DataFrame:
     olurdu.
     """
     kutu = ham[
-        ham["latitude"].between(LAT_MIN, LAT_MAX)
-        & ham["longitude"].between(LON_MIN, LON_MAX)
+        ham["latitude"].between(LAT_MIN, LAT_MAX) & ham["longitude"].between(LON_MIN, LON_MAX)
     ]
     return pd.DataFrame(
         {
@@ -146,8 +148,7 @@ def main() -> int:
     birlesik = birlesik.reset_index(drop=True)
 
     cikti = Path(args.out)
-    cikti.parent.mkdir(parents=True, exist_ok=True)
-    birlesik.to_parquet(cikti, index=False)
+    atomic_write_dataframe(birlesik, cikti)
 
     print(f"Yazildi: {cikti}")
     print(f"  {len(birlesik):,} tespit, {birlesik['tarih'].min()} - {birlesik['tarih'].max()}")

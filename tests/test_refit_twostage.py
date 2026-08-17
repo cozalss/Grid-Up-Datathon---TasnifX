@@ -77,8 +77,14 @@ class TestMultiSeedRefit:
         params["n_estimators"] = 60
 
         result = multi_seed_refit(
-            train, y, test, kind="lightgbm", params=params,
-            n_estimators=60, seeds=(0, 1, 2, 3), verbose=False,
+            train,
+            y,
+            test,
+            kind="lightgbm",
+            params=params,
+            n_estimators=60,
+            seeds=(0, 1, 2, 3),
+            verbose=False,
         )
 
         assert result.per_seed_predictions.shape == (4, len(test))
@@ -96,8 +102,14 @@ class TestMultiSeedRefit:
         params["subsample_freq"] = 1
 
         result = multi_seed_refit(
-            train, y, test, kind="lightgbm", params=params,
-            n_estimators=60, seeds=(0, 1, 2), verbose=False,
+            train,
+            y,
+            test,
+            kind="lightgbm",
+            params=params,
+            n_estimators=60,
+            seeds=(0, 1, 2),
+            verbose=False,
         )
 
         first, second = result.per_seed_predictions[0], result.per_seed_predictions[1]
@@ -107,18 +119,26 @@ class TestMultiSeedRefit:
         train, y, _ = data
         with pytest.raises(ValueError, match="test"):
             multi_seed_refit(
-                train, y, None, kind="lightgbm",  # type: ignore[arg-type]
+                train,
+                y,
+                None,
+                kind="lightgbm",  # type: ignore[arg-type]
                 params=starter_params("lightgbm", "regression"),
-                n_estimators=10, verbose=False,
+                n_estimators=10,
+                verbose=False,
             )
 
     def test_length_mismatch_raises(self, data):
         train, _, test = data
         with pytest.raises(ValueError, match="uzunluklari"):
             multi_seed_refit(
-                train, np.zeros(3), test, kind="lightgbm",
+                train,
+                np.zeros(3),
+                test,
+                kind="lightgbm",
                 params=starter_params("lightgbm", "regression"),
-                n_estimators=10, verbose=False,
+                n_estimators=10,
+                verbose=False,
             )
 
 
@@ -205,8 +225,12 @@ class TestTwoStage:
         features, target, folds = sparse_data
 
         result = fit_two_stage(
-            features, target, folds, metric="mae",
-            early_stopping_rounds=30, verbose=False,
+            features,
+            target,
+            folds,
+            metric="mae",
+            early_stopping_rounds=30,
+            verbose=False,
         )
 
         assert result.best_threshold is not None
@@ -217,27 +241,21 @@ class TestTwoStage:
 
     def test_thresholded_mode_needs_a_threshold(self, sparse_data):
         features, target, folds = sparse_data
-        result = fit_two_stage(
-            features, target, folds, early_stopping_rounds=30, verbose=False
-        )
+        result = fit_two_stage(features, target, folds, early_stopping_rounds=30, verbose=False)
         result.best_threshold = None
         with pytest.raises(ValueError, match="esik"):
             result.predict_oof(mode="thresholded")
 
     def test_expected_mode_needs_no_threshold(self, sparse_data):
         features, target, folds = sparse_data
-        result = fit_two_stage(
-            features, target, folds, early_stopping_rounds=30, verbose=False
-        )
+        result = fit_two_stage(features, target, folds, early_stopping_rounds=30, verbose=False)
         predictions = result.predict_oof(mode="expected")
         assert predictions.shape == (len(features),)
         assert (predictions >= 0).all()
 
     def test_second_stage_trains_only_on_positives(self, sparse_data):
         features, target, folds = sparse_data
-        result = fit_two_stage(
-            features, target, folds, early_stopping_rounds=30, verbose=False
-        )
+        result = fit_two_stage(features, target, folds, early_stopping_rounds=30, verbose=False)
         # 2. asamanin OOF'u pozitif sayisi kadar satirla egitildi
         assert int(result.positive_mask.sum()) < len(features)
         assert len(result.regressor.oof_predictions) == int(result.positive_mask.sum())

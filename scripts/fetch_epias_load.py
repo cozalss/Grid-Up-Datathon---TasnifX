@@ -45,6 +45,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import tempfile
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -109,9 +110,12 @@ def _cek(istemci: EpiasClient, ad: str, fn, baslangic: date, bitis: date) -> pd.
     if basarisiz:
         # SESSIZ ATLAMA YOK: eksik parca, veride fark edilmeyen bir delik
         # birakir ve lag/rolling feature'lari o delikte sessizce yanlis olur.
-        print(f"  UYARI: {len(basarisiz)} parca alinamadi:")
+        print(f"  HATA: {len(basarisiz)} parca alinamadi:")
         for satir in basarisiz[:5]:
             print(f"    {satir}")
+        raise RuntimeError(
+            f"{ad} indirmesi tamamlanamadi; {len(basarisiz)} eksik parca var. Onceki cikti korundu."
+        )
 
     if not toplanan:
         return pd.DataFrame()
@@ -130,6 +134,23 @@ def _zaman_kolonu_kur(frame: pd.DataFrame) -> pd.DataFrame:
     return sonuc.drop(columns=[c for c in ("date", "time", "hour") if c in sonuc.columns])
 
 
+def _atomic_parquet(frame: pd.DataFrame, path: Path) -> None:
+    """Parquet'i ayni dosya sisteminde gecici yola yazip atomik yayinlar."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        delete=False,
+    ) as handle:
+        temporary = Path(handle.name)
+    try:
+        frame.to_parquet(temporary, index=False)
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def main() -> int:
     ayristirici = argparse.ArgumentParser(description=__doc__)
     ayristirici.add_argument("--start", default="2020-01-01")
@@ -140,11 +161,10 @@ def main() -> int:
     baslangic = date.fromisoformat(args.start)
     bitis = date.fromisoformat(args.end)
 
-    ortam = load_env_file(ROOT / ".env")
-    if not ortam:
+    loaded = load_env_file(ROOT / ".env")
+    if not loaded and not (os.environ.get("EPIAS_USERNAME") and os.environ.get("EPIAS_PASSWORD")):
         print("HATA: .env okunamadi. EPIAS_USERNAME ve EPIAS_PASSWORD gerekli.")
         return 1
-    os.environ.update(ortam)
 
     istemci = EpiasClient.from_env()
     cikti_dizini = ROOT / args.out
@@ -165,7 +185,7 @@ def main() -> int:
         onceki = len(frame)
         frame = frame.drop_duplicates(subset="zaman").sort_values("zaman").reset_index(drop=True)
         yol = cikti_dizini / dosya
-        frame.to_parquet(yol, index=False)
+        _atomic_parquet(frame, yol)
 
         bosluk = ""
         if len(frame) > 1:

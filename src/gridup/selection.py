@@ -79,10 +79,7 @@ class SelectionResult:
     def curve(self) -> pd.DataFrame:
         """Feature sayisi - skor egrisi. Juri sunumunda dogrudan slayt olur."""
         return pd.DataFrame(
-            [
-                {"feature_sayisi": step.n_features, "skor": step.score}
-                for step in self.history
-            ]
+            [{"feature_sayisi": step.n_features, "skor": step.score} for step in self.history]
         ).sort_values("feature_sayisi")
 
     @property
@@ -161,10 +158,7 @@ def mean_absolute_shap(
         if values.ndim == 3:
             values = values.mean(axis=2)
 
-    return (
-        pd.Series(values.mean(axis=0), index=sample.columns)
-        .sort_values(ascending=False)
-    )
+    return pd.Series(values.mean(axis=0), index=sample.columns).sort_values(ascending=False)
 
 
 def fold_shap_importance(
@@ -419,15 +413,22 @@ def shap_backward_selection(
         subset = train[features]
 
         result = cross_validate(
-            subset, y, folds, kind=kind, task_type=task_type, metric=metric,
-            params=model_params, early_stopping_rounds=100, verbose=False,
+            subset,
+            y,
+            folds,
+            kind=kind,
+            task_type=task_type,
+            metric=metric,
+            params=model_params,
+            early_stopping_rounds=100,
+            verbose=False,
         )
         elapsed = time.perf_counter() - started
 
-        improved = (
-            best_score is None
-            or (result.overall_score > best_score if greater_is_better
-                else result.overall_score < best_score)
+        improved = best_score is None or (
+            result.overall_score > best_score
+            if greater_is_better
+            else result.overall_score < best_score
         )
         if improved:
             best_score = result.overall_score
@@ -451,9 +452,7 @@ def shap_backward_selection(
             # tam da durma kararini gerekcelendiren adim. OLCULDU: 3 CV kosusu
             # yapildi, history'de 2 adim vardi ve summary() "Toplam 2 adim"
             # diyordu. Juriye sunulan eleme egrisinin son noktasi eksikti.
-            history.append(
-                SelectionStep(len(features), result.overall_score, (), elapsed)
-            )
+            history.append(SelectionStep(len(features), result.overall_score, (), elapsed))
             if progress:
                 progress(f"{patience} adimdir iyilesme yok -- duruluyor.")
             break
@@ -461,9 +460,7 @@ def shap_backward_selection(
         if len(features) - drop_per_step < min_features:
             if progress:
                 progress(f"Alt sinira ({min_features}) ulasildi -- duruluyor.")
-            history.append(
-                SelectionStep(len(features), result.overall_score, (), elapsed)
-            )
+            history.append(SelectionStep(len(features), result.overall_score, (), elapsed))
             break
 
         # SHAP'i her fold'un KENDI VALIDATION satirlarinda hesapla.
@@ -475,9 +472,7 @@ def shap_backward_selection(
         )
         weakest = importance.tail(drop_per_step)["feature"].tolist()
 
-        history.append(
-            SelectionStep(len(features), result.overall_score, tuple(weakest), elapsed)
-        )
+        history.append(SelectionStep(len(features), result.overall_score, tuple(weakest), elapsed))
         features = [column for column in features if column not in weakest]
 
     return SelectionResult(

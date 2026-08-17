@@ -95,9 +95,7 @@ class FeatureGroup:
 
     def __post_init__(self) -> None:
         if self.risk not in RISK_LEVELS:
-            raise ValueError(
-                f"Bilinmeyen risk '{self.risk}'. Secenekler: {RISK_LEVELS}"
-            )
+            raise ValueError(f"Bilinmeyen risk '{self.risk}'. Secenekler: {RISK_LEVELS}")
         if not self.kolonlar:
             raise ValueError(f"'{self.ad}' grubu bos -- en az bir kolon gerekli.")
 
@@ -166,12 +164,14 @@ class AblationResult:
         Bu kontrol tam olarak o durumu yakalar ve ne yapilacagini soyler.
         """
         scores = {name: r.overall_score for name, r in self.variants.items()}
-        best_name = (max if self.greater_is_better else min)(scores, key=scores.get)
+
+        def score_key(name: str) -> float:
+            return scores[name]
+
+        best_name = (max if self.greater_is_better else min)(scores, key=score_key)
         best = scores[best_name]
 
-        improved = (
-            self.blend_score > best if self.greater_is_better else self.blend_score < best
-        )
+        improved = self.blend_score > best if self.greater_is_better else self.blend_score < best
         lines = ["HARMAN KONTROLU", "-" * 46]
         lines.append(f"  en iyi tekil : {best_name} = {best:.6f}")
         lines.append(f"  harman       : {self.blend_score:.6f}")
@@ -180,7 +180,7 @@ class AblationResult:
             lines.append("  Harman kazandi -- esit agirlik burada dogru secim.")
             return "\n".join(lines)
 
-        worst_name = (min if self.greater_is_better else max)(scores, key=scores.get)
+        worst_name = (min if self.greater_is_better else max)(scores, key=score_key)
         lines.append("")
         lines.append("  UYARI: Harman en iyi tekil varyanttan KOTU.")
         lines.append(f"  Sebep: '{worst_name}' varyanti ({scores[worst_name]:.6f}) esit")
@@ -333,9 +333,7 @@ def ablation_ensemble(
         ValueError: Grup kolonlari ``train``de yoksa veya tek varyant cikarsa.
     """
     all_columns = list(train.columns)
-    missing = sorted(
-        {c for group in groups for c in group.kolonlar} - set(all_columns)
-    )
+    missing = sorted({c for group in groups for c in group.kolonlar} - set(all_columns))
     if missing:
         raise ValueError(
             f"{len(missing)} grup kolonu train'de yok: {missing[:8]}"
@@ -406,9 +404,7 @@ def ablation_ensemble(
     return outcome
 
 
-def _resolve_weights(
-    weights: dict[str, float] | None, names: Sequence[str]
-) -> dict[str, float]:
+def _resolve_weights(weights: dict[str, float] | None, names: Sequence[str]) -> dict[str, float]:
     """Agirliklari dogrular ve toplami 1 olacak sekilde normalize eder."""
     if weights is None:
         return {name: 1.0 / len(names) for name in names}
@@ -457,8 +453,15 @@ def leave_one_group_out(
     all_columns = list(train.columns)
 
     baseline = cross_validate(
-        train, y, folds, kind=kind, task_type=task_type, metric=metric,
-        params=params, early_stopping_rounds=early_stopping_rounds, verbose=False,
+        train,
+        y,
+        folds,
+        kind=kind,
+        task_type=task_type,
+        metric=metric,
+        params=params,
+        early_stopping_rounds=early_stopping_rounds,
+        verbose=False,
     )
     _, greater_is_better, _ = get_metric(metric)
     if verbose:
@@ -472,8 +475,15 @@ def leave_one_group_out(
                 print(f"  '{group.ad}' atlandi -- cikarilinca hic feature kalmiyor")
             continue
         result = cross_validate(
-            train[remaining], y, folds, kind=kind, task_type=task_type, metric=metric,
-            params=params, early_stopping_rounds=early_stopping_rounds, verbose=False,
+            train[remaining],
+            y,
+            folds,
+            kind=kind,
+            task_type=task_type,
+            metric=metric,
+            params=params,
+            early_stopping_rounds=early_stopping_rounds,
+            verbose=False,
         )
         # katki > 0  =>  grup silinince skor KOTULESTI  =>  grup faydali
         delta = result.overall_score - baseline.overall_score

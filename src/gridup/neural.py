@@ -206,8 +206,9 @@ def _build_network(config: NeuralConfig, cardinalities: Sequence[int], n_numeric
     """Gomulu + MLP agini kurar."""
     torch = _require_torch()
     nn = torch.nn
+    base_module: Any = nn.Module
 
-    class TabularNet(nn.Module):
+    class TabularNet(base_module):
         def __init__(self) -> None:
             super().__init__()
             self.embeddings = nn.ModuleList()
@@ -217,7 +218,7 @@ def _build_network(config: NeuralConfig, cardinalities: Sequence[int], n_numeric
                 self.embeddings.append(nn.Embedding(cardinality, size))
                 embedding_width += size
 
-            layers: list[nn.Module] = []
+            layers: list[Any] = []
             width = embedding_width + n_numeric
             for hidden in config.hidden_sizes:
                 layers += [
@@ -374,9 +375,7 @@ def neural_cross_validate(
         raise ValueError("En az bir fold gerekli.")
 
     config = config or NeuralConfig()
-    device = torch.device(
-        config.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    )
+    device = torch.device(config.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     torch.manual_seed(config.seed)
 
     y = np.asarray(target, dtype="float64").ravel()
@@ -405,8 +404,7 @@ def neural_cross_validate(
 
     if verbose:
         print(
-            f"[sinir agi] {device} | {len(categorical)} kategorik, "
-            f"{len(numeric)} sayisal feature"
+            f"[sinir agi] {device} | {len(categorical)} kategorik, {len(numeric)} sayisal feature"
         )
 
     for fold_index, (train_idx, valid_idx) in enumerate(folds, start=1):
@@ -422,9 +420,7 @@ def neural_cross_validate(
         )
 
         network = _build_network(config, preprocessor.cardinalities, len(numeric)).to(device)
-        network, best_epoch = _train_one_fold(
-            network, train_tensors, valid_tensors, config, torch
-        )
+        network, best_epoch = _train_one_fold(network, train_tensors, valid_tensors, config, torch)
 
         network.eval()
         with torch.no_grad():
@@ -439,10 +435,14 @@ def neural_cross_validate(
         if test is not None and test_predictions is not None:
             test_codes, test_scaled = preprocessor.transform(test)
             with torch.no_grad():
-                raw = network(
-                    torch.as_tensor(test_codes, device=device),
-                    torch.as_tensor(test_scaled, device=device),
-                ).cpu().numpy()
+                raw = (
+                    network(
+                        torch.as_tensor(test_codes, device=device),
+                        torch.as_tensor(test_scaled, device=device),
+                    )
+                    .cpu()
+                    .numpy()
+                )
             test_predictions += preprocessor.unscale_target(raw) / len(folds)
 
         importance_total += _first_layer_importance(network, preprocessor, torch)
@@ -450,9 +450,7 @@ def neural_cross_validate(
         if verbose:
             print(f"  fold {fold_index}/{len(folds)}  {metric}={score:.6f}  ({best_epoch} epok)")
 
-    overall = (
-        float(metric_fn(y[covered], oof[covered])) if covered.any() else float("nan")
-    )
+    overall = float(metric_fn(y[covered], oof[covered])) if covered.any() else float("nan")
     coverage = float(covered.mean())
     if verbose and coverage < 0.999:
         print(

@@ -35,6 +35,11 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from gridup.io_utils import (  # noqa: E402
+    publish_bytes,
+    publish_dataframe,
+    validate_cached_file,
+)
 from gridup.turkish import join_key, strip_qualifier  # noqa: E402
 
 #: Yil -> yillik bulten Eklenti adresi (yigm.ktb.gov.tr, dogrulandi 2026-08).
@@ -65,14 +70,20 @@ def indir(yil: int, url: str) -> Path:
     """Bulteni ham dizine indirir; dosya zaten varsa dokunmaz."""
     hedef = HAM_DIZIN / f"ktb_konaklama_yillik_{yil}.xlsx"
     if hedef.exists():
-        print(f"  {yil}: ham dosya mevcut, indirilmedi ({hedef})")
-        return hedef
+        try:
+            validate_cached_file(hedef, min_bytes=10_000, source=url)
+        except (OSError, ValueError) as error:
+            print(f"  {yil}: ham cache dogrulanamadi; yeniden indirilecek ({error})")
+        else:
+            print(f"  {yil}: hash dogrulanmis ham dosya mevcut, indirilmedi ({hedef})")
+            return hedef
 
     son_hata: Exception | None = None
     for deneme in range(1, RETRIES + 1):
         try:
             yanit = requests.get(
-                url, timeout=TIMEOUT_S,
+                url,
+                timeout=TIMEOUT_S,
                 headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
             )
             yanit.raise_for_status()
@@ -85,10 +96,11 @@ def indir(yil: int, url: str) -> Path:
         raise RuntimeError(f"{yil} bulteni {RETRIES} denemede inmedi. Son hata: {son_hata}")
 
     if len(yanit.content) < 10_000:
-        raise RuntimeError(f"{yil} bulteni supheli kucuk ({len(yanit.content)} bayt) -- "
-                           "muhtemelen hata sayfasi indi.")
-    HAM_DIZIN.mkdir(parents=True, exist_ok=True)
-    hedef.write_bytes(yanit.content)
+        raise RuntimeError(
+            f"{yil} bulteni supheli kucuk ({len(yanit.content)} bayt) -- "
+            "muhtemelen hata sayfasi indi."
+        )
+    publish_bytes(yanit.content, hedef, source=url, min_bytes=10_000)
     print(f"  {yil}: indirildi ({len(yanit.content):,} bayt)")
     time.sleep(REQUEST_PAUSE_S)
     return hedef
@@ -103,7 +115,7 @@ def _kolon_bul(baslik_satiri: pd.Series, aranan: str) -> int:
 
 
 def il_ilce_tablosu(yol: Path, yil: int) -> pd.DataFrame:
-    """"Il Ilce" sayfasini ortak semaya cevirir.
+    """ "Il Ilce" sayfasini ortak semaya cevirir.
 
     Sayfa yapisi (2023-2025'te ayni, her yil icin YENIDEN dogrulanir):
       satir 0: belge turu basligi, satir 1: grup basliklari (ILLER, ILCELER,
@@ -154,8 +166,9 @@ def main() -> int:
     for yil, url in sorted(BULTENLER.items()):
         yol = indir(yil, url)
         tablo = il_ilce_tablosu(yol, yil)
-        print(f"  {yil}: {len(tablo)} ilce satiri "
-              f"(geceleme toplami {tablo['geceleme'].sum():,.0f})")
+        print(
+            f"  {yil}: {len(tablo)} ilce satiri (geceleme toplami {tablo['geceleme'].sum():,.0f})"
+        )
         parcalar.append(tablo)
 
     birlesik = pd.concat(parcalar, ignore_index=True)
@@ -163,8 +176,13 @@ def main() -> int:
     birlesik = birlesik[kolonlar].sort_values(["yil", "il", "ilce"]).reset_index(drop=True)
 
     cikti = Path(args.out)
-    cikti.parent.mkdir(parents=True, exist_ok=True)
-    birlesik.to_parquet(cikti, index=False)
+    publish_dataframe(
+        birlesik,
+        cikti,
+        required_columns=kolonlar,
+        min_rows=len(BULTENLER),
+        source="KTB annual bulletins: " + ",".join(map(str, sorted(BULTENLER))),
+    )
 
     print(f"Yazildi: {cikti}")
     print(f"  {len(birlesik)} satir, yillar {sorted(birlesik['yil'].unique())}")

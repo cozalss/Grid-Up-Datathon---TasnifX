@@ -55,8 +55,7 @@ def test_tr_gun_once_tarih_fold_kronolojisini_bozmuyor():
         tr_metin, embargo=pd.Timedelta(days=30), n_splits=3, verbose=False
     )
     ihlal = sum(
-        int((gunler[train_idx] >= gunler[valid_idx].min()).sum())
-        for train_idx, valid_idx in folds
+        int((gunler[train_idx] >= gunler[valid_idx].min()).sum()) for train_idx, valid_idx in folds
     )
     assert ihlal == 0, f"{ihlal} train satiri gercek takvimde valid'in gelecegine bakiyor"
 
@@ -108,9 +107,7 @@ def test_ayristirilamayan_tarihler_son_foldun_valid_setine_yigilmiyor():
     gecersiz_konum = len(seri) - 1
     assert 1 / len(seri) < MAX_UNPARSED_TIME_RATIO  # sinirin altinda, tolere edilir
 
-    folds = purged_time_series_split(
-        seri, embargo=pd.Timedelta(days=1), n_splits=2, verbose=False
-    )
+    folds = purged_time_series_split(seri, embargo=pd.Timedelta(days=1), n_splits=2, verbose=False)
     kullanilan: set[int] = set()
     for train_idx, valid_idx in folds:
         kullanilan |= set(train_idx.tolist()) | set(valid_idx.tolist())
@@ -256,12 +253,10 @@ def test_adversarial_validation_ham_datetime_kolonuyla_cokmuyor():
     """
     rng = np.random.default_rng(0)
     train = pd.DataFrame(
-        {"tarih": pd.date_range("2024-01-01", periods=300, freq="D"),
-         "x": rng.normal(size=300)}
+        {"tarih": pd.date_range("2024-01-01", periods=300, freq="D"), "x": rng.normal(size=300)}
     )
     test = pd.DataFrame(
-        {"tarih": pd.date_range("2024-10-27", periods=150, freq="D"),
-         "x": rng.normal(size=150)}
+        {"tarih": pd.date_range("2024-10-27", periods=150, freq="D"), "x": rng.normal(size=150)}
     )
     sonuc = adversarial_validation(train, test, n_splits=3)
     assert sonuc["auc"] > 0.9
@@ -277,12 +272,8 @@ def test_top_features_gercek_ayiriciyi_acik_ara_one_koyuyor():
     gercek veride suclu gurultunun icinde kaybolur.
     """
     rng = np.random.default_rng(0)
-    train = pd.DataFrame(
-        {"gercek_ayirici": rng.normal(0, 1, 400), "gurultu": rng.normal(size=400)}
-    )
-    test = pd.DataFrame(
-        {"gercek_ayirici": rng.normal(30, 1, 200), "gurultu": rng.normal(size=200)}
-    )
+    train = pd.DataFrame({"gercek_ayirici": rng.normal(0, 1, 400), "gurultu": rng.normal(size=400)})
+    test = pd.DataFrame({"gercek_ayirici": rng.normal(30, 1, 200), "gurultu": rng.normal(size=200)})
     sonuc = adversarial_validation(train, test, n_splits=3)
     siralama = dict(sonuc["top_features"])
     assert sonuc["top_features"][0][0] == "gercek_ayirici"
@@ -309,11 +300,7 @@ def test_auc_bire_yakinken_sample_weights_kullanma_uyarisi_veriyor():
 def test_ortak_olmayan_feature_columns_sessizce_dusurulmuyor():
     """Kullanici o kolonu bilerek istedi; test'te olmamasi baslibasina bulgudur."""
     rng = np.random.default_rng(0)
-    train = pd.DataFrame(
-        {"a": rng.normal(size=200), "sadece_train": rng.normal(size=200)}
-    )
+    train = pd.DataFrame({"a": rng.normal(size=200), "sadece_train": rng.normal(size=200)})
     test = pd.DataFrame({"a": rng.normal(size=100)})
-    sonuc = adversarial_validation(
-        train, test, feature_columns=["a", "sadece_train"], n_splits=3
-    )
+    sonuc = adversarial_validation(train, test, feature_columns=["a", "sadece_train"], n_splits=3)
     assert any("sadece_train" in not_ for not_ in sonuc["notes"])

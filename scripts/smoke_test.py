@@ -33,18 +33,24 @@ from gridup import (  # noqa: E402
     write_submission,
 )
 from gridup.ensemble import correlation_matrix, hill_climb_weights  # noqa: E402
-from gridup.experiment import ExperimentLog, ExperimentRecord  # noqa: E402
+from gridup.experiment import (  # noqa: E402
+    DataArtifact,
+    ExperimentProvenance,
+    ExperimentRecord,
+)
 from gridup.features import (  # noqa: E402
     add_calendar_features,
-    add_frequency_encoding,
-    add_group_statistics,
-    add_lag_features,
-    add_rolling_features,
     add_turkish_holiday_features,
     oof_target_encode,
 )
 from gridup.features.temporal import shared_origin  # noqa: E402
-from gridup.metrics import log_transform_target  # noqa: E402
+from gridup.pipeline import (  # noqa: E402
+    FoldPlan,
+    build_paired_history_features,
+    runtime_recipe_fingerprint,
+)
+from gridup.recipe import CVRecipe, FeatureRecipe, ModelRecipe, PipelineRecipe  # noqa: E402
+from gridup.stores import SQLiteExperimentStore  # noqa: E402
 from gridup.synthetic import SyntheticSpec, make_distribution_dataset  # noqa: E402
 from gridup.turkish import diagnose_join, join_key  # noqa: E402
 from gridup.validation import adversarial_validation, purged_time_series_split  # noqa: E402
@@ -110,8 +116,11 @@ def main() -> int:
     # ------------------------------------------------------------------
     banner("4. CV SEMASI SECIMI")
     suggestion = suggest_scheme(
-        train, target=TARGET, task_type="regression",
-        known_group=GROUP_COLUMN, known_time=TIME_COLUMN,
+        train,
+        target=TARGET,
+        task_type="regression",
+        known_group=GROUP_COLUMN,
+        known_time=TIME_COLUMN,
     )
     print(suggestion)
 
@@ -141,27 +150,27 @@ def main() -> int:
     horizon = int((test[TIME_COLUMN].max() - test[TIME_COLUMN].min()).days) + 1
     print(f"  Tahmin ufku (test blok uzunlugu): {horizon} gun")
 
-    def build_features(frame: pd.DataFrame) -> pd.DataFrame:
-        """Train ve test'e AYNI donusumleri uygular -- egitim/servis esdegerligi."""
+    def build_base(frame: pd.DataFrame) -> pd.DataFrame:
         out = add_calendar_features(frame, TIME_COLUMN, include_year=False, origin=origin)
-        out = add_turkish_holiday_features(out, TIME_COLUMN)
-        out = add_group_statistics(
-            out, ["ilce"], ["tuketim_kwh", "sicaklik_c"],
-            aggregations=("mean", "std", "max"), target_column=TARGET,
-        )
-        out = add_frequency_encoding(out, ["ilce", "il", "fider_no", "abone_grubu"])
-        out = add_lag_features(
-            out, "tuketim_kwh", [1, 7, 28],
-            time_column=TIME_COLUMN, group_columns=[GROUP_COLUMN], horizon=horizon,
-        )
-        return add_rolling_features(
-            out, "tuketim_kwh", [7, 28],
-            time_column=TIME_COLUMN, group_columns=[GROUP_COLUMN], horizon=horizon,
-            aggregations=("mean", "std"),
-        )
+        return add_turkish_holiday_features(out, TIME_COLUMN)
 
-    train_features = build_features(train)
-    test_features = build_features(test)
+    # Global grup/frekans mapping'i erken temporal fold'lara gelecekteki
+    # validation dagilimini tasirdi; fold-ici encoder olmadan bu aile kapali.
+    history = build_paired_history_features(
+        build_base(train),
+        build_base(test),
+        value_column="tuketim_kwh",
+        time_column=TIME_COLUMN,
+        group_columns=[GROUP_COLUMN],
+        horizon=horizon,
+        shifts=[horizon, horizon + 6, horizon + 27],
+        rolling_windows=[7, 28],
+        rolling_aggregations=("mean", "std"),
+        # ACIKCA veriliyor: bu history hedef degil kovaryat ("tuketim_kwh")
+        # uzerinde. Nobetci, ikisinin ayni olmadigini dogrular.
+        target_column=TARGET,
+    )
+    train_features, test_features = history.train, history.test
 
     print(f"  train feature sayisi: {train_features.shape[1]}")
     print(f"  test  feature sayisi: {test_features.shape[1]}")
@@ -178,8 +187,13 @@ def main() -> int:
     banner("8. FOLD-DISI HEDEF KODLAMA (sizintisiz)")
     y = train_features[TARGET].to_numpy(dtype="float64")
     train_encoded, test_encoded = oof_target_encode(
-        train_features, pd.Series(y), ["ilce", "abone_grubu"], folds,
-        test=test_features, smoothing=30.0,
+        train_features,
+        pd.Series(y),
+        ["ilce", "abone_grubu"],
+        folds,
+        test=test_features,
+        smoothing=30.0,
+        uncovered_policy="nan",
     )
     print("  Kodlanan kolonlar: ilce, abone_grubu -> +2 feature")
 
@@ -188,8 +202,7 @@ def main() -> int:
     feature_columns = [
         column
         for column in train_encoded.columns
-        if column not in drop_columns + [ID_COLUMN, TIME_COLUMN]
-        and column in test_encoded.columns
+        if column not in drop_columns + [ID_COLUMN, TIME_COLUMN] and column in test_encoded.columns
     ]
     adversarial = adversarial_validation(
         train_encoded[feature_columns].sample(n=min(20000, len(train_encoded)), random_state=42),
@@ -206,9 +219,8 @@ def main() -> int:
     banner("10. MODEL EGITIMI (hedef carpik -> log1p donusumu)")
     x_train = train_encoded[feature_columns]
     x_test = test_encoded[feature_columns]
-    y_log = log_transform_target(y)
-
     results = {}
+    params_by_kind = {}
     for kind in ("lightgbm", "catboost"):
         print(f"\n  --- {kind} ---")
         params = None
@@ -223,32 +235,38 @@ def main() -> int:
             params = starter_params("catboost", "regression")
             params["iterations"] = 400
 
+        params_by_kind[kind] = dict(params)
+
         results[kind] = cross_validate(
-            x_train, y_log, folds,
-            kind=kind, task_type="regression", metric="rmse",
-            params=params, test=x_test, early_stopping_rounds=50,
+            x_train,
+            y,
+            folds,
+            kind=kind,
+            task_type="regression",
+            metric="rmsle",
+            params=params,
+            test=x_test,
+            early_stopping_rounds=50,
+            target_transform="log1p",
+            early_stopping_metric="rmsle",
         )
         print(results[kind].summary()[:900])
 
     # ------------------------------------------------------------------
     banner("11. HARMANLAMA")
-    covered = ~np.isclose(results["lightgbm"].oof_predictions, 0.0)
+    covered = results["lightgbm"].oof_covered
     oof_map = {name: result.oof_predictions[covered] for name, result in results.items()}
 
     print("  Model korelasyonu:")
     print(correlation_matrix(oof_map).round(4).to_string())
 
-    weights = hill_climb_weights(oof_map, y_log[covered], metric="rmse", step=0.02)
+    weights = hill_climb_weights(oof_map, y[covered], metric="rmsle", step=0.02)
 
-    blended_test = sum(
-        weight * results[name].test_predictions for name, weight in weights.items()
-    )
+    blended_test = sum(weight * results[name].test_predictions for name, weight in weights.items())
 
     # ------------------------------------------------------------------
     banner("12. SUBMISSION YAZ VE DOGRULA")
-    from gridup.metrics import inverse_log_transform
-
-    predictions = inverse_log_transform(blended_test)
+    predictions = blended_test
     submission_path = write_submission(
         test_encoded[ID_COLUMN].to_numpy(),
         predictions,
@@ -275,20 +293,71 @@ def main() -> int:
 
     # ------------------------------------------------------------------
     banner("14. DENEY DEFTERI")
-    log = ExperimentLog(Path(__file__).resolve().parents[1] / "experiments" / "deneyler.jsonl")
+    root = Path(__file__).resolve().parents[1]
+    store = SQLiteExperimentStore(root / "experiments" / "experiments.db")
+    fold_plan = FoldPlan.from_folds(folds, n_rows=len(train_encoded))
     for name, result in results.items():
-        log.add(
+        estimator_count_key = "iterations" if name == "catboost" else "n_estimators"
+        recipe = PipelineRecipe(
+            seed=42,
+            cv=CVRecipe(
+                n_splits=len(folds),
+                splitter="purged_time_series",
+                embargo_days=35,
+            ),
+            features=FeatureRecipe(
+                horizon=horizon,
+                target_shifts=(),
+                rolling_windows=(),
+                history_value_columns=("tuketim_kwh",),
+                history_shifts=(horizon, horizon + 6, horizon + 27),
+                history_rolling_windows=(7, 28),
+                history_rolling_aggregations=("mean", "std"),
+                families=(
+                    "calendar",
+                    "holiday",
+                    "consumption_history",
+                    "oof_target_encoding",
+                ),
+            ),
+            model=ModelRecipe(
+                kind=name,
+                objective=str(params_by_kind[name].get("objective", "regression")),
+                metric="rmsle",
+                early_stopping_metric="rmsle",
+                n_estimators=int(params_by_kind[name][estimator_count_key]),
+                early_stopping_rounds=50,
+            ),
+        )
+        runtime_fingerprint = runtime_recipe_fingerprint(
+            recipe.to_dict(),
+            backend=name,
+            target_transform="log1p",
+            n_estimators=400,
+            early_stopping_rounds=50,
+        )
+        provenance = ExperimentProvenance.capture(
+            recipe_fingerprint=runtime_fingerprint,
+            data_artifacts=[DataArtifact.from_path(submission_path)],
+            feature_names=feature_columns,
+            fold_fingerprint=fold_plan.fingerprint,
+        )
+        store.add(
             ExperimentRecord(
                 name=f"duman_{name}",
                 cv_score=result.overall_score,
-                metric="rmse(log1p)",
+                metric="rmsle",
                 model_kind=name,
                 n_features=len(feature_columns),
                 fold_scores=result.fold_scores,
+                params=params_by_kind[name],
+                features=list(feature_columns),
                 notes="duman testi: takvim+tatil+grup+lag+rolling+OOF hedef kodlama",
+                submission_path=str(submission_path),
+                provenance=provenance,
             )
         )
-    print(log.leaderboard().to_string(index=False))
+    print(pd.DataFrame(store.load()).tail(len(results))[["name", "cv_score", "metric"]])
 
     elapsed = time.perf_counter() - started
     banner(f"TAMAM -- pipeline uctan uca calisiyor.  Toplam sure: {elapsed:.1f} sn")

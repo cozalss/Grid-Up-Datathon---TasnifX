@@ -137,9 +137,7 @@ class ZooResult:
                 "Hicbir satir tum uyelerce kapsanmiyor -- ortak OOF kapsami bos. "
                 "Uyeler ayni fold'larla mi egitildi? Daha az fold dene."
             )
-        return indeks, {
-            ad: sonuc.oof_predictions[indeks] for ad, sonuc in self.results.items()
-        }
+        return indeks, {ad: sonuc.oof_predictions[indeks] for ad, sonuc in self.results.items()}
 
     @property
     def test_matrix(self) -> dict[str, np.ndarray]:
@@ -161,9 +159,11 @@ class ZooResult:
             }
             for name, result in self.results.items()
         ]
-        return pd.DataFrame(rows).sort_values(
-            "skor", ascending=not self.greater_is_better
-        ).reset_index(drop=True)
+        return (
+            pd.DataFrame(rows)
+            .sort_values("skor", ascending=not self.greater_is_better)
+            .reset_index(drop=True)
+        )
 
     def correlation(self) -> pd.DataFrame:
         """Modeller arasi OOF korelasyonu -- YALNIZCA ortak kapsamdaki satirlar.
@@ -253,10 +253,16 @@ def make_model_zoo(
             print(f"\n--- {entry.name} ({entry.kind}) ---")
         params = entry.params or starter_params(entry.kind, task_type)
         results[entry.name] = cross_validate(
-            train, y, folds,
-            kind=entry.kind, task_type=task_type, metric=metric,
-            params=params, test=test,
-            early_stopping_rounds=early_stopping_rounds, verbose=verbose,
+            train,
+            y,
+            folds,
+            kind=entry.kind,
+            task_type=task_type,
+            metric=metric,
+            params=params,
+            test=test,
+            early_stopping_rounds=early_stopping_rounds,
+            verbose=verbose,
         )
 
     result = ZooResult(
@@ -305,7 +311,13 @@ def sweep_count_objectives(
         raise ValueError(f"'{kind}' icin gecerli objective ailesi yok: {list(families)}")
 
     return make_model_zoo(
-        train, target, folds, entries=entries, task_type="regression",
-        metric=metric, test=test, early_stopping_rounds=early_stopping_rounds,
+        train,
+        target,
+        folds,
+        entries=entries,
+        task_type="regression",
+        metric=metric,
+        test=test,
+        early_stopping_rounds=early_stopping_rounds,
         verbose=verbose,
     )

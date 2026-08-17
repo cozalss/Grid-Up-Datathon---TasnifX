@@ -34,14 +34,18 @@ def _veri(n: int = 400, m: int = 200, tohum: int = 0):
     rng = np.random.default_rng(tohum)
     train = pd.DataFrame(
         {
-            "a": rng.normal(size=n), "b": rng.normal(size=n),
-            "c": rng.normal(size=n), "grup": rng.choice(["x", "y", "z"], n),
+            "a": rng.normal(size=n),
+            "b": rng.normal(size=n),
+            "c": rng.normal(size=n),
+            "grup": rng.choice(["x", "y", "z"], n),
         }
     )
     test = pd.DataFrame(
         {
-            "a": rng.normal(size=m), "b": rng.normal(size=m),
-            "c": rng.normal(size=m), "grup": rng.choice(["x", "y", "z"], m),
+            "a": rng.normal(size=m),
+            "b": rng.normal(size=m),
+            "c": rng.normal(size=m),
+            "grup": rng.choice(["x", "y", "z"], m),
         }
     )
     y = (train["a"] * 2 + train["b"] - train["c"] + rng.normal(0, 0.3, n)).to_numpy()
@@ -69,9 +73,7 @@ def test_refit_bozuk_hedefi_cross_validate_ile_ayni_sekilde_reddediyor(bozuk):
     with pytest.raises(ValueError, match="NaN/sonsuz"):
         cross_validate(train, y, folds, kind="lightgbm", params=PARAMS, verbose=False)
     with pytest.raises(ValueError, match="NaN/sonsuz"):
-        multi_seed_refit(
-            train, y, test, params=PARAMS, n_estimators=50, seeds=[0], verbose=False
-        )
+        multi_seed_refit(train, y, test, params=PARAMS, n_estimators=50, seeds=[0], verbose=False)
 
 
 # --------------------------------------------------------------------------
@@ -88,12 +90,15 @@ def test_test_kolon_sirasi_degisince_tahmin_degismiyor():
     her merge/concat/groupby.agg kolon sirasini degistirebilir.
     """
     train, test, y = _veri()
-    duz = multi_seed_refit(
-        train, y, test, params=PARAMS, n_estimators=80, seeds=[0], verbose=False
-    )
+    duz = multi_seed_refit(train, y, test, params=PARAMS, n_estimators=80, seeds=[0], verbose=False)
     karisik = multi_seed_refit(
-        train, y, test[["grup", "c", "a", "b"]],
-        params=PARAMS, n_estimators=80, seeds=[0], verbose=False,
+        train,
+        y,
+        test[["grup", "c", "a", "b"]],
+        params=PARAMS,
+        n_estimators=80,
+        seeds=[0],
+        verbose=False,
     )
     np.testing.assert_allclose(duz.predictions, karisik.predictions)
 
@@ -102,8 +107,13 @@ def test_test_te_eksik_kolon_acik_hata_veriyor():
     train, test, y = _veri()
     with pytest.raises(ValueError, match="train kolonu yok"):
         multi_seed_refit(
-            train, y, test.drop(columns=["c"]),
-            params=PARAMS, n_estimators=50, seeds=[0], verbose=False,
+            train,
+            y,
+            test.drop(columns=["c"]),
+            params=PARAMS,
+            n_estimators=50,
+            seeds=[0],
+            verbose=False,
         )
 
 
@@ -113,8 +123,13 @@ def test_test_te_fazla_kolon_tahmin_edilmeden_hata_veriyor():
     rng = np.random.default_rng(1)
     with pytest.raises(ValueError, match="train'de olmayan"):
         multi_seed_refit(
-            train, y, test.assign(ekstra=rng.normal(size=len(test))),
-            params=PARAMS, n_estimators=50, seeds=[0], verbose=False,
+            train,
+            y,
+            test.assign(ekstra=rng.normal(size=len(test))),
+            params=PARAMS,
+            n_estimators=50,
+            seeds=[0],
+            verbose=False,
         )
 
 
@@ -131,13 +146,22 @@ def test_cv_de_calisan_tuned_params_refit_te_de_calisiyor():
     train, test, y = _veri()
     folds = [(np.arange(0, 300), np.arange(300, 400))]
     tuned = {
-        "n_estimators": 200, "learning_rate": 0.05, "max_depth": 5,
-        "subsample": 0.8, "colsample_bytree": 0.7,
+        "n_estimators": 200,
+        "learning_rate": 0.05,
+        "max_depth": 5,
+        "subsample": 0.8,
+        "colsample_bytree": 0.7,
     }
     cross_validate(train, y, folds, kind="xgboost", params=tuned, verbose=False)
     sonuc = multi_seed_refit(
-        train, y, test, kind="xgboost", params=tuned,
-        n_estimators=100, seeds=[0], verbose=False,
+        train,
+        y,
+        test,
+        kind="xgboost",
+        params=tuned,
+        n_estimators=100,
+        seeds=[0],
+        verbose=False,
     )
     assert np.isfinite(sonuc.predictions).all()
 
@@ -156,8 +180,13 @@ def test_params_icindeki_num_iterations_n_estimatorsu_ezmiyor():
     """
     train, test, y = _veri()
     sonuc = multi_seed_refit(
-        train, y, test, params={**PARAMS, "num_iterations": 5},
-        n_estimators=500, seeds=[0], verbose=False,
+        train,
+        y,
+        test,
+        params={**PARAMS, "num_iterations": 5},
+        n_estimators=500,
+        seeds=[0],
+        verbose=False,
     )
     assert sonuc.models[0].booster_.num_trees() == 500
     assert sonuc.n_estimators == 500
@@ -175,8 +204,13 @@ def test_tekrarli_tohum_reddediliyor():
     train, test, y = _veri()
     with pytest.raises(ValueError, match="benzersiz olmali"):
         multi_seed_refit(
-            train, y, test, params=PARAMS, n_estimators=50,
-            seeds=[7, 7, 7], verbose=False,
+            train,
+            y,
+            test,
+            params=PARAMS,
+            n_estimators=50,
+            seeds=[7, 7, 7],
+            verbose=False,
         )
 
 
@@ -184,8 +218,13 @@ def test_farkli_tohumlar_gercek_sapma_uretiyor():
     """Ters yon: farkli tohumlar sifir olmayan bir sapma vermeli."""
     train, test, y = _veri()
     sonuc = multi_seed_refit(
-        train, y, test, params=PARAMS, n_estimators=50,
-        seeds=[1, 2, 3], verbose=False,
+        train,
+        y,
+        test,
+        params=PARAMS,
+        n_estimators=50,
+        seeds=[1, 2, 3],
+        verbose=False,
     )
     assert sonuc.seed_disagreement > 0.0
 
@@ -214,21 +253,20 @@ def test_genisleyen_pencerede_k_eksi_bir_bolu_k_varsayimi_yanlis():
     Son gun egitilen model, CV'nin dogruladigi modelden sistematik olarak
     daha AZ egitilmis oluyordu.
     """
-    zaman = pd.Series(
-        np.repeat(pd.date_range("2024-01-01", periods=200, freq="D"), 20)
-    )
+    zaman = pd.Series(np.repeat(pd.date_range("2024-01-01", periods=200, freq="D"), 20))
     folds = purged_time_series_split(
-        zaman, embargo=pd.Timedelta(days=30), n_splits=5,
-        test_span=pd.Timedelta(days=20), verbose=False,
+        zaman,
+        embargo=pd.Timedelta(days=30),
+        n_splits=5,
+        test_span=pd.Timedelta(days=20),
+        verbose=False,
     )
     oran = fold_train_fraction(folds, len(zaman))
     assert oran == pytest.approx(0.550, abs=0.01)
     assert oran < 0.8, "genisleyen pencere (k-1)/k'dan az veri gorur"
 
     varsayimla = estimate_full_data_rounds([100, 110, 90], n_folds=5)
-    olcumle = estimate_full_data_rounds(
-        [100, 110, 90], n_folds=5, mean_train_fraction=oran
-    )
+    olcumle = estimate_full_data_rounds([100, 110, 90], n_folds=5, mean_train_fraction=oran)
     assert varsayimla == 120
     assert olcumle == 182
     assert olcumle > varsayimla * 1.4
@@ -237,6 +275,4 @@ def test_genisleyen_pencerede_k_eksi_bir_bolu_k_varsayimi_yanlis():
 def test_gecersiz_train_orani_reddediliyor():
     for gecersiz in (0.0, -0.5, 1.5):
         with pytest.raises(ValueError, match="mean_train_fraction"):
-            estimate_full_data_rounds(
-                [100], n_folds=5, mean_train_fraction=gecersiz
-            )
+            estimate_full_data_rounds([100], n_folds=5, mean_train_fraction=gecersiz)

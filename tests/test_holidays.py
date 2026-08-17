@@ -28,7 +28,7 @@ class TestHalfDayHolidays:
         result = add_turkish_holiday_features(_frame(["2026-03-19"]), "tarih")
         row = result.iloc[0]
         assert row["tatil_yarim_gun"] == 1
-        assert row["tatil_mi"] == 0          # tam gun tatil DEGIL
+        assert row["tatil_mi"] == 0  # tam gun tatil DEGIL
         assert row["tatil_agirligi"] == pytest.approx(0.5)
 
     def test_kurban_arifesi_is_detected(self):
@@ -205,13 +205,9 @@ class TestDistanceStillWorks:
         assert distances[0] < distances[1] < distances[2]
 
     def test_near_flag_respects_window(self):
-        result = add_turkish_holiday_features(
-            _frame(["2026-10-31"]), "tarih", window_days=3
-        )
+        result = add_turkish_holiday_features(_frame(["2026-10-31"]), "tarih", window_days=3)
         assert result["tatil_yakininda"].iloc[0] == 1
-        far = add_turkish_holiday_features(
-            _frame(["2026-10-31"]), "tarih", window_days=1
-        )
+        far = add_turkish_holiday_features(_frame(["2026-10-31"]), "tarih", window_days=1)
         assert far["tatil_yakininda"].iloc[0] == 0
 
 

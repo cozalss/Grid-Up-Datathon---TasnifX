@@ -1,6 +1,7 @@
 # --- Veri: asla commit edilmez (yarisma verisi + turetilmis dosyalar) ---
 data/*
 !data/.gitkeep
+!data/sources.yml
 # ISTISNA: gercek GDZ provasinin kaynagi repoda TASINIR (11 MB, ekip
 # arkadasi klonlayinca indirme derdi olmasin). Kaynak: Kaggle
 # tmlalper/manisa-izmir-plansiz-elektrik-kesintileri (halka acik).
@@ -29,6 +30,7 @@ submissions/
 mlruns/
 wandb/
 optuna_*.db
+experiments/*.db*
 *.lgb
 *.cbm
 *.ubj

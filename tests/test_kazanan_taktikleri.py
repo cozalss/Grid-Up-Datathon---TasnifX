@@ -79,7 +79,7 @@ def test_toplu_olay_kayan7_penceresi_ufukta_bitiyor():
 
     gunler = pd.date_range("2024-03-01", periods=20, freq="D")
     for i in range(_UFUK, 20):
-        beklenen = paylar[max(0, i - _UFUK - 6): i - _UFUK + 1].mean()
+        beklenen = paylar[max(0, i - _UFUK - 6) : i - _UFUK + 1].mean()
         deger = sonuc.loc[sonuc["gun"] == gunler[i], kolon].iloc[0]
         assert deger == pytest.approx(beklenen, abs=1e-6), f"gun {i}"
 
@@ -87,8 +87,12 @@ def test_toplu_olay_kayan7_penceresi_ufukta_bitiyor():
 def test_toplu_olay_bayragi_esik_ve_nan():
     panel, paylar = _toplu_olay_paneli()
     sonuc = add_mass_event_features(
-        panel, "kesinti", time_column="gun", horizon=_UFUK,
-        group_columns=["ilce"], threshold=0.5,
+        panel,
+        "kesinti",
+        time_column="gun",
+        horizon=_UFUK,
+        group_columns=["ilce"],
+        threshold=0.5,
     )
     kolon = f"kesinti_ufuk{_UFUK}_topluolay_bayrak_lag1"
 
@@ -113,9 +117,7 @@ def test_toplu_olay_ayni_gun_payi_reddediliyor():
 def test_toplu_olay_grup_kolonu_zorunlu():
     panel, _ = _toplu_olay_paneli()
     with pytest.raises(ValueError, match="group_columns"):
-        add_mass_event_features(
-            panel, "kesinti", time_column="gun", horizon=1, group_columns=[]
-        )
+        add_mass_event_features(panel, "kesinti", time_column="gun", horizon=1, group_columns=[])
 
 
 # --------------------------------------------------------------------------
@@ -131,9 +133,7 @@ def _agirlik_paneli(deger: float, n_gun: int = 5, ilce: str = "bornova") -> pd.D
 def test_rampa_uclari_izmir_bombasi_degerleri():
     """En eski satir 0.05, en yeni 0.95, ara dogrusal (tam aktif grup: carpan=1)."""
     panel = _agirlik_paneli(deger=7.0)  # hep > 0 -> aktiflik 1 -> carpan 1
-    agirlik = recency_activity_weights(
-        panel, "kesinti", time_column="gun", group_columns=["ilce"]
-    )
+    agirlik = recency_activity_weights(panel, "kesinti", time_column="gun", group_columns=["ilce"])
     np.testing.assert_allclose(agirlik, [0.05, 0.275, 0.5, 0.725, 0.95])
 
 
@@ -147,42 +147,32 @@ def test_aktiflik_carpani_olu_seriyi_tabana_indiriyor():
         panel, "kesinti", time_column="gun", group_columns=["ilce"], activity_floor=0.25
     )
     rampa = np.array([0.05, 0.275, 0.5, 0.725, 0.95])
-    np.testing.assert_allclose(agirlik[:5], rampa * 0.25)   # olu -> taban
-    np.testing.assert_allclose(agirlik[5:], rampa * 1.0)    # aktif -> tam
+    np.testing.assert_allclose(agirlik[:5], rampa * 0.25)  # olu -> taban
+    np.testing.assert_allclose(agirlik[5:], rampa * 1.0)  # aktif -> tam
 
 
 def test_tek_satirlik_grup_en_guncel_agirligi_alir():
     panel = _agirlik_paneli(deger=1.0, n_gun=1)
-    agirlik = recency_activity_weights(
-        panel, "kesinti", time_column="gun", group_columns=["ilce"]
-    )
+    agirlik = recency_activity_weights(panel, "kesinti", time_column="gun", group_columns=["ilce"])
     assert agirlik[0] == pytest.approx(0.95)
 
 
 def test_agirlik_girdi_sirasinda_donuyor():
     """Karisik satir sirasi: agirlik dogru SATIRA yazilmali, dogru konuma degil."""
     panel = _agirlik_paneli(deger=2.0)
-    duz = recency_activity_weights(
-        panel, "kesinti", time_column="gun", group_columns=["ilce"]
-    )
+    duz = recency_activity_weights(panel, "kesinti", time_column="gun", group_columns=["ilce"])
     perm = np.array([3, 0, 4, 1, 2])
     karisik = panel.iloc[perm].reset_index(drop=True)
-    karma = recency_activity_weights(
-        karisik, "kesinti", time_column="gun", group_columns=["ilce"]
-    )
+    karma = recency_activity_weights(karisik, "kesinti", time_column="gun", group_columns=["ilce"])
     np.testing.assert_allclose(karma, duz[perm])
 
 
 def test_agirlik_parametre_hatalari():
     panel = _agirlik_paneli(deger=1.0)
     with pytest.raises(ValueError, match="start"):
-        recency_activity_weights(
-            panel, "kesinti", time_column="gun", start=0.9, end=0.1
-        )
+        recency_activity_weights(panel, "kesinti", time_column="gun", start=0.9, end=0.1)
     with pytest.raises(ValueError, match="activity_floor"):
-        recency_activity_weights(
-            panel, "kesinti", time_column="gun", activity_floor=1.5
-        )
+        recency_activity_weights(panel, "kesinti", time_column="gun", activity_floor=1.5)
     with pytest.raises(KeyError, match="yok"):
         recency_activity_weights(panel, "olmayan", time_column="gun")
 
@@ -194,8 +184,11 @@ def _cv_verisi():
     x = pd.DataFrame({"a": rng.normal(0, 1, n), "b": rng.normal(0, 1, n)})
     y = (x.a * 3 + rng.normal(0, 1, n)).to_numpy()
     folds = purged_time_series_split(
-        tarih, embargo=pd.Timedelta(days=5), n_splits=2,
-        test_span=pd.Timedelta(days=30), verbose=False,
+        tarih,
+        embargo=pd.Timedelta(days=5),
+        n_splits=2,
+        test_span=pd.Timedelta(days=30),
+        verbose=False,
     )
     return x, y, tarih, folds
 
@@ -206,20 +199,30 @@ def test_cross_validate_agirlikla_kosuyor():
     x, y, tarih, folds = _cv_verisi()
     params = {"n_estimators": 50, "verbose": -1}
 
-    duz = cross_validate(
-        x, y, folds, kind="lightgbm", metric="mae", params=params, verbose=False
-    )
+    duz = cross_validate(x, y, folds, kind="lightgbm", metric="mae", params=params, verbose=False)
     birim = cross_validate(
-        x, y, folds, kind="lightgbm", metric="mae", params=params,
-        sample_weight=np.ones(len(x)), verbose=False,
+        x,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="mae",
+        params=params,
+        sample_weight=np.ones(len(x)),
+        verbose=False,
     )
     assert birim.overall_score == pytest.approx(duz.overall_score, rel=1e-9)
 
     panel = pd.DataFrame({"gun": tarih, "hedef": y})
     agirlik = recency_activity_weights(panel, "hedef", time_column="gun")
     gercek = cross_validate(
-        x, y, folds, kind="lightgbm", metric="mae", params=params,
-        sample_weight=agirlik, verbose=False,
+        x,
+        y,
+        folds,
+        kind="lightgbm",
+        metric="mae",
+        params=params,
+        sample_weight=agirlik,
+        verbose=False,
     )
     assert np.isfinite(gercek.overall_score)
     assert np.array_equal(gercek.oof_covered, duz.oof_covered)
@@ -229,8 +232,13 @@ def test_cross_validate_agirlik_boyut_hatasi():
     x, y, _, folds = _cv_verisi()
     with pytest.raises(ValueError, match="sample_weight"):
         cross_validate(
-            x, y, folds, kind="lightgbm", metric="mae",
-            sample_weight=np.ones(3), verbose=False,
+            x,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="mae",
+            sample_weight=np.ones(3),
+            verbose=False,
         )
 
 
@@ -240,8 +248,13 @@ def test_cross_validate_negatif_agirlik_reddediliyor():
     kotu[0] = -1.0
     with pytest.raises(ValueError, match="negatif"):
         cross_validate(
-            x, y, folds, kind="lightgbm", metric="mae",
-            sample_weight=kotu, verbose=False,
+            x,
+            y,
+            folds,
+            kind="lightgbm",
+            metric="mae",
+            sample_weight=kotu,
+            verbose=False,
         )
 
 
@@ -285,7 +298,7 @@ def test_carpan_kapsam_maskesine_uyuyor():
     """Kapsanmayan (dolgu) satirlar taramaya girmemeli -- purged CV geregi."""
     y, tahmin = _yanli_tahmin(n=200)
     bozuk = tahmin.copy()
-    bozuk[:50] = y[:50] * 5.0          # dolgu bolgesi: anlamsiz tahmin
+    bozuk[:50] = y[:50] * 5.0  # dolgu bolgesi: anlamsiz tahmin
     maske = np.ones(200, dtype=bool)
     maske[:50] = False
     en_iyi, _, _ = tune_final_multiplier(y, bozuk, covered=maske)
@@ -321,13 +334,13 @@ def test_yumusak_iqr_grup_bazinda_ayri_tavan():
     degerler = np.concatenate([_AYKIRI, _AYKIRI * 10.0])
     gruplar = np.array(["a"] * 9 + ["b"] * 9)
     sonuc = soften_outliers(degerler, gruplar)
-    assert sonuc[8] == pytest.approx(45.44)     # a: 100 -> 45.44
-    assert sonuc[17] == pytest.approx(454.4)    # b: 1000 -> 0.38*1000 + 0.62*120
+    assert sonuc[8] == pytest.approx(45.44)  # a: 100 -> 45.44
+    assert sonuc[17] == pytest.approx(454.4)  # b: 1000 -> 0.38*1000 + 0.62*120
 
 
 def test_yumusak_iqr_blend_uclari():
     assert soften_outliers(_AYKIRI, blend=0.0)[-1] == pytest.approx(100.0)  # ham
-    assert soften_outliers(_AYKIRI, blend=1.0)[-1] == pytest.approx(12.0)   # sert kirpma
+    assert soften_outliers(_AYKIRI, blend=1.0)[-1] == pytest.approx(12.0)  # sert kirpma
 
 
 def test_yumusak_iqr_girdiyi_degistirmiyor():
@@ -352,17 +365,23 @@ def test_yumusak_iqr_parametre_hatalari():
 
 def _hava_paneli() -> pd.DataFrame:
     gunler = pd.date_range("2024-07-01", periods=6, freq="D")
-    return pd.DataFrame({
-        "gun": gunler, "ilce": "bornova",
-        "sicaklik_min": [10.0, 25.0, 26.0, 27.0, 5.0, 30.0],
-    })
+    return pd.DataFrame(
+        {
+            "gun": gunler,
+            "ilce": "bornova",
+            "sicaklik_min": [10.0, 25.0, 26.0, 27.0, 5.0, 30.0],
+        }
+    )
 
 
 def test_ardisik_esik_ustu_sayaci():
     """[F,T,T,T,F,T] -> [0,1,2,3,0,1] -- sicak gece yorulma mekanizmasi."""
     sonuc = add_consecutive_extreme_days(
-        _hava_paneli(), "sicaklik_min", time_column="gun",
-        group_columns=["ilce"], threshold=22.0,
+        _hava_paneli(),
+        "sicaklik_min",
+        time_column="gun",
+        group_columns=["ilce"],
+        threshold=22.0,
     )
     np.testing.assert_array_equal(
         sonuc["sicaklik_min_ardisik_ustu_gun"].to_numpy(), [0, 1, 2, 3, 0, 1]
@@ -371,8 +390,12 @@ def test_ardisik_esik_ustu_sayaci():
 
 def test_ardisik_esik_alti_yonu():
     sonuc = add_consecutive_extreme_days(
-        _hava_paneli(), "sicaklik_min", time_column="gun",
-        group_columns=["ilce"], threshold=20.0, above=False,
+        _hava_paneli(),
+        "sicaklik_min",
+        time_column="gun",
+        group_columns=["ilce"],
+        threshold=20.0,
+        above=False,
     )
     np.testing.assert_array_equal(
         sonuc["sicaklik_min_ardisik_alti_gun"].to_numpy(), [1, 0, 0, 0, 1, 0]
@@ -382,10 +405,17 @@ def test_ardisik_esik_alti_yonu():
 def test_ardisik_sayac_gruplar_ve_sira():
     """Karisik satir sirasi + iki grup: sayac grup ici kronolojiden, sira korunur."""
     gunler = pd.date_range("2024-07-01", periods=4, freq="D")
-    panel = pd.concat([
-        pd.DataFrame({"gun": gunler, "ilce": "b", "v": [30.0, 30.0, 10.0, 30.0]}),
-        pd.DataFrame({"gun": gunler, "ilce": "a", "v": [10.0, 30.0, 30.0, 30.0]}),
-    ], ignore_index=True).sample(frac=1, random_state=5).reset_index(drop=True)
+    panel = (
+        pd.concat(
+            [
+                pd.DataFrame({"gun": gunler, "ilce": "b", "v": [30.0, 30.0, 10.0, 30.0]}),
+                pd.DataFrame({"gun": gunler, "ilce": "a", "v": [10.0, 30.0, 30.0, 30.0]}),
+            ],
+            ignore_index=True,
+        )
+        .sample(frac=1, random_state=5)
+        .reset_index(drop=True)
+    )
 
     sonuc = add_consecutive_extreme_days(
         panel, "v", time_column="gun", group_columns=["ilce"], threshold=20.0
@@ -400,10 +430,13 @@ def test_ardisik_sayac_gruplar_ve_sira():
 def test_yagis_anomalisi_el_hesabi():
     """pencere 2, yagis [0,0,10,0]: kayan toplam [0,0,10,10],
     genisleyen ort [0,0,10/3,5] -> anomali [0,0,20/3,5]."""
-    panel = pd.DataFrame({
-        "gun": pd.date_range("2024-01-01", periods=4, freq="D"),
-        "ilce": "bornova", "yagis": [0.0, 0.0, 10.0, 0.0],
-    })
+    panel = pd.DataFrame(
+        {
+            "gun": pd.date_range("2024-01-01", periods=4, freq="D"),
+            "ilce": "bornova",
+            "yagis": [0.0, 0.0, 10.0, 0.0],
+        }
+    )
     sonuc = add_precip_anomaly(
         panel, "yagis", time_column="gun", group_columns=["ilce"], windows=(2,)
     )
@@ -415,29 +448,31 @@ def test_yagis_anomalisi_el_hesabi():
 def test_yagis_anomalisi_grup_ici_referans():
     """Iklim referansi grubun KENDI gecmisi: ayni mm iki ilcede farkli anomali."""
     gunler = pd.date_range("2024-01-01", periods=2, freq="D")
-    panel = pd.concat([
-        pd.DataFrame({"gun": gunler, "ilce": "kurak", "yagis": [0.0, 10.0]}),
-        pd.DataFrame({"gun": gunler, "ilce": "yagisli", "yagis": [100.0, 100.0]}),
-    ], ignore_index=True)
+    panel = pd.concat(
+        [
+            pd.DataFrame({"gun": gunler, "ilce": "kurak", "yagis": [0.0, 10.0]}),
+            pd.DataFrame({"gun": gunler, "ilce": "yagisli", "yagis": [100.0, 100.0]}),
+        ],
+        ignore_index=True,
+    )
     sonuc = add_precip_anomaly(
         panel, "yagis", time_column="gun", group_columns=["ilce"], windows=(2,)
     )
     kurak = sonuc[sonuc["ilce"] == "kurak"]["yagis_anomali2g"].to_numpy()
     yagisli = sonuc[sonuc["ilce"] == "yagisli"]["yagis_anomali2g"].to_numpy()
-    np.testing.assert_allclose(kurak, [0.0, 5.0])       # [0,10] vs ort [0,5]
-    np.testing.assert_allclose(yagisli, [0.0, 50.0])    # [100,200] vs ort [100,150]
+    np.testing.assert_allclose(kurak, [0.0, 5.0])  # [0,10] vs ort [0,5]
+    np.testing.assert_allclose(yagisli, [0.0, 50.0])  # [100,200] vs ort [100,150]
 
 
 def test_yagis_anomalisi_giris_hatalari():
-    panel = pd.DataFrame({
-        "gun": pd.date_range("2024-01-01", periods=2),
-        "ilce": "x", "yagis": [1.0, 2.0],
-    })
+    panel = pd.DataFrame(
+        {
+            "gun": pd.date_range("2024-01-01", periods=2),
+            "ilce": "x",
+            "yagis": [1.0, 2.0],
+        }
+    )
     with pytest.raises(ValueError, match="pencere"):
-        add_precip_anomaly(
-            panel, "yagis", time_column="gun", group_columns=["ilce"], windows=()
-        )
+        add_precip_anomaly(panel, "yagis", time_column="gun", group_columns=["ilce"], windows=())
     with pytest.raises(KeyError, match="yok"):
-        add_precip_anomaly(
-            panel, "olmayan", time_column="gun", group_columns=["ilce"]
-        )
+        add_precip_anomaly(panel, "olmayan", time_column="gun", group_columns=["ilce"])

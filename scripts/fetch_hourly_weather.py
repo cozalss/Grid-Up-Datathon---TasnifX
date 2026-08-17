@@ -51,6 +51,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fetch_weather import ARCHIVE_URL, RATE_LIMIT_BACKOFF, cap_end_date  # noqa: E402
 
 from gridup.features.weather import circular_mean  # noqa: E402
+from gridup.io_utils import atomic_write_dataframe  # noqa: E402
 
 #: Saatlik degiskenler: basinc + ruzgar uclusu. Sicaklik/yagis BILEREK yok --
 #: onlar gunluk tabloda zaten var; burada yalnizca saatlik cozunurlugun
@@ -138,8 +139,7 @@ def load_reference_districts(path: Path = REFERENCE_PATH) -> list[tuple[str, flo
     if frame["ilce_key"].duplicated().any():
         raise ValueError("ilce_key tekil degil -- referans tablosunu kontrol et.")
     return [
-        (str(satir.ilce_key), float(satir.lat), float(satir.lon))
-        for satir in frame.itertuples()
+        (str(satir.ilce_key), float(satir.lat), float(satir.lon)) for satir in frame.itertuples()
     ]
 
 
@@ -182,11 +182,14 @@ def fetch_hourly(
             # fetch_weather.py'de olculen ayni davranis -- ayni merdiven.
             if response.status_code == 429:
                 header = response.headers.get("Retry-After")
-                wait = int(header) if header and header.isdigit() else RATE_LIMIT_BACKOFF[
-                    min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)
-                ]
-                print(f"  {name}: hiz siniri (429); {wait} sn bekleniyor "
-                      f"[deneme {attempt}/{retries}]")
+                wait = (
+                    int(header)
+                    if header and header.isdigit()
+                    else RATE_LIMIT_BACKOFF[min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)]
+                )
+                print(
+                    f"  {name}: hiz siniri (429); {wait} sn bekleniyor [deneme {attempt}/{retries}]"
+                )
                 time.sleep(wait)
                 last_error = requests.HTTPError("429 Too Many Requests")
                 continue
@@ -278,21 +281,53 @@ def checkpoint_covers(path: Path, start: str, end: str) -> bool:
     return bool(span.min() <= pd.Timestamp(start) and span.max() >= pd.Timestamp(end))
 
 
+#: Bir kolonun bu orandan fazlasi NaN ise veri KABUL EDILMEZ. %2 esigi bir
+#: "dikkat cek" isareti, bu ise bir KAPIDIR: bunun ustu, kaynagin alan adini
+#: degistirdigi veya bolgesel olarak veri dondurmedigi anlamina gelir.
+NAN_RED_ESIGI = 0.10
+
+
 def validate_combined(combined: pd.DataFrame, n_districts: int, start: str, end: str) -> None:
-    """Satir sayisi, tekrar ve NaN orani kontrolu. Sonuclari yazdirir."""
+    """Satir sayisi, tekrar ve NaN orani kontrolu.
+
+    Sonuclari yazdirir VE kabul edilemez kalitede veriyi ``ValueError`` ile
+    reddeder. Onceki hali yalnizca yazdiriyordu: betik gece boyu gozetimsiz
+    kosarken (96 ilce x yillarca saatlik veri, saatler surer) bir kolonun
+    %60'i NaN gelse bile exit 0 donuyor, parquet yaziliyordu. LightGBM NaN'i
+    dogal olarak isledigi icin egitim de hatasiz devam eder ve sonuc, sessizce
+    zayiflamis bir feature ile "makul gorunen ama yanlis" bir CV skorudur --
+    bu deponun her yerde kacindigi hata bicimi.
+    """
     n_days = (pd.Timestamp(end) - pd.Timestamp(start)).days + 1
     expected = n_districts * n_days
-    print(f"  Beklenen satir: {n_districts} ilce x {n_days} gun = {expected:,}; "
-          f"gercek: {len(combined):,}")
+    print(
+        f"  Beklenen satir: {n_districts} ilce x {n_days} gun = {expected:,}; "
+        f"gercek: {len(combined):,}"
+    )
 
     duplicated = int(combined.duplicated(subset=["ilce_key", "tarih"]).sum())
     if duplicated:
         print(f"  UYARI: {duplicated} tekrar eden (ilce_key, tarih) satiri!")
 
     print("  NaN oranlari:")
+    reddedilenler: list[str] = []
     for column, ratio in combined.isna().mean().items():
-        marker = "  <-- %2 ustu!" if ratio >= 0.02 else ""
+        if ratio >= NAN_RED_ESIGI:
+            marker = f"  <-- RED (>=%{100 * NAN_RED_ESIGI:.0f})"
+            reddedilenler.append(f"{column} %{100 * ratio:.1f}")
+        elif ratio >= 0.02:
+            marker = "  <-- %2 ustu!"
+        else:
+            marker = ""
         print(f"    {column:18s} %{100 * ratio:.3f}{marker}")
+
+    if reddedilenler:
+        raise ValueError(
+            "Harici veri kalite kapisi: su kolonlarda NaN orani "
+            f"%{100 * NAN_RED_ESIGI:.0f} esigini asti -> {', '.join(reddedilenler)}. "
+            "Parquet YAZILMADI. Muhtemel sebep: kaynak alan adi degistirdi veya "
+            "ilgili aralikta veri dondurmedi. Once cekimi tekrarla."
+        )
 
 
 def main() -> int:
@@ -300,11 +335,14 @@ def main() -> int:
     parser.add_argument("--start", default="2020-01-01", help="Baslangic tarihi (YYYY-AA-GG)")
     parser.add_argument("--end", default="2026-08-15", help="Bitis tarihi (YYYY-AA-GG)")
     parser.add_argument(
-        "--pause", type=float, default=DEFAULT_PAUSE,
+        "--pause",
+        type=float,
+        default=DEFAULT_PAUSE,
         help=f"Istekler arasi bekleme, sn (varsayilan: {DEFAULT_PAUSE})",
     )
     parser.add_argument(
-        "--fresh", action="store_true",
+        "--fresh",
+        action="store_true",
         help="Kontrol noktalarini yok say ve her ilceyi bastan indir",
     )
     args = parser.parse_args()
@@ -342,7 +380,7 @@ def main() -> int:
             continue
 
         daily = aggregate_daily(hourly, ilce_key)
-        daily.to_parquet(CHECKPOINT_DIR / f"{ilce_key}.parquet", index=False)
+        atomic_write_dataframe(daily, CHECKPOINT_DIR / f"{ilce_key}.parquet")
         print(f"{len(hourly):,} saat -> {len(daily):,} gun")
         time.sleep(args.pause)  # API'ye nazik ol
 
@@ -360,14 +398,17 @@ def main() -> int:
     combined = combined.drop_duplicates(subset=["ilce_key", "tarih"])
     combined = combined.sort_values(["ilce_key", "tarih"]).reset_index(drop=True)
 
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_parquet(OUTPUT_PATH, index=False)
-
-    print(f"\nYazildi: {OUTPUT_PATH}")
-    print(f"  {len(combined):,} satir x {combined.shape[1]} kolon, "
-          f"{combined['ilce_key'].nunique()} ilce")
+    # Kalite kapisi YAZMADAN ONCE calisir. Tersi sirada kapinin bir anlami
+    # kalmaz: bozuk veri zaten yayinlanmis olur ve sonraki kosular onu okur.
+    print(
+        f"\n  {len(combined):,} satir x {combined.shape[1]} kolon, "
+        f"{combined['ilce_key'].nunique()} ilce"
+    )
     print(f"  Tarih araligi: {combined['tarih'].min().date()} - {combined['tarih'].max().date()}")
     validate_combined(combined, len(districts), args.start, args.end)
+
+    atomic_write_dataframe(combined, OUTPUT_PATH)
+    print(f"\nYazildi: {OUTPUT_PATH}")
 
     if failures:
         print(f"\n  UYARI: {len(failures)} ilce alinamadi: {failures}")

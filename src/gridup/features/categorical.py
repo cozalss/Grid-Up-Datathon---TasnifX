@@ -26,12 +26,89 @@ from ..compat import safe_str
 from ..validation import assert_folds_align
 
 __all__ = [
+    "FrequencyEncoder",
+    "TargetEncodingResult",
     "add_frequency_encoding",
     "add_count_encoding",
     "oof_target_encode",
     "add_combination_features",
     "reduce_rare_categories",
 ]
+
+
+class FrequencyEncoder:
+    """Train frekanslarini bir kez ogrenip sonraki frame'lere uygular.
+
+    ``fit`` yalnizca egitim dagilimini gorur. Boylece train ve test ayri ayri
+    kodlandiginda ayni kategorinin iki farkli sayisal anlama gelmesi engellenir.
+    """
+
+    def __init__(self, columns: Sequence[str], *, suffix: str = "_frekans") -> None:
+        self.columns = tuple(columns)
+        self.suffix = suffix
+        self._frequencies: dict[str, pd.Series] | None = None
+
+    def fit(self, frame: pd.DataFrame) -> FrequencyEncoder:
+        """Frekans haritalarini ``frame`` (train) uzerinden ogren."""
+        frequencies: dict[str, pd.Series] = {}
+        for column in self.columns:
+            if column not in frame.columns:
+                raise KeyError(f"Kolon '{column}' frame icinde yok.")
+            mapping = frame[column].value_counts(normalize=True, dropna=False)
+            # Eksik deger bir kategori degildir. Paydada kalir ama transform'da
+            # daima NaN kalmasi icin haritadan cikarilir.
+            frequencies[column] = mapping[mapping.index.notna()].copy()
+        self._frequencies = frequencies
+        return self
+
+    def transform(self, frame: pd.DataFrame) -> pd.DataFrame:
+        """Fit edilmis train haritalarini yeni bir frame'e uygula."""
+        if self._frequencies is None:
+            raise RuntimeError("FrequencyEncoder.transform oncesinde fit cagrilmalidir.")
+
+        new_columns = {}
+        for column in self.columns:
+            if column not in frame.columns:
+                raise KeyError(f"Kolon '{column}' frame icinde yok.")
+            mapped = frame[column].map(self._frequencies[column]).astype("float32")
+            new_columns[f"{column}{self.suffix}"] = mapped.mask(
+                mapped.isna() & frame[column].notna(), 0.0
+            )
+        return frame.assign(**new_columns)
+
+    def fit_transform(self, frame: pd.DataFrame) -> pd.DataFrame:
+        """Train haritasini ogren ve ayni frame'e uygula."""
+        return self.fit(frame).transform(frame)
+
+
+class TargetEncodingResult(tuple):
+    """Iki elemanli eski sonucu, OOF kapsam maskesiyle zenginlestirir.
+
+    Tuple alt sinifi oldugu icin ``encoded_train, encoded_test = result`` ve
+    ``result[0]`` gibi mevcut kullanimlar aynen calisir.
+    """
+
+    covered: np.ndarray
+
+    def __new__(
+        cls,
+        encoded_train: pd.DataFrame,
+        encoded_test: pd.DataFrame | None,
+        covered: np.ndarray,
+    ) -> TargetEncodingResult:
+        result = super().__new__(cls, (encoded_train, encoded_test))
+        coverage = np.asarray(covered, dtype=bool).copy()
+        coverage.setflags(write=False)
+        result.covered = coverage
+        return result
+
+    @property
+    def encoded_train(self) -> pd.DataFrame:
+        return self[0]
+
+    @property
+    def encoded_test(self) -> pd.DataFrame | None:
+        return self[1]
 
 
 def add_frequency_encoding(
@@ -53,22 +130,7 @@ def add_frequency_encoding(
             yalnizca dagilimini kullanir.
     """
     source = reference if reference is not None else frame
-    new_columns = {}
-
-    for column in columns:
-        if column not in frame.columns:
-            raise KeyError(f"Kolon '{column}' frame icinde yok.")
-        frequencies = source[column].value_counts(normalize=True, dropna=False)
-        mapped = frame[column].map(frequencies).astype("float32")
-        # "Hic gorulmemis kategori" ile "gercekten eksik deger" AYNI SEY DEGILDIR.
-        # Ikisini de 0.0 yapmak modelin ayrimi gormesini engeller: biri "bu tip
-        # hakkinda bilgimiz yok", digeri "bu kayitta tip girilmemis".
-        # Gercekten eksik olan satirlar NaN kalir -- GBDT'ler NaN'i yerli isler.
-        new_columns[f"{column}{suffix}"] = mapped.mask(
-            mapped.isna() & frame[column].notna(), 0.0
-        )
-
-    return frame.assign(**new_columns)
+    return FrequencyEncoder(columns, suffix=suffix).fit(source).transform(frame)
 
 
 def add_count_encoding(
@@ -93,9 +155,7 @@ def add_count_encoding(
         counts = source[column].value_counts(dropna=False)
         mapped = frame[column].map(counts).astype("float32")
         # Bkz. add_frequency_encoding: eksik deger 0 DEGIL, NaN kalir.
-        new_columns[f"{column}{suffix}"] = mapped.mask(
-            mapped.isna() & frame[column].notna(), 0.0
-        )
+        new_columns[f"{column}{suffix}"] = mapped.mask(mapped.isna() & frame[column].notna(), 0.0)
 
     return frame.assign(**new_columns)
 
@@ -132,7 +192,8 @@ def oof_target_encode(
     noise_level: float = 0.0,
     seed: int = 42,
     suffix: str = "_hedef_kod",
-) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+    uncovered_policy: str = "error",
+) -> TargetEncodingResult:
     """Sizintisiz (fold-disi) hedef kodlama. YENI frame'ler dondurur.
 
     Her train satirinin kodlamasi, o satirin AIT OLMADIGI fold'lardan hesaplanir.
@@ -150,12 +211,18 @@ def oof_target_encode(
         noise_level: Kodlamaya eklenecek gaussian gurultunun standart sapmasi
             (hedefin std'sine oranla). Asiri uyumu kirar; 0.01-0.05 tipiktir.
         seed: Gurultu icin tohum.
+        uncovered_policy: Hicbir valid fold'una girmeyen train satirlari icin
+            politika. Varsayilan ``"error"`` kismi OOF kapsamini reddeder.
+            ``"nan"`` bu satirlari NaN birakir ve ``result.covered`` ile maskeyi
+            tasir; modelleme katmani yalnizca kapsanan satirlari kullanmalidir.
 
     Returns:
-        ``(kodlanmis_train, kodlanmis_test)``. ``test`` verilmemisse ikincisi ``None``.
+        Iki elemanli tuple-uyumlu ``TargetEncodingResult``. ``test``
+        verilmemisse ikinci eleman ``None``; ``covered`` OOF kapsam maskesidir.
 
     Raises:
-        ValueError: ``folds`` bossa -- sessizce sizintili kodlama uretmek yerine.
+        ValueError: ``folds`` bossa, politika gecersizse veya varsayilan
+            politikada OOF kapsami kismiysa.
     """
     fold_list = list(folds)
     if not fold_list:
@@ -170,6 +237,24 @@ def oof_target_encode(
     # Fold'lar gercekten bu frame icin mi uretildi? Kontrol etmezsek yanlis
     # satirlar kodlanir ve hicbir hata firlamaz.
     assert_folds_align(len(train), fold_list)
+
+    if uncovered_policy not in {"error", "nan"}:
+        raise ValueError(
+            f"uncovered_policy yalnizca 'error' veya 'nan' olabilir; verilen: {uncovered_policy!r}"
+        )
+
+    covered = np.zeros(len(train), dtype=bool)
+    for _, apply_idx in fold_list:
+        covered[apply_idx] = True
+    if uncovered_policy == "error" and not covered.all():
+        missing = int((~covered).sum())
+        raise ValueError(
+            "OOF hedef kodlama kapsami kismi: "
+            f"{missing}/{len(train)} train satiri hicbir valid fold'unda yok. "
+            "Bu satirlari egitime sessizce katmak temporal sizintidir. "
+            "Kapsanan satirlari result.covered ile secmek icin "
+            "uncovered_policy='nan' kullanin."
+        )
 
     target_values = pd.Series(np.asarray(target, dtype=float), index=range(len(target)))
     # Test kodlamasi icin tum train'den hesaplanan prior. Test hedefi zaten
@@ -186,7 +271,7 @@ def oof_target_encode(
 
         categories = train[column].reset_index(drop=True)
         oof = np.full(len(train), np.nan, dtype="float64")
-        fold_priors = np.full(len(train), global_prior, dtype="float64")
+        fold_priors = np.full(len(train), np.nan, dtype="float64")
 
         for fit_idx, apply_idx in fold_list:
             # Prior da FOLD ICINDEN hesaplanir. Global prior kullanmak, satirin
@@ -204,8 +289,10 @@ def oof_target_encode(
             oof[apply_idx] = categories.iloc[apply_idx].map(means).to_numpy(dtype="float64")
             fold_priors[apply_idx] = fold_prior
 
-        # Hicbir fold'un gormedigi kategori -> o fold'un ortalamasi.
-        oof = np.where(np.isnan(oof), fold_priors, oof)
+        # KAPSANAN ama fit fold'unda gorulmemis kategori -> o fold'un ortalamasi.
+        # Kapsanmayan satir ayri bir durumdur ve ``nan`` politikasinda NaN kalir.
+        unseen_in_fold = covered & np.isnan(oof)
+        oof[unseen_in_fold] = fold_priors[unseen_in_fold]
 
         if noise_level > 0:
             # Tek satirlik hedefte std() (ddof=1) NaN doner ve TUM kolonu
@@ -230,7 +317,7 @@ def oof_target_encode(
 
     encoded_train = train.assign(**train_encoded)
     encoded_test = test.assign(**test_encoded) if test is not None else None
-    return encoded_train, encoded_test
+    return TargetEncodingResult(encoded_train, encoded_test, covered)
 
 
 def add_combination_features(
@@ -291,8 +378,6 @@ def reduce_rare_categories(
         counts = source[column].value_counts(dropna=False)
         keep = set(counts[counts >= min_count].index)
         as_object = frame[column].astype(object)
-        new_columns[column] = (
-            as_object.where(as_object.isin(keep), other_label).astype("category")
-        )
+        new_columns[column] = as_object.where(as_object.isin(keep), other_label).astype("category")
 
     return frame.assign(**new_columns)

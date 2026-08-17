@@ -140,8 +140,13 @@ def gurultude_arama() -> TuningResult:
     """SIFIR sinyalli veride gercek bir Optuna aramasi (modul basina bir kez)."""
     train, y, folds = _gurultu_verisi()
     return tune_with_optuna(
-        train, y, folds, metric="rmse", n_trials=12,
-        early_stopping_rounds=30, verbose=False,
+        train,
+        y,
+        folds,
+        metric="rmse",
+        n_trials=12,
+        early_stopping_rounds=30,
+        verbose=False,
     )
 
 
@@ -179,8 +184,13 @@ def test_arama_sonucu_metrigin_yonunu_tasiyor(gurultude_arama: TuningResult):
 
     train, y, folds = _gurultu_verisi(n=300, p=5, tohum=1)
     r2_sonuc = tune_with_optuna(
-        train, y, folds, metric="r2", n_trials=3,
-        early_stopping_rounds=20, verbose=False,
+        train,
+        y,
+        folds,
+        metric="r2",
+        n_trials=3,
+        early_stopping_rounds=20,
+        verbose=False,
     )
     assert r2_sonuc.greater_is_better is True, "r2 buyuk-daha-iyidir"
 

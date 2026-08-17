@@ -72,7 +72,6 @@ from gridup.ablation import FeatureGroup, leave_one_group_out  # noqa: E402
 from gridup.features import (  # noqa: E402
     add_calendar_features,
     add_cyclical_features,
-    add_frequency_encoding,
     add_lag_features,
     add_neighbour_target_lag,
     add_physical_derivatives,
@@ -107,8 +106,12 @@ AYNI_GUN_SIZINTISI = ("effectedsubscribers", "hourlyloadavg")
 #: takvim/tatil/lag/frekans yarisma verisinin kendisinden turer (cekirdek),
 #: hava/gunes dis kaynaktan gelir (harici), komsu kanitlanmamis (deneysel).
 RISKLER = {
-    "takvim": "cekirdek", "tatil": "cekirdek", "lag": "cekirdek",
-    "frekans": "cekirdek", "hava": "harici", "gunes": "harici",
+    "takvim": "cekirdek",
+    "tatil": "cekirdek",
+    "lag": "cekirdek",
+    "frekans": "cekirdek",
+    "hava": "harici",
+    "gunes": "harici",
     "komsu": "deneysel",
 }
 
@@ -134,8 +137,11 @@ def panel_kur() -> pd.DataFrame:
     ham[GRUP] = ham["ilce"].map(lambda x: join_key(strip_qualifier(str(x))))
 
     panel = build_panel(
-        ham, entity_columns=[GRUP], time_column=ZAMAN,
-        value_columns=[HEDEF, *AYNI_GUN_SIZINTISI], verbose=False,
+        ham,
+        entity_columns=[GRUP],
+        time_column=ZAMAN,
+        value_columns=[HEDEF, *AYNI_GUN_SIZINTISI],
+        verbose=False,
     )
     korunan = panel[HEDEF].sum() / ham[HEDEF].sum()
     if abs(korunan - 1.0) > 0.001:
@@ -194,30 +200,37 @@ def _gunes(frame: pd.DataFrame, ref: pd.DataFrame) -> pd.DataFrame:
 def _lag(frame: pd.DataFrame) -> pd.DataFrame:
     """Hedefin gecmisi -- horizon=31 kaydirmali oldugu icin MESRU."""
     out = add_lag_features(
-        frame, HEDEF, [31, 62, 93],
-        time_column=ZAMAN, horizon=UFUK, group_columns=[GRUP],
+        frame,
+        HEDEF,
+        shifts=[31, 62, 93],
+        time_column=ZAMAN,
+        horizon=UFUK,
+        group_columns=[GRUP],
     )
     return add_rolling_features(
-        out, HEDEF, [31, 93],
-        time_column=ZAMAN, horizon=UFUK, group_columns=[GRUP],
+        out,
+        HEDEF,
+        [31, 93],
+        time_column=ZAMAN,
+        horizon=UFUK,
+        group_columns=[GRUP],
     )
 
 
 def _komsu(frame: pd.DataFrame, ref: pd.DataFrame) -> pd.DataFrame:
     """Komsu ilcelerin GECMIS hedefi (ufuk=31) -- firtina mekansal yayilir."""
-    koordinat = ref.loc[
-        ref[GRUP].isin(frame[GRUP].unique()), [GRUP, "lat", "lon"]
-    ].reset_index(drop=True)
+    koordinat = ref.loc[ref[GRUP].isin(frame[GRUP].unique()), [GRUP, "lat", "lon"]].reset_index(
+        drop=True
+    )
     komsular = nearest_neighbours(koordinat, key_column=GRUP)
     return add_neighbour_target_lag(
-        frame, komsular, key_column=GRUP, time_column=ZAMAN,
-        target_column=HEDEF, horizon=UFUK,
+        frame,
+        komsular,
+        key_column=GRUP,
+        time_column=ZAMAN,
+        target_column=HEDEF,
+        horizon=UFUK,
     )
-
-
-def _frekans(frame: pd.DataFrame) -> pd.DataFrame:
-    """Ilce frekans kodlamasi -- hedefi kullanmaz, sizintisiz."""
-    return add_frequency_encoding(frame, [GRUP])
 
 
 def aileleri_kur(
@@ -236,7 +249,6 @@ def aileleri_kur(
         ("gunes", lambda f: _gunes(f, ref)),
         ("lag", _lag),
         ("komsu", lambda f: _komsu(f, ref)),
-        ("frekans", _frekans),
     ]
     yasak = {HEDEF, ZAMAN, GRUP, PANEL_FLAG_COLUMN, *AYNI_GUN_SIZINTISI}
     frame = panel
@@ -249,9 +261,9 @@ def aileleri_kur(
         if not (frame[GRUP].to_numpy() == panel[GRUP].to_numpy()).all():
             raise RuntimeError(f"'{ad}' ailesi satir sirasini bozdu")
         aile_kolonlari[ad] = [
-            c for c in frame.columns
-            if c not in onceki and c not in yasak
-            and pd.api.types.is_numeric_dtype(frame[c])
+            c
+            for c in frame.columns
+            if c not in onceki and c not in yasak and pd.api.types.is_numeric_dtype(frame[c])
         ]
         print(f"  {ad:<8} {len(aile_kolonlari[ad]):>2} kolon")
     return frame, aile_kolonlari
@@ -260,8 +272,10 @@ def aileleri_kur(
 def main() -> int:
     if not VERI.exists():
         print(f"HATA: {VERI} yok.")
-        print("Indir: kaggle datasets download -d "
-              "tmlalper/manisa-izmir-plansiz-elektrik-kesintileri --unzip")
+        print(
+            "Indir: kaggle datasets download -d "
+            "tmlalper/manisa-izmir-plansiz-elektrik-kesintileri --unzip"
+        )
         return 1
 
     set_global_seed(42)
@@ -275,8 +289,11 @@ def main() -> int:
 
     # Fold'lar TUM kosularda AYNIDIR -- provayla ayni sema (embargo=31, 4x31).
     folds = purged_time_series_split(
-        panel[ZAMAN], embargo=pd.Timedelta(days=UFUK),
-        n_splits=4, test_span=pd.Timedelta(days=UFUK), verbose=False,
+        panel[ZAMAN],
+        embargo=pd.Timedelta(days=UFUK),
+        n_splits=4,
+        test_span=pd.Timedelta(days=UFUK),
+        verbose=False,
     )
 
     print("\n2/4  AILELER")
@@ -295,31 +312,42 @@ def main() -> int:
     params = starter_params("lightgbm", "regression", objective="mae")
     y = ozellik[HEDEF].to_numpy()
     tam = cross_validate(
-        ozellik[kolonlar], y, folds, kind="lightgbm", metric="mae",
-        params=params, verbose=False,
+        ozellik[kolonlar],
+        y,
+        folds,
+        kind="lightgbm",
+        metric="mae",
+        params=params,
+        verbose=False,
     )
     kapsanan, _ = tam.covered_predictions()
     sifir_baseline = float(np.abs(y[kapsanan]).mean())
     print(f"  tam MAE      : {tam.overall_score:.4f}")
     print(f"  sifir-baseline: {sifir_baseline:.4f}")
-    print(f"  fold_std     : {tam.fold_std:.4f}"
-          f"  ({'STABIL' if tam.is_stable else 'GURULTULU'})")
+    print(f"  fold_std     : {tam.fold_std:.4f}  ({'STABIL' if tam.is_stable else 'GURULTULU'})")
 
     print("\n4/4  LEAVE-ONE-GROUP-OUT")
     gruplar = [
-        FeatureGroup(ad, tuple(kols), risk=RISKLER[ad])
-        for ad, kols in aile_kolonlari.items()
+        FeatureGroup(ad, tuple(kols), risk=RISKLER[ad]) for ad, kols in aile_kolonlari.items()
     ]
     tablo = leave_one_group_out(
-        ozellik[kolonlar], y, folds, groups=gruplar,
-        kind="lightgbm", metric="mae", params=params, verbose=True,
+        ozellik[kolonlar],
+        y,
+        folds,
+        groups=gruplar,
+        kind="lightgbm",
+        metric="mae",
+        params=params,
+        verbose=True,
     )
     # LOGO kendi taban kosusunu yapar; ayni fold+params+seed ile tam modelle
     # AYNI cikmali. Cikmadiysa determinizm bozuktur ve deltalar guvenilmez.
     taban = float(tablo.attrs["taban_skor"])
     if abs(taban - tam.overall_score) > 1e-6:
-        print(f"  UYARI: LOGO tabani ({taban:.6f}) tam modelden "
-              f"({tam.overall_score:.6f}) farkli -- determinizm kontrol et")
+        print(
+            f"  UYARI: LOGO tabani ({taban:.6f}) tam modelden "
+            f"({tam.overall_score:.6f}) farkli -- determinizm kontrol et"
+        )
 
     aileler = {}
     for satir in tablo.itertuples():
@@ -347,16 +375,16 @@ def main() -> int:
         "panel": {"satir": int(len(panel)), "ilce": int(n_ilce), "gun": int(n_gun)},
     }
     CIKTI.parent.mkdir(parents=True, exist_ok=True)
-    CIKTI.write_text(
-        json.dumps(sonuc, indent=2, ensure_ascii=True) + "\n", encoding="utf-8"
-    )
+    CIKTI.write_text(json.dumps(sonuc, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
 
     print(f"\n{'=' * 70}")
     print("VERI GUNU ONCELIK LISTESI (delta = aile silinince MAE kaybi)")
     for sira, ad in enumerate(siralama, start=1):
         bilgi = aileler[ad]
-        print(f"  {sira}. {ad:<8} delta={bilgi['delta']:+8.2f}  "
-              f"({bilgi['kolon_sayisi']} kolon, ailesiz MAE={bilgi['mae_ailesiz']:.2f})")
+        print(
+            f"  {sira}. {ad:<8} delta={bilgi['delta']:+8.2f}  "
+            f"({bilgi['kolon_sayisi']} kolon, ailesiz MAE={bilgi['mae_ailesiz']:.2f})"
+        )
     print(f"\nYazildi: {CIKTI.relative_to(KOK)}")
     print(f"TAMAM ({time.perf_counter() - baslangic:.0f} sn)")
     return 0

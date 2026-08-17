@@ -43,8 +43,7 @@ def _iki_ayli_panel() -> pd.DataFrame:
     gunler = pd.date_range("2023-01-01", "2023-02-28", freq="D")
     # Ocak: gun numarasi ciftse 0, tekse gun numarasi. Subat: hep 5.
     degerler = [
-        0.0 if gun.day % 2 == 0 else float(gun.day) if gun.month == 1 else 5.0
-        for gun in gunler
+        0.0 if gun.day % 2 == 0 else float(gun.day) if gun.month == 1 else 5.0 for gun in gunler
     ]
     return pd.DataFrame({"gun": gunler, "ilce": "bornova", "kesinti": degerler})
 
@@ -61,9 +60,7 @@ def test_subat_satirlari_ocak_istatistiklerini_aliyor():
 
     # Ocak: tek gunler 1,3,...,31 -> toplam 256; cift gunler (15 adet) sifir.
     assert subat["kesinti_sontamay_toplam"].nunique() == 1
-    assert subat["kesinti_sontamay_toplam"].iloc[0] == pytest.approx(
-        float(ocak_degerleri.sum())
-    )
+    assert subat["kesinti_sontamay_toplam"].iloc[0] == pytest.approx(float(ocak_degerleri.sum()))
     assert subat["kesinti_sontamay_max"].iloc[0] == pytest.approx(31.0)
     assert subat["kesinti_sontamay_olayli_gun"].iloc[0] == pytest.approx(16.0)
     assert subat["kesinti_sontamay_olaysiz_gun"].iloc[0] == pytest.approx(15.0)
@@ -161,9 +158,7 @@ def test_gecersiz_ufuk_reddediliyor():
 def test_cumhuriyet_bayrami_oncesi_pencereler():
     """29 Ekim sabittir: 26 Ekim'den 3 gun, 20 Ekim'den 9 gun kalir."""
     panel = pd.DataFrame({"gun": pd.to_datetime(["2023-10-26", "2023-10-20"])})
-    sonuc = add_upcoming_holiday_features(
-        panel, "gun", windows=(3, 7, 15), include_half_days=False
-    )
+    sonuc = add_upcoming_holiday_features(panel, "gun", windows=(3, 7, 15), include_half_days=False)
     yirmi_alti = sonuc.iloc[0]
     assert yirmi_alti["tatil_sonraki_mesafe"] == 3
     assert yirmi_alti["tatil_onumuzdeki_3g"] == 1
@@ -227,9 +222,7 @@ def test_ters_donusum_once_kirpip_sonra_kare_aliyor():
     """
     assert inverse_sqrt_transform(np.array([-0.5]))[0] == pytest.approx(0.0)
     # Bilincli olarak kapatilirsa matematiksel kare doner (belgelenmis tehlike).
-    assert inverse_sqrt_transform(
-        np.array([-0.5]), clip_negative=False
-    )[0] == pytest.approx(0.25)
+    assert inverse_sqrt_transform(np.array([-0.5]), clip_negative=False)[0] == pytest.approx(0.25)
 
 
 # --------------------------------------------------------------------------

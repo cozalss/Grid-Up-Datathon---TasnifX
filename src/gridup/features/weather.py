@@ -223,7 +223,6 @@ def _consecutive_run(condition: np.ndarray) -> np.ndarray:
     return result
 
 
-
 def _orijinal_siraya_don(frame: pd.DataFrame, index) -> pd.DataFrame:
     """Gecici sira kolonuna gore geri sirala, kolonu at, girdi index'ini koy."""
     geri = frame.sort_values("_gridup_sira").drop(columns="_gridup_sira")
@@ -294,8 +293,10 @@ def add_physical_derivatives(
     )
 
     has_range = (
-        temperature_max and temperature_max in frame.columns
-        and temperature_min and temperature_min in frame.columns
+        temperature_max
+        and temperature_max in frame.columns
+        and temperature_min
+        and temperature_min in frame.columns
     )
     if has_range:
         # Gun ici genlik: dusuk genlik = gece sogumasi yok = termal birikme.
@@ -305,8 +306,9 @@ def add_physical_derivatives(
 
     grouped = frame.groupby(list(group_columns), observed=True, sort=False)
 
-    def _run_length(series: pd.Series, *, above: float | None = None,
-                    below: float | None = None) -> pd.Series:
+    def _run_length(
+        series: pd.Series, *, above: float | None = None, below: float | None = None
+    ) -> pd.Series:
         """Grup icinde ardisik kosul sayisi. Kosul bozulunca sifirlanir."""
         values = series.astype("float64").to_numpy()
         condition = values > above if above is not None else values < below
@@ -336,9 +338,9 @@ def add_physical_derivatives(
         # degil, uzun kurakligi bitiren ILK yagmur.
         is_wet = frame[precipitation].astype("float64") >= DRY_DAY_MM
         previous_drought = grouped["kuraklik_gunu"].shift(1).fillna(0)
-        frame["kuraklik_sonrasi_ilk_yagmur"] = (
-            is_wet & (previous_drought >= drought_days)
-        ).astype("int8")
+        frame["kuraklik_sonrasi_ilk_yagmur"] = (is_wet & (previous_drought >= drought_days)).astype(
+            "int8"
+        )
 
         # Kumulatif yagis: zemin doygunlugu proxy'si (7 gun).
         frame["yagis_7g_toplam"] = (
@@ -359,8 +361,7 @@ def add_physical_derivatives(
             # Islak zemin + ruzgar: agac devrilmesinin fiziksel mekanizmasi.
             # Carpim, ikisinin de yuksek oldugu gunleri one cikarir.
             frame["islak_ruzgar"] = (
-                frame["yagis_7g_toplam"].astype("float64")
-                * frame[wind_column].astype("float64")
+                frame["yagis_7g_toplam"].astype("float64") * frame[wind_column].astype("float64")
             ).astype("float32")
 
     return _orijinal_siraya_don(frame, daily.index)
@@ -488,9 +489,7 @@ def add_precip_anomaly(
         referans = toplam.groupby(anahtarlar, observed=True).transform(
             lambda s: s.expanding(min_periods=1).mean()
         )
-        yeni[f"{precip_column}_anomali{window}g"] = np.asarray(
-            toplam - referans, dtype="float32"
-        )
+        yeni[f"{precip_column}_anomali{window}g"] = np.asarray(toplam - referans, dtype="float32")
 
     return _orijinal_siraya_don(result.assign(**yeni), frame.index)
 
@@ -553,18 +552,13 @@ def add_weather_accumulators(
 
         for window in windows:
             roller = shifted.rolling(window, min_periods=1)
-            new_columns[f"{column}_geri{window}_max"] = np.asarray(
-                roller.max(), dtype="float32"
-            )
-            new_columns[f"{column}_geri{window}_ort"] = np.asarray(
-                roller.mean(), dtype="float32"
-            )
+            new_columns[f"{column}_geri{window}_max"] = np.asarray(roller.max(), dtype="float32")
+            new_columns[f"{column}_geri{window}_ort"] = np.asarray(roller.mean(), dtype="float32")
 
         for window in lead_windows:
             # Ileriye bakan pencere: ters cevir, kaydir, geri cevir.
-            forward = (
-                grouped[column]
-                .transform(lambda s, w=window: s[::-1].rolling(w, min_periods=1).max()[::-1])
+            forward = grouped[column].transform(
+                lambda s, w=window: s[::-1].rolling(w, min_periods=1).max()[::-1]
             )
             new_columns[f"{column}_ileri{window}_max"] = np.asarray(forward, dtype="float32")
 

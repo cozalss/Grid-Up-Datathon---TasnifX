@@ -11,10 +11,13 @@ gecmisi "sistematik calistik" kanitidir.
 
 from __future__ import annotations
 
+import hashlib
+import importlib.metadata
 import json
 import platform
 import subprocess
 import sys
+import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,9 +28,12 @@ import pandas as pd
 __all__ = [
     "COMPETITION_DAYS",
     "DAILY_SUBMISSION_LIMIT",
+    "DataArtifact",
     "ExperimentLog",
+    "ExperimentProvenance",
     "ExperimentRecord",
     "current_git_sha",
+    "sha256_file",
 ]
 
 
@@ -41,6 +47,182 @@ DAILY_SUBMISSION_LIMIT = 3
 COMPETITION_DAYS = 12
 
 
+def sha256_file(path: str | Path, *, chunk_size: int = 1024 * 1024) -> str:
+    """Return a streaming SHA-256 digest for a file."""
+
+    source = Path(path)
+    digest = hashlib.sha256()
+    with source.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(chunk_size), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+@dataclass(frozen=True)
+class DataArtifact:
+    """Content-addressed input or output used by an experiment."""
+
+    path: str
+    size_bytes: int
+    sha256: str
+
+    @classmethod
+    def from_path(cls, path: str | Path) -> DataArtifact:
+        source = Path(path).resolve()
+        if not source.is_file():
+            raise FileNotFoundError(f"Artifact dosyasi bulunamadi: {source}")
+        return cls(
+            path=str(source),
+            size_bytes=source.stat().st_size,
+            sha256=sha256_file(source),
+        )
+
+
+def _git_dirty() -> bool | None:
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return bool(result.stdout.strip())
+
+
+def _git_diff_fingerprint() -> str | None:
+    try:
+        diff = subprocess.run(
+            ["git", "diff", "HEAD", "--binary", "--no-ext-diff"],
+            capture_output=True,
+            timeout=10,
+            check=False,
+        )
+        untracked = subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard", "-z"],
+            capture_output=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if diff.returncode != 0 or untracked.returncode != 0:
+        return None
+    digest = hashlib.sha256()
+    changed = bool(diff.stdout or untracked.stdout)
+    if not changed:
+        return None
+    digest.update(diff.stdout)
+    for raw_path in untracked.stdout.split(b"\0"):
+        if not raw_path:
+            continue
+        relative = Path(raw_path.decode(errors="surrogateescape"))
+        if not relative.is_file():
+            continue
+        digest.update(b"\0untracked\0")
+        digest.update(raw_path)
+        try:
+            with relative.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+        except OSError:
+            return None
+    return digest.hexdigest()
+
+
+def _package_versions() -> dict[str, str]:
+    packages = (
+        "numpy",
+        "pandas",
+        "scikit-learn",
+        "lightgbm",
+        "xgboost",
+        "catboost",
+        "torch",
+        "optuna",
+        "shap",
+    )
+    versions: dict[str, str] = {}
+    for package in packages:
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            versions[package] = "NOT_INSTALLED"
+    return versions
+
+
+def _redacted_command(argv: list[str]) -> tuple[str, ...]:
+    sensitive = ("password", "passwd", "secret", "token", "api-key", "apikey")
+    output: list[str] = []
+    redact_next = False
+    for value in argv:
+        lowered = value.lower()
+        if redact_next:
+            output.append("<REDACTED>")
+            redact_next = False
+            continue
+        if any(marker in lowered for marker in sensitive):
+            if "=" in value:
+                output.append(value.split("=", 1)[0] + "=<REDACTED>")
+            else:
+                output.append(value)
+                redact_next = True
+            continue
+        output.append(value)
+    return tuple(output)
+
+
+@dataclass(frozen=True)
+class ExperimentProvenance:
+    """Reproduction-critical metadata with a deliberate secret-free schema."""
+
+    recipe_fingerprint: str
+    data_artifacts: tuple[DataArtifact, ...]
+    feature_names: tuple[str, ...]
+    fold_fingerprint: str
+    git_sha: str | None
+    git_dirty: bool | None
+    git_diff_fingerprint: str | None
+    python: str
+    platform: str
+    command: tuple[str, ...]
+    package_versions: dict[str, str]
+
+    @classmethod
+    def capture(
+        cls,
+        *,
+        recipe_fingerprint: str,
+        data_artifacts: list[DataArtifact] | tuple[DataArtifact, ...],
+        feature_names: list[str] | tuple[str, ...],
+        fold_fingerprint: str,
+    ) -> ExperimentProvenance:
+        if not recipe_fingerprint:
+            raise ValueError("recipe_fingerprint zorunludur")
+        if not fold_fingerprint:
+            raise ValueError("fold_fingerprint zorunludur")
+        return cls(
+            recipe_fingerprint=recipe_fingerprint,
+            data_artifacts=tuple(data_artifacts),
+            feature_names=tuple(feature_names),
+            fold_fingerprint=fold_fingerprint,
+            git_sha=current_git_sha(),
+            git_dirty=_git_dirty(),
+            git_diff_fingerprint=_git_diff_fingerprint(),
+            python=sys.version.split()[0],
+            platform=platform.platform(),
+            command=_redacted_command(sys.argv),
+            package_versions=_package_versions(),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 def current_git_sha() -> str | None:
     """Mevcut git commit SHA'si. Repo yoksa ``None``.
 
@@ -50,7 +232,10 @@ def current_git_sha() -> str | None:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, timeout=5, check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
         )
     except (OSError, subprocess.SubprocessError):
         return None
@@ -79,8 +264,12 @@ class ExperimentRecord:
     timestamp: str = ""
     git_sha: str | None = None
     environment: dict[str, str] = field(default_factory=dict)
+    run_id: str = ""
+    provenance: ExperimentProvenance | None = None
 
     def __post_init__(self) -> None:
+        if not self.run_id:
+            self.run_id = str(uuid.uuid4())
         if not self.timestamp:
             self.timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
         if self.git_sha is None:
@@ -166,9 +355,9 @@ class ExperimentLog:
         for record in reversed(records):
             if record.get("name") == name:
                 record["lb_score"] = lb_score
-                record["submitted_at"] = submitted_at or datetime.now(
-                    timezone.utc
-                ).isoformat(timespec="seconds")
+                record["submitted_at"] = submitted_at or datetime.now(timezone.utc).isoformat(
+                    timespec="seconds"
+                )
                 break
         else:
             # Notebook'ta donus degeri kolayca gozden kacar. Sessizce False
@@ -252,10 +441,8 @@ class ExperimentLog:
         satirlar = [
             f"SUBMISSION BUTCESI ({butce['tarih']})",
             "-" * 42,
-            f"  bugun  : {butce['bugun_kullanilan']} kullanildi, "
-            f"{butce['bugun_kalan']} kaldi",
-            f"  toplam : {butce['toplam_kullanilan']} kullanildi, "
-            f"{butce['toplam_kalan']} kaldi",
+            f"  bugun  : {butce['bugun_kullanilan']} kullanildi, {butce['bugun_kalan']} kaldi",
+            f"  toplam : {butce['toplam_kullanilan']} kullanildi, {butce['toplam_kalan']} kaldi",
         ]
         if butce["gunluk_dagilim"]:
             satirlar.append("  gunluk dagilim:")
@@ -274,8 +461,17 @@ class ExperimentLog:
         frame = pd.DataFrame(records)
         columns = [
             column
-            for column in ("name", "cv_score", "lb_score", "metric", "model_kind",
-                           "n_features", "notes", "timestamp", "git_sha")
+            for column in (
+                "name",
+                "cv_score",
+                "lb_score",
+                "metric",
+                "model_kind",
+                "n_features",
+                "notes",
+                "timestamp",
+                "git_sha",
+            )
             if column in frame.columns
         ]
         return (

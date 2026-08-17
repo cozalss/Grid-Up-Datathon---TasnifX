@@ -118,8 +118,7 @@ class TuningResult:
             return pd.DataFrame()
         return (
             self.history.groupby("objective", observed=True)["skor"]
-            .agg(deneme="size", en_iyi="max" if self.greater_is_better else "min",
-                 medyan="median")
+            .agg(deneme="size", en_iyi="max" if self.greater_is_better else "min", medyan="median")
             .sort_values("en_iyi", ascending=not self.greater_is_better)
             .reset_index()
         )
@@ -185,9 +184,7 @@ def suggest_params(
         raise ValueError(f"Bilinmeyen model tipi '{kind}'.")
 
     if search_objective:
-        choice = trial.suggest_categorical(
-            "objective_family", ["l2", "mae", "poisson", "tweedie"]
-        )
+        choice = trial.suggest_categorical("objective_family", ["l2", "mae", "poisson", "tweedie"])
         objective = COUNT_OBJECTIVES[kind][choice]
         key = "loss_function" if kind == "catboost" else "objective"
         params[key] = objective
@@ -272,12 +269,17 @@ def tune_with_optuna(
     records: list[dict[str, Any]] = []
 
     def objective(trial: Any) -> float:
-        params = suggest_params(
-            trial, kind, task_type=task_type, search_objective=search_objective
-        )
+        params = suggest_params(trial, kind, task_type=task_type, search_objective=search_objective)
         result = cross_validate(
-            train, y, folds, kind=kind, task_type=task_type, metric=metric,
-            params=params, early_stopping_rounds=early_stopping_rounds, verbose=False,
+            train,
+            y,
+            folds,
+            kind=kind,
+            task_type=task_type,
+            metric=metric,
+            params=params,
+            early_stopping_rounds=early_stopping_rounds,
+            verbose=False,
         )
 
         family = trial.params.get("objective_family", task_type)
@@ -292,8 +294,11 @@ def tune_with_optuna(
         )
 
         if verbose and (trial.number + 1) % 10 == 0:
-            best = min(r["skor"] for r in records) if not greater_is_better \
+            best = (
+                min(r["skor"] for r in records)
+                if not greater_is_better
                 else max(r["skor"] for r in records)
+            )
             print(f"  {trial.number + 1} deneme, en iyi {metric}={best:.6f}")
 
         return result.overall_score
@@ -310,8 +315,10 @@ def tune_with_optuna(
     # Kazanan trial'in TAM parametre sozlugunu yeniden uret: study.best_params
     # yalnizca aranan degerleri tutar, sabitleri (n_estimators, n_jobs...) tutmaz.
     best_params = suggest_params(
-        optuna.trial.FixedTrial(study.best_params), kind,
-        task_type=task_type, search_objective=search_objective,
+        optuna.trial.FixedTrial(study.best_params),
+        kind,
+        task_type=task_type,
+        search_objective=search_objective,
     )
 
     result = TuningResult(

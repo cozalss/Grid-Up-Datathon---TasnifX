@@ -156,9 +156,7 @@ class TestYanginVerisi:
     def test_marmaris_2021_gorunuyor(self, yanginlar):
         """2021 Marmaris/Mugla yangini (docs/10 bolum 5) veride iz birakmali."""
         tarihler = pd.to_datetime(yanginlar["tarih"])
-        agustos_2021 = yanginlar[
-            (tarihler >= "2021-07-28") & (tarihler <= "2021-08-15")
-        ]
+        agustos_2021 = yanginlar[(tarihler >= "2021-07-28") & (tarihler <= "2021-08-15")]
         assert len(agustos_2021) > 100
 
 
@@ -186,9 +184,7 @@ class TestTurizmGeceleme:
         assert turizm["yil"].nunique() >= 2
 
     def test_yalnizca_hedef_iller(self, turizm):
-        assert set(turizm["il_key"].unique()) <= {
-            "izmir", "manisa", "aydin", "denizli", "mugla"
-        }
+        assert set(turizm["il_key"].unique()) <= {"izmir", "manisa", "aydin", "denizli", "mugla"}
 
     def test_il_toplami_satirlari_yok(self, turizm):
         """'Toplam' ara satirlari ilce degildir; join'e sizmamali."""

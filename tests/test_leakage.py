@@ -80,14 +80,17 @@ class TestOofTargetEncoding:
         assert values[0] == pytest.approx(100.0)
         assert values[1] == pytest.approx(0.0)
 
-    def test_unseen_category_falls_back_to_prior_not_nan(self):
+    def test_unseen_category_falls_back_to_fold_prior_but_uncovered_rows_stay_nan(self):
         train = pd.DataFrame({"kategori": ["a", "a", "b", "b"]})
         target = pd.Series([1.0, 2.0, 3.0, 4.0])
         folds = [(np.array([0, 1]), np.array([2, 3]))]
 
-        encoded, _ = oof_target_encode(train, target, ["kategori"], folds)
+        result = oof_target_encode(train, target, ["kategori"], folds, uncovered_policy="nan")
+        encoded, _ = result
 
-        assert not encoded["kategori_hedef_kod"].isna().any()
+        assert encoded.loc[:1, "kategori_hedef_kod"].isna().all()
+        assert encoded.loc[2:, "kategori_hedef_kod"].notna().all()
+        np.testing.assert_array_equal(result.covered, [False, False, True, True])
 
     def test_test_encoding_uses_full_train(self):
         train = pd.DataFrame({"kategori": ["a", "a", "b", "b"]})
@@ -120,8 +123,13 @@ class TestRollingWindowLeakage:
 
         # Act
         result = add_rolling_features(
-            frame, "deger", [2], time_column="tarih", horizon=1,
-            group_columns=["trafo_id"], aggregations=("mean",),
+            frame,
+            "deger",
+            [2],
+            time_column="tarih",
+            horizon=1,
+            group_columns=["trafo_id"],
+            aggregations=("mean",),
         )
         rolled = result["deger_kayan2_mean"].to_numpy()
 
@@ -140,9 +148,9 @@ class TestRollingWindowLeakage:
         )
 
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
+            frame, "deger", shifts=[1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
-        lagged = result["deger_lag1"].to_numpy()
+        lagged = result["deger_shift1"].to_numpy()
 
         assert np.isnan(lagged[0])
         assert lagged[1] == pytest.approx(1.0)
@@ -151,17 +159,25 @@ class TestRollingWindowLeakage:
     def test_lag_respects_group_boundaries(self, time_series_frame):
         """Bir varligin ilk satiri, ONCEKI VARLIGIN son degerini almamali."""
         result = add_lag_features(
-            time_series_frame, "tuketim", [1],
-            time_column="tarih", horizon=1, group_columns=["trafo_id"],
+            time_series_frame,
+            "tuketim",
+            shifts=[1],
+            time_column="tarih",
+            horizon=1,
+            group_columns=["trafo_id"],
         )
         first_rows = result.groupby("trafo_id", observed=True).head(1)
-        assert first_rows["tuketim_lag1"].isna().all()
+        assert first_rows["tuketim_shift1"].isna().all()
 
     def test_input_frame_is_not_mutated(self, time_series_frame):
         before = time_series_frame.copy()
         add_lag_features(
-            time_series_frame, "tuketim", [1, 7],
-            time_column="tarih", horizon=1, group_columns=["trafo_id"],
+            time_series_frame,
+            "tuketim",
+            shifts=[1, 7],
+            time_column="tarih",
+            horizon=1,
+            group_columns=["trafo_id"],
         )
         pd.testing.assert_frame_equal(time_series_frame, before)
 
@@ -175,12 +191,12 @@ class TestRollingWindowLeakage:
             }
         )
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
+            frame, "deger", shifts=[1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
         # Girdi sirasi korunmus: 0. satir hala 2024-01-03
         assert result.loc[0, "tarih"] == pd.Timestamp("2024-01-03")
         # 2024-01-03'un lag1'i 2024-01-02'nin degeri = 20.0
-        assert result.loc[0, "deger_lag1"] == pytest.approx(20.0)
+        assert result.loc[0, "deger_shift1"] == pytest.approx(20.0)
 
 
 class TestPurgedSplit:
@@ -188,9 +204,7 @@ class TestPurgedSplit:
         times = time_series_frame["tarih"]
         embargo = pd.Timedelta(days=10)
 
-        for train_idx, valid_idx in purged_time_series_split(
-            times, n_splits=3, embargo=embargo
-        ):
+        for train_idx, valid_idx in purged_time_series_split(times, n_splits=3, embargo=embargo):
             train_max = times.iloc[train_idx].max()
             valid_min = times.iloc[valid_idx].min()
             assert valid_min - train_max >= embargo
@@ -204,9 +218,7 @@ class TestPurgedSplit:
 
     def test_empty_series_raises(self):
         with pytest.raises(ValueError):
-            purged_time_series_split(
-                pd.Series([], dtype="datetime64[ns]"), embargo=pd.Timedelta(0)
-            )
+            purged_time_series_split(pd.Series([], dtype="datetime64[ns]"), embargo=pd.Timedelta(0))
 
     def test_embargo_is_required(self):
         """Ambargo verilmezse fonksiyon CALISMAZ.
@@ -330,10 +342,14 @@ class TestHorizonAwareFeatures:
         )
 
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih",
-            group_columns=["trafo_id"], horizon=5,
+            frame,
+            "deger",
+            shifts=[5],
+            time_column="tarih",
+            group_columns=["trafo_id"],
+            horizon=5,
         )
-        lagged = result["deger_ufuk5_lag1"].to_numpy()
+        lagged = result["deger_shift5"].to_numpy()
 
         # Ufuk 5 -> 5. satirin en taze mevcut degeri 0. satirinki (5 adim geride)
         assert np.isnan(lagged[:5]).all()
@@ -349,9 +365,9 @@ class TestHorizonAwareFeatures:
             }
         )
         result = add_lag_features(
-            frame, "deger", [1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
+            frame, "deger", shifts=[1], time_column="tarih", horizon=1, group_columns=["trafo_id"]
         )
-        assert result["deger_lag1"].iloc[1] == pytest.approx(1.0)
+        assert result["deger_shift1"].iloc[1] == pytest.approx(1.0)
 
     def test_rolling_respects_horizon(self):
         frame = pd.DataFrame(
@@ -362,8 +378,13 @@ class TestHorizonAwareFeatures:
             }
         )
         result = add_rolling_features(
-            frame, "deger", [2], time_column="tarih",
-            group_columns=["trafo_id"], horizon=3, aggregations=("mean",),
+            frame,
+            "deger",
+            [2],
+            time_column="tarih",
+            group_columns=["trafo_id"],
+            horizon=3,
+            aggregations=("mean",),
         )
         rolled = result["deger_ufuk3_kayan2_mean"].to_numpy()
 
@@ -378,7 +399,7 @@ class TestHorizonAwareFeatures:
             {"tarih": pd.date_range("2024-01-01", periods=3), "deger": [1.0, 2.0, 3.0]}
         )
         with pytest.raises(ValueError, match="horizon"):
-            add_lag_features(frame, "deger", [1], time_column="tarih", horizon=0)
+            add_lag_features(frame, "deger", shifts=[1], time_column="tarih", horizon=0)
 
 
 class TestCalendarOriginDrift:

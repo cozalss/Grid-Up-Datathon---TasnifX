@@ -50,6 +50,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from gridup.epias import EpiasClient, EpiasRequestError, load_env_file  # noqa: E402
+from gridup.io_utils import publish_dataframe, validate_published_dataframe  # noqa: E402
 from gridup.turkish import join_key  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -120,8 +121,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start", default="2022-01-01")
     parser.add_argument("--end", default="2026-08-01")
-    parser.add_argument("--planned", action="store_true",
-                        help="Plansiz yerine PLANLI kesintileri cek")
+    parser.add_argument(
+        "--planned", action="store_true", help="Plansiz yerine PLANLI kesintileri cek"
+    )
     parser.add_argument("--pause", type=float, default=DEFAULT_PAUSE)
     parser.add_argument("--fresh", action="store_true", help="Mevcut dosyayi yok say")
     args = parser.parse_args()
@@ -132,6 +134,7 @@ def main() -> int:
     path = PLANNED_PATH if args.planned else UNPLANNED_PATH
     label = "planli" if args.planned else "plansiz"
     output = OUTPUT_DIR / f"kesinti_{label}.parquet"
+    source = f"epias://{path}"
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     start = date.fromisoformat(args.start)
@@ -142,8 +145,17 @@ def main() -> int:
     existing: pd.DataFrame | None = None
     done: set[str] = set()
     if output.exists() and not args.fresh:
-        existing = pd.read_parquet(output)
-        if "date" in existing.columns:
+        try:
+            existing = validate_published_dataframe(
+                output,
+                required_columns=("date", "province", "district"),
+                min_rows=1,
+                source=source,
+            )
+        except (OSError, ValueError) as error:
+            print(f"Mevcut kesinti cache'i dogrulanamadi; kullanilmayacak: {error}")
+            existing = None
+        if existing is not None and "date" in existing.columns:
             done = set(existing["date"].astype(str).str[:10].unique())
         print(f"Mevcut dosyada {len(done)} gun var -- atlanacak.")
 
@@ -179,11 +191,11 @@ def main() -> int:
 
         # Ara kayit: uzun indirmede coksek bile ilerleme kaybolmasin.
         if index % 200 == 0:
-            _save(collected, existing, output)
+            _save(collected, existing, output, source=source)
 
         time.sleep(args.pause)
 
-    combined = _save(collected, existing, output)
+    combined = _save(collected, existing, output, source=source)
 
     print(f"\nYazildi: {output}")
     print(f"  {len(combined):,} satir x {combined.shape[1]} kolon")
@@ -203,7 +215,11 @@ def main() -> int:
 
 
 def _save(
-    collected: list[pd.DataFrame], existing: pd.DataFrame | None, output: Path
+    collected: list[pd.DataFrame],
+    existing: pd.DataFrame | None,
+    output: Path,
+    *,
+    source: str,
 ) -> pd.DataFrame:
     """Toplananlari mevcutla birlestirip yazar ve birlesigi dondurur."""
     parts = [frame for frame in collected if not frame.empty]
@@ -215,7 +231,13 @@ def _save(
     combined = pd.concat(parts, ignore_index=True)
     if "id" in combined.columns:
         combined = combined.drop_duplicates(subset=["id"])
-    combined.to_parquet(output, index=False)
+    publish_dataframe(
+        combined,
+        output,
+        required_columns=("date", "province", "district"),
+        min_rows=1,
+        source=source,
+    )
     return combined
 
 

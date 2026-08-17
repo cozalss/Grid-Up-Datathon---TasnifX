@@ -20,6 +20,7 @@ Ama iki kural ihlal edilirse sizinti olur:
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -70,19 +71,28 @@ HOLIDAY_CODES: dict[str, int] = {
     "ramazan": 1,
     "kurban": 2,
     "cumhuriyet": 3,
-    "egemenlik": 4,      # 23 Nisan Ulusal Egemenlik ve Cocuk Bayrami
-    "genclik": 5,        # 19 Mayis Ataturk'u Anma, Genclik ve Spor Bayrami
-    "zafer": 6,          # 30 Agustos
-    "emek": 7,           # 1 Mayis
-    "demokrasi": 8,      # 15 Temmuz
+    "egemenlik": 4,  # 23 Nisan Ulusal Egemenlik ve Cocuk Bayrami
+    "genclik": 5,  # 19 Mayis Ataturk'u Anma, Genclik ve Spor Bayrami
+    "zafer": 6,  # 30 Agustos
+    "emek": 7,  # 1 Mayis
+    "demokrasi": 8,  # 15 Temmuz
     "yilbasi": 9,
 }
 
 # Cakismada hangi tatil kazanir. Dini bayramlar once: elektrik tuketimi ve
 # isgucu davranisi acisindan baskin olan onlardir (uc gunluk tatil, seyahat,
 # sanayinin durmasi). Milli bayram tek gundur ve etkisi daha zayiftir.
-_HOLIDAY_PRIORITY = ("ramazan", "kurban", "cumhuriyet", "egemenlik",
-                     "genclik", "zafer", "demokrasi", "emek", "yilbasi")
+_HOLIDAY_PRIORITY = (
+    "ramazan",
+    "kurban",
+    "cumhuriyet",
+    "egemenlik",
+    "genclik",
+    "zafer",
+    "demokrasi",
+    "emek",
+    "yilbasi",
+)
 
 # IDARI IZIN gunleri -- hukumetin bayram oncesi/sonrasi verdigi EK tatil.
 # holidays kutuphanesinde YOKTUR ama kamu kapanir, okullar kapanir, kazi ve
@@ -105,33 +115,51 @@ _HOLIDAY_PRIORITY = ("ramazan", "kurban", "cumhuriyet", "egemenlik",
 # Bu ayrim onemli: arifede holiday_agirligi zaten 0.5'tir; buraya 1.0 yazmak
 # ayni yarim gunu iki kez saymak olur.
 ADMINISTRATIVE_LEAVE: dict[str, float] = {
-    "2019-06-03": 0.5, "2019-06-07": 1.0,
-    "2021-05-10": 1.0, "2021-05-11": 1.0, "2021-05-12": 0.5,
-    "2022-07-13": 1.0, "2022-07-14": 1.0,
+    "2019-06-03": 0.5,
+    "2019-06-07": 1.0,
+    "2021-05-10": 1.0,
+    "2021-05-11": 1.0,
+    "2021-05-12": 0.5,
+    "2022-07-13": 1.0,
+    "2022-07-14": 1.0,
     # 2023 Kurban arifesi: 27 Haziran yasal olarak zaten yarim gun ->
     # ek izin de yarim gundur. Onceki 1.0 degeri konvansiyonu bozuyordu.
-    "2023-06-26": 1.0, "2023-06-27": 0.5,
-    "2024-04-08": 1.0, "2024-04-09": 0.5,
-    "2024-06-20": 1.0, "2024-06-21": 1.0,
+    "2023-06-26": 1.0,
+    "2023-06-27": 0.5,
+    "2024-04-08": 1.0,
+    "2024-04-09": 0.5,
+    "2024-06-20": 1.0,
+    "2024-06-21": 1.0,
     # 2025 Ramazan: 26.03.2025 Cumhurbaskani aciklamasi -- "2, 3 ve 4 Nisan'da
     # kamu calisanlarimiz idari izinli sayilacak" (toplam 9 gunluk tatil).
     # Onceki surumde bu UC GUN TAMAMEN EKSIKTI.
-    "2025-04-02": 1.0, "2025-04-03": 1.0, "2025-04-04": 1.0,
+    "2025-04-02": 1.0,
+    "2025-04-03": 1.0,
+    "2025-04-04": 1.0,
     # 2025 Kurban: EK idari izin VERILMEDI. Iletisim Baskanligi aciklamasi
     # yalnizca YASAL tatili teyit ediyordu (5 Haziran ogleden sonra + 6-9
     # Haziran). Onceki surumdeki "2025-06-05": 0.5 girdisi HATALIYDI --
     # zaten yasal olan yarim gunu ek izin sayiyordu; kaldirildi.
     # 2026 Kurban: 04.05.2026 aciklamasi -- resmi tatile "1,5 gun daha"
     # eklendi; 26 Mayis Sali OGLEDEN ONCE de izinli.
-    "2026-05-25": 1.0, "2026-05-26": 0.5,
+    "2026-05-25": 1.0,
+    "2026-05-26": 0.5,
 }
 
 # Ege bolgesi icin mevsimsellik: yaz turizmi ve tarimsal sulama yuku belirleyicidir.
 TURKISH_SEASONS = {
-    12: "kis", 1: "kis", 2: "kis",
-    3: "ilkbahar", 4: "ilkbahar", 5: "ilkbahar",
-    6: "yaz", 7: "yaz", 8: "yaz",
-    9: "sonbahar", 10: "sonbahar", 11: "sonbahar",
+    12: "kis",
+    1: "kis",
+    2: "kis",
+    3: "ilkbahar",
+    4: "ilkbahar",
+    5: "ilkbahar",
+    6: "yaz",
+    7: "yaz",
+    8: "yaz",
+    9: "sonbahar",
+    10: "sonbahar",
+    11: "sonbahar",
 }
 
 
@@ -207,8 +235,9 @@ def shared_origin(*frames: pd.DataFrame, time_column: str) -> pd.Timestamp:
     # soylemiyordu. Karsilastirmadan once kendimiz soyluyoruz.
     tz_durumlari = {value.tz is not None for value in valid}
     if len(tz_durumlari) > 1:
-        etiket = [f"frame#{sira}={'tz-aware' if v.tz else 'tz-naive'}"
-                  for sira, v in enumerate(valid)]
+        etiket = [
+            f"frame#{sira}={'tz-aware' if v.tz else 'tz-naive'}" for sira, v in enumerate(valid)
+        ]
         raise ValueError(
             f"'{time_column}' kolonu frame'ler arasinda TUTARSIZ saat dilimi tasiyor: "
             f"{', '.join(etiket)}. Ortak origin hesaplanamaz -- once hepsini ayni "
@@ -531,9 +560,7 @@ def add_ramadan_features(
     result[f"{prefix}_ayi"] = in_ramadan.astype(np.int8)
     result[f"{prefix}_gunu"] = day_number
     result[f"{prefix}_ilerleme"] = progress.astype(np.float32)
-    result[f"{prefix}_son_on_gun"] = (
-        in_ramadan & (days_to_eid <= LAST_TEN_NIGHTS)
-    ).astype(np.int8)
+    result[f"{prefix}_son_on_gun"] = (in_ramadan & (days_to_eid <= LAST_TEN_NIGHTS)).astype(np.int8)
     result[f"{prefix}_bayrama_kalan"] = days_to_eid
     return result
 
@@ -618,9 +645,7 @@ def add_turkish_holiday_features(
 
     dates = times.dt.date
     in_calendar = dates.map(lambda day: day in calendar if pd.notna(day) else False)
-    is_full_day = dates.map(
-        lambda day: day in full_day_calendar if pd.notna(day) else False
-    )
+    is_full_day = dates.map(lambda day: day in full_day_calendar if pd.notna(day) else False)
     is_half_day = in_calendar.to_numpy() & ~is_full_day.to_numpy()
 
     names = dates.map(lambda day: calendar.get(day, "") if pd.notna(day) else "")
@@ -633,9 +658,9 @@ def add_turkish_holiday_features(
         lambda day: leave_lookup.get(day, 0.0) if pd.notna(day) else 0.0
     ).astype("float32")
 
-    holiday_weight = np.where(
-        is_full_day.to_numpy(), 1.0, np.where(is_half_day, 0.5, 0.0)
-    ).astype("float32")
+    holiday_weight = np.where(is_full_day.to_numpy(), 1.0, np.where(is_half_day, 0.5, 0.0)).astype(
+        "float32"
+    )
 
     holiday_dates = np.array(sorted(calendar.keys()), dtype="datetime64[D]")
     is_holiday = is_full_day
@@ -653,14 +678,12 @@ def add_turkish_holiday_features(
         # Buyuk veri setlerinde NxM matris bellek yer; benzersiz gunler uzerinden hesapla.
         unique_days, inverse = np.unique(valid_days, return_inverse=True)
         differences = np.abs(
-            (unique_days[:, None] - holiday_dates[None, :])
-            .astype("timedelta64[D]")
-            .astype("int64")
+            (unique_days[:, None] - holiday_dates[None, :]).astype("timedelta64[D]").astype("int64")
         )
         nearest = differences.min(axis=1)
-        distances[valid_mask] = np.clip(
-            nearest[inverse], 0, MISSING_HOLIDAY_DISTANCE
-        ).astype("int16")
+        distances[valid_mask] = np.clip(nearest[inverse], 0, MISSING_HOLIDAY_DISTANCE).astype(
+            "int16"
+        )
 
     weekend = (times.dt.dayofweek >= 5).fillna(False).to_numpy()
 
@@ -736,11 +759,69 @@ def _sorted_view(
     return frame.iloc[order], order
 
 
+def _integer_offset(value: int, *, parameter: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        raise TypeError(f"{parameter} tam sayi olmali, verilen: {value!r}")
+    return int(value)
+
+
+def _lag_specifications(
+    *,
+    lags: Sequence[int] | None,
+    shifts: Sequence[int] | None,
+    horizon: int,
+    prefix: str,
+) -> list[tuple[int, str]]:
+    """Mutlak shift degeri ile cikti adini tek, dogrulanmis sozlesmeye cevir."""
+    if lags is not None and shifts is not None:
+        raise ValueError("lags ve shifts birlikte verilemez; yalnizca birini secin.")
+    if lags is None and shifts is None:
+        raise ValueError("Gecikme icin shifts (onerilen) veya legacy lags verilmelidir.")
+
+    if shifts is not None:
+        if len(shifts) == 0:
+            raise ValueError("shifts bos olamaz.")
+        specifications = []
+        for shift in shifts:
+            absolute_shift = _integer_offset(shift, parameter="shift")
+            if absolute_shift < horizon:
+                raise ValueError(
+                    f"shift ({absolute_shift}) horizon ({horizon}) kadar veya daha buyuk "
+                    "olmali; aksi halde tahmin aninda bilinmeyen veri kullanilir."
+                )
+            specifications.append((absolute_shift, f"{prefix}_shift{absolute_shift}"))
+        return specifications
+
+    assert lags is not None
+    if len(lags) == 0:
+        raise ValueError("lags bos olamaz.")
+    warnings.warn(
+        "lags= origin-relative semantigi kullanimdan kalkiyor; gercek mutlak "
+        "ofsetleri shifts= ile verin.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+    specifications = []
+    for lag in lags:
+        legacy_lag = _integer_offset(lag, parameter="lag")
+        if legacy_lag < 1:
+            raise ValueError(f"legacy lag >= 1 olmali, verilen: {legacy_lag}")
+        absolute_shift = horizon + legacy_lag - 1
+        name = (
+            f"{prefix}_lag{legacy_lag}"
+            if horizon == 1
+            else f"{prefix}_ufuk{horizon}_lag{legacy_lag}"
+        )
+        specifications.append((absolute_shift, name))
+    return specifications
+
+
 def add_lag_features(
     frame: pd.DataFrame,
     value_column: str,
-    lags: Sequence[int],
+    lags: Sequence[int] | None = None,
     *,
+    shifts: Sequence[int] | None = None,
     time_column: str,
     horizon: int,
     group_columns: Sequence[str] | None = None,
@@ -753,8 +834,13 @@ def add_lag_features(
 
     Args:
         value_column: Gecikmesi alinacak kolon (genellikle hedef veya bir olcum).
-        lags: Gecikme adimlari, or. ``[1, 7, 14, 28]``. Tahmin anindan GERIYE
-            sayilir, satirdan degil -- bkz. ``horizon``.
+        lags: KULLANIMDAN KALKIYOR. Tahmin origin'ine gore gecikme adimlari;
+            gercek ofset ``horizon + lag - 1`` olur. Bir gecis surumu icin eski
+            davranis ve kolon adlari korunur. Yeni kod ``shifts`` kullanmalidir.
+        shifts: Kaynak seriye uygulanacak GERCEK, mutlak satir ofsetleri.
+            Ornegin ``shifts=[31, 62, 93]`` dogrudan ``shift(31)``,
+            ``shift(62)``, ``shift(93)`` uretir. Her ofset ``horizon`` kadar
+            veya daha buyuk olmalidir.
         time_column: Siralama icin zaman kolonu -- ZORUNLU. Sirasiz veride
             ``shift`` rastgele satir alir ve gelecegi sizdirir.
         group_columns: Varsa her varlik icin ayri gecikme (or. trafo bazinda).
@@ -779,6 +865,11 @@ def add_lag_features(
     blok tahmin ediyorsan ``horizon=30``; lag ``k`` o zaman
     ``shift(horizon + k - 1)`` olarak hesaplanir ve ``lags=[1]`` "tahmin
     anindaki en taze mevcut deger" anlamina gelir.
+
+    Yeni ``shifts`` API'sinde ofset dogrudan ifade edilir: bir aylik blok ve
+    en taze kullanilabilir deger icin ``horizon=30, shifts=[30]``. Tahmin
+    aninda bilinmeyen veri kullanmamak icin ``shift >= horizon`` zorunludur.
+    Eski ``lags`` semantigi bir gecis surumu boyunca korunur ve uyari verir.
     """
     if value_column not in frame.columns:
         raise KeyError(f"Kolon '{value_column}' frame icinde yok.")
@@ -795,12 +886,11 @@ def add_lag_features(
         else ordered[value_column]
     )
 
+    specifications = _lag_specifications(lags=lags, shifts=shifts, horizon=horizon, prefix=prefix)
+
     lagged = {}
-    for lag in lags:
-        # Lag tahmin ANINDAN geriye sayilir: ufuk 1 iken shift(lag),
-        # ufuk 30 iken shift(29 + lag).
-        shifted = source.shift(horizon + lag - 1)
-        name = f"{prefix}_lag{lag}" if horizon == 1 else f"{prefix}_ufuk{horizon}_lag{lag}"
+    for absolute_shift, name in specifications:
+        shifted = source.shift(absolute_shift)
         lagged[name] = np.asarray(shifted)
 
     # Orijinal siraya geri dondur.
@@ -1007,13 +1097,15 @@ def add_previous_month_features(
     degerler = pd.to_numeric(frame[value_column], errors="coerce")
 
     # Ay-seviyesi ozet tablosu: her (grup, ay) icin bir satir.
-    kaynak = pd.DataFrame({
-        "_ay": times.dt.to_period("M"),
-        "_gun_no": times.dt.day,
-        "_deger": degerler,
-        "_olayli": (degerler > 0).astype("float64"),
-        "_olaysiz": (degerler == 0).astype("float64"),
-    })
+    kaynak = pd.DataFrame(
+        {
+            "_ay": times.dt.to_period("M"),
+            "_gun_no": times.dt.day,
+            "_deger": degerler,
+            "_olayli": (degerler > 0).astype("float64"),
+            "_olaysiz": (degerler == 0).astype("float64"),
+        }
+    )
     for column in groups:
         kaynak[column] = frame[column].to_numpy()
 
@@ -1142,11 +1234,13 @@ def add_mass_event_features(
     if gecerli.empty:
         bos = np.full(len(frame), np.nan, dtype="float32")
         etiket = "" if horizon == 1 else f"ufuk{horizon}_"
-        return frame.assign(**{
-            f"{prefix}_{etiket}topluolay_pay_lag1": bos,
-            f"{prefix}_{etiket}topluolay_pay_kayan7": bos,
-            f"{prefix}_{etiket}topluolay_bayrak_lag1": bos,
-        })
+        return frame.assign(
+            **{
+                f"{prefix}_{etiket}topluolay_pay_lag1": bos,
+                f"{prefix}_{etiket}topluolay_pay_kayan7": bos,
+                f"{prefix}_{etiket}topluolay_bayrak_lag1": bos,
+            }
+        )
 
     grup_gun = gecerli.groupby(["_gun", *groups], observed=True)["_olayli"].max()
     pay = grup_gun.groupby(level=0).mean()
@@ -1164,16 +1258,16 @@ def add_mass_event_features(
     )
 
     etiket = "" if horizon == 1 else f"ufuk{horizon}_"
-    return frame.assign(**{
-        f"{prefix}_{etiket}topluolay_pay_lag1": times.map(kaydirilmis).astype("float32"),
-        f"{prefix}_{etiket}topluolay_pay_kayan7": times.map(kayan7).astype("float32"),
-        f"{prefix}_{etiket}topluolay_bayrak_lag1": times.map(bayrak).astype("float32"),
-    })
+    return frame.assign(
+        **{
+            f"{prefix}_{etiket}topluolay_pay_lag1": times.map(kaydirilmis).astype("float32"),
+            f"{prefix}_{etiket}topluolay_pay_kayan7": times.map(kayan7).astype("float32"),
+            f"{prefix}_{etiket}topluolay_bayrak_lag1": times.map(bayrak).astype("float32"),
+        }
+    )
 
 
-def _grup_kimlikleri(
-    ordered: pd.DataFrame, group_columns: Sequence[str] | None
-) -> np.ndarray:
+def _grup_kimlikleri(ordered: pd.DataFrame, group_columns: Sequence[str] | None) -> np.ndarray:
     """Sirali gorunumde satir basina grup kodu (grup yoksa hepsi 0).
 
     ``_sorted_view`` gruplari bitisik dizer; kodlar gorunum sirasinda artar.
@@ -1271,7 +1365,7 @@ def add_event_decay_features(
     gecerli = times.notna().to_numpy()
     gunler = times.to_numpy(dtype="datetime64[D]").astype("int64")
     degerler = pd.to_numeric(ordered[value_column], errors="coerce").to_numpy(dtype="float64")
-    olaylar = (degerler > 0).astype("float64")          # NaN > 0 -> False -> 0
+    olaylar = (degerler > 0).astype("float64")  # NaN > 0 -> False -> 0
     degerler = np.nan_to_num(degerler, nan=0.0)
 
     kimlikler = _grup_kimlikleri(ordered, group_columns)
@@ -1287,10 +1381,10 @@ def add_event_decay_features(
         n_gecerli = int(gecerli[bas:son].sum())
         if n_gecerli <= horizon:
             continue  # gorulebilir gecmis yok; NaN kalir
-        g_gun = gunler[bas:bas + n_gecerli]
+        g_gun = gunler[bas : bas + n_gecerli]
         for yari_omur in half_lives:
             for tur, seri in (("olay", olaylar), ("deger", degerler)):
-                x = seri[bas:bas + n_gecerli]
+                x = seri[bas : bas + n_gecerli]
                 bozunum = np.empty(n_gecerli, dtype="float64")
                 bozunum[0] = x[0]
                 for j in range(1, n_gecerli):
@@ -1298,13 +1392,11 @@ def add_event_decay_features(
                     alpha = 2.0 ** (-fark / yari_omur)
                     bozunum[j] = x[j] + alpha * bozunum[j - 1]
                 kolon = f"{prefix}_{etiket}bozunum{yari_omur:g}g_{tur}"
-                ciktilar[kolon][bas + horizon: bas + n_gecerli] = bozunum[:-horizon]
+                ciktilar[kolon][bas + horizon : bas + n_gecerli] = bozunum[:-horizon]
 
     restore = np.empty_like(order)
     restore[order] = np.arange(len(order))
-    return frame.assign(**{
-        ad: dizi[restore].astype("float32") for ad, dizi in ciktilar.items()
-    })
+    return frame.assign(**{ad: dizi[restore].astype("float32") for ad, dizi in ciktilar.items()})
 
 
 def add_days_since_event_features(
@@ -1383,8 +1475,8 @@ def add_days_since_event_features(
         n_gecerli = int(gecerli[bas:son].sum())
         if n_gecerli <= horizon:
             continue
-        g_gun = gunler[bas:bas + n_gecerli]
-        olay_gunu = np.where(olayli[bas:bas + n_gecerli], g_gun, SENTINEL)
+        g_gun = gunler[bas : bas + n_gecerli]
+        olay_gunu = np.where(olayli[bas : bas + n_gecerli], g_gun, SENTINEL)
         son_olay = np.maximum.accumulate(olay_gunu)
         # Ufuk kaydirmasi: i satiri, i - horizon'a kadarki son olayi gorur.
         gorunen = son_olay[:-horizon]
@@ -1392,16 +1484,18 @@ def add_days_since_event_features(
         var = gorunen > SENTINEL
         dilim = np.full(n_gecerli - horizon, np.nan)
         dilim[var] = (hedef_gunler[var] - gorunen[var]).astype("float64")
-        gecen_gun[bas + horizon: bas + n_gecerli] = dilim
-        hic_yok[bas + horizon: bas + n_gecerli] = (~var).astype("int64")
+        gecen_gun[bas + horizon : bas + n_gecerli] = dilim
+        hic_yok[bas + horizon : bas + n_gecerli] = (~var).astype("int64")
 
     restore = np.empty_like(order)
     restore[order] = np.arange(len(order))
     etiket = "" if horizon == 1 else f"ufuk{horizon}_"
-    return frame.assign(**{
-        f"{prefix}_{etiket}son_olaydan_gun": gecen_gun[restore].astype("float32"),
-        f"{prefix}_{etiket}hic_olay_yok": hic_yok[restore].astype("int8"),
-    })
+    return frame.assign(
+        **{
+            f"{prefix}_{etiket}son_olaydan_gun": gecen_gun[restore].astype("float32"),
+            f"{prefix}_{etiket}hic_olay_yok": hic_yok[restore].astype("int8"),
+        }
+    )
 
 
 def add_upcoming_holiday_features(
@@ -1474,15 +1568,13 @@ def add_upcoming_holiday_features(
         ileri = np.full(len(unique_days), MISSING_HOLIDAY_DISTANCE, dtype="int64")
         bulunan = konum < len(holiday_dates)
         ileri[bulunan] = (
-            holiday_dates[konum[bulunan]] - unique_days[bulunan]
-        ).astype("timedelta64[D]").astype("int64")
-        distances[valid_mask] = np.clip(
-            ileri[inverse], 0, MISSING_HOLIDAY_DISTANCE
-        ).astype("int16")
+            (holiday_dates[konum[bulunan]] - unique_days[bulunan])
+            .astype("timedelta64[D]")
+            .astype("int64")
+        )
+        distances[valid_mask] = np.clip(ileri[inverse], 0, MISSING_HOLIDAY_DISTANCE).astype("int16")
 
     yeni = {f"{prefix}_sonraki_mesafe": distances}
     for window in windows:
-        yeni[f"{prefix}_onumuzdeki_{window}g"] = (
-            (distances <= window) & valid_mask
-        ).astype("int8")
+        yeni[f"{prefix}_onumuzdeki_{window}g"] = ((distances <= window) & valid_mask).astype("int8")
     return frame.assign(**yeni)

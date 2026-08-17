@@ -92,15 +92,13 @@ def test_skorlar_dogrulanmamis_satirlari_saymiyor():
     from gridup.two_stage import tune_threshold
 
     beklenen = tune_threshold(
-        y[kapsanan], sonuc.oof_probability[kapsanan],
-        sonuc.oof_magnitude[kapsanan], metric="mae",
+        y[kapsanan],
+        sonuc.oof_probability[kapsanan],
+        sonuc.oof_magnitude[kapsanan],
+        metric="mae",
     )
-    assert sonuc.diagnostics["esikli_mod_mae"] == pytest.approx(
-        round(beklenen["best_score"], 6)
-    )
-    assert sonuc.diagnostics["oof_kapsami"] == pytest.approx(
-        round(float(kapsanan.mean()), 4)
-    )
+    assert sonuc.diagnostics["esikli_mod_mae"] == pytest.approx(round(beklenen["best_score"], 6))
+    assert sonuc.diagnostics["oof_kapsami"] == pytest.approx(round(float(kapsanan.mean()), 4))
     assert "not" in sonuc.diagnostics
 
 
@@ -152,34 +150,25 @@ def test_kosullu_merdiven_marjinal_olandan_ve_esikli_moddan_iyi():
 
     marjinal = {
         q: r.oof_predictions
-        for q, r in fit_quantile_ladder(
-            frame, y, folds, quantiles=seviyeler, verbose=False
-        ).items()
+        for q, r in fit_quantile_ladder(frame, y, folds, quantiles=seviyeler, verbose=False).items()
     }
-    kosullu = fit_conditional_quantile_ladder(
-        frame, y, folds, quantiles=seviyeler, verbose=False
-    )
+    kosullu = fit_conditional_quantile_ladder(frame, y, folds, quantiles=seviyeler, verbose=False)
 
     # Kosullu merdiven pozitif buyuklukleri ogrenmeli, sifiri degil.
     assert kosullu[0.5].mean() > 1.8 * marjinal[0.5].mean()
 
     mae_marjinal = MAE(
         y[kapsanan],
-        conditional_quantile_from_hurdle(
-            sonuc.oof_probability, marjinal, verbose=False
-        )[kapsanan],
+        conditional_quantile_from_hurdle(sonuc.oof_probability, marjinal, verbose=False)[kapsanan],
     )
     mae_kosullu = MAE(
         y[kapsanan],
-        conditional_quantile_from_hurdle(
-            sonuc.oof_probability, kosullu, verbose=False
-        )[kapsanan],
+        conditional_quantile_from_hurdle(sonuc.oof_probability, kosullu, verbose=False)[kapsanan],
     )
     mae_esikli = MAE(y[kapsanan], sonuc.predict_oof(mode="thresholded")[kapsanan])
 
     assert mae_kosullu < mae_esikli < mae_marjinal, (
-        f"kosullu={mae_kosullu:.4f} esikli={mae_esikli:.4f} "
-        f"marjinal={mae_marjinal:.4f}"
+        f"kosullu={mae_kosullu:.4f} esikli={mae_esikli:.4f} marjinal={mae_marjinal:.4f}"
     )
 
 
@@ -241,7 +230,7 @@ def test_marjinal_gorunumlu_merdiven_uyari_uretiyor(capsys):
     ogrenmis olabilir -- olculdu: marjinal q=0.05 tahminlerinin %100'u sifir."""
     olasilik = np.full(100, 0.9)
     merdiven = {
-        0.05: np.zeros(100),          # marjinal merdivenin imzasi
+        0.05: np.zeros(100),  # marjinal merdivenin imzasi
         0.5: np.full(100, 4.0),
     }
     conditional_quantile_from_hurdle(olasilik, merdiven, verbose=True)
@@ -271,9 +260,9 @@ def test_ornek_agirligi_iki_asamaya_gercekten_ulasiyor():
     assert len(agirlikli.oof_probability) == len(y)
     assert (agirlikli.covered() == agirliksiz.covered()).all()
     maske = agirlikli.covered()
-    assert not np.allclose(
-        agirlikli.oof_probability[maske], agirliksiz.oof_probability[maske]
-    ), "agirlik hicbir tahmini degistirmedi -- passthrough kopuk olabilir"
+    assert not np.allclose(agirlikli.oof_probability[maske], agirliksiz.oof_probability[maske]), (
+        "agirlik hicbir tahmini degistirmedi -- passthrough kopuk olabilir"
+    )
 
 
 def test_ornek_agirligi_kosullu_merdivene_pozitif_alt_kumeyle_iniyor():
@@ -285,8 +274,12 @@ def test_ornek_agirligi_kosullu_merdivene_pozitif_alt_kumeyle_iniyor():
 
     # Act
     merdiven = fit_conditional_quantile_ladder(
-        frame, y, folds, quantiles=(0.25, 0.5),
-        sample_weight=agirlik, verbose=False,
+        frame,
+        y,
+        folds,
+        quantiles=(0.25, 0.5),
+        sample_weight=agirlik,
+        verbose=False,
     )
 
     # Assert
@@ -304,6 +297,10 @@ def test_ornek_agirligi_yanlis_boyda_erken_ve_acik_hata():
         fit_two_stage(frame, y, folds, sample_weight=np.ones(10), verbose=False)
     with pytest.raises(ValueError, match="sample_weight"):
         fit_conditional_quantile_ladder(
-            frame, y, folds, quantiles=(0.5,),
-            sample_weight=np.ones(10), verbose=False,
+            frame,
+            y,
+            folds,
+            quantiles=(0.5,),
+            sample_weight=np.ones(10),
+            verbose=False,
         )

@@ -285,8 +285,12 @@ class TestStackOofKapsamiKapali:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             sonuc = stack_oof(
-                uyeler, y, folds, base_covered=zoo.oof_covered,
-                metric="rmse", verbose=False,
+                uyeler,
+                y,
+                folds,
+                base_covered=zoo.oof_covered,
+                metric="rmse",
+                verbose=False,
             )
         assert np.isfinite(sonuc["score"])
         assert sonuc["coverage"] == pytest.approx(0.5)
@@ -310,9 +314,13 @@ def zoo_ve_veri():
 
     n = 3000
     rng = np.random.default_rng(0)
-    X = pd.DataFrame({
-        "a": rng.normal(size=n), "b": rng.normal(size=n), "c": rng.normal(size=n),
-    })
+    X = pd.DataFrame(
+        {
+            "a": rng.normal(size=n),
+            "b": rng.normal(size=n),
+            "c": rng.normal(size=n),
+        }
+    )
     y = (3 * X["a"] - 2 * X["b"] + 0.5 * X["c"] + rng.normal(0, 2.0, n)).to_numpy()
     folds = list(TimeSeriesSplit(n_splits=4).split(X))
 
@@ -324,13 +332,17 @@ def zoo_ve_veri():
     xgb["n_estimators"] = 80
 
     zoo = make_model_zoo(
-        X, y, folds,
+        X,
+        y,
+        folds,
         entries=[
             ZooEntry("lgbm_a", "lightgbm", lgb_a),
             ZooEntry("lgbm_b", "lightgbm", lgb_b),
             ZooEntry("xgb", "xgboost", xgb),
         ],
-        metric="rmse", early_stopping_rounds=20, verbose=False,
+        metric="rmse",
+        early_stopping_rounds=20,
+        verbose=False,
     )
     return zoo, y
 
@@ -396,9 +408,9 @@ class TestGercekZooKapsami:
         assert alinan.loc["lgbm_a", "xgb"] == pytest.approx(
             beklenen.loc["lgbm_a", "xgb"], abs=1e-12
         )
-        assert alinan.loc["lgbm_a", "xgb"] < pd.DataFrame(zoo.oof_matrix).corr().loc[
-            "lgbm_a", "xgb"
-        ]
+        assert (
+            alinan.loc["lgbm_a", "xgb"] < pd.DataFrame(zoo.oof_matrix).corr().loc["lgbm_a", "xgb"]
+        )
 
     def test_summary_kapsam_uyarisini_basiyor(self, zoo_ve_veri):
         """Kapsam %80 iken kullanici bunu EKRANDA gormeli."""

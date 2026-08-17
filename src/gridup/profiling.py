@@ -167,9 +167,7 @@ def _column_flags(series: pd.Series, kind: str, row_count: int) -> tuple[str, ..
     if kind in {"kategorik", "metin"}:
         sample = series.dropna().astype(str).head(500)
         if any(has_combining_dot(value) for value in sample):
-            flags.append(
-                "BIRLESIK NOKTA (U+0307) -- yanlis .lower() kullanilmis, join'ler bozulur"
-            )
+            flags.append("BIRLESIK NOKTA (U+0307) -- yanlis .lower() kullanilmis, join'ler bozulur")
 
     return tuple(flags)
 

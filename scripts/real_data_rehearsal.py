@@ -46,7 +46,6 @@ from gridup import (  # noqa: E402
 )
 from gridup.features import (  # noqa: E402
     add_calendar_features,
-    add_frequency_encoding,
     add_turkish_holiday_features,
 )
 from gridup.features.outage_reason import reason_family_report  # noqa: E402
@@ -72,8 +71,10 @@ def basamak(no: str, baslik: str) -> None:
 def main() -> int:
     if not VERI.exists():
         print(f"HATA: {VERI} yok.")
-        print("Indir: kaggle datasets download -d "
-              "tmlalper/manisa-izmir-plansiz-elektrik-kesintileri --unzip")
+        print(
+            "Indir: kaggle datasets download -d "
+            "tmlalper/manisa-izmir-plansiz-elektrik-kesintileri --unzip"
+        )
         return 1
 
     set_global_seed(42)
@@ -98,8 +99,10 @@ def main() -> int:
     if negatif:
         print(f"  UYARI: {negatif} kayitta bitis < baslangic -- disariya aliniyor")
         ham = ham[ham[HEDEF] >= 0]
-    print(f"  hedef '{HEDEF}': medyan={ham[HEDEF].median():.0f} dk  "
-          f"max={ham[HEDEF].max():,.0f} dk ({ham[HEDEF].max() / 1440:.1f} gun)")
+    print(
+        f"  hedef '{HEDEF}': medyan={ham[HEDEF].median():.0f} dk  "
+        f"max={ham[HEDEF].max():,.0f} dk ({ham[HEDEF].max() / 1440:.1f} gun)"
+    )
 
     # ---------------------------------------------------------------- 2
     basamak("2/7", "TURKCE JOIN -- referans tablosuyla eslesme")
@@ -123,14 +126,18 @@ def main() -> int:
     # ---------------------------------------------------------------- 4
     basamak("4/7", "PANEL -- olay kaydi -> ilce x gun")
     kapsam = panel_coverage(ham, entity_columns=[GRUP], time_column=ZAMAN)
-    print(f"  beklenen {kapsam['expected_rows']:,.0f}  gercek {kapsam['actual_rows']:,.0f}"
-          f"  doluluk %{kapsam['coverage'] * 100:.1f}")
+    print(
+        f"  beklenen {kapsam['expected_rows']:,.0f}  gercek {kapsam['actual_rows']:,.0f}"
+        f"  doluluk %{kapsam['coverage'] * 100:.1f}"
+    )
     if kapsam["coverage"] > 1.0:
         print("  HATA: doluluk %100'u asamaz -- izgaraya oturtma bozuk.")
         return 1
 
     panel = build_panel(
-        ham, entity_columns=[GRUP], time_column=ZAMAN,
+        ham,
+        entity_columns=[GRUP],
+        time_column=ZAMAN,
         value_columns=[HEDEF, "effectedsubscribers", "hourlyloadavg"],
         verbose=True,
     )
@@ -154,8 +161,11 @@ def main() -> int:
 
     ufuk = 31
     folds = purged_time_series_split(
-        panel[ZAMAN], embargo=pd.Timedelta(days=max(ufuk, 30)),
-        n_splits=4, test_span=pd.Timedelta(days=ufuk), verbose=True,
+        panel[ZAMAN],
+        embargo=pd.Timedelta(days=max(ufuk, 30)),
+        n_splits=4,
+        test_span=pd.Timedelta(days=ufuk),
+        verbose=True,
     )
     for i, (tr, va) in enumerate(folds, start=1):
         print(f"    fold {i}: train={len(tr):>7,}  valid={len(va):>6,}")
@@ -170,15 +180,18 @@ def main() -> int:
         oncesi = len(ozellik)
         ozellik = ozellik.merge(
             hava.drop(columns=[c for c in ("konum", "il", "ilce") if c in hava.columns]),
-            left_on=[GRUP, ZAMAN], right_on=["ilce_key", "tarih"],
-            how="left", validate="many_to_one",
+            left_on=[GRUP, ZAMAN],
+            right_on=["ilce_key", "tarih"],
+            how="left",
+            validate="many_to_one",
         )
         assert len(ozellik) == oncesi, "hava merge satir sayisini degistirdi"
         sicaklik = [c for c in ozellik.columns if "sicaklik" in c]
         if sicaklik:
             oran = ozellik[sicaklik[0]].notna().mean()
             print(f"  hava join eslesme orani: %{oran * 100:.1f}")
-    ozellik = add_frequency_encoding(ozellik, [GRUP])
+    # Dagilim/frekans ozellikleri temporal CV'den once tum panelde fit edilmez.
+    # Fold-ici encoder entegrasyonu gelene kadar bu aile fail-closed kapali.
 
     # SIZINTI DUVARI (cekismeli denetim yakaladi): ham olay kaydinin TUM
     # kolonlari ayni gunun bilgisidir ve feature olamaz. Ilk surum id,
@@ -190,14 +203,21 @@ def main() -> int:
     # asagida her kosuda yeniden olculur ve yalnizca kendi baseline'iyla
     # kiyaslanir.
     ham_kolonlar = {
-        "id", "il", "ilce", "date", "starttime", "endtime", "reason",
-        "effectedsubscribers", "hourlyloadavg", "effectedneighbourhoods",
+        "id",
+        "il",
+        "ilce",
+        "date",
+        "starttime",
+        "endtime",
+        "reason",
+        "effectedsubscribers",
+        "hourlyloadavg",
+        "effectedneighbourhoods",
         "distributioncompanyname",
     }
     dus = {HEDEF, ZAMAN, GRUP, PANEL_FLAG_COLUMN, "tarih", "ilce_key", *ham_kolonlar}
     kolonlar = [
-        c for c in ozellik.columns
-        if c not in dus and pd.api.types.is_numeric_dtype(ozellik[c])
+        c for c in ozellik.columns if c not in dus and pd.api.types.is_numeric_dtype(ozellik[c])
     ]
     print(f"  {len(kolonlar)} sayisal feature (ham olay kolonlari sizinti duvarinin arkasinda)")
 
@@ -205,7 +225,11 @@ def main() -> int:
     basamak("7/7", "MODEL")
     y = ozellik[HEDEF].to_numpy()
     sonuc = cross_validate(
-        ozellik[kolonlar], y, folds, kind="lightgbm", metric="mae",
+        ozellik[kolonlar],
+        y,
+        folds,
+        kind="lightgbm",
+        metric="mae",
         params=starter_params("lightgbm", "regression", objective="mae"),
         verbose=False,
     )
