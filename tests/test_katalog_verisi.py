@@ -77,6 +77,8 @@ class TestEpdkBolgeSinifi:
         yerlesim-yeri nufusuna gore tanimlar; ilce toplami bizim panelde
         kullanilabilir tek granulerdir (bkz. demografi.py docstring).
         """
+        if not REFERANS_YOLU.exists():
+            pytest.skip("Referans ilce tablosu yok: scripts/fetch_districts.py calistir")
         referans = pd.read_parquet(REFERANS_YOLU)
         siniflar = epdk_bolge_sinifi(referans["nufus"])
         assert {"kentsel", "kentalti"} <= set(siniflar.unique())

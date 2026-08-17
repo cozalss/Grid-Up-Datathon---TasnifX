@@ -71,6 +71,15 @@ where = ["src"]
 [tool.setuptools.dynamic]
 version = {attr = "gridup._version.__version__"}
 
+[tool.coverage.run]
+# neural.py yalnizca ``torch`` ile calisir ve torch ``neural`` extra'sindadir --
+# CI'in kilitli grafigi (full+dev+security) torch KURMAZ (Linux CUDA wheel'i
+# ~GB; datathon CI'i icin kasitli). Torch yokken tum neural testleri skip
+# olur ve 204 satir "kapsanmadi" gorunur; bu, kodun test edilmedigi degil,
+# o ortamda calistirilamadigi anlamina gelir. Modul, torch kurulu makinede
+# tests/test_neural.py ile olculur.
+omit = ["*/gridup/neural.py"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
