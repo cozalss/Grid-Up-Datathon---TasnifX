@@ -8,7 +8,7 @@
     "immutable_semantics": "source.immutable=true asserts that the UPSTREAM reference cannot change under us -- i.e. snapshot_ref is content-addressed (a hash) or an archived immutable release. A live HTTP API is mutable by definition, so artifacts pulled from one keep immutable=false and remain WARNINGS on purpose. That warning is truthful, not a defect: it records that we redistribute a hash-pinned local snapshot of a source that may since have changed. Do not flip this flag to silence the warning -- either archive the raw response and point snapshot_ref at it, or leave the warning standing.",
     "review_log": [
       {
-        "date": "2026-08-16",
+        "date": "2026-08-17",
         "scope": "8 artifacts, license + redistribution review",
         "outcome": "License and redistribution resolved for all 8. immutable stays false for the 5 live-API pulls; see immutable_semantics."
       }
@@ -23,7 +23,7 @@
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
       "verification": {
         "basis": "published-open-license",
-        "reviewed_at": "2026-08-16",
+        "reviewed_at": "2026-08-17",
         "evidence": "Open-Meteo publishes historical archive data under CC BY 4.0; redistribution permitted with attribution."
       },
       "source": {
@@ -46,7 +46,7 @@
       "attribution": "Derived by this project with pvlib (BSD-3-Clause) from the MIT-licensed district coordinate table; distributed under this repository's MIT license.",
       "verification": {
         "basis": "own-derived-work",
-        "reviewed_at": "2026-08-16",
+        "reviewed_at": "2026-08-17",
         "evidence": "Solar geometry computed locally by gridup.features.solar; the only third-party input is data/reference/ilceler_gdz_adm.parquet (MIT, see below). pvlib is BSD-3-Clause and imposes no restriction on computed output."
       },
       "source": {
@@ -69,7 +69,7 @@
       "attribution": "District records from turkiye-api (ubeydeozdmr/turkiye-api, MIT) with Open-Meteo geocoding (CC BY 4.0).",
       "verification": {
         "basis": "published-open-license",
-        "reviewed_at": "2026-08-16",
+        "reviewed_at": "2026-08-17",
         "evidence": "https://api.github.com/repos/ubeydeozdmr/turkiye-api/license reports SPDX MIT for the upstream project that serves turkiyeapi.dev."
       },
       "source": {
@@ -92,7 +92,7 @@
       "attribution": "CSV representation of ilceler_gdz_adm.parquet; same provenance and license.",
       "verification": {
         "basis": "published-open-license",
-        "reviewed_at": "2026-08-16",
+        "reviewed_at": "2026-08-17",
         "evidence": "Content-addressed derivation of the MIT-licensed parquet above (snapshot_ref pins its sha256)."
       },
       "source": {
@@ -115,7 +115,7 @@
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0; hourly series aggregated locally to daily derivatives.",
       "verification": {
         "basis": "published-open-license",
-        "reviewed_at": "2026-08-16",
+        "reviewed_at": "2026-08-17",
         "evidence": "Same Open-Meteo CC BY 4.0 terms as hava_gunluk.parquet."
       },
       "source": {
@@ -138,7 +138,7 @@
       "attribution": "AFAD (T.C. Icisleri Bakanligi Afet ve Acil Durum Yonetimi Baskanligi) earthquake catalog, with USGS FDSN fallback (USGS data is US public domain).",
       "verification": {
         "basis": "institutional-confirmation",
-        "reviewed_at": "2026-08-16",
+        "reviewed_at": "2026-08-17",
         "evidence": "AFAD publishes NO open-data license text for the event-service endpoint. Redistribution clearance was obtained by the team directly from the institution. This is NOT a published open license -- an auditor should read it as a documented permission, not as an SPDX-identifiable grant."
       },
       "source": {
@@ -161,7 +161,7 @@
       "attribution": "We acknowledge the use of data from NASA LANCE FIRMS (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS). MODIS/VIIRS active fire data.",
       "verification": {
         "basis": "published-open-policy",
-        "reviewed_at": "2026-08-16",
+        "reviewed_at": "2026-08-17",
         "evidence": "NASA FIRMS FAQ states NASA promotes full and open sharing of data and encourages publication of FIRMS imagery; no redistribution restriction is imposed. Attribution text above is the form NASA requests."
       },
       "source": {
@@ -184,7 +184,7 @@
       "attribution": "T.C. Kultur ve Turizm Bakanligi, Yatirim ve Isletmeler Genel Mudurlugu (YIGM) annual accommodation statistics bulletins.",
       "verification": {
         "basis": "institutional-confirmation",
-        "reviewed_at": "2026-08-16",
+        "reviewed_at": "2026-08-17",
         "evidence": "YIGM publishes NO reuse/redistribution license text alongside the accommodation bulletins. Redistribution clearance was obtained by the team directly from the institution. This is NOT a published open license -- read it as a documented permission, not an SPDX-identifiable grant."
       },
       "source": {

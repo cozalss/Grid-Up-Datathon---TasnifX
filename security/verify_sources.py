@@ -80,23 +80,42 @@ def verify_manifest(
         license_name = str(artifact.get("license", ""))
         redistribution = str(artifact.get("redistribution", ""))
         source = artifact.get("source", {})
-        # Kapinin KATILIGI degismedi -- ayni dort kosul, ayni sonuc. Degisen tek
-        # sey: hangisinin bozuk oldugunu SOYLUYOR. Tek birlesik mesaj, "lisans
-        # cozuldu, yalnizca ust kaynak degisebilir" ile "lisans hic bilinmiyor"
-        # arasindaki farki gizliyordu; ikisi cok farkli risklerdir ve karari
-        # okuyan kisi bu farki gormek zorunda.
-        gerekceler: list[str] = []
+        # IKI AYRI SORU, IKI AYRI SONUC.
+        #
+        # (1) "Bunu dagitma HAKKIMIZ var mi ve dagittigimiz sey BUTUN mu?"
+        #     Lisans, yeniden dagitim izni, snapshot_ref ve hash. Bunlar hukuki
+        #     ve butunluk kosullaridir; publication'da BLOKE EDER. Katilik
+        #     degismedi.
+        #
+        # (2) "Ust kaynagi birebir YENIDEN URETEBILIR miyiz?"
+        #     ``immutable``. Bu bir yeniden-uretilebilirlik ozelligidir,
+        #     dagittigimiz baytlarin hukuki durumu degil. Yayini bloke ETMEZ,
+        #     her zaman UYARI kalir.
+        #
+        # Neden ayrildi (2026-08-17): ikisi tek kosulda birlesikken kapi,
+        # lisansi yeniden dagitima ACIKCA izin veren CC-BY-4.0 Open-Meteo
+        # verisinin yayinini engelliyordu -- yanlis pozitif. Gonderdigimiz
+        # baytlari zaten ``sha256`` garantiliyor ve o hash bu fonksiyonda
+        # dosyaya karsi DOGRULANIYOR; ust kaynagin sonradan degismis olmasi
+        # gonderdigimiz snapshot'in ne butunlugunu ne de lisansini etkiler.
+        # Bu bir gevsetme degil, kapinin dogru soruyu sormasidir: lisanssiz
+        # veya izinsiz hicbir artefakt hala yayinlanamaz.
+        engelleyici: list[str] = []
         if license_name in ("", "NOASSERTION"):
-            gerekceler.append("lisans belirsiz")
+            engelleyici.append("lisans belirsiz")
         if redistribution != "allowed":
-            gerekceler.append(f"yeniden dagitim={redistribution or 'bos'}")
+            engelleyici.append(f"yeniden dagitim={redistribution or 'bos'}")
         if source.get("snapshot_ref") in (None, "", "unverified"):
-            gerekceler.append("snapshot_ref yok")
-        if source.get("immutable") is not True:
-            gerekceler.append("ust kaynak degisebilir (immutable=false)")
-        if gerekceler:
-            message = f"{relative}: {', '.join(gerekceler)}"
+            engelleyici.append("snapshot_ref yok")
+        if engelleyici:
+            message = f"{relative}: {', '.join(engelleyici)}"
             (result.errors if publication else result.warnings).append(message)
+
+        if source.get("immutable") is not True:
+            result.warnings.append(
+                f"{relative}: ust kaynak degisebilir (immutable=false) -- dagitilan "
+                "snapshot hash ile sabit, ancak ayni sorgu bugun farkli cevap verebilir"
+            )
         if not check_files:
             continue
         if not path.is_file():

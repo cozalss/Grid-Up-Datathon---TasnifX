@@ -42,7 +42,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -233,6 +235,108 @@ def _kos(komut: list[str], *, aciklama: str) -> subprocess.CompletedProcess[str]
         print(f"  HATA ({aciklama}):")
         print("   ", (sonuc.stderr or sonuc.stdout or "")[:800])
     return sonuc
+
+
+#: Kaggle CLI'nin basarisizken bile stdout'a yazip cikis kodu 0 dondurdugu
+#: metinler. Cikis koduna guvenmek OLCULDU ve yaniltti: mevcut bir dataset'te
+#: ``datasets create`` "dataset already exists" yazip 0 ile cikiyor.
+_KAGGLE_HATA_IZLERI = ("already exists", "error", "not found", "403", "401", "traceback")
+
+
+def _kaggle_ciktisi_basarili(sonuc: subprocess.CompletedProcess[str]) -> bool:
+    """Cikis kodu VE cikti metni birlikte degerlendirilir."""
+    if sonuc.returncode != 0:
+        return False
+    metin = ((sonuc.stdout or "") + (sonuc.stderr or "")).lower()
+    return not any(iz in metin for iz in _KAGGLE_HATA_IZLERI)
+
+
+def _kaggle_son_guncelleme(ref: str) -> str | None:
+    """Dataset'in Kaggle'daki ``lastUpdated`` degeri; bulunamazsa ``None``."""
+    sonuc = subprocess.run(
+        ["kaggle", "datasets", "list", "-m", "-s", ref.rsplit("/", maxsplit=1)[-1]],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        cwd=ROOT,
+        check=False,
+    )
+    for satir in (sonuc.stdout or "").splitlines():
+        if satir.startswith(ref):
+            parcalar = satir.split()
+            # ref title... size lastUpdated(tarih saat) indirme oy puan
+            return " ".join(parcalar[-5:-3]) if len(parcalar) >= 5 else None
+    return None
+
+
+def _kaggle_yayinla() -> bool:
+    """Dataset'i olusturur ya da SURUMLER; sonucu Kaggle'a SORARAK dogrular.
+
+    Onceki hali ``datasets create``in donus kodunu basari sayiyordu. Kaggle CLI
+    mevcut bir dataset'te "dataset already exists" yazip yine de 0 ile cikiyor;
+    bu yuzden ``version`` yedegine hic dusulmuyor ve betik "OK" basarken
+    dataset GUNCELLENMEMIS kaliyordu. Yarisma gunu internetsiz notebook'un eski
+    wheel'i kurmasi demektir bu -- tam olarak bu deponun her yerde kacindigi
+    sessiz basarisizlik bicimi.
+    """
+    kimlik = json.loads((CIKTI / "dataset-metadata.json").read_text(encoding="utf-8"))
+    ref = str(kimlik["id"])
+    onceki = _kaggle_son_guncelleme(ref)
+    mevcut = onceki is not None
+    print(
+        f"  dataset {'VAR' if mevcut else 'YOK'}: {ref}" + (f" (son: {onceki})" if onceki else "")
+    )
+
+    if mevcut:
+        sonuc = _kos(
+            [
+                "kaggle",
+                "datasets",
+                "version",
+                "-p",
+                str(CIKTI),
+                "-m",
+                f"dogrulanmis guncelleme {datetime.now(timezone.utc):%Y-%m-%d %H:%M}",
+                "--dir-mode",
+                "zip",
+            ],
+            aciklama="dataset surumleme",
+        )
+    else:
+        sonuc = _kos(
+            ["kaggle", "datasets", "create", "-p", str(CIKTI), "--dir-mode", "zip"],
+            aciklama="dataset olusturma",
+        )
+
+    if not _kaggle_ciktisi_basarili(sonuc):
+        print("  HATA: Kaggle yukleme basarisiz.")
+        print("   ", ((sonuc.stdout or "") + (sonuc.stderr or ""))[:600])
+        return False
+
+    # Kaggle surum olusturmayi ASENKRON isler: komut doner, dataset birkac
+    # saniye sonra guncellenir. Bu yuzden ANINDA lastUpdated karsilastirmasi
+    # yanlis negatif verir (olculdu). Once Kaggle'in kendi kabul cumlesini
+    # arariz, sonra kisa sure yoklariz.
+    kabul = "being created" in ((sonuc.stdout or "") + (sonuc.stderr or "")).lower()
+    if not kabul:
+        print("  HATA: Kaggle yuklemeyi kabul ettigini bildirmedi.")
+        print("   ", ((sonuc.stdout or "") + (sonuc.stderr or ""))[-600:])
+        return False
+
+    for _ in range(12):  # ~60 sn
+        sonraki = _kaggle_son_guncelleme(ref)
+        if not mevcut or sonraki != onceki:
+            print(f"  OK. Dataset guncellendi (lastUpdated: {sonraki}).")
+            print("      Notebook'ta 'Add Input' ile bagla.")
+            return True
+        time.sleep(5)
+
+    print(
+        "  UYARI: Kaggle yuklemeyi KABUL ETTI ama 60 sn icinde yeni surum gorunmedi.\n"
+        f"         Bu normal olabilir (asenkron isleme). ELLE DOGRULA:\n"
+        f"         https://www.kaggle.com/datasets/{ref}"
+    )
+    return True
 
 
 def wheel_uret() -> Path | None:
@@ -503,31 +607,8 @@ def main() -> int:
             )
         yayin_kapisini_dogrula()
         print("\nKaggle'a yukleniyor...")
-        sonuc = _kos(
-            ["kaggle", "datasets", "create", "-p", str(CIKTI), "--dir-mode", "zip"],
-            aciklama="dataset olusturma",
-        )
-        if sonuc.returncode == 0:
-            print("  OK. Notebook'ta 'Add Input' ile bagla.")
-        else:
-            print("  Dataset olusturulamadi; ayni dogrulanmis paket surumleniyor...")
-            guncelleme = _kos(
-                [
-                    "kaggle",
-                    "datasets",
-                    "version",
-                    "-p",
-                    str(CIKTI),
-                    "-m",
-                    "dogrulanmis guncelleme",
-                    "--dir-mode",
-                    "zip",
-                ],
-                aciklama="dataset guncelleme",
-            )
-            if guncelleme.returncode != 0:
-                print("  HATA: Kaggle create ve version islemleri basarisiz.")
-                return 1
+        if not _kaggle_yayinla():
+            return 1
     else:
         print("\nYUKLEME: Tum yayin kapilari icin betigi --wheels --upload ile yeniden calistir.")
         print("\nSonra notebook'un ilk hucresine notebook_bootstrap.py icerigini yapistir.")

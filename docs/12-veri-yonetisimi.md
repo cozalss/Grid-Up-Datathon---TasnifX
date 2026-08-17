@@ -111,7 +111,7 @@ provenance kaydini korur. Bu belge yeni kaynak eklendiginde, yarisma kosullari
 degistiginde, bir veri olayi sonrasinda veya en gec proje kapanisinda yeniden
 gozden gecirilir.
 
-## Lisans ve yeniden dagitim incelemesi (16 Agustos 2026)
+## Lisans ve yeniden dagitim incelemesi (17 Agustos 2026)
 
 Sekiz harici artefaktin tamami tek oturumda incelendi. Sonuclar
 `data/sources.yml` icine `verification` alani olarak yazildi; `security/
@@ -145,7 +145,7 @@ degisebilen bir kaynagin hash ile sabitlenmis bir anlik goruntusudur. Etiketi
 Uyariyi durustce kapatmanin tek yolu ham cevabi arsivleyip `snapshot_ref`i o
 arsive baglamaktir. Yarisma penceresinde bu yapilmadi; karar bilincli.
 
-Uyari metni 16 Agustos'ta kesinlestirildi: onceden dort farkli kosul tek bir
+Uyari metni 17 Agustos'ta kesinlestirildi: onceden dort farkli kosul tek bir
 "lisans/yeniden dagitim/immutable incelemesi acik" mesajina dusuyordu ve
 "lisans hic bilinmiyor" ile "lisans tamam, yalnizca ust kaynak degisebilir"
 ayirt edilemiyordu. Kapinin katiligi aynidir; yalnizca hangi kosulun bozuk

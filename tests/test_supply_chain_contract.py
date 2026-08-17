@@ -111,7 +111,7 @@ def test_defence_in_depth_and_neural_workflows_are_explicit() -> None:
 def test_yarisma_penceresinde_otomatik_tetikleyici_yok() -> None:
     """Yarisma boyunca (21 Agustos - 1 Eylul) kendiliginden kosan is OLMAMALI.
 
-    2026-08-16 karari: ``dependabot.yml`` silindi (haftalik bagimlilik PR'lari)
+    2026-08-17 karari: ``dependabot.yml`` silindi (haftalik bagimlilik PR'lari)
     ve ``neural.yml``in haftalik cron'u kaldirildi. Gerekce, gurultunun kendisi
     degil dikkat maliyetidir: yarisma penceresinde acilan her otomatik PR ve
     her pazartesi sabahi dusen kirmizi/yesil bildirim, hicbir kapiyi
@@ -385,3 +385,66 @@ def test_repository_source_manifest_hashes_and_schemas_are_valid():
 
     assert result.checked_artifacts >= 8
     assert not result.errors
+
+
+def _manifest_yaz(tmp_path, artefakt: dict) -> Path:
+    """Tek artefaktlik gecici manifest.
+
+    ``check_files=False`` ile kullanilir: burada olculen sey lisans/immutable
+    KARAR MANTIGI, dosya semasi degil. Hash gecerliligi kontrolu zaten
+    ``check_files``tan bagimsiz calisir, o yuzden gecerli bir digest veriyoruz.
+    """
+    manifest = tmp_path / "sources.yml"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "artifacts": [{"path": "artefakt.bin", "sha256": "0" * 64, **artefakt}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return manifest
+
+
+def test_yayin_kapisi_lisanssiz_artefakti_hala_reddeder(tmp_path) -> None:
+    """Kapinin HUKUKI katiligi degismedi: lisans/izin eksikse yayin BLOKE."""
+    from security.verify_sources import verify_manifest
+
+    for bozuk in (
+        {"license": "NOASSERTION", "redistribution": "allowed"},
+        {"license": "MIT", "redistribution": "unverified"},
+    ):
+        manifest = _manifest_yaz(
+            tmp_path,
+            {**bozuk, "source": {"snapshot_ref": "x", "immutable": True}},
+        )
+        sonuc = verify_manifest(manifest, root=tmp_path, publication=True, check_files=False)
+        assert sonuc.errors, f"Yayin kapisi bunu reddetmeliydi: {bozuk}"
+
+
+def test_yayin_kapisi_degisebilir_ust_kaynagi_bloke_etmez(tmp_path) -> None:
+    """``immutable=false`` tek basina yayini engellememelidir -- UYARI kalir.
+
+    2026-08-17 karari. Bu kosul bir YENIDEN URETILEBILIRLIK ozelligidir,
+    dagitilan baytlarin hukuki durumu degil: ``sha256`` gonderdigimiz snapshot'i
+    zaten sabitliyor ve ayni fonksiyonda dosyaya karsi dogrulaniyor. Birlesik
+    haldeyken kapi, lisansi yeniden dagitima ACIKCA izin veren CC-BY-4.0
+    Open-Meteo verisinin yayinini engelliyordu -- yanlis pozitif.
+    """
+    from security.verify_sources import verify_manifest
+
+    manifest = _manifest_yaz(
+        tmp_path,
+        {
+            "license": "CC-BY-4.0",
+            "redistribution": "allowed",
+            "source": {"snapshot_ref": "2020..2026", "immutable": False},
+        },
+    )
+    sonuc = verify_manifest(manifest, root=tmp_path, publication=True, check_files=False)
+
+    assert not sonuc.errors, f"immutable=false tek basina yayini bloke etmemeli: {sonuc.errors}"
+    assert any("immutable=false" in u for u in sonuc.warnings), (
+        "Uyari KAYBOLMAMALI -- bilgi korunmali, yalnizca bloke etmemeli."
+    )

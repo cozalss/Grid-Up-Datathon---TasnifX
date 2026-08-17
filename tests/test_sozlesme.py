@@ -419,7 +419,7 @@ HEDEF_MODULLERI = (
     "neural",
     "metrics",
     "weighting",
-    # 2026-08-16: ``pipeline`` bu listeye SONRADAN eklendi. Modul
+    # 2026-08-17: ``pipeline`` bu listeye SONRADAN eklendi. Modul
     # ``gridup.features.*`` agacinin DISINDA dogdugu icin kendiliginden buyuyen
     # tarama ona ulasmiyordu: ``build_paired_history_features`` ve
     # ``build_paired_distribution_features`` hedef parametresi alip fold almadigi

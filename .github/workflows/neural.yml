@@ -1,6 +1,6 @@
 name: Optional neural validation
 
-# Yalnizca ELLE tetiklenir. Haftalik cron ("17 2 * * 1") 2026-08-16'da
+# Yalnizca ELLE tetiklenir. Haftalik cron ("17 2 * * 1") 2026-08-17'da
 # kaldirildi.
 #
 # OLCUM: ci.yml ``--extra full`` kuruyor ve ``full`` torch ICERMEZ, dolayisiyla
