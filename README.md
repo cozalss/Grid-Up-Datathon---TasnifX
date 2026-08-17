@@ -15,10 +15,10 @@ dersler var.
 
 | | |
 |---|---|
-| Kod | **18.073 satır** · 43 modül · test tarafı 16.179 satır |
-| Test | **1135 test** toplanıyor · ruff check + format, mypy temiz |
+| Kod | **18.358 satır** · 44 modül · test tarafı 16.506 satır |
+| Test | **1160 test** toplanıyor · ruff check + format, mypy temiz |
 | Uçtan uca kanıt | `full_pipeline.py` 21/21 · `smoke_test.py` · `day_one.py` submission üretiyor |
-| Harici veri | 96 ilçe hava (günlük + saatlik türev: basınç, eşik-üstü rüzgâr) · güneş · deprem (AFAD) · yangın (FIRMS) · turizm gecelemesi (KTB) · Türkiye tüketim+üretim · 96 ilçe referans |
+| Harici veri | 96 ilçe hava (günlük + saatlik türev: basınç, eşik-üstü rüzgâr) · güneş · deprem (AFAD) · yangın (FIRMS) · turizm gecelemesi (KTB, yıllık ilçe + aylık il) · Türkiye tüketim+üretim · 96 ilçe referans |
 | Kaggle offline | [`cemzal/gridup-offline-paket`](https://www.kaggle.com/datasets/cemzal/gridup-offline-paket) — internet kapalı notebook için |
 | İstihbarat | 2023 birincisinin çözümü, 558 satır forum dökümü, **2024 birincisi Pikachow'un final sunumu** (29 slayt) + 2024–26 Kaggle meta taraması ([docs/08](docs/08-gdz-2024-birincisi-ve-2026-meta.md)) |
 
@@ -220,7 +220,7 @@ docs/
   06-teknik-tuzaklar.md          bilinen tuzaklar
   07-veri-gunu-kontrol-listesi.md saat saat veri günü planı
 
-tests/    1135 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
+tests/    1160 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
 ```
 
 ---

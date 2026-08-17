@@ -70,6 +70,7 @@ VERI_DOSYALARI = (
     "data/external/depremler.parquet",  # AFAD M>=4 Ege katalogu
     "data/external/yanginlar.parquet",  # NASA FIRMS sicak-nokta tespitleri
     "data/external/turizm_geceleme.parquet",  # KTB ilce konaklama 2023-25
+    "data/external/turizm_aylik_il.parquet",  # KTB il x ay konaklama 2019-01..2026-06
 )
 
 #: Kaggle imajinda OLMAYAN, bizim kullandigimiz paketler. Bunlarin wheel'ini

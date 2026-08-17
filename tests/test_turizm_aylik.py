@@ -1,0 +1,311 @@
+"""KTB AYLIK turizm cekicisi ve aylik feature katmani testleri.
+
+Iki soru:
+  1. ``fetch_turizm_aylik.il_tablosu`` bultenin donemini ICERIKTEN dogruluyor
+     ve kapsam degisikligini (2022 Kasim) etiketliyor mu?
+  2. ``add_monthly_attribute`` yayimlanmamis ayi panele sokabiliyor mu?
+     (lag < 2 reddedilmeli; lag 12 gecen yilin ayni ayini vermeli.)
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from gridup.features.tourism import (
+    MIN_LAG_MONTHS,
+    add_monthly_attribute,
+    district_monthly_estimate,
+)
+
+KOK = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(KOK / "src"))
+
+
+def _betik():
+    yol = KOK / "scripts" / "fetch_turizm_aylik.py"
+    spec = importlib.util.spec_from_file_location("fetch_turizm_aylik", yol)
+    modul = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(modul)
+    return modul
+
+
+ILLER = ["Adana", "Aydın", "Muğla", "İzmir"]
+
+
+def _sahte_bulten(yol: Path, *, yil: int, ay: int, kapsam_basit: bool, il_sayisi: int = 81) -> None:
+    """KTB aylik bultenin sayfa yapisini birebir taklit eden xlsx yazar."""
+    ay_adlari = [
+        "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN",
+        "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK",
+    ]  # fmt: skip
+    baslik = (
+        "İŞLETME VE BASİT BELGELİ KONAKLAMA TESİSLERİNDE ..."
+        if kapsam_basit
+        else "TURİZM İŞLETME BELGELİ KONAKLAMA TESİSLERİNDE ..."
+    )
+    yil_sayfa = pd.DataFrame([[baslik, None, None], ["YILLAR", "TESİSE GELİŞ", "GECELEME"]]
+                             + [[str(y), 1, 2] for y in range(yil - 3, yil + 1)])  # fmt: skip
+    ay_sayfa = pd.DataFrame([[baslik, None, None], ["AYLAR", "TESİSE GELİŞ", "GECELEME"]]
+                            + [[ay_adlari[i], 1, 2] for i in range(ay)])  # fmt: skip
+
+    iller = ILLER + [f"Il{i}" for i in range(il_sayisi - len(ILLER))]
+    satirlar = [
+        [baslik] + [None] * 12,
+        [
+            "İLLER",
+            "TESİSE GELİŞ SAYISI",
+            None,
+            None,
+            "GECELEME",
+            None,
+            None,
+            "ORTALAMA KALIŞ",
+            None,
+            None,
+            "DOLULUK ORANI (%)",
+            None,
+            None,
+        ],  # fmt: skip
+        [None] + ["YABANCI", "YERLİ", "TOPLAM"] * 4,
+    ]
+    for sira, il in enumerate(iller, start=1):
+        satirlar.append([il, sira, sira * 2, sira * 3, sira * 10, sira * 20, sira * 30,
+                         1.5, 1.5, 1.5, 10.0, 20.0, 30.0])  # fmt: skip
+    satirlar.append(["TOPLAM"] + [999] * 12)
+    il_sayfa = pd.DataFrame(satirlar)
+
+    with pd.ExcelWriter(yol, engine="openpyxl") as yazici:
+        icindekiler = pd.DataFrame([["İçindekiler"]])
+        icindekiler.to_excel(yazici, sheet_name="İçindekiler", header=False, index=False)
+        yil_sayfa.to_excel(yazici, sheet_name="Geliş-Geceleme Yıl", header=False, index=False)
+        ay_sayfa.to_excel(yazici, sheet_name="Geliş-Geceleme Ay", header=False, index=False)
+        il_sayfa.to_excel(yazici, sheet_name="İl", header=False, index=False)
+
+
+# --------------------------------------------------------------------------
+# Cekici: il_tablosu
+# --------------------------------------------------------------------------
+
+
+def test_bulten_haritasi_2019_2026_bosluksuz() -> None:
+    """Yil-ay haritasi 2019-01'den son doneme kadar ATLAMASIZ olmali.
+
+    Eksik bir ay, lag-12 join'de o ay icin sessiz NaN uretir.
+    """
+    m = _betik()
+    donemler = sorted(m.BULTENLER)
+    beklenen = []
+    yil, ay = donemler[0]
+    while (yil, ay) <= donemler[-1]:
+        beklenen.append((yil, ay))
+        ay += 1
+        if ay > 12:
+            yil, ay = yil + 1, 1
+    assert donemler == beklenen, "Haritada atlanan ay var."
+    assert donemler[0] == (2019, 1)
+    assert len(set(m.BULTENLER.values())) == len(m.BULTENLER), "Ayni URL iki doneme atanmis."
+
+
+def test_il_tablosu_donemi_icerikten_dogrular(tmp_path: Path) -> None:
+    """Dosya adi ne derse desin, icerik farkli bir ay soyluyorsa reddedilmeli."""
+    m = _betik()
+    yol = tmp_path / "x.xlsx"
+    _sahte_bulten(yol, yil=2025, ay=7, kapsam_basit=True)
+    with pytest.raises(ValueError, match="beklenen donem 2025-06"):
+        m.il_tablosu(yol, 2025, 6)
+    with pytest.raises(ValueError, match="beklenen donem 2024-07"):
+        m.il_tablosu(yol, 2024, 7)
+
+
+def test_il_tablosu_sema_ve_kapsam(tmp_path: Path) -> None:
+    """81 il, TOPLAM disarida, kapsam etiketi basliktan, degerler dogru kolondan."""
+    m = _betik()
+    eski = tmp_path / "eski.xlsx"
+    yeni = tmp_path / "yeni.xlsx"
+    _sahte_bulten(eski, yil=2022, ay=10, kapsam_basit=False)
+    _sahte_bulten(yeni, yil=2022, ay=11, kapsam_basit=True)
+
+    t_eski = m.il_tablosu(eski, 2022, 10)
+    t_yeni = m.il_tablosu(yeni, 2022, 11)
+    assert list(t_eski.columns) == m.CIKTI_KOLONLARI
+    assert len(t_eski) == 81 and "toplam" not in set(t_eski["il_key"])
+    assert set(t_eski["kapsam"]) == {"isletme"}
+    assert set(t_yeni["kapsam"]) == {"isletme_basit"}
+
+    mugla = t_eski[t_eski["il_key"] == "mugla"].iloc[0]
+    sira = ILLER.index("Muğla") + 1
+    assert mugla["gelis"] == sira * 3
+    assert mugla["geceleme_yabanci"] == sira * 10
+    assert mugla["geceleme"] == sira * 30
+    assert mugla["doluluk"] == 30.0
+    # Turkce anahtar: "İzmir" -> "izmir", "Aydın" -> "aydin"
+    assert {"izmir", "aydin"} <= set(t_eski["il_key"])
+
+
+def test_il_tablosu_eksik_il_reddedilir(tmp_path: Path) -> None:
+    """80 il = yapi degismis; sessizce kabul edilmez."""
+    m = _betik()
+    yol = tmp_path / "eksik.xlsx"
+    _sahte_bulten(yol, yil=2024, ay=3, kapsam_basit=True, il_sayisi=80)
+    with pytest.raises(ValueError, match="80 il satiri"):
+        m.il_tablosu(yol, 2024, 3)
+
+
+# --------------------------------------------------------------------------
+# Feature: add_monthly_attribute
+# --------------------------------------------------------------------------
+
+
+def _aylik(yillar=(2025, 2026), iller=("mugla", "denizli")) -> pd.DataFrame:
+    satirlar = []
+    for il in iller:
+        for yil in yillar:
+            for ay in range(1, 13):
+                deger = 1000.0 * ay if il == "mugla" else 100.0
+                satirlar.append({"il_key": il, "yil": yil, "ay": ay, "geceleme": deger + yil})
+    return pd.DataFrame(satirlar)
+
+
+def _panel() -> pd.DataFrame:
+    gunler = pd.date_range("2026-01-01", "2026-12-31", freq="MS") + pd.Timedelta(days=14)
+    return pd.DataFrame(
+        [(il, g) for il in ("mugla", "denizli") for g in gunler], columns=["il_key", "tarih"]
+    )
+
+
+@pytest.mark.parametrize("lag", [0, 1, -3])
+def test_yayin_gecikmesi_altindaki_lag_reddedilir(lag: int) -> None:
+    """lag 0/1 = henuz yayimlanmamis ay; sessiz kabul sizintidir."""
+    with pytest.raises(ValueError, match="yayin gecikmesinin altinda"):
+        add_monthly_attribute(
+            _panel(), _aylik(), key_column="il_key", time_column="tarih",
+            value_columns=["geceleme"], lag_months=lag,
+        )  # fmt: skip
+    assert MIN_LAG_MONTHS == 2
+
+
+def test_lag_12_gecen_yilin_ayni_ayini_verir() -> None:
+    """2026-07 satiri 2025-07 degerini gormeli; 2026 degerlerinin hicbiri sizmamali."""
+    sonuc = add_monthly_attribute(
+        _panel(), _aylik(), key_column="il_key", time_column="tarih",
+        value_columns=["geceleme"], lag_months=12, prefix="turizm",
+    )  # fmt: skip
+    mugla_temmuz = sonuc[(sonuc["il_key"] == "mugla") & (sonuc["tarih"].dt.month == 7)]
+    assert mugla_temmuz["turizm_geceleme"].tolist() == [7000.0 + 2025]
+    # 2026 kaynakli deger (…+2026) hicbir satirda olmamali
+    assert not (sonuc["turizm_geceleme"] % 10 == 6).any(), "SIZINTI: 2026 verisi kullanilmis."
+    assert sonuc["turizm_geceleme"].notna().all()
+
+
+def test_lag_2_iki_ay_geriyi_verir() -> None:
+    """lag 2: 2026-03 satiri 2026-01 degerini gormeli."""
+    sonuc = add_monthly_attribute(
+        _panel(), _aylik(), key_column="il_key", time_column="tarih",
+        value_columns=["geceleme"], lag_months=2, add_year_share=False,
+    )  # fmt: skip
+    mart = sonuc[(sonuc["il_key"] == "mugla") & (sonuc["tarih"].dt.month == 3)]
+    assert mart["aylik_geceleme"].tolist() == [1000.0 + 2026]
+    ocak = sonuc[(sonuc["il_key"] == "mugla") & (sonuc["tarih"].dt.month == 1)]
+    assert ocak["aylik_geceleme"].tolist() == [11000.0 + 2025]  # 2025-11
+
+
+def test_yil_payi_kapsamdan_bagimsiz_ve_bire_toplanir() -> None:
+    """Ay payi kaynak yilin 12 ayina bolunur; il icinde 12 ay toplami 1'dir."""
+    sonuc = add_monthly_attribute(
+        _panel(), _aylik(), key_column="il_key", time_column="tarih",
+        value_columns=["geceleme"], lag_months=12,
+    )  # fmt: skip
+    for il in ("mugla", "denizli"):
+        paylar = sonuc.loc[sonuc["il_key"] == il, "aylik_geceleme_yil_payi"]
+        assert np.isclose(paylar.sum(), 1.0), f"{il}: paylar {paylar.sum()} topluyor."
+    # Denizli duz profil: her ay ~1/12; Mugla Temmuz payi Ocak'in ~7 kati
+    denizli = sonuc.loc[sonuc["il_key"] == "denizli", "aylik_geceleme_yil_payi"]
+    assert np.allclose(denizli, 1 / 12, atol=1e-3)
+
+
+def test_yil_payi_eksik_yilda_nan() -> None:
+    """Kaynak yilin 12 ayi yoksa pay HESAPLANMAZ (yanlis payda ile oran uretilmez)."""
+    aylik = _aylik(yillar=(2025,))
+    aylik = aylik[~((aylik["yil"] == 2025) & (aylik["ay"] == 12))]  # Aralik eksik
+    sonuc = add_monthly_attribute(
+        _panel(), aylik, key_column="il_key", time_column="tarih",
+        value_columns=["geceleme"], lag_months=12,
+    )  # fmt: skip
+    assert sonuc["aylik_geceleme_yil_payi"].isna().all()
+    # Ham deger yine de baglanmali (Aralik disinda)
+    assert sonuc["aylik_geceleme"].notna().sum() == 2 * 11
+
+
+def test_add_monthly_attribute_girdiyi_degistirmez() -> None:
+    panel, aylik = _panel(), _aylik()
+    p_kopya, a_kopya = panel.copy(), aylik.copy()
+    add_monthly_attribute(
+        panel, aylik, key_column="il_key", time_column="tarih", value_columns=["geceleme"]
+    )
+    pd.testing.assert_frame_equal(panel, p_kopya)
+    pd.testing.assert_frame_equal(aylik, a_kopya)
+
+
+# --------------------------------------------------------------------------
+# Feature: district_monthly_estimate
+# --------------------------------------------------------------------------
+
+
+def test_ilce_ay_tahmini_pay_carpi_il_aylik() -> None:
+    """Bodrum il gecelemesinin %60'iysa, her ayda il aylik x 0.6 almali."""
+    yillik = pd.DataFrame(
+        {
+            "ilce_key": ["bodrum", "menteşe", "pamukkale"],
+            "il_key": ["mugla", "mugla", "denizli"],
+            "yil": [2025, 2025, 2025],
+            "geceleme": [600.0, 400.0, 50.0],
+        }
+    )
+    aylik = _aylik(yillar=(2025, 2026))
+    tahmin = district_monthly_estimate(yillik, aylik)
+
+    assert set(tahmin["yil"]) == {2025}, "Yalnizca ortak yil uretilmeli."
+    bodrum = tahmin[tahmin["ilce_key"] == "bodrum"].set_index("ay")
+    assert len(bodrum) == 12
+    assert np.isclose(bodrum.loc[7, "ilce_il_payi"], 0.6)
+    assert np.isclose(bodrum.loc[7, "geceleme_tahmini"], 0.6 * (7000.0 + 2025))
+    pamukkale = tahmin[tahmin["ilce_key"] == "pamukkale"]
+    assert np.allclose(pamukkale["ilce_il_payi"], 1.0)
+    assert list(tahmin.columns) == [
+        "ilce_key", "il_key", "yil", "ay", "geceleme_tahmini", "ilce_il_payi",
+    ]  # fmt: skip
+
+
+def test_ilce_ay_tahmini_ortak_yil_yoksa_hata() -> None:
+    yillik = pd.DataFrame(
+        {"ilce_key": ["bodrum"], "il_key": ["mugla"], "yil": [2019], "geceleme": [1.0]}
+    )
+    with pytest.raises(ValueError, match="ortak yil yok"):
+        district_monthly_estimate(yillik, _aylik(yillar=(2025,)))
+
+
+def test_ilce_ay_tahmini_lag12_ile_panele_baglanir() -> None:
+    """Tahmin tablosu ``add_monthly_attribute`` ile ilce anahtarindan baglanabilmeli."""
+    yillik = pd.DataFrame(
+        {"ilce_key": ["bodrum", "menteşe"], "il_key": ["mugla", "mugla"],
+         "yil": [2025, 2025], "geceleme": [600.0, 400.0]}
+    )  # fmt: skip
+    tahmin = district_monthly_estimate(yillik, _aylik(yillar=(2025,)))
+    panel = pd.DataFrame(
+        {"ilce_key": ["bodrum", "bodrum"], "tarih": pd.to_datetime(["2026-07-15", "2026-01-03"])}
+    )
+    sonuc = add_monthly_attribute(
+        panel, tahmin, key_column="ilce_key", time_column="tarih",
+        value_columns=["geceleme_tahmini"], lag_months=12, prefix="turizm",
+    )  # fmt: skip
+    assert np.isclose(sonuc.loc[0, "turizm_geceleme_tahmini"], 0.6 * (7000.0 + 2025))
+    assert np.isclose(sonuc.loc[1, "turizm_geceleme_tahmini"], 0.6 * (1000.0 + 2025))
+    paylar = sonuc["turizm_geceleme_tahmini_yil_payi"]
+    assert np.isclose(paylar.iloc[0] / paylar.iloc[1], (7000.0 + 2025) / (1000.0 + 2025))

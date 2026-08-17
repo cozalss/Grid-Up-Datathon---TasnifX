@@ -30,6 +30,7 @@ from .demografi import epdk_bolge_sinifi
 from .national import (
     add_annual_district_attribute,
     add_national_series,
+    add_seasonal_district_profile,
     daily_from_hourly,
 )
 from .outage_reason import add_reason_features, classify_reason, reason_family_report
@@ -55,6 +56,7 @@ from .temporal import (
     add_upcoming_holiday_features,
     shared_origin,
 )
+from .tourism import add_monthly_attribute, district_monthly_estimate
 from .weather import (
     add_consecutive_extreme_days,
     add_physical_derivatives,
@@ -70,7 +72,10 @@ __all__ = [
     "daily_point_intensity",
     "add_national_series",
     "add_annual_district_attribute",
+    "add_seasonal_district_profile",
     "daily_from_hourly",
+    "add_monthly_attribute",
+    "district_monthly_estimate",
     "add_calendar_features",
     "add_cyclical_features",
     "add_turkish_holiday_features",

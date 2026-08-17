@@ -196,6 +196,22 @@ SENARYOLAR: dict[str, tuple[str, object]] = {
             prefix="turizm",
         ),
     ),
+    "add_seasonal_district_profile": (
+        "national",
+        lambda m, f: m.add_seasonal_district_profile(
+            f,
+            pd.DataFrame(
+                {
+                    "yer": [y for y in KOORDINATLAR for _ in range(12)],
+                    "ay": list(range(1, 13)) * len(KOORDINATLAR),
+                    "su_ay_endeksi": [1.0 + 0.05 * a for _ in KOORDINATLAR for a in range(12)],
+                }
+            ),
+            key_column="yer",
+            time_column="tarih",
+            prefix="mevsim",
+        ),
+    ),
     # --- temporal ---
     "add_calendar_features": ("temporal", lambda m, f: m.add_calendar_features(f, "tarih")),
     "add_cyclical_features": (

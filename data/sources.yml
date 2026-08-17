@@ -249,6 +249,34 @@
           "tesise_gelis"
         ]
       }
+    },
+    {
+      "path": "data/external/izsu_su_profili.parquet",
+      "sha256": "32e8a168f024b057e6557a022928600dda2c5a97b7a0992eba744b25df6976b3",
+      "license": "CC-BY-4.0",
+      "redistribution": "allowed",
+      "attribution": "Izmir Buyuksehir Belediyesi Acik Veri Portali (IZSU) -- ilce/mahalle bazli su tuketimi, Izmir Metropolitan Municipality Open Data License (CC BY 4.0).",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-17",
+        "evidence": "acikveri.bizizmir.com veri seti sayfasi lisansi Izmir Buyuksehir Belediyesi Acik Veri Lisansi olarak veriyor ve bu lisans CC BY 4.0 uzerine kuruludur; indirme kayit gerektirmiyor."
+      },
+      "source": {
+        "uri": "https://openfiles.izmir.bel.tr/309436/docs/izsu-yillik-ilce-mahalle-su-tuketimi.csv",
+        "snapshot_ref": "2014-01..2024-09 konut abonesi; ilce x ay mevsimsel profile indirgendi",
+        "retrieved_at": "2026-08-17",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 300,
+        "required_columns": [
+          "ilce_key",
+          "ay",
+          "su_ay_endeksi",
+          "su_yaz_kis"
+        ]
+      }
     }
   ]
 }

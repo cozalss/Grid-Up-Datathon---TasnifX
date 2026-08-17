@@ -17,15 +17,20 @@ kolonlar: tesise gelis / geceleme / ortalama kalis / doluluk, her biri
 yabanci-yerli-toplam. Yapi 2019-01'den 2026-06'ya kadar AYNI (olculdu:
 7 farkli yil/ay ornegi, 85 x 13 hucre, ayni baslik dizilimi).
 
-IKI TUZAK (olculdu, 2026-08-17)
--------------------------------
+UC TUZAK (olculdu, 2026-08-17)
+------------------------------
 1. **Kapsam degisikligi.** 2022 Ekim'e kadar bultenler yalnizca "Turizm
    Isletme Belgeli" tesisleri kapsar; 2022 Kasim'dan itibaren "Isletme VE
    Basit Belgeli" (belediye belgeli basit tesisler de dahil). Bu bir SEVIYE
    sicramasidir, turizm artisi degil. ``kapsam`` kolonu bunu tasir; yillar
    arasi karsilastirmada ay-payi gibi kapsamdan bagimsiz turevler tercih
    edilmelidir (feature katmani bunu uretir).
-2. **URL slug'lari tutarsiz.** "s-bat", "06", "yeni", "v2" gibi ekler var;
+   Ikinci, BASLIKSIZ bir genisleme daha var (olculdu, tam veriyle): 2025-07
+   itibariyla Turkiye toplam gecelemesi +%25, Mugla YERLI gecelemesi 3-4x
+   artarken DOLULUK ORANI sabit (%13 -> %15). Tesis sayisi artmis, turist
+   degil. Baslik degismedigi icin ``kapsam`` bunu etiketleyemez; yillar
+   arasi kiyasta kapsamdan bagimsiz tek olcu ``doluluk``tur.
+3. **URL slug'lari tutarsiz.** "s-bat", "06", "yeni", "v2" gibi ekler var;
    ay adini slug'dan cikarmak guvenilmez. Bu yuzden yil-ay -> URL haritasi
    SABIT kodlanmis ve her dosyanin ayi/yili dosyanin KENDI ICINDEKI
    "Gelis-Geceleme Ay/Yil" sayfalarindan dogrulanir. Uyusmazlik = hata.
@@ -225,7 +230,9 @@ def indir(yil: int, ay: int, eklenti: str) -> Path:
             if deneme < RETRIES:
                 time.sleep(REQUEST_PAUSE_S + 2**deneme)
     else:
-        raise RuntimeError(f"{yil}-{ay:02d} bulteni {RETRIES} denemede inmedi. Son hata: {son_hata}")
+        raise RuntimeError(
+            f"{yil}-{ay:02d} bulteni {RETRIES} denemede inmedi. Son hata: {son_hata}"
+        )
 
     if len(yanit.content) < MIN_BAYT:
         raise RuntimeError(
@@ -289,12 +296,12 @@ def il_tablosu(yol: Path, yil: int, ay: int) -> pd.DataFrame:
         ValueError: Donem uyusmazsa, baslik dizilimi degismisse veya il
             sayisi 81 degilse.
     """
-    kitap = pd.ExcelFile(yol)
-    okunan = dosya_donemi(kitap)
-    if okunan != (yil, ay):
-        raise ValueError(f"{yol.name}: beklenen donem {yil}-{ay:02d}, icerik {okunan} diyor.")
+    with pd.ExcelFile(yol) as kitap:
+        okunan = dosya_donemi(kitap)
+        if okunan != (yil, ay):
+            raise ValueError(f"{yol.name}: beklenen donem {yil}-{ay:02d}, icerik {okunan} diyor.")
+        ham = pd.read_excel(kitap, sheet_name=_sayfa_bul(kitap, SAYFA_IL), header=None)
 
-    ham = pd.read_excel(kitap, sheet_name=_sayfa_bul(kitap, SAYFA_IL), header=None)
     baslik = " ".join(join_key(str(x)) for x in ham.iloc[1].tolist())
     for parca in ("gelis", "geceleme", "doluluk"):
         if parca not in baslik:

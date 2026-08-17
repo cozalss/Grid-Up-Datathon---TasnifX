@@ -50,6 +50,7 @@ __all__ = [
     "daily_from_hourly",
     "add_national_series",
     "add_annual_district_attribute",
+    "add_seasonal_district_profile",
     "RENEWABLE_COLUMNS",
 ]
 
@@ -248,3 +249,79 @@ def add_annual_district_attribute(
             cikti = cikti.drop(columns=[population_column])
 
     return cikti.drop(columns=["_eslesme_anahtar", "_eslesme_yil"])
+
+
+def add_seasonal_district_profile(
+    frame: pd.DataFrame,
+    profile: pd.DataFrame,
+    *,
+    key_column: str,
+    time_column: str,
+    value_columns: Sequence[str] | None = None,
+    profile_key_column: str | None = None,
+    month_column: str = "ay",
+    prefix: str = "mevsim",
+) -> pd.DataFrame:
+    """``(ilce, ay)`` mevsimsel profilini panele ekler. YENI frame dondurur.
+
+    Profil bir IKLIM NORMALI gibidir: uzun bir gecmisten cikarilmis, yila
+    gore degismeyen bir mevsimsellik sekli. Bu yuzden UFUK KAYDIRMASI
+    GEREKTIRMEZ ve gerektirmemesi bir eksiklik degil, tanimin sonucudur:
+
+      * Hedeften TURETILMEZ -- disaridan gelen bir kovaryatin mevsimselligidir,
+        dolayisiyla fold kavrami uygulanmaz.
+      * ZAMANA gore degismez -- 2020 Temmuzu ile 2026 Temmuzu ayni degeri
+        alir. "Gelecekten bilgi" tasiyamaz, cunku gelecege ait bir degeri yok.
+
+    ``IZSU`` su tuketimi profili bu sekilde kullanilir (bkz.
+    ``scripts/fetch_izsu.py``): Cesme'nin yaz/kis orani 2.18, Konak'in 1.04.
+    Kaynak tablosu 2024-09'da bitiyor ama profil bundan ETKILENMEZ --
+    zaman serisi olarak kullanilsaydi 2025-2026 panelinde NaN olurdu.
+
+    KAPSAM: Profilde bulunmayan ilceler NaN alir. Bu bir ILCE sinirIdir,
+    ZAMAN sinirI degil; egitim ile test arasinda degismedigi icin dagilim
+    kaymasi yaratmaz. GBDT modelleri NaN'i dogal olarak isler.
+
+    Args:
+        profile: ``(anahtar, ay)`` basina bir satir.
+        month_column: Profildeki ay kolonu (1-12).
+
+    Raises:
+        KeyError: Zorunlu kolonlardan biri yoksa.
+        ValueError: Profilde tekrarlanan ``(anahtar, ay)`` varsa -- birlestirme
+            satir cogaltir ve panel sessizce buyur.
+    """
+    for kolon in (key_column, time_column):
+        if kolon not in frame.columns:
+            raise KeyError(f"frame icinde '{kolon}' kolonu yok.")
+    profil_anahtar = profile_key_column or key_column
+    for kolon in (profil_anahtar, month_column):
+        if kolon not in profile.columns:
+            raise KeyError(f"profile icinde '{kolon}' kolonu yok.")
+
+    kolonlar = (
+        list(value_columns)
+        if value_columns
+        else [k for k in profile.columns if k not in (profil_anahtar, month_column)]
+    )
+    if not kolonlar:
+        return frame.copy()
+
+    tablo = profile[[profil_anahtar, month_column, *kolonlar]].copy()
+    if tablo.duplicated(subset=[profil_anahtar, month_column]).any():
+        raise ValueError(
+            f"profile icinde tekrarlanan ({profil_anahtar}, {month_column}) var; "
+            "birlestirme panel satirlarini cogaltirdi."
+        )
+    tablo[profil_anahtar] = tablo[profil_anahtar].astype(str)
+    yeniden = {k: f"{prefix}_{k}" for k in kolonlar}
+    tablo = tablo.rename(
+        columns={profil_anahtar: "_profil_anahtar", month_column: "_profil_ay", **yeniden}
+    )
+    tablo["_profil_ay"] = tablo["_profil_ay"].astype("int16")
+
+    cikti = frame.copy()
+    cikti["_profil_anahtar"] = cikti[key_column].astype(str)
+    cikti["_profil_ay"] = pd.to_datetime(cikti[time_column]).dt.month.astype("int16")
+    cikti = cikti.merge(tablo, on=["_profil_anahtar", "_profil_ay"], how="left")
+    return cikti.drop(columns=["_profil_anahtar", "_profil_ay"])

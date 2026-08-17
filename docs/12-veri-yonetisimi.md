@@ -124,7 +124,7 @@ verify_sources.py` bunlari her kosuda dogrular.
 | `ilceler_gdz_adm.parquet` · `.csv` | MIT | `ubeydeozdmr/turkiye-api` deposunun SPDX lisansi (GitHub API ile dogrulandi) |
 | `gunes_gunluk.parquet` | MIT | Kendi turetilmis eserimiz: pvlib (BSD-3) ile MIT koordinat tablosundan hesaplandi |
 | `depremler.parquet` (AFAD) | kurum teyidi | **Yayimlanmis acik lisans YOK.** Yeniden dagitim izni kurumdan dogrudan alindi |
-| `turizm_geceleme.parquet` (KTB/YIGM) | kurum teyidi | **Yayimlanmis acik lisans YOK.** Yeniden dagitim izni kurumdan dogrudan alindi |
+| `turizm_geceleme.parquet` · `turizm_aylik_il.parquet` (KTB/YIGM) | kurum teyidi | **Yayimlanmis acik lisans YOK.** Yeniden dagitim izni kurumdan dogrudan alindi (ayni kurum, ayni yayin serisi) |
 
 **Iki statunun farki onemlidir ve karistirilmamalidir.** "Yayimlanmis acik
 lisans", herkesin okuyup dogrulayabilecegi bir metindir. "Kurum teyidi", bu

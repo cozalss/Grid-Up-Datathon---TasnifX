@@ -12,6 +12,7 @@ pandas>=2.1
 numpy>=1.26
 scipy>=1.11
 pyarrow>=14.0          # parquet: CSV'den 5-20x hizli okuma
+openpyxl>=3.1          # KTB konaklama bultenleri xlsx (fetch_turizm*.py)
 
 # --- Modelleme ---
 scikit-learn>=1.3
