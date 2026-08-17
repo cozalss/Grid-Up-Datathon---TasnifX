@@ -366,7 +366,10 @@ def write_submission(
                 "Bu oran yuksekse model olcegi veya ters donusum hatalidir -- "
                 "kirpma bir cozum degil, bir semptom ortbasidir."
             )
-        values = np.clip(raw_values, 0, None)
+        # ravel(): np.clip 'n boyutlu' tip dondurur; raw_values 1 boyutlu
+        # oldugu icin yeniden atama eski numpy stub'larinda tip catismasi
+        # yaratir. ravel zaten 1B olan diziyi degistirmez, tipi netlestirir.
+        values = np.clip(raw_values, 0, None).ravel()
 
     submission = pd.DataFrame({id_column: identifiers, target_column: values})
 

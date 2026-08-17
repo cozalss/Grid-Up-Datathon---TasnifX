@@ -1564,7 +1564,10 @@ def add_upcoming_holiday_features(
         unique_days, inverse = np.unique(valid_days, return_inverse=True)
         # side="right": bugun tatilse bile bir SONRAKI tatili isaret et --
         # "bugun bayram" bilgisini {prefix}_mi zaten tasiyor.
-        konum = np.searchsorted(holiday_dates, unique_days, side="right")
+        # asarray(): np.searchsorted dizi girdiyle dizi dondurur ama eski
+        # numpy stub'lari skaler asiri yuklemesini seciyor ve konum[maske]
+        # indekslemesi tip hatasi veriyor. Davranis degismez.
+        konum = np.asarray(np.searchsorted(holiday_dates, unique_days, side="right"))
         ileri = np.full(len(unique_days), MISSING_HOLIDAY_DISTANCE, dtype="int64")
         bulunan = konum < len(holiday_dates)
         ileri[bulunan] = (

@@ -300,7 +300,9 @@ def oof_target_encode(
             spread = float(target_values.std())
             scale = spread * noise_level if np.isfinite(spread) else 0.0
             if scale > 0:
-                oof = oof + rng.normal(0.0, scale, size=len(oof))
+                # ravel(): toplama sonucu 'n boyutlu' tiplenir; oof 1 boyutlu
+                # kalmali (eski numpy stub'lari bu catismayi yakaliyor).
+                oof = (oof + rng.normal(0.0, scale, size=len(oof))).ravel()
 
         train_encoded[f"{column}{suffix}"] = oof.astype("float32")
 
