@@ -37,11 +37,34 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+#: CI kalite matrisinde KOSMASI gereken Python surumleri.
+#: 2026-08-18: dort surumden ikiye indirildi. Tutulanlarin gercek tuketicisi
+#: var -- 3.11 gelistirici makinesi, 3.12 KAGGLE (juri notebook'unun kostugu
+#: ortam). 3.10/3.13 kaldirildi: kullanan yok, her push'ta gurultu uretiyordu.
+BEKLENEN_CI_SURUMLERI = ("3.11", "3.12")
+
+
 def test_ci_matrix_and_required_gates_are_explicit():
     workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 
-    for version in ("3.10", "3.11", "3.12", "3.13"):
-        assert version in workflow
+    # Matris girdileri SATIR BAZINDA aranir, metin icinde degil.
+    # Onceki hali tum dosyada alt dize ariyordu ve bir YORUM satirinda gecen
+    # "3.10" bile testi geciriyordu -- olculdu: matris 3.10'u kaldirdiktan
+    # sonra test yine GECTI, cunku gerekce yorumunda surum adi geciyordu.
+    # Sahte gecen bir kapi, kapi olmayandan daha tehlikelidir.
+    matris = {
+        satir.split('"')[1]
+        for satir in workflow.splitlines()
+        if satir.strip().startswith("- python:") and '"' in satir
+    }
+    assert matris == set(BEKLENEN_CI_SURUMLERI), (
+        f"CI matrisi {sorted(matris)} kosuyor, beklenen {sorted(BEKLENEN_CI_SURUMLERI)}. "
+        "Surum ekler/cikarirsan BEKLENEN_CI_SURUMLERI'ni de guncelle."
+    )
+    assert "3.12" in matris, (
+        "Kaggle Python 3.12 kullaniyor. Bu surum matristen CIKARILAMAZ: "
+        "yerelde calisip Kaggle'da patlayan kod eleme sebebidir."
+    )
     for gate in (
         "ruff check",
         "pytest",

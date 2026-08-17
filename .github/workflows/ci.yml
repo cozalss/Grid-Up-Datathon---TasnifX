@@ -19,16 +19,26 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # MATRIS 2026-08-18'de DORT SURUMDEN IKIYE indirildi.
+      #
+      # Tutulan ikisinin GERCEK bir tuketicisi var:
+      #   3.11  gelistirici makinesi
+      #   3.12  KAGGLE -- juri notebook'unun kosacagi ortam. Yerelde calisip
+      #         Kaggle'da patlayan kod eleme sebebidir; bu is o riski kapatir.
+      #
+      # 3.10 ve 3.13 kaldirildi: ikisini de kullanan kimse yok, her push'ta
+      # iki kat gurultu uretiyorlardi. Kaynak yine 3.10 uyumlu tutuluyor
+      # (ruff target-version = py310) ve requires-python >=3.10 degismedi;
+      # yalnizca OTOMATIK denetim yuzeyi daraltildi.
+      #
+      # NOT: 3.10 isi kaldirilmadan once ise yaradi -- numpy 2.2.6 stub'lari
+      # altinda UC gercek tip hatasi bulup kapattirdi (986a74d).
       matrix:
         include:
-          - python: "3.10"
-            constraints: requirements/constraints-py310.txt
           - python: "3.11"
             constraints: requirements/constraints-py311.txt
           - python: "3.12"
             constraints: requirements/constraints-py312.txt
-          - python: "3.13"
-            constraints: requirements/constraints-py313.txt
     steps:
       - name: Checkout exact revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
