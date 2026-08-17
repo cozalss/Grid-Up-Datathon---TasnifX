@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "bundle_license": "mixed-see-artifacts",
+  "policy": {
+    "unverified_value": "unverified",
+    "publication": "fail-closed",
+    "note": "An artifact hash pins the local snapshot; mutable upstreams still require an archived immutable raw snapshot before redistribution.",
+    "immutable_semantics": "source.immutable=true asserts that the UPSTREAM reference cannot change under us -- i.e. snapshot_ref is content-addressed (a hash) or an archived immutable release. A live HTTP API is mutable by definition, so artifacts pulled from one keep immutable=false and remain WARNINGS on purpose. That warning is truthful, not a defect: it records that we redistribute a hash-pinned local snapshot of a source that may since have changed. Do not flip this flag to silence the warning -- either archive the raw response and point snapshot_ref at it, or leave the warning standing.",
+    "review_log": [
+      {
+        "date": "2026-08-16",
+        "scope": "8 artifacts, license + redistribution review",
+        "outcome": "License and redistribution resolved for all 8. immutable stays false for the 5 live-API pulls; see immutable_semantics."
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "data/external/hava_gunluk.parquet",
+      "sha256": "a40bde141509639f5450245e016b2f4c2028892e5d230faaafcac7a36fe6ef43",
+      "license": "CC-BY-4.0",
+      "redistribution": "allowed",
+      "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-16",
+        "evidence": "Open-Meteo publishes historical archive data under CC BY 4.0; redistribution permitted with attribution."
+      },
+      "source": {
+        "uri": "https://archive-api.open-meteo.com/v1/archive",
+        "snapshot_ref": "2020-01-01..2026-08-15; Europe/Istanbul; 96 district coordinates",
+        "retrieved_at": "2026-08-15",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 231648,
+        "required_columns": ["il_key", "ilce_key", "tarih", "sicaklik_ort", "yagis_toplam", "ruzgar_max"]
+      }
+    },
+    {
+      "path": "data/external/gunes_gunluk.parquet",
+      "sha256": "5a0b0c961cefd44ccceae0774c3ee8dcca01bb2f54e4ba5e8edb08aa20b33cf7",
+      "license": "MIT",
+      "redistribution": "allowed",
+      "attribution": "Derived by this project with pvlib (BSD-3-Clause) from the MIT-licensed district coordinate table; distributed under this repository's MIT license.",
+      "verification": {
+        "basis": "own-derived-work",
+        "reviewed_at": "2026-08-16",
+        "evidence": "Solar geometry computed locally by gridup.features.solar; the only third-party input is data/reference/ilceler_gdz_adm.parquet (MIT, see below). pvlib is BSD-3-Clause and imposes no restriction on computed output."
+      },
+      "source": {
+        "uri": "local-derived:pvlib+data/reference/ilceler_gdz_adm.parquet",
+        "snapshot_ref": "183ee502661637efa75cac382101fa99e0d7705e6f8fcd04b99220b8fa29d5e3",
+        "retrieved_at": "2026-08-15",
+        "immutable": true
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 233760,
+        "required_columns": ["tarih", "anahtar", "gunes_ghi_gunluk", "gun_uzunlugu_saat"]
+      }
+    },
+    {
+      "path": "data/reference/ilceler_gdz_adm.parquet",
+      "sha256": "183ee502661637efa75cac382101fa99e0d7705e6f8fcd04b99220b8fa29d5e3",
+      "license": "MIT",
+      "redistribution": "allowed",
+      "attribution": "District records from turkiye-api (ubeydeozdmr/turkiye-api, MIT) with Open-Meteo geocoding (CC BY 4.0).",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-16",
+        "evidence": "https://api.github.com/repos/ubeydeozdmr/turkiye-api/license reports SPDX MIT for the upstream project that serves turkiyeapi.dev."
+      },
+      "source": {
+        "uri": "https://turkiyeapi.dev/api/v1/districts",
+        "snapshot_ref": "96 GDZ+ADM districts; il/ilce/lat/lon; retrieved 2026-08-15",
+        "retrieved_at": "2026-08-15",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 96,
+        "required_columns": ["il", "ilce", "il_key", "ilce_key", "anahtar", "lat", "lon"]
+      }
+    },
+    {
+      "path": "data/reference/ilceler_gdz_adm.csv",
+      "sha256": "6d9f56edc92c90cd516f1e5e4d8c1e2264a96e6835a5bd68655c2c1bfc11650a",
+      "license": "MIT",
+      "redistribution": "allowed",
+      "attribution": "CSV representation of ilceler_gdz_adm.parquet; same provenance and license.",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-16",
+        "evidence": "Content-addressed derivation of the MIT-licensed parquet above (snapshot_ref pins its sha256)."
+      },
+      "source": {
+        "uri": "local-derived:data/reference/ilceler_gdz_adm.parquet",
+        "snapshot_ref": "183ee502661637efa75cac382101fa99e0d7705e6f8fcd04b99220b8fa29d5e3",
+        "retrieved_at": "2026-08-15",
+        "immutable": true
+      },
+      "schema": {
+        "format": "csv",
+        "min_rows": 96,
+        "required_columns": ["il", "ilce", "il_key", "ilce_key", "anahtar", "lat", "lon"]
+      }
+    },
+    {
+      "path": "data/external/hava_saatlik_turev.parquet",
+      "sha256": "14fe59748f7f9220737af2844a79007a449e17b390af926aa87ed0f24a3cef43",
+      "license": "CC-BY-4.0",
+      "redistribution": "allowed",
+      "attribution": "Weather data by Open-Meteo.com under CC BY 4.0; hourly series aggregated locally to daily derivatives.",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-16",
+        "evidence": "Same Open-Meteo CC BY 4.0 terms as hava_gunluk.parquet."
+      },
+      "source": {
+        "uri": "https://archive-api.open-meteo.com/v1/archive",
+        "snapshot_ref": "2020-01-01..2026-08-15 hourly-derived",
+        "retrieved_at": "2026-08-15",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 231744,
+        "required_columns": ["ilce_key", "tarih", "basinc_min", "ruzgar_15ms_saat"]
+      }
+    },
+    {
+      "path": "data/external/depremler.parquet",
+      "sha256": "2abe735ba7b1ce8bae6740be35bc8291fffaacf76a9d7c5188ba36cc978e821b",
+      "license": "AFAD-institutional-clearance",
+      "redistribution": "allowed",
+      "attribution": "AFAD (T.C. Icisleri Bakanligi Afet ve Acil Durum Yonetimi Baskanligi) earthquake catalog, with USGS FDSN fallback (USGS data is US public domain).",
+      "verification": {
+        "basis": "institutional-confirmation",
+        "reviewed_at": "2026-08-16",
+        "evidence": "AFAD publishes NO open-data license text for the event-service endpoint. Redistribution clearance was obtained by the team directly from the institution. This is NOT a published open license -- an auditor should read it as a documented permission, not as an SPDX-identifiable grant."
+      },
+      "source": {
+        "uri": "https://deprem.afad.gov.tr/apiv2/event/filter",
+        "snapshot_ref": "2020-01-01..2026-08-15; M>=4",
+        "retrieved_at": "2026-08-15",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 373,
+        "required_columns": ["tarih", "lat", "lon", "buyukluk", "kaynak"]
+      }
+    },
+    {
+      "path": "data/external/yanginlar.parquet",
+      "sha256": "3c8c6b9ecc34ec6d40996f0e6e82f0c8ecd0478bf8cafcfbc60d5e6841b99df5",
+      "license": "NASA-EOSDIS-open",
+      "redistribution": "allowed",
+      "attribution": "We acknowledge the use of data from NASA LANCE FIRMS (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS). MODIS/VIIRS active fire data.",
+      "verification": {
+        "basis": "published-open-policy",
+        "reviewed_at": "2026-08-16",
+        "evidence": "NASA FIRMS FAQ states NASA promotes full and open sharing of data and encourages publication of FIRMS imagery; no redistribution restriction is imposed. Attribution text above is the form NASA requests."
+      },
+      "source": {
+        "uri": "https://firms.modaps.eosdis.nasa.gov/data/country/",
+        "snapshot_ref": "Turkey; modis+viirs-snpp; 2020..2026",
+        "retrieved_at": "2026-08-15",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 30575,
+        "required_columns": ["tarih", "lat", "lon", "frp", "aygit"]
+      }
+    },
+    {
+      "path": "data/external/turizm_geceleme.parquet",
+      "sha256": "718be613090f8a7d77d89be8d0474a25bc3f9b3f8a887691f40fd364a90ad23f",
+      "license": "KTB-institutional-clearance",
+      "redistribution": "allowed",
+      "attribution": "T.C. Kultur ve Turizm Bakanligi, Yatirim ve Isletmeler Genel Mudurlugu (YIGM) annual accommodation statistics bulletins.",
+      "verification": {
+        "basis": "institutional-confirmation",
+        "reviewed_at": "2026-08-16",
+        "evidence": "YIGM publishes NO reuse/redistribution license text alongside the accommodation bulletins. Redistribution clearance was obtained by the team directly from the institution. This is NOT a published open license -- read it as a documented permission, not an SPDX-identifiable grant."
+      },
+      "source": {
+        "uri": "https://yigm.ktb.gov.tr/",
+        "snapshot_ref": "2023..2025 annual bulletins",
+        "retrieved_at": "2026-08-15",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 234,
+        "required_columns": ["yil", "il_key", "ilce_key", "geceleme", "tesise_gelis"]
+      }
+    }
+  ]
+}

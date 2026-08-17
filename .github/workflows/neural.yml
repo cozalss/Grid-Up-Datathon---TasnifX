@@ -1,0 +1,44 @@
+name: Optional neural validation
+
+# Yalnizca ELLE tetiklenir. Haftalik cron ("17 2 * * 1") 2026-08-16'da
+# kaldirildi.
+#
+# OLCUM: ci.yml ``--extra full`` kuruyor ve ``full`` torch ICERMEZ, dolayisiyla
+# test_neural.py ve test_determinizm.py'nin torch yollari orada
+# ``pytest.importorskip`` ile ATLANIR -- bu is akisi o testlerin torch ile
+# kosuldugu TEK CI yeriydi. Yine de cron kaldirildi, cunku gelistirici
+# ortaminda torch KURULU (olculdu) ve tam takim her yerel kosuda torch ile
+# geciyor; yarisma penceresinde (21 Agustos - 1 Eylul) pazartesi sabahi dusen
+# bildirim, zaten yerelde kosan bir seyi ikinci kez dogrulamak icin dikkat
+# harcatir. Kapsam kapisi bundan etkilenmez: torch'suz TOPLAM kapsam %86
+# (esik %85, olculdu).
+#
+# Yarisma bittiginde cron geri konabilir.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  neural:
+    name: Locked PyTorch contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.11"
+      - name: Set up locked dependency installer
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.5"
+          enable-cache: true
+      - name: Install exact optional neural environment
+        run: uv sync --locked --extra neural --extra dev
+      - name: Run neural contracts
+        run: uv run python -m pytest tests/test_neural.py tests/test_determinizm.py

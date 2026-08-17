@@ -15,9 +15,9 @@ dersler var.
 
 | | |
 |---|---|
-| Kod | **10.924 satır** · 31 modül |
-| Test | **961 test** geçiyor · ruff temiz |
-| Uçtan uca kanıt | `full_pipeline.py` 20/20 · `smoke_test.py` 42 sn · `day_one.py` submission üretiyor |
+| Kod | **17.516 satır** · 41 modül · test tarafı 15.677 satır |
+| Test | **1088 test** toplanıyor · ruff check + format, mypy (41 dosya) temiz |
+| Uçtan uca kanıt | `full_pipeline.py` 21/21 · `smoke_test.py` · `day_one.py` submission üretiyor |
 | Harici veri | 96 ilçe hava (günlük + saatlik türev: basınç, eşik-üstü rüzgâr) · güneş · deprem (AFAD) · yangın (FIRMS) · turizm gecelemesi (KTB) · Türkiye tüketim+üretim · 96 ilçe referans |
 | Kaggle offline | [`cemzal/gridup-offline-paket`](https://www.kaggle.com/datasets/cemzal/gridup-offline-paket) — internet kapalı notebook için |
 | İstihbarat | 2023 birincisinin çözümü, 558 satır forum dökümü, **2024 birincisi Pikachow'un final sunumu** (29 slayt) + 2024–26 Kaggle meta taraması ([docs/08](docs/08-gdz-2024-birincisi-ve-2026-meta.md)) |
@@ -30,13 +30,12 @@ dersler var.
 git clone https://github.com/cozalss/Grid-Up-Datathon---TasnifX.git
 cd Grid-Up-Datathon---TasnifX
 
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1          # Git Bash: source .venv/Scripts/activate
-pip install -e ".[full]"
+python -m pip install --require-hashes -r requirements/uv-bootstrap.txt
+uv sync --locked --extra full --extra dev
 
-python scripts\ekip_kontrol.py         # kurulum doktoru: 7 kontrol, ~3 sn
-python -m pytest -q                    # 961 test — hepsi geçmeli
-python scripts\smoke_test.py           # uçtan uca kanıt, ~42 sn
+uv run python scripts\ekip_kontrol.py  # kurulum doktoru: 7 kontrol, ~3 sn
+uv run python -m pytest -q             # tüm testler geçmeli
+uv run python scripts\smoke_test.py    # uçtan uca kanıt, ~42 sn
 ```
 
 `ekip_kontrol` geçemediğin her maddede düzeltme komutunu kendisi söyler —
@@ -45,8 +44,11 @@ takıldıysan önce onu çalıştır, sonra sor.
 Çalıştıysa hazırsın. `smoke_test` sentetik veri üretip pipeline'ın her adımını geçirir
 ve sonunda geçerli bir submission dosyası yazar.
 
+`uv sync --locked`, yerel makineyi CI ile aynı hash-doğrulamalı 170 paketlik grafa
+bağlar ve `.venv` ortamını otomatik oluşturur.
+
 > **Windows notu:** `python3` değil `python` yaz — bu makinede `python3` bozuk bir
-> Store kısayoluna gidiyor. Sanal ortam `bin/` değil `Scripts/` altında.
+> Store kısayoluna gidiyor.
 
 ---
 
@@ -78,7 +80,7 @@ Bu üç çıktı sonraki 12 günün her kararını belirler.
 ### İlk 2 saat — tek komutla submission
 
 ```powershell
-python scripts\day_one.py --data data\raw
+python scripts\day_one.py --data data\raw --metric mae
 python scripts\day_one.py --data data\raw --time TARIH --group ILCE --metric mae
 ```
 
@@ -218,7 +220,7 @@ docs/
   06-teknik-tuzaklar.md          bilinen tuzaklar
   07-veri-gunu-kontrol-listesi.md saat saat veri günü planı
 
-tests/    961 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
+tests/    1085 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
 ```
 
 ---
@@ -239,8 +241,9 @@ Gerçek GDZ provası hariç hepsi `data/` altında ve **gitignore'da** (aşağı
 
 Gerçek veride ölçülen her şey `experiments/ablasyon_gercek.json` ve
 `experiments/benchmark_gercek.json` içinde: feature ailesi öncelik sırası
-(lag +22,3 baskın; tatil/güneş negatif) ve model sıralaması (iki aşamalı >
-catboost_mae > …; harman 308,3 şampiyon, stacking rekabet dışı). Veri günü
+(lag +22,3 baskın; tatil/güneş negatif) ve model OOF sıralaması bulunur. Harman
+aynı OOF üzerinde seçildiği için bilimsel "şampiyon" ilan edilmez; bağımsız,
+eşleştirilmiş outer kanıt yoksa `kazanan=null` kalır. Veri günü
 planı bu ölçümlere yaslanır — `docs/07`. **Kapsam:** sayılar 2021–22 verisi ve
 `kesinti_dk` hedefi içindir; 2026 verisi gelince ablasyon 1. günde yeniden
 koşulur (betik hazır, ~10 dk).
@@ -260,17 +263,12 @@ EPİAŞ için `.env` gerekir — `.env.example`'ı kopyalayıp kendi bilgilerini
 setiyle almıştım?" sorusuna cevap veremezseniz o skoru bir daha üretemezsiniz.
 
 ```python
-from gridup.experiment import ExperimentLog, ExperimentRecord
+from gridup.stores import SQLiteExperimentStore
 
-log = ExperimentLog("experiments/deneyler.jsonl")
-log.add(ExperimentRecord(
-    name="lgbm_takvim_lag", cv_score=sonuc.overall_score, metric="mape",
-    model_kind="lightgbm", n_features=len(X.columns),
-    fold_scores=sonuc.fold_scores, notes="lag[1,7,28] + TR tatil eklendi",
-))
-log.record_lb("lgbm_takvim_lag", 1.5234)   # submission SONRASI
-print(log.budget_report())                  # günlük 3 submission takibi
-print(log.cv_lb_correlation())              # CV↔LB — shakeup erken uyarısı
+# day_one.py; veri hashleri, reçete/fold parmak izi, parametreler ve feature
+# listesini atomik olarak kaydeder ve ekrana run_id basar.
+store = SQLiteExperimentStore("experiments/experiments.db")
+store.record_lb("<day_one-run-id>", 1.5234)  # submission SONRASI
 ```
 
 **İş bölümü önerisi.** Değerlendirmenin üçte ikisi notebook ve sunumda:
@@ -303,12 +301,14 @@ bilemezsiniz. Her adımdan sonra CV'yi ölçün ve deftere yazın.
 ## Kaggle'da internet kapalıysa
 
 ```powershell
-python scripts\build_kaggle_package.py --wheels
-kaggle datasets version -p kaggle_paket -m "guncelleme" --dir-mode zip
+python scripts\build_kaggle_package.py --wheels --upload
 ```
 
 Notebook'un ilk hücresine `kaggle_paket/notebook_bootstrap.py` içeriğini yapıştırın.
 Wheel + harici veri + eksik paketler oradan yüklenir.
+
+`--upload` yolu lisans, immutable kaynak, şema, artifact ve wheel hash kapılarının
+tamamını çalıştırır. Doğrudan Kaggle CLI ile yükleme desteklenmez.
 
 > **Kaynak değiştiyse paketi yeniden üretin.** Yüklü paket bayatlarsa
 > internetsiz notebook düzeltilmiş sandığınız kodu **çalıştırmaz**.

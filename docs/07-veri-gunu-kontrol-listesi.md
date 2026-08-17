@@ -23,7 +23,7 @@ izlenecek adımları içerir.
 | EPDK bölge sınıfı | `gridup.features.demografi.epdk_bolge_sinifi` | Resmi kentsel/kentaltı/kırsal eşikleri |
 | Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
 | Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
-| Test paketi | `tests/` | 961 test |
+| Test paketi | `tests/` | 1085 test |
 
 ---
 
@@ -84,7 +84,7 @@ Veriyi `data/raw/` altına koyun, sonra:
 
 ```powershell
 cd c:\Users\cemmo\Documents\Datahon
-python scripts\day_one.py --data data\raw
+python scripts\day_one.py --data data\raw --metric mae
 ```
 
 Betik `sample_submission.csv`'den hedef ve ID kolonunu **kendisi çıkarır**.
@@ -160,9 +160,9 @@ tespitine öncelik verdi.
 Sonra LB skorunu deftere yazın:
 
 ```python
-from gridup.experiment import ExperimentLog
-log = ExperimentLog("experiments/deneyler.jsonl")
-log.record_lb("gun1_baseline", <LB_SKORU>)
+from gridup.stores import SQLiteExperimentStore
+store = SQLiteExperimentStore("experiments/experiments.db")
+store.record_lb("<day_one-run-id>", <LB_SKORU>)
 ```
 
 ---
