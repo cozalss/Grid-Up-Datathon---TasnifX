@@ -35,7 +35,14 @@
       "schema": {
         "format": "parquet",
         "min_rows": 231648,
-        "required_columns": ["il_key", "ilce_key", "tarih", "sicaklik_ort", "yagis_toplam", "ruzgar_max"]
+        "required_columns": [
+          "il_key",
+          "ilce_key",
+          "tarih",
+          "sicaklik_ort",
+          "yagis_toplam",
+          "ruzgar_max"
+        ]
       }
     },
     {
@@ -58,7 +65,12 @@
       "schema": {
         "format": "parquet",
         "min_rows": 233760,
-        "required_columns": ["tarih", "anahtar", "gunes_ghi_gunluk", "gun_uzunlugu_saat"]
+        "required_columns": [
+          "tarih",
+          "anahtar",
+          "gunes_ghi_gunluk",
+          "gun_uzunlugu_saat"
+        ]
       }
     },
     {
@@ -81,7 +93,15 @@
       "schema": {
         "format": "parquet",
         "min_rows": 96,
-        "required_columns": ["il", "ilce", "il_key", "ilce_key", "anahtar", "lat", "lon"]
+        "required_columns": [
+          "il",
+          "ilce",
+          "il_key",
+          "ilce_key",
+          "anahtar",
+          "lat",
+          "lon"
+        ]
       }
     },
     {
@@ -104,7 +124,15 @@
       "schema": {
         "format": "csv",
         "min_rows": 96,
-        "required_columns": ["il", "ilce", "il_key", "ilce_key", "anahtar", "lat", "lon"]
+        "required_columns": [
+          "il",
+          "ilce",
+          "il_key",
+          "ilce_key",
+          "anahtar",
+          "lat",
+          "lon"
+        ]
       }
     },
     {
@@ -127,7 +155,12 @@
       "schema": {
         "format": "parquet",
         "min_rows": 231744,
-        "required_columns": ["ilce_key", "tarih", "basinc_min", "ruzgar_15ms_saat"]
+        "required_columns": [
+          "ilce_key",
+          "tarih",
+          "basinc_min",
+          "ruzgar_15ms_saat"
+        ]
       }
     },
     {
@@ -150,30 +183,42 @@
       "schema": {
         "format": "parquet",
         "min_rows": 373,
-        "required_columns": ["tarih", "lat", "lon", "buyukluk", "kaynak"]
+        "required_columns": [
+          "tarih",
+          "lat",
+          "lon",
+          "buyukluk",
+          "kaynak"
+        ]
       }
     },
     {
       "path": "data/external/yanginlar.parquet",
-      "sha256": "3c8c6b9ecc34ec6d40996f0e6e82f0c8ecd0478bf8cafcfbc60d5e6841b99df5",
+      "sha256": "41b69c2c0627f19156169511164a5ea0fd54e725a234c17eddaac85743103091",
       "license": "NASA-EOSDIS-open",
       "redistribution": "allowed",
       "attribution": "We acknowledge the use of data from NASA LANCE FIRMS (https://earthdata.nasa.gov/firms), part of NASA's Earth Science Data and Information System (ESDIS). MODIS/VIIRS active fire data.",
       "verification": {
         "basis": "published-open-policy",
         "reviewed_at": "2026-08-17",
-        "evidence": "NASA FIRMS FAQ states NASA promotes full and open sharing of data and encourages publication of FIRMS imagery; no redistribution restriction is imposed. Attribution text above is the form NASA requests."
+        "evidence": "NASA FIRMS FAQ states NASA promotes full and open sharing of data and encourages publication of FIRMS imagery; no redistribution restriction is imposed. Attribution text above is the form NASA requests. 2025-2026 boslugu Area API ile kapatildi (yillik ulke arsivi o yillar icin yayimlanmamis, HTTP 404); _SP arsiv urunu + _NRT birlikte kullanildi."
       },
       "source": {
         "uri": "https://firms.modaps.eosdis.nasa.gov/data/country/",
-        "snapshot_ref": "Turkey; modis+viirs-snpp; 2020..2026",
-        "retrieved_at": "2026-08-15",
+        "snapshot_ref": "Turkey/Ege kutusu; modis+viirs-snpp; 2020-01-01..2026-08-17",
+        "retrieved_at": "2026-08-17",
         "immutable": false
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 30575,
-        "required_columns": ["tarih", "lat", "lon", "frp", "aygit"]
+        "min_rows": 40000,
+        "required_columns": [
+          "tarih",
+          "lat",
+          "lon",
+          "frp",
+          "aygit"
+        ]
       }
     },
     {
@@ -196,7 +241,13 @@
       "schema": {
         "format": "parquet",
         "min_rows": 234,
-        "required_columns": ["yil", "il_key", "ilce_key", "geceleme", "tesise_gelis"]
+        "required_columns": [
+          "yil",
+          "il_key",
+          "ilce_key",
+          "geceleme",
+          "tesise_gelis"
+        ]
       }
     }
   ]
