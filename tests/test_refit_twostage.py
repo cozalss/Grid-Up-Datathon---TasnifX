@@ -115,6 +115,38 @@ class TestMultiSeedRefit:
         first, second = result.per_seed_predictions[0], result.per_seed_predictions[1]
         assert not np.allclose(first, second), "tohumlar ayni sonucu uretti"
 
+    def test_donusum_ve_agirlik_cv_ile_ayni_sekilde_gecer(self, data):
+        """P1-7: sqrt donusumu fit uzayinda, tahmin HAM uzayda; agirlik kabul edilir.
+
+        Hedef negatif olmayan yapilir; sqrt uzayinda egitilen model ham uzaya
+        geri cevrilmezse tahminler ~sqrt(y) mertebesinde kalir -- bunu olcuyoruz.
+        """
+        train, y, test = data
+        y_pos = np.abs(y) + 1.0
+        params = starter_params("lightgbm", "regression")
+        agirlik = np.linspace(0.5, 1.5, len(train))
+
+        result = multi_seed_refit(
+            train,
+            y_pos,
+            test,
+            kind="lightgbm",
+            params=params,
+            n_estimators=80,
+            seeds=(0, 1),
+            sample_weight=agirlik,
+            target_transform="sqrt",
+            verbose=False,
+        )
+        # Ham uzay: tahminlerin olcegi hedefin olcegine yakin (sqrt olcegi degil)
+        assert abs(result.predictions.mean() - y_pos.mean()) < 0.5 * y_pos.mean()
+        assert result.predictions.mean() > np.sqrt(y_pos).mean() * 1.2
+        with pytest.raises(ValueError, match="sample_weight"):
+            multi_seed_refit(
+                train, y_pos, test, kind="lightgbm", params=params, n_estimators=10,
+                seeds=(0,), sample_weight=agirlik[:-1], verbose=False,
+            )  # fmt: skip
+
     def test_requires_test_frame(self, data):
         train, y, _ = data
         with pytest.raises(ValueError, match="test"):

@@ -52,6 +52,8 @@ __all__ = [
     "build_splitter",
     "parse_time_series",
     "purged_time_series_split",
+    "ForecastGeometry",
+    "forecast_geometry",
     "adversarial_validation",
     "leakage_report",
     "check_train_test_overlap",
@@ -530,6 +532,70 @@ def _fixed_span_windows(
     return list(reversed(windows))
 
 
+@dataclass(frozen=True)
+class ForecastGeometry:
+    """Train sonu ile test blogu arasindaki zaman geometrisi.
+
+    * ``horizon_days``: test blogunun SON gunu train'in son gununden kac gun
+      sonra -- lag/rolling kaydirmasi ve ``test_span`` bunu kullanir. Test
+      train'e bitisikse blok uzunluguna esittir; arada bosluk varsa
+      bosluk + blok. Eski formul ``(test.max - test.min) + 1`` boslugu YOK
+      SAYIYORDU: 10 gunluk boslukta CV lag'i 20 gun, test lag'i 30 gun
+      bayatti (olculdu, 2026-08-18) -- ayni kolon iki farkli sey demekti.
+    * ``gap_days``: train sonu ile test basi arasindaki verisiz gun sayisi
+      (bitisikse 0). CV ambargosu tam olarak budur.
+    * ``interleaved``: test tarihleri train icine giriyor (rastgele bolme);
+      zaman-ileri semasi uygulanamaz, cagiran karar verir.
+    """
+
+    horizon_days: int
+    gap_days: int
+    interleaved: bool
+    train_end: pd.Timestamp
+    test_start: pd.Timestamp
+    test_end: pd.Timestamp
+
+    @property
+    def embargo(self) -> pd.Timedelta:
+        return pd.Timedelta(days=self.gap_days)
+
+    def summary(self) -> str:
+        return (
+            f"train sonu {self.train_end.date()} -> test {self.test_start.date()}.."
+            f"{self.test_end.date()}: ufuk {self.horizon_days} gun, bosluk {self.gap_days} gun"
+            + (" [IC ICE: zaman-ileri sema uygulanamaz]" if self.interleaved else "")
+        )
+
+
+def forecast_geometry(train_times: pd.Series, test_times: pd.Series) -> ForecastGeometry:
+    """Ufuk ve ambargoyu train/test tarihlerinden TEK yerde turetir.
+
+    Raises:
+        ValueError: Serilerden biri bos veya tamamen NaT ise.
+    """
+    train_t = pd.to_datetime(pd.Series(train_times), errors="coerce").dropna()
+    test_t = pd.to_datetime(pd.Series(test_times), errors="coerce").dropna()
+    if train_t.empty or test_t.empty:
+        raise ValueError("forecast_geometry: train veya test zaman serisi bos/NaT.")
+    train_end = train_t.max().normalize()
+    test_start, test_end = test_t.min().normalize(), test_t.max().normalize()
+    interleaved = bool(test_start <= train_end)
+    if interleaved:
+        horizon = int((test_end - test_start).days) + 1
+        gap = 0
+    else:
+        horizon = int((test_end - train_end).days)
+        gap = int((test_start - train_end).days) - 1
+    return ForecastGeometry(
+        horizon_days=max(horizon, 1),
+        gap_days=max(gap, 0),
+        interleaved=interleaved,
+        train_end=train_end,
+        test_start=test_start,
+        test_end=test_end,
+    )
+
+
 def purged_time_series_split(
     times: pd.Series,
     *,
@@ -549,9 +615,19 @@ def purged_time_series_split(
     Args:
         times: Zaman damgalari (frame ile ayni sirada, ayni uzunlukta).
         embargo: Train ile valid arasinda birakilacak bosluk. **ZORUNLU.**
-            Kural: **en uzun kayan pencerenden BUYUK olmali.** 7/14/30 gunluk
-            pencereler kullaniyorsan ``pd.Timedelta(days=30)`` uygun bir baslangictir.
-            Ambargo istemiyorsan ``pd.Timedelta(0)`` yaz -- bilincli bir karar olsun.
+            Kural (2026-08-18 denetimiyle DUZELTILDI): ambargo, **train'in son
+            gunu ile test blogunun ilk gunu arasindaki GERCEK bosluktur**
+            (``forecast_geometry(...).embargo``); bitisik test icin 0. Bu
+            repodaki tum gecmis-hedef feature'lari zaten ``horizon`` kadar
+            kaydirilmistir; B-1'deki train satiriyla B'deki valid satirinin
+            ayni ham veriyi gormesi sizinti DEGIL, tam olarak dagitim
+            rejimidir (test satiri T0+h de y[T0-1]'i lag olarak gorur). Eski
+            kural ("en uzun kayan pencereden buyuk") her fold'un egitimini
+            valid'den 30+ gun bayatlatiyor, CV'yi kotumser ve dagitimdan
+            farkli yapiyordu. Kayan pencere feature'i horizon KAYDIRMASIZ
+            kurulduysa (bu repoda yasak) o zaman pencere boyu kadar ambargo
+            gerekir. Ambargo istemiyorsan ``pd.Timedelta(0)`` yaz -- bilincli
+            bir karar olsun.
         n_splits: Fold sayisi.
         test_span: Verilirse her dogrulama penceresi **tam olarak bu kadar zaman**
             kaplar ve pencereler veri sonundan geriye dogru dizilir. Verilmezse

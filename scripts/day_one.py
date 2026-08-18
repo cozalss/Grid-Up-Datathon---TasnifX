@@ -62,6 +62,7 @@ from gridup.stores import SQLiteExperimentStore  # noqa: E402
 from gridup.turkish import join_key, normalize_columns  # noqa: E402
 from gridup.validation import (  # noqa: E402
     build_splitter,
+    forecast_geometry,
     parse_time_series,
     purged_time_series_split,
 )
@@ -623,11 +624,17 @@ def main() -> int:
     print(suggestion)
 
     horizon = 1
+    bosluk_gun = 0
     if time_column and test is not None and time_column in test.columns:
         test_times = parse_time_series(test[time_column])
-        horizon = int((test_times.max() - test_times.min()).days) + 1
-        print(f"\n  Tahmin ufku (test blok uzunlugu): {horizon} gun")
-        print("  -> lag/rolling feature'lari bu ufka gore kaydirilmali")
+        # UFUK = train'in son gunu -> test blogunun son gunu; AMBARGO = aradaki
+        # verisiz bosluk. Eski formul (test.max - test.min + 1) boslugu yok
+        # sayiyordu: 10 gun boslukta CV lag'i 20 gun, test lag'i 30 gun bayatti
+        # (olculdu, 2026-08-18 denetimi P1-3).
+        geometri = forecast_geometry(parse_time_series(train[time_column]), test_times)
+        horizon, bosluk_gun = geometri.horizon_days, geometri.gap_days
+        print(f"\n  {geometri.summary()}")
+        print("  -> lag/rolling feature'lari bu ufka gore kaydirilmali; CV ambargosu = bosluk")
         harici_kapsam_raporu(test_times.min(), test_times.max())
 
     splitter_name: str
@@ -635,7 +642,7 @@ def main() -> int:
     embargo_days = 0
     if time_column:
         train[time_column] = parse_time_series(train[time_column])
-        embargo = pd.Timedelta(days=max(horizon, 30))
+        embargo = pd.Timedelta(days=bosluk_gun)
         # DOGRULAMA PENCERESI = TEST BLOGU UZUNLUGU.
         #
         # 2023 GDZ birincisi TimeSeriesSplit(n_splits=3, test_size=744)
@@ -648,7 +655,7 @@ def main() -> int:
         test_span = pd.Timedelta(days=horizon) if horizon else None
         splitter_name = "purged_time_series"
         test_span_days = horizon
-        embargo_days = max(horizon, 30)
+        embargo_days = bosluk_gun
         folds = purged_time_series_split(
             train[time_column],
             n_splits=recipe.cv.n_splits,

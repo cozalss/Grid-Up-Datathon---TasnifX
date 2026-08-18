@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from gridup import (  # noqa: E402
     build_panel,
     cross_validate,
+    forecast_geometry,
     postprocess_predictions,
     set_global_seed,
     write_submission,
@@ -189,8 +190,10 @@ def main() -> int:
     # ------------------------------------------------------------------ 4
     banner("4/9", "FEATURE URETIMI")
     origin = shared_origin(train, test, time_column=TIME)
-    horizon = int((test[TIME].max() - test[TIME].min()).days) + 1
-    print(f"  ortak origin={origin.date()}  ufuk={horizon} gun")
+    # Ufuk = train sonu -> test sonu; ambargo = train-test boslugu (P1-3).
+    geometri = forecast_geometry(train[TIME], test[TIME])
+    horizon, bosluk_gun = geometri.horizon_days, geometri.gap_days
+    print(f"  ortak origin={origin.date()}  {geometri.summary()}")
 
     def build_base(frame: pd.DataFrame) -> pd.DataFrame:
         out = add_calendar_features(frame, TIME, include_year=False, origin=origin)
@@ -284,7 +287,8 @@ def main() -> int:
     folds = purged_time_series_split(
         train_features[TIME],
         n_splits=3 if args.hizli else 4,
-        embargo=pd.Timedelta(days=max(horizon, 30)),
+        embargo=pd.Timedelta(days=bosluk_gun),
+        test_span=pd.Timedelta(days=horizon),
         verbose=False,
     )
     check("fold uretimi", len(folds) >= 2, f"{len(folds)} fold")
@@ -420,7 +424,8 @@ def main() -> int:
         cv=CVRecipe(
             n_splits=len(folds),
             splitter="purged_time_series",
-            embargo_days=max(horizon, 30),
+            test_span_days=horizon,
+            embargo_days=bosluk_gun,
         ),
         features=FeatureRecipe(
             horizon=horizon,

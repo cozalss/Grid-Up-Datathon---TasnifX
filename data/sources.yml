@@ -339,6 +339,36 @@
           "et0_toplam"
         ]
       }
+    },
+    {
+      "path": "data/external/hava_kalitesi_gunluk.parquet",
+      "sha256": "c0b7b69252a4f7766c2839f8fe5f8e58f0f21e2c26f2a66f7fad1c701707c2c8",
+      "license": "CC-BY-4.0",
+      "redistribution": "allowed",
+      "attribution": "Air quality data by Open-Meteo.com under CC BY 4.0 (CAMS tabanli).",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-18",
+        "evidence": "Open-Meteo Air Quality API, hava_gunluk ile ayni CC BY 4.0 kosullari; anahtar gerekmiyor."
+      },
+      "source": {
+        "uri": "https://air-quality-api.open-meteo.com/v1/air-quality",
+        "snapshot_ref": "2020-01-01..2026-08-12; 96 ilce; pm10/pm2_5/dust saatlikten gunluge",
+        "retrieved_at": "2026-08-18",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 220000,
+        "required_columns": [
+          "ilce_key",
+          "tarih",
+          "pm10_ort",
+          "pm10_max",
+          "toz_ort",
+          "toz_tasinim_saat"
+        ]
+      }
     }
   ]
 }

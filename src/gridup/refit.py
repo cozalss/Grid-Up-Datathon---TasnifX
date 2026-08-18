@@ -49,8 +49,11 @@ import pandas as pd
 
 from .models import (
     ModelKind,
+    TargetTransform,
     _predict,
     _prepare_categoricals,
+    _resolve_target_transform,
+    _validate_sample_weight,
     assert_finite_target,
     fit_without_validation,
     merge_infrastructure_params,
@@ -304,12 +307,18 @@ def multi_seed_refit(
     n_estimators: int,
     seeds: Sequence[int] = tuple(range(5)),
     needs_proba: bool = False,
+    sample_weight: np.ndarray | Sequence[float] | None = None,
+    target_transform: TargetTransform = None,
     verbose: bool = True,
 ) -> RefitResult:
     """Tum veriyle, birden fazla tohumla egitir ve tahminleri ortalar.
 
     CV BITTIKTEN SONRA calistirilir. Once ``cross_validate`` ile en iyi
-    konfigurasyonu bul, sonra bunu cagir.
+    konfigurasyonu bul, sonra bunu cagir. ``sample_weight`` ve
+    ``target_transform`` CV'DEKI ILE AYNI verilmelidir: benchmark'in
+    olctugu konfigurasyon (agirlikli / sqrt-donusumlu) aksi halde nihai
+    gonderime tasinamazdi (2026-08-18 denetimi, P1-7). Donusumlu hedefte
+    tahminler ham uzaya GERI cevrilerek dondurulur.
 
     Args:
         n_estimators: Agac sayisi. ``estimate_full_data_rounds`` ile hesapla --
@@ -328,12 +337,15 @@ def multi_seed_refit(
     y = np.asarray(target).ravel()
     if len(y) != len(train):
         raise ValueError(f"train ({len(train)}) ve target ({len(y)}) uzunluklari farkli.")
+    weights = _validate_sample_weight(sample_weight, len(train))
 
     # cross_validate bu kontrolu YAPIYORDU, refit YAPMIYORDU. Yani CV'nin
     # reddettigi hedef, submission'i ureten yoldan gecebiliyordu.
     # OLCULDU: inf iceren hedefle refit tahmin ortalamasi 2.24e+35 dondu ve
     # postprocess_predictions onu TEMIZLEMEDI -- max 1.69e+36 submission'a gitti.
     assert_finite_target(y)
+    # Fit uzayi: CV ile ayni donusum; tahmin ham uzaya geri cevrilir.
+    y_fit, inverse, _ = _resolve_target_transform(y, target_transform, "regression")
 
     seed_list = list(seeds)
     if not seed_list:
@@ -388,8 +400,10 @@ def multi_seed_refit(
             seeded["random_seed"] = seed
             seeded.pop("random_state", None)
 
-        model = fit_without_validation(kind, seeded, train_ready, y, categorical)
-        prediction = _predict(model, test_ready, needs_proba=needs_proba)
+        model = fit_without_validation(
+            kind, seeded, train_ready, y_fit, categorical, sample_weight=weights
+        )
+        prediction = inverse(_predict(model, test_ready, needs_proba=needs_proba))
         per_seed.append(prediction)
         models.append(model)
 

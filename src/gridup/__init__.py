@@ -94,6 +94,7 @@ from .two_stage import (
 from .validation import (
     adversarial_validation,
     build_splitter,
+    forecast_geometry,
     leakage_report,
     purged_time_series_split,
     suggest_scheme,
@@ -132,6 +133,7 @@ __all__ = [
     "leakage_report",
     "adversarial_validation",
     "purged_time_series_split",
+    "forecast_geometry",
     # panel
     "build_panel",
     "panel_coverage",

@@ -1,4 +1,4 @@
-"""HAVA KALITESI: PM10, PM2.5, toz ve aerosol -- izolator kirlenmesinin yarisi.
+"""HAVA KALITESI: PM10, PM2.5 ve toz -- izolator kirlenmesinin EKSIK YARISI.
 
 NEDEN BU BETIK
 --------------
@@ -68,7 +68,14 @@ CKPT_DIR = ROOT / "data" / "external" / ".hava_kalitesi_ckpt"
 
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 
-HOURLY_VARIABLES = ["pm10", "pm2_5", "dust", "aerosol_optical_depth"]
+#: ``aerosol_optical_depth`` BILEREK YOK. Cekildi ve olculdu (2026-08-18):
+#:   2020 %100 NaN · 2021 %100 · 2022 %58.9 · 2023+ %0
+#: Yani urun ~2022 ortasinda basliyor ve panelin ilk UC yilini bos birakiyor.
+#: Diger uc degisken (pm10, pm2_5, dust) tum aralikta %0 NaN. AOD ayrica
+#: PM10/toz ile buyuk olcude ayni seyi olcer (aerosol yuku), yani kapsami
+#: bozuk bir kolonu tasimanin karsiligi yok. Kalite kapisi bunu %39 NaN ile
+#: zaten reddetmisti -- esigi yukseltip gecirmek yerine kolon dusuruldu.
+HOURLY_VARIABLES = ["pm10", "pm2_5", "dust"]
 
 #: Beklenen birimler. Parametre sessizce yok sayilirsa esik sayimlari
 #: anlamsizlasir -- fail-closed.
@@ -156,7 +163,6 @@ def gunluge_indir(saatlik: pd.DataFrame, ilce_key: str) -> pd.DataFrame:
         toz_ort=("dust", "mean"),
         toz_max=("dust", "max"),
         toz_tasinim_saat=("_toz_tasinim", "sum"),
-        aod_ort=("aerosol_optical_depth", "mean"),
     )
     for kolon in ("pm10_sinir_saat", "pm10_yuksek_saat", "toz_tasinim_saat"):
         gun[kolon] = gun[kolon].astype("int16")
@@ -244,6 +250,9 @@ def main() -> int:
         return 1
 
     birlesik = pd.concat(parcalar, ignore_index=True)
+    # Eski kontrol noktalari aod_ort tasiyor olabilir (bkz. HOURLY_VARIABLES
+    # notu). Yeniden indirmeye gerek yok; kolon burada dusuruluyor.
+    birlesik = birlesik.drop(columns=["aod_ort"], errors="ignore")
     birlesik = birlesik.drop_duplicates(subset=["ilce_key", "tarih"])
     birlesik = birlesik.sort_values(["ilce_key", "tarih"]).reset_index(drop=True)
     print(f"\n{len(birlesik):,} satir x {birlesik.shape[1]} kolon")

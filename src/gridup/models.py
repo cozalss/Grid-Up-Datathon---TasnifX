@@ -18,6 +18,7 @@ Bu yuzden ``cross_validate`` OOF'u her zaman dondurur ve diske yazmayi onerir.
 from __future__ import annotations
 
 import time
+import warnings
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
@@ -101,19 +102,39 @@ def _resolve_early_stopping_metric(
     *,
     target_transform: str | None = None,
     early_stopping_rounds: int = 200,
+    early_stopping_space: str = "raw",
 ) -> tuple[dict[str, Any], str | None]:
     """Resmi metrik adini backend ``eval_metric`` degerine cevirir.
 
     Ayni ayarin hem ust-seviye API'de hem ``params`` icinde farkli verilmesi
     erken durdurmayi sessizce baska objektife baglardi; bu nedenle celiskide
     hangisinin kazanacagini tahmin etmek yerine kapali hata veririz.
+
+    ``early_stopping_space="fit"``: ``metric`` FIT uzayindaki (donusturulmus
+    hedef) metriktir; ham uzay esdegerligi ARANMAZ ve bu acikca uyari olarak
+    yazilir. Olculdu (2026-08-18 denetimi): sqrt donusumu icin ham-uzay
+    esdegeri olmadigi icin guard erken durdurmayi kapatiyor, 2000 sabit
+    agac kosuluyordu -> benchmark 393,00 MAE ("sqrt kotu" artefakti); fit
+    uzayinda l2 ile erken durdurma 326,5 verdi. Sonuc yine kazanmiyor ama
+    karar artik artefakta degil olcume dayanir.
     """
+    if early_stopping_space not in ("raw", "fit"):
+        raise ValueError(f"early_stopping_space 'raw' veya 'fit' olmali: {early_stopping_space!r}")
     resolved = dict(params)
     existing = resolved.get("eval_metric")
     if early_stopping_rounds <= 0:
         return resolved, str(existing) if existing is not None else None
 
-    if target_transform is not None:
+    if target_transform is not None and early_stopping_space == "fit":
+        if metric is None:
+            raise ValueError("early_stopping_space='fit' icin early_stopping_metric zorunlu.")
+        warnings.warn(
+            f"Erken durdurma FIT uzayinda ({target_transform!r} hedef, metrik "
+            f"{metric!r}); ham skor uzayina denk DEGIL, tur secimi yaklasiktir.",
+            UserWarning,
+            stacklevel=3,
+        )
+    elif target_transform is not None:
         if metric is None:
             raise ValueError(
                 "target_transform ile early stopping kullanirken matematiksel olarak "
@@ -966,6 +987,7 @@ def fit_without_validation(
     features: pd.DataFrame,
     target: np.ndarray,
     categorical: list[str],
+    sample_weight: np.ndarray | None = None,
 ) -> Any:
     """Tum veriyle, DOGRULAMA KUMESI OLMADAN egitir.
 
@@ -984,7 +1006,9 @@ def fit_without_validation(
         is_classification = str(params.get("objective", "")).startswith(("binary", "multiclass"))
         model_class = lgb.LGBMClassifier if is_classification else lgb.LGBMRegressor
         model = model_class(**params)
-        model.fit(features, target, categorical_feature=categorical or "auto")
+        model.fit(
+            features, target, sample_weight=sample_weight, categorical_feature=categorical or "auto"
+        )
         return model
 
     if kind == "xgboost":
@@ -993,7 +1017,7 @@ def fit_without_validation(
         is_classification = str(params.get("objective", "")).startswith(("binary", "multi"))
         model_class = xgb.XGBClassifier if is_classification else xgb.XGBRegressor
         model = model_class(**params)
-        model.fit(features, target, verbose=False)
+        model.fit(features, target, sample_weight=sample_weight, verbose=False)
         return model
 
     if kind == "catboost":
@@ -1002,7 +1026,13 @@ def fit_without_validation(
         is_classification = params.get("loss_function") in {"Logloss", "MultiClass"}
         model_class = CatBoostClassifier if is_classification else CatBoostRegressor
         model = model_class(**params)
-        model.fit(features, target, cat_features=categorical or None, verbose=False)
+        model.fit(
+            features,
+            target,
+            sample_weight=sample_weight,
+            cat_features=categorical or None,
+            verbose=False,
+        )
         return model
 
     raise ValueError(f"Bilinmeyen model tipi '{kind}'.")
@@ -1146,6 +1176,7 @@ def cross_validate(
     target_transform: TargetTransform = None,
     early_stopping_metric: str | None = None,
     early_stopping_rounds: int = 200,
+    early_stopping_space: str = "raw",
     verbose: bool = True,
 ) -> CVResult:
     """Capraz dogrulamali egitim. OOF ve test tahminlerini dondurur.
@@ -1197,6 +1228,10 @@ def cross_validate(
             degerine acikca cevrilir. ``params['eval_metric']`` farkli bir
             deger iceriyorsa sessiz oncelik yerine ``ValueError`` verir.
         early_stopping_rounds: Iyilesme olmadan kac tur beklenecegi.
+        early_stopping_space: ``"raw"`` (varsayilan) erken durdurma metrigi
+            ham skor uzayina denk olmali; ``"fit"`` ise ``target_transform``
+            uygulanmis hedef uzayindaki metriktir (or. sqrt + l2) ve
+            esdegerlik aranmaz -- uyari verilir.
 
     Returns:
         ``CVResult``. ``warnings`` alani skorun bilinen yanliliklarini tasir.
@@ -1265,6 +1300,7 @@ def cross_validate(
         early_stopping_metric,
         target_transform=target_transform_name,
         early_stopping_rounds=early_stopping_rounds,
+        early_stopping_space=early_stopping_space,
     )
 
     offsets, test_offsets = _resolve_offsets(

@@ -278,6 +278,28 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
         ),
     ),
     Kaynak(
+        ad="hava_kalitesi_gunluk",
+        yol="data/external/hava_kalitesi_gunluk.parquet",
+        tarih_kolonu="tarih",
+        anahtar_kolonu="ilce_key",
+        beklenen_ilce=96,
+        asgari_satir=220_000,
+        fizik=(
+            ("PM10 negatif olamaz", lambda d: float(d["pm10_ort"].min()) >= 0),
+            (
+                "PM10 max makul aralikta (<5000 ug/m3)",
+                lambda d: float(d["pm10_max"].max()) < 5000,
+            ),
+            (
+                "toz KISIN degil ILKBAHAR/YAZ tasinimlarinda zirve yapar",
+                lambda d: (
+                    d.loc[_ay(d, "tarih").isin([3, 4, 5, 6, 7]), "toz_ort"].mean()
+                    > d.loc[_ay(d, "tarih").isin([11, 12, 1]), "toz_ort"].mean()
+                ),
+            ),
+        ),
+    ),
+    Kaynak(
         ad="ilceler_referans_csv",
         yol="data/reference/ilceler_gdz_adm.csv",
         # Parquet'in CSV ikizi: Kaggle notebook'unda pyarrow olmasa da
