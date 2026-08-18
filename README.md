@@ -16,7 +16,7 @@ dersler var.
 | | |
 |---|---|
 | Kod | **18.358 satır** · 44 modül · test tarafı 16.506 satır |
-| Test | **1175 test** toplanıyor · ruff check + format, mypy temiz |
+| Test | **1196 test** toplanıyor · ruff check + format, mypy temiz |
 | Uçtan uca kanıt | `full_pipeline.py` 21/21 · `smoke_test.py` · `day_one.py` submission üretiyor |
 | Harici veri | 96 ilçe hava (günlük + saatlik türev: basınç, eşik-üstü rüzgâr) · güneş · deprem (AFAD) · yangın (FIRMS) · turizm gecelemesi (KTB, yıllık ilçe + aylık il) · Türkiye tüketim+üretim · 96 ilçe referans |
 | Kaggle offline | [`cemzal/gridup-offline-paket`](https://www.kaggle.com/datasets/cemzal/gridup-offline-paket) — internet kapalı notebook için |
@@ -220,7 +220,7 @@ docs/
   06-teknik-tuzaklar.md          bilinen tuzaklar
   07-veri-gunu-kontrol-listesi.md saat saat veri günü planı
 
-tests/    1175 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
+tests/    1196 test — sızıntı, Türkçe, sözleşmeler, determinizm, özellik tabanlı
 ```
 
 ---
@@ -231,7 +231,7 @@ Gerçek GDZ provası hariç hepsi `data/` altında ve **gitignore'da** (aşağı
 
 | Veri | Boyut | Nasıl üretilir |
 |---|---|---|
-| Hava, 96 ilçe, 2020–2026 | 231.648 × 20 | `python scripts/fetch_weather.py --all-districts` |
+| Hava, 96 ilçe, 2020–2026-09 | 233.952 × 23 | `python scripts/fetch_weather.py --all-districts` + `fetch_weather_bridge.py` (forecast köprüsü, `hava_tahmin` bayrağı) |
 | Güneş fiziği, 96 ilçe | 233.760 × 9 | `features/solar.py` (pvlib, deterministik) |
 | Türkiye saatlik tüketim | 58.044 × 2 | `python scripts/fetch_epias_load.py` |
 | Türkiye saatlik üretim | 58.044 × 18 | aynı betik — **yakıt kırılımı** |

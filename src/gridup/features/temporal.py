@@ -763,10 +763,44 @@ def _sort_key(series: pd.Series, *, is_time: bool) -> np.ndarray:
     return codes
 
 
+def _tek_satir_dogrula(frame: pd.DataFrame, sort_by: Sequence[str], *, time_column: str) -> None:
+    """``(grup..., gun)`` bazinda tek satir degilse hata firlatir.
+
+    Bu moduldeki her gecmis-hedef feature'i ``shift(horizon)`` ile SATIR
+    kaydirir, GUN degil. Grup basina gunde birden cok satir (olay-duzeyi
+    kayit) varsa "horizon satir once" cogu zaman ayni gun ya da birkac gun
+    oncesidir ve ufuk duvari SESSIZCE yok olur. Olculdu (2026-08-18
+    denetimi): 1 ilce x 40 gun x 3 olay/gun, horizon=7 -> shift7 feature'inin
+    en kucuk gun farki 2, satirlarin %94'u <7 gun oncesinden. Ayni guard
+    spatial.py'de vardi, buraya tasindi. Once gunluk topla (build_panel).
+    """
+    tekrarli = int(frame.duplicated(list(sort_by)).sum())
+    if tekrarli:
+        ornek = frame.loc[frame.duplicated(list(sort_by)), list(sort_by)].head(2)
+        raise ValueError(
+            f"{tuple(sort_by)} ikilisi {tekrarli} satirda tekrarliyor "
+            f"(ornek: {ornek.to_dict('records')}). "
+            "shift(horizon) SATIR kaydirir, GUN degil: tekrarli satirlarda ufuk duvari "
+            "sessizce delinir (olculdu: 3 satir/gun + horizon=7 -> satirlarin %94'u <7 gun "
+            f"oncesinden). Once ('{time_column}' bazinda) gunluk topla: gridup.build_panel(...) "
+            "ya da frame.groupby([grup, gun])[hedef].sum().reset_index()."
+        )
+
+
 def _sorted_view(
-    frame: pd.DataFrame, sort_by: Sequence[str], *, time_column: str
+    frame: pd.DataFrame,
+    sort_by: Sequence[str],
+    *,
+    time_column: str,
+    require_unique: bool = True,
 ) -> tuple[pd.DataFrame, np.ndarray]:
-    """Sirali bir kopya ve orijinal siraya donmek icin permutasyon dondurur."""
+    """Sirali bir kopya ve orijinal siraya donmek icin permutasyon dondurur.
+
+    ``require_unique`` (varsayilan) satir kaydirmali feature'lar icin
+    ``sort_by`` bazinda tekillik ister; bkz. ``_tek_satir_dogrula``.
+    """
+    if require_unique:
+        _tek_satir_dogrula(frame, sort_by, time_column=time_column)
     keys = [
         _sort_key(frame[column], is_time=(column == time_column))
         for column in reversed(list(sort_by))

@@ -90,13 +90,182 @@ def require_official_metric(metric: str | None) -> str:
     return normalized
 
 
-def resolve_task(explicit: str | None, target_summary: dict[str, Any]) -> str:
-    """Acik kullanici secimini koru; yoksa profil tahminini kullan."""
+#: Resmi metrik bunlardan biriyse hedef REGRESYONDUR -- profil "multiclass"
+#: dese bile. Olculdu (2026-08-18 denetimi): 2024 GDZ semasinda gunluk
+#: kesinti adedi 0..8 arasi -> profil 20'den az benzersiz deger gorup
+#: "multiclass" dedi -> LightGBM "Multiclass objective and metrics don't
+#: match" ile coktu, submission uretilmedi.
+REGRESYON_METRIKLERI = frozenset({"rmse", "rmsle", "mae", "mape", "smape", "r2"})
+
+#: Regresyon metrigi -> egitim objective'i. MAE'de L2 egitmek, benchmark'ta
+#: SIFIR TABANININ altinda kaldi (lgb_l2 400 vs sifir 367 vs lgb_mae 311).
+#: metrics.py:10 "MAE -> L1" der; burasi onu day_one'a uygular.
+METRIK_OBJECTIVE = {
+    "mae": "mae",
+    "mape": "mae",
+    "smape": "mae",
+    "rmse": "l2",
+    "rmsle": "l2",
+    "r2": "l2",
+}
+
+
+def resolve_task(
+    explicit: str | None, target_summary: dict[str, Any], metric: str | None = None
+) -> str:
+    """Acik kullanici secimini koru; yoksa profil tahminini kullan.
+
+    Profil dusuk kardinaliteli sayisal hedefi "multiclass" sanabilir; resmi
+    metrik bir regresyon metrigiyse bu tahmin ezilir ve neden yazilir.
+    """
     inferred = target_summary.get("gorev_tahmini")
     resolved = explicit or inferred or "regression"
+    if (
+        explicit is None
+        and metric is not None
+        and metric.strip().lower() in REGRESYON_METRIKLERI
+        and resolved != "regression"
+    ):
+        print(
+            f"  NOT: profil gorevi {resolved!r} tahmin etti ama resmi metrik "
+            f"{metric!r} bir regresyon metrigi -> gorev 'regression' olarak cozuldu "
+            "(dusuk kardinaliteli sayim hedefi tuzagi)."
+        )
+        resolved = "regression"
     if resolved not in {"regression", "binary", "multiclass"}:
         raise ValueError(f"desteklenmeyen gorev tipi: {resolved}")
     return str(resolved)
+
+
+#: Bilesik id sentezinde denenen ayraclar ve tarih bicimleri (2024 GDZ emsali:
+#: ``unique_id = "2025-07-01-izmir-aliağa"``; docs/01:35).
+_ID_AYRACLARI = ("-", "_", "|", "/", "")
+_ID_TARIH_BICIMLERI = ("%Y-%m-%d", "%d.%m.%Y", "%Y%m%d", "%d-%m-%Y", "%Y/%m/%d")
+
+
+def _id_parca_adaylari(test: pd.DataFrame, time_column: str | None) -> list[tuple[str, pd.Series]]:
+    """Id'yi olusturabilecek parcalar: tarih (birkac bicim) + metin kolonlari (ham/kucuk)."""
+    parcalar: list[tuple[str, pd.Series]] = []
+    if time_column is not None and time_column in test.columns:
+        zaman = pd.to_datetime(test[time_column], errors="coerce")
+        for bicim in _ID_TARIH_BICIMLERI:
+            parcalar.append((f"{time_column}:{bicim}", zaman.dt.strftime(bicim)))
+    for kolon in test.columns:
+        dtype = test[kolon].dtype
+        metin = (
+            pd.api.types.is_string_dtype(dtype)  # pandas 3: str/StringDtype
+            or pd.api.types.is_object_dtype(dtype)
+            or isinstance(dtype, pd.CategoricalDtype)
+        )
+        if kolon == time_column or not metin:
+            continue
+        ham = test[kolon].astype(str).str.strip()
+        parcalar.append((kolon, ham))
+        parcalar.append((f"{kolon}:kucuk", ham.map(lambda s: s.lower())))
+    return parcalar
+
+
+def synthesize_id_column(
+    test: pd.DataFrame, sample: pd.DataFrame, id_column: str, time_column: str | None
+) -> pd.Series | None:
+    """sample_submission id'si test'te YOKSA test kolonlarindan yeniden kurmayi dener.
+
+    2024 GDZ'de id bilesik bir dizgeydi ("il-ilce-tarih" gibi) ve test'te
+    ayri kolon olarak yoktu. Yontem: tarih (5 bicim) ve metin kolonlarinin
+    (ham/kucuk harf) 1-3'lu siralamalari 5 ayracla birlestirilir; uretilen
+    kume sample id kumesiyle BIREBIR esitse o desen kabul edilir. Esitlik
+    sarti sessiz yanlis desene izin vermez. Bulunamazsa None.
+    """
+    from itertools import permutations
+
+    hedef = set(sample[id_column].astype(str).str.strip())
+    if len(hedef) != len(test):
+        return None
+    parcalar = _id_parca_adaylari(test, time_column)
+    for uzunluk in (1, 2, 3):
+        for kombin in permutations(parcalar, uzunluk):
+            adlar = [k[0].split(":")[0] for k in kombin]
+            if len(set(adlar)) != uzunluk:
+                continue  # ayni kolonun iki bicimi bir arada olmaz
+            for ayrac in _ID_AYRACLARI:
+                aday = kombin[0][1]
+                for _, seri in kombin[1:]:
+                    aday = aday + ayrac + seri
+                if set(aday) == hedef:
+                    print(
+                        f"  id '{id_column}' test'te yoktu; desen bulundu: "
+                        f"{' + '.join(k[0] for k in kombin)} (ayrac {ayrac!r})"
+                    )
+                    return aday.rename(id_column)
+    return None
+
+
+#: Harici gunluk seriler: (dosya, zaman kolonu). Test blogu bu dosyalarin son
+#: gununu asarsa ilgili feature ailesi YALNIZCA testte NaN olur -- CV'de
+#: gorunmez (2026-08-18 denetimi, P0-10). Ilk kontrol budur.
+HARICI_GUNLUK_DOSYALAR: tuple[tuple[str, str], ...] = (
+    ("data/external/hava_gunluk.parquet", "tarih"),
+    ("data/external/hava_saatlik_turev.parquet", "tarih"),
+    ("data/external/gunes_gunluk.parquet", "tarih"),
+    ("data/external/yanginlar.parquet", "tarih"),
+    ("data/external/depremler.parquet", "tarih"),
+)
+
+
+def harici_kapsam_raporu(
+    test_min: pd.Timestamp, test_max: pd.Timestamp, root: Path = ROOT
+) -> list[tuple[str, pd.Timestamp | None, bool]]:
+    """Her harici gunluk serinin son gununu test blogunun sonuyla kiyaslar.
+
+    Dondurdugu liste: (dosya, son_gun, kapsiyor_mu). Dosya yoksa son_gun None.
+    ``hava_gunluk`` icin tahmin (forecast koprusu) satirlarinin test
+    araligindaki payi da yazilir -- model o gunlerde ERA5 degil, tahmin gorur.
+    """
+    print("\n  HARICI VERI KAPSAMI (test bloguna gore):")
+    sonuc: list[tuple[str, pd.Timestamp | None, bool]] = []
+    for gorece, zaman_kolonu in HARICI_GUNLUK_DOSYALAR:
+        yol = root / gorece
+        if not yol.exists():
+            print(f"    - {gorece}: YOK")
+            sonuc.append((gorece, None, False))
+            continue
+        try:
+            tablo = pd.read_parquet(yol, columns=[zaman_kolonu])
+        except (OSError, ValueError, KeyError) as hata:
+            print(f"    - {gorece}: okunamadi ({hata})")
+            sonuc.append((gorece, None, False))
+            continue
+        zaman = pd.to_datetime(tablo[zaman_kolonu], errors="coerce")
+        son = zaman.max()
+        kapsiyor = bool(pd.notna(son) and son >= test_max.normalize())
+        durum = "OK" if kapsiyor else f"UYARI: {(test_max.normalize() - son).days} gun ACIK"
+        print(f"    - {gorece}: son gun {son.date() if pd.notna(son) else '?'}  [{durum}]")
+        if gorece.endswith("hava_gunluk.parquet"):
+            try:
+                bayrak = pd.read_parquet(yol, columns=[zaman_kolonu, "hava_tahmin"])
+                aralik = bayrak[
+                    (bayrak[zaman_kolonu] >= test_min.normalize())
+                    & (bayrak[zaman_kolonu] <= test_max.normalize())
+                ]
+                if len(aralik):
+                    pay = float(aralik["hava_tahmin"].mean())
+                    print(f"      test araliginda tahmin (forecast) satiri payi: %{100 * pay:.0f}")
+            except (OSError, ValueError, KeyError):
+                print("      (hava_tahmin bayragi yok: fetch_weather_bridge.py calistirilmamis)")
+        sonuc.append((gorece, son, kapsiyor))
+    if not all(k for _, _, k in sonuc):
+        print(
+            "    -> Acik olan seride test satirlari NaN alir; ya kaynagi guncelle "
+            "(fetch_weather_bridge.py / fetch_*.py) ya da o aileyi ufuk-kaydirmali kullan."
+        )
+    return sonuc
+
+
+def objective_for_metric(task_type: str, metric: str) -> str | None:
+    """Regresyonda resmi metrige uygun objective; digerlerinde None (varsayilan)."""
+    if task_type != "regression":
+        return None
+    return METRIK_OBJECTIVE.get(metric.strip().lower())
 
 
 def _kolonu_coz(ad: str | None, frame: pd.DataFrame) -> str | None:
@@ -167,8 +336,17 @@ def find_files(data_dir: Path) -> dict[str, Path]:
     kalmaz. Ayni dosya iki role atanamaz; elenen adaylar da ekrana yazilir,
     cunku veri gununde yanlis dosyayi okumak saatlere mal olur.
     """
+
+    # SIG olan once: data/raw/train.csv, data/raw/_prova/train.csv'den ONCE
+    # gelmeli. Duz sorted() ile "_" harfi "t"den once siralanir ve alt
+    # dizindeki sentetik prova dosyasi gercek dosyayi GOLGELER (olculdu:
+    # 2026-08-18 denetimi, ayni ad iki yolda -> uyari bile okunamiyordu).
+    # Derinlik birincil anahtar; ayni derinlikte ad sirasi.
+    def _sira(path: Path) -> tuple[int, str]:
+        return (len(path.relative_to(data_dir).parts), str(path).lower())
+
     dosyalar: list[tuple[Path, set[str], str]] = []
-    for path in sorted(data_dir.rglob("*")):
+    for path in sorted(data_dir.rglob("*"), key=_sira):
         if path.suffix.lower() not in _VERI_UZANTILARI:
             continue
         katlanmis = join_key(path.stem)
@@ -183,16 +361,20 @@ def find_files(data_dir: Path) -> dict[str, Path]:
             continue
         found[key] = kalan[0]
         kullanilan.add(kalan[0])
+        secilen = kalan[0].relative_to(data_dir).as_posix()
         if not kelime_eslesmesi:
             print(
                 f"  UYARI: '{key}' icin kelime eslesmesi yok; "
-                f"'{kalan[0].name}' ALT DIZGI ile secildi -- dogru dosya mi kontrol et."
+                f"'{secilen}' ALT DIZGI ile secildi -- dogru dosya mi kontrol et."
             )
         if len(kalan) > 1:
-            digerleri = ", ".join(path.name for path in kalan[1:])
+            # Goreli yol yaz: ayni ad farkli dizinlerde olabilir; yalnizca
+            # dosya adi yazilirsa "train.csv secildi, yok sayilan: train.csv"
+            # gibi anlamsiz bir uyari cikar.
+            digerleri = ", ".join(path.relative_to(data_dir).as_posix() for path in kalan[1:])
             print(
                 f"  UYARI: '{key}' icin {len(kalan)} aday var. "
-                f"'{kalan[0].name}' secildi, yok sayilanlar: {digerleri}"
+                f"'{secilen}' secildi, yok sayilanlar: {digerleri}"
             )
     return found
 
@@ -351,24 +533,42 @@ def main() -> int:
     report = profile(train, test, target=args.target)
     print(report.report())
 
-    inferred_task = report.target_summary.get("gorev_tahmini")
-    target_kind = resolve_task(args.task, report.target_summary)
-    if args.task is not None and inferred_task not in (None, args.task):
-        print(
-            f"  UYARI: profil gorevi {inferred_task!r} tahmin etti; "
-            f"acik --task={args.task!r} korunuyor."
-        )
     try:
         args.metric = require_official_metric(args.metric)
     except ValueError as error:
         print(f"\n  HATA: {error}")
         return 1
+    inferred_task = report.target_summary.get("gorev_tahmini")
+    target_kind = resolve_task(args.task, report.target_summary, metric=args.metric)
+    if args.task is not None and inferred_task not in (None, args.task):
+        print(
+            f"  UYARI: profil gorevi {inferred_task!r} tahmin etti; "
+            f"acik --task={args.task!r} korunuyor."
+        )
     zero_share = float(report.target_summary.get("sifir_orani", 0.0) or 0.0)
     skew = float(report.target_summary.get("carpiklik", 0.0) or 0.0)
 
     # ---------------------------------------------------------------- 3
     banner("3/7", "SIZINTI TARAMASI")
     time_column = args.time_column or (report.time_columns[0] if report.time_columns else None)
+
+    # ID KOLONU CV'DEN ONCE DOGRULANIR. Olculdu (2026-08-18): 2024 semasinda
+    # sample'in bilesik unique_id'si test'te yoktu -> tum CV bitti, 7/7'de
+    # KeyError, dosya yok. Sentez basarisizsa simdi, net mesajla dur.
+    if test is not None and sample is not None and args.id_column not in test.columns:
+        sentez = synthesize_id_column(test, sample, args.id_column, time_column)
+        if sentez is None:
+            print(
+                f"\n  HATA: sample_submission id kolonu '{args.id_column}' test'te yok ve "
+                f"test kolonlarindan turetilemedi.\n"
+                f"  sample id ornekleri: {sample[args.id_column].head(3).tolist()}\n"
+                f"  test kolonlari: {list(test.columns)}\n"
+                f"  Cozum: test'e id kolonunu elle kur "
+                f"(or. test['{args.id_column}'] = tarih + '-' + il + '-' + ilce) ve yeniden kos."
+            )
+            return 1
+        test = test.assign(**{args.id_column: sentez.to_numpy()})
+
     findings = leakage_report(train, args.target, test=test, time_column=time_column)
     print(f"  {findings['summary']}\n")
     for severity in ("critical", "warning", "info"):
@@ -428,6 +628,7 @@ def main() -> int:
         horizon = int((test_times.max() - test_times.min()).days) + 1
         print(f"\n  Tahmin ufku (test blok uzunlugu): {horizon} gun")
         print("  -> lag/rolling feature'lari bu ufka gore kaydirilmali")
+        harici_kapsam_raporu(test_times.min(), test_times.max())
 
     splitter_name: str
     test_span_days: int | None = None
@@ -510,7 +711,10 @@ def main() -> int:
             f"{args.metric} HAM hedef uzayinda olculecek"
         )
 
-    params = starter_params("lightgbm", target_kind)
+    objective = objective_for_metric(target_kind, args.metric)
+    params = starter_params("lightgbm", target_kind, objective=objective)
+    if objective is not None:
+        print(f"  objective: {params['objective']} (resmi metrik {args.metric} icin)")
     result = cross_validate(
         train_features[columns],
         y,
@@ -555,6 +759,10 @@ def main() -> int:
         sample=sample,
         id_column=args.id_column,
         target_column=args.target,
+        # Test sirasi sample sirasindan farkliysa hizala; id'ler tekilse
+        # guvenlidir (yardimci tekrarli id'de zaten reddeder). Olculdu:
+        # karisik sample ile "ID sirasi uyusmuyor" hatasi, EXIT=1, dosya yok.
+        align_to_sample=sample is not None,
     )
 
     fold_plan = FoldPlan.from_folds(folds, n_rows=len(train_features))

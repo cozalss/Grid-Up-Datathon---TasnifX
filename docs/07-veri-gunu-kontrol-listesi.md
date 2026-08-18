@@ -9,7 +9,7 @@ izlenecek adımları içerir.
 
 | Varlık | Yer | Durum |
 |---|---|---|
-| Hava durumu, 2020–2026 | `data/external/hava_gunluk.parquet` | **96 ilçe**, 231.648 satır, sıfır eksik |
+| Hava durumu, 2020–2026-09-02 | `data/external/hava_gunluk.parquet` | **96 ilçe**, 233.952 satır, sıfır eksik; ERA5 arşivi 2026-08-09'a kadar + Open-Meteo forecast köprüsü (`hava_tahmin=1`, 2304 satır, dikiş 0,70 °C) — `scripts/fetch_weather_bridge.py` |
 | Güneş fiziği, 2020–2026 | `data/external/gunes_gunluk.parquet` | 96 ilçe × 2435 gün, sıfır eksik |
 | 96 ilçe + koordinat + nüfus | `data/reference/ilceler_gdz_adm.parquet` | Komşuluk grafiği doğrulandı |
 | Arıza sebebi taksonomisi | `gridup.features.outage_reason` | 919 metin → 22 aile, %0,88 sınıflanamayan |
@@ -24,7 +24,7 @@ izlenecek adımları içerir.
 | EPDK bölge sınıfı | `gridup.features.demografi.epdk_bolge_sinifi` | Resmi kentsel/kentaltı/kırsal eşikleri |
 | Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
 | Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
-| Test paketi | `tests/` | 1175 test |
+| Test paketi | `tests/` | 1196 test |
 
 ---
 
@@ -81,12 +81,21 @@ kabul etsin. **Takım birleşmeden kimse submission yapmasın.**
 
 ## Saat 1 — İlk komut
 
-Veriyi `data/raw/` altına koyun, sonra:
+Veriyi `data/raw/` altına koyun (**yalnızca** yarışma dosyaları; alt dizinde
+başka CSV bırakmayın — betik sığ dosyayı tercih eder ama gölgeyi uyarır), sonra:
 
 ```powershell
 cd c:\Users\cemmo\Documents\Datahon
-python scripts\day_one.py --data data\raw --metric mae
+python scripts\fetch_weather_bridge.py            # hava arşivini bugün+16'ya köprüle
+python scripts\day_one.py --data data\raw --metric mae --task regression
 ```
+
+`--task regression`: sayım hedefi (0..8 gibi) profilde "multiclass" görünür;
+metrik regresyon metriğiyse betik zaten regresyona çözer, bayrak bunu açık
+kılar. Betik ayrıca metrikten objective türetir (MAE → L1), bileşik
+`unique_id`'yi test kolonlarından sentezler ve **HARİCİ VERİ KAPSAMI**
+satırlarını basar — test bloğunun sonu bir serinin son gününü aşıyorsa
+"UYARI: N gün AÇIK" görürsünüz; o aileyi ya yenileyin ya ufuk-kaydırmalı kullanın.
 
 Betik `sample_submission.csv`'den hedef ve ID kolonunu **kendisi çıkarır**.
 Zaman ve grup kolonunu bildiğinizde ekleyin:
@@ -118,8 +127,9 @@ operatörün şebeke manevrası. `Borçtan Kesme` de öyle. Yarışma hedefi bun
 içeriyorsa modelleme tamamen değişir.
 
 ```python
+# NOT: read_any kolon adlarini normalize eder ("ARIZA SEBEBİ" -> "ariza_sebebi").
 from gridup.features import reason_family_report
-print(reason_family_report(train["ARIZA_SEBEBI"]))
+print(reason_family_report(train["ariza_sebebi"]))
 ```
 
 **2 · İlçe adları tablomuzla eşleşiyor mu?**
@@ -128,7 +138,7 @@ print(reason_family_report(train["ARIZA_SEBEBI"]))
 from gridup.turkish import diagnose_join, join_key
 import pandas as pd
 ref = pd.read_parquet("data/reference/ilceler_gdz_adm.parquet")
-print(diagnose_join(train["ILCE"].unique(), ref["ilce"].unique()))
+print(diagnose_join(train["ilce"].unique(), ref["ilce"].unique()))
 ```
 
 Eşleşmeyen varsa **2012 büyükşehir yasası** şüphelisi: Efeler, Şehzadeler,
@@ -138,11 +148,14 @@ diyor olabilir.
 **3 · Hava verisi join oluyor mu?**
 
 ```python
+# Hava parquet'i ILCE bazlidir: anahtar ilce_key = join_key(strip_qualifier(ilce)).
+# konum_key "il-ilce" bilesik dizgedir; il_key ile eslesmez (olculdu: %0).
+from gridup.turkish import strip_qualifier
 hava = pd.read_parquet("data/external/hava_gunluk.parquet")
-train["il_key"] = train["IL"].map(join_key)
-merged = train.merge(hava, left_on=["il_key","TARIH"],
-                     right_on=["konum_key","tarih"], how="left")
-print(merged["sicaklik_ort"].notna().mean())   # ~1.0 olmalı
+train["ilce_key"] = train["ilce"].map(lambda ad: join_key(strip_qualifier(ad)))
+train["tarih"] = pd.to_datetime(train["tarih"]).dt.normalize()
+merged = train.merge(hava, on=["ilce_key", "tarih"], how="left")
+print(merged["sicaklik_ort"].notna().mean())   # ~1.0 olmalı; degilse diagnose_join
 ```
 
 **4 · Aykırı değerler**
@@ -187,7 +200,7 @@ değiştirmeyin** — hangisinin işe yaradığını bilemezsiniz.
 2. **Ufuk-farkındalıklı lag/rolling** — ölçülen katkı **+22,3 dk**, diğer tüm
    ailelerin toplamından büyük. İlk kurulacak aile budur:
    ```python
-   out = add_lag_features(out, TARGET, [31,62,93], time_column=TIME,
+   out = add_lag_features(out, TARGET, shifts=[31, 62, 93], time_column=TIME,
                           group_columns=[GROUP], horizon=HORIZON)
    ```
    `horizon` **zorunlu**. Test bloğu bir aylıksa 1 günlük lag yoktur.

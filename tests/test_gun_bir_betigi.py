@@ -461,3 +461,110 @@ def test_zaman_kolonu_bulununca_foldlar_ileri_zincirleme_oluyor():
     assert len(folds) == 5
     assert boylar == sorted(boylar)
     assert len(set(boylar)) > 1, "esit boylar rastgele KFold demektir"
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-18 DENETIMI -- 2024 GDZ semasi: sayim hedefi, bilesik unique_id,
+# karisik sample sirasi, alt dizinde golge dosya
+# ---------------------------------------------------------------------------
+
+
+def _veri_2024_semasi(dizin: Path) -> tuple[Path, pd.DataFrame]:
+    """2024 GDZ bicimi: ``tarih, ilce="izmir-aliağa", bildirimsiz_sum`` (0..8),
+    sample ``unique_id = tarih-ilce`` KARISIK sirada; test'te unique_id YOK.
+    Ayrica ``_prova/`` alt dizininde farkli boyutlu sentetik kopya var.
+    """
+    dizin.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(7)
+    gunler = pd.date_range("2025-01-01", periods=120, freq="D")
+    ilceler = ["izmir-aliağa", "izmir-bornova", "muğla-bodrum", "aydın-efeler"]
+    satirlar = [
+        {"tarih": g.strftime("%Y-%m-%d"), "ilce": ilce, "bildirimsiz_sum": int(rng.poisson(1.2))}
+        for g in gunler
+        for ilce in ilceler
+    ]
+    frame = pd.DataFrame(satirlar)
+    frame["bildirimsiz_sum"] = frame["bildirimsiz_sum"].clip(upper=8)
+    egitim = frame.iloc[: 100 * len(ilceler)].copy()
+    deneme = frame.iloc[100 * len(ilceler) :].copy()
+    sample = pd.DataFrame(
+        {
+            "unique_id": deneme["tarih"] + "-" + deneme["ilce"],
+            "bildirimsiz_sum": 0,
+        }
+    ).sample(frac=1.0, random_state=3)  # karisik sira
+    egitim.to_csv(dizin / "train.csv", index=False, encoding="utf-8")
+    deneme.drop(columns=["bildirimsiz_sum"]).to_csv(
+        dizin / "test.csv", index=False, encoding="utf-8"
+    )
+    sample.to_csv(dizin / "sample_submission.csv", index=False, encoding="utf-8")
+    golge = dizin / "_prova"
+    golge.mkdir()
+    egitim.head(50).to_csv(golge / "train.csv", index=False)
+    deneme.head(10).to_csv(golge / "test.csv", index=False)
+    sample.head(10).to_csv(golge / "sample_submission.csv", index=False)
+    return dizin, sample
+
+
+def test_golge_dizin_gercek_dosyayi_ezmiyor(tmp_path, capsys):
+    """Ust dizindeki train.csv, _prova/train.csv'den ONCE gelmeli; uyari goreli yol yazmali."""
+    modul = _betigi_yukle()
+    dizin, _ = _veri_2024_semasi(tmp_path / "raw")
+    bulunan = modul.find_files(dizin)
+    assert bulunan["train"] == dizin / "train.csv"
+    assert bulunan["test"] == dizin / "test.csv"
+    assert bulunan["sample"] == dizin / "sample_submission.csv"
+    cikti = capsys.readouterr().out
+    assert "_prova/train.csv" in cikti, cikti
+
+
+def test_regresyon_metrigi_multiclass_tahminini_eziyor():
+    modul = _betigi_yukle()
+    assert modul.resolve_task(None, {"gorev_tahmini": "multiclass"}, metric="mae") == "regression"
+    assert modul.resolve_task(None, {"gorev_tahmini": "multiclass"}, metric="AUC") == "multiclass"
+    assert (
+        modul.resolve_task("multiclass", {"gorev_tahmini": "regression"}, metric="mae")
+        == "multiclass"
+    )
+    assert modul.objective_for_metric("regression", "mae") == "mae"
+    assert modul.objective_for_metric("regression", "rmse") == "l2"
+    assert modul.objective_for_metric("binary", "mae") is None
+
+
+def test_bilesik_id_test_kolonlarindan_sentezleniyor(tmp_path):
+    modul = _betigi_yukle()
+    dizin, sample = _veri_2024_semasi(tmp_path / "raw")
+    test = pd.read_csv(dizin / "test.csv")
+    sentez = modul.synthesize_id_column(test, sample, "unique_id", "tarih")
+    assert sentez is not None
+    assert list(sentez) == list(test["tarih"] + "-" + test["ilce"])
+    # Sample kumesi test ile eslesmiyorsa sessizce bir desen UYDURMAZ
+    yanlis = sample.copy()
+    yanlis["unique_id"] = yanlis["unique_id"] + "x"
+    assert modul.synthesize_id_column(test, yanlis, "unique_id", "tarih") is None
+
+
+@pytest.mark.slow
+def test_2024_semasi_uctan_uca_submission_uretiyor(tmp_path):
+    """Denetimde OLCULDU: bu semada betik iki kez cokuyordu (multiclass;
+    KeyError unique_id) ve karisik sample'da "ID sirasi uyusmuyor" veriyordu.
+    Simdi: EXIT 0, dosya sample sirasinda, id kumesi birebir, L1 objective.
+    """
+    dizin, sample = _veri_2024_semasi(tmp_path / "raw")
+    komut = [
+        sys.executable, str(KOK / "scripts" / "day_one.py"),
+        "--data", str(dizin), "--time", "tarih", "--group", "ilce", "--metric", "mae", "--yes",
+    ]  # fmt: skip
+    kosu = subprocess.run(
+        komut, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(KOK), timeout=600, check=False,
+    )  # fmt: skip
+    assert kosu.returncode == 0, kosu.stdout[-3000:] + kosu.stderr[-1500:]
+    assert "gorev 'regression' olarak cozuldu" in kosu.stdout
+    assert "objective: mae" in kosu.stdout
+    assert "desen bulundu" in kosu.stdout
+    assert "Yazildi:" in kosu.stdout
+    yol = KOK / "submissions" / "gun1_baseline.csv"
+    yazilan = pd.read_csv(yol)
+    assert list(yazilan.columns) == ["unique_id", "bildirimsiz_sum"]
+    assert list(yazilan["unique_id"]) == list(sample["unique_id"]), "sample sirasi korunmali"

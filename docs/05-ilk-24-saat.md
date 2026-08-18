@@ -141,15 +141,18 @@ hangisinin işe yaradığını bilemezsin.
 ## Saat 7+ — Harici veri
 
 ```powershell
-python scripts\fetch_weather.py --start 2020-01-01 --end 2026-09-01 --districts
+python scripts\fetch_weather.py --start 2020-01-01 --end 2026-09-01 --all-districts
 ```
 
 **Join'i mutlaka `join_key` ile yap:**
 
 ```python
-train["il_key"] = train["il"].map(join_key)
-merged = train.merge(hava, left_on=["il_key", "tarih"],
-                     right_on=["konum_key", "tarih"], how="left")
+# Hava parquet'i ILCE bazli: anahtar ilce_key. (konum_key "il-ilce" bilesigidir,
+# il_key ile eslesmez -- olculdu: %0 eslesme.)
+from gridup.turkish import join_key, strip_qualifier
+train["ilce_key"] = train["ilce"].map(lambda ad: join_key(strip_qualifier(ad)))
+train["tarih"] = pd.to_datetime(train["tarih"]).dt.normalize()
+merged = train.merge(hava, on=["ilce_key", "tarih"], how="left")
 
 # Kaç satır eşleşti? SESSİZ SIFIR EŞLEŞMEYE KARŞI KONTROL:
 print(merged["sicaklik_ort"].notna().mean())   # ~1.0 olmalı

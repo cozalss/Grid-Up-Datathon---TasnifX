@@ -477,6 +477,29 @@ HORIZON = 1                # TODO
 train = read_any(DATA_DIR / "train.csv")
 test  = read_any(DATA_DIR / "test.csv")
 print(train.shape, test.shape)
+
+# sample_submission OKUNUR: write_submission satir sayisini, ID kumesini ve
+# SIRAYI buna gore dogrular ve orijinal basligi geri yazar. Okunmazsa bu
+# kapilarin hicbiri calismaz (2026-08-18 denetimi).
+try:
+    sample_submission = read_any(DATA_DIR / "sample_submission.csv")
+    print("sample_submission kolonlari:", list(sample_submission.columns))
+except FileNotFoundError:
+    sample_submission = None
+    print("UYARI: sample_submission bulunamadi; submission sample'a gore dogrulanamayacak")
+
+# TEK SATIR / (GRUP, GUN): lag ailesi SATIR kaydirir, GUN degil. Olay-duzeyi
+# kayitta (ilce basina gunde birden cok satir) ufuk duvari sessizce delinir
+# (olculdu: 3 olay/gun + horizon=7 -> satirlarin %94'u <7 gun oncesinden).
+# 01 numarali notebook'un panelini kullan; burada ham train ise ONCE topla.
+if TIME_COLUMN and GROUP_COLUMN:
+    tekrar = int(train.duplicated([GROUP_COLUMN, TIME_COLUMN]).sum())
+    if tekrar:
+        raise ValueError(
+            f"train'de ({GROUP_COLUMN}, {TIME_COLUMN}) {tekrar} satirda tekrarliyor. "
+            "Once gunluk panele topla: build_panel(...) (bkz. 01_kesif) -- "
+            "aksi halde lag feature'lari ayni gunun hedefini gorur."
+        )
 """),
     markdown("""
 ## 1 · Fold'lar — feature üretmeden önce
@@ -695,8 +718,10 @@ path = write_submission(
     test_features[ID_COLUMN].to_numpy(),
     predictions,
     OUT_DIR / "baseline_lgbm.csv",
+    sample=sample_submission,        # satir/ID/sira kapisi + orijinal baslik
     id_column=ID_COLUMN,
     target_column=TARGET,
+    align_to_sample=sample_submission is not None,  # sira farkliysa hizala
 )
 """),
     markdown("""
@@ -742,7 +767,14 @@ provenance = ExperimentProvenance.capture(
     feature_names=FEATURES,
     fold_fingerprint=fold_plan.fingerprint,
 )
-store = SQLiteExperimentStore(OUT_DIR.parent / "experiments" / "experiments.db")
+# Kaggle'da /kaggle/working disina yazilamaz ve git yoktur: strict_provenance
+# git SHA ister ve submission YAZILDIKTAN SONRA cokerdi (olculdu, 2026-08-18).
+# Yerelde repo icindeyiz -> tam provenance korunur.
+if IS_KAGGLE:
+    STORE_PATH = OUT_DIR / "experiments.db"
+else:
+    STORE_PATH = OUT_DIR.parent / "experiments" / "experiments.db"
+store = SQLiteExperimentStore(STORE_PATH, strict_provenance=not IS_KAGGLE)
 record = store.add(ExperimentRecord(
     name="baseline_lgbm",
     cv_score=result.overall_score,

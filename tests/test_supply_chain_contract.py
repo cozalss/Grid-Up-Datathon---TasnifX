@@ -471,3 +471,16 @@ def test_yayin_kapisi_degisebilir_ust_kaynagi_bloke_etmez(tmp_path) -> None:
     assert any("immutable=false" in u for u in sonuc.warnings), (
         "Uyari KAYBOLMAMALI -- bilgi korunmali, yalnizca bloke etmemeli."
     )
+
+
+def test_paket_veri_listesi_kaynak_manifestinden_turetiliyor():
+    """VERI_DOSYALARI == sources.yml artefaktlari; elle liste ayrismasi kapali.
+
+    2026-08-18 denetimi: izsu manifestte var pakette yok, turizm_aylik_il
+    yalnizca listede vardi; Kaggle'a yuklenen paket bayat kaldi.
+    """
+    package = _load_script("build_kaggle_manifest_contract", "scripts/build_kaggle_package.py")
+    manifest = json.loads((ROOT / "data" / "sources.yml").read_text(encoding="utf-8"))
+    beklenen = tuple(a["path"] for a in manifest["artifacts"])
+    assert beklenen == package.VERI_DOSYALARI
+    assert len(beklenen) >= 10
