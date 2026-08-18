@@ -35,6 +35,29 @@ Her birinin dagitim sebekesine giden AYRI bir zinciri var:
 * **Alcak bulut** -> hem konvektif aktivite gostergesi hem cati GES
   uretiminin dususu (dagitik uretim, ADM/GDZ'nin DERMS gundemi).
 
+NEDEN ``models=era5_land`` KULLANILMIYOR -- OLCULDU (2026-08-18)
+--------------------------------------------------------------
+``models=era5_land`` cozunurlugu 0.25 dereceden (~25 km) 0.1 dereceye
+(~11 km) indirir ve toprak neminde GERCEKTEN farkli deger dondurur
+(olculdu: 0.1043 vs 0.0940, ayni gun ayni koordinat).
+
+Ama bir YUKSELTME degil, TAKAS oldugu olculdu -- ayni istekte alti
+degiskenin ikisi tamamen bos geliyor:
+
+    relative_humidity_2m        ERA5 %0 NaN   era5_land %0 NaN
+    dew_point_2m                     %0            %0
+    soil_moisture_0_to_7cm           %0            %0
+    vapour_pressure_deficit          %0            %0
+    cloud_cover_low                  %0        %100 NaN
+    et0_fao_evapotranspiration       %0        %100 NaN
+
+Kaybedilenlerden ET0, bu tablonun EN DEGERLI degiskeni: tarimsal sulama
+talebinin fiziksel vekili ve "Mayis-Eylul sulama sezonu" bayragindan cok
+daha iyi. Daha ince toprak nemi icin onu vermek kotu bir takas.
+
+Ayrica ilk 36 ilce zaten varsayilan ERA5 ile cekilmisti; yarisindan sonra
+model degistirmek ILCELER ARASI sessiz bir tutarsizlik yaratirdi.
+
 KULLANIM
 --------
 ::
