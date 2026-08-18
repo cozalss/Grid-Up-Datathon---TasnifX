@@ -17,7 +17,7 @@
   "artifacts": [
     {
       "path": "data/external/hava_gunluk.parquet",
-      "sha256": "a40bde141509639f5450245e016b2f4c2028892e5d230faaafcac7a36fe6ef43",
+      "sha256": "2589018fbb7657d4d63a2fba23a823855df29f0bd1c46d0c271b3d8a17d05017",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
@@ -28,8 +28,8 @@
       },
       "source": {
         "uri": "https://archive-api.open-meteo.com/v1/archive",
-        "snapshot_ref": "2020-01-01..2026-08-15; Europe/Istanbul; 96 district coordinates",
-        "retrieved_at": "2026-08-15",
+        "snapshot_ref": "ERA5 archive 2020-01-01..2026-08-09 (96 ilce) + Open-Meteo forecast bridge 2026-08-10..2026-09-02 (hava_tahmin=1; fetch_weather_bridge.py, dikis 0.70 C)",
+        "retrieved_at": "2026-08-18",
         "immutable": false
       },
       "schema": {
@@ -251,7 +251,7 @@
       }
     },
     {
-            "path": "data/external/turizm_aylik_il.parquet",
+      "path": "data/external/turizm_aylik_il.parquet",
       "sha256": "fa555ad5c57002d0328c5f8bcab55645ffa6997d9692520c545b3cbbdfd3a9dc",
       "license": "KTB-institutional-clearance",
       "redistribution": "allowed",
@@ -283,7 +283,7 @@
       }
     },
     {
-"path": "data/external/izsu_su_profili.parquet",
+      "path": "data/external/izsu_su_profili.parquet",
       "sha256": "32e8a168f024b057e6557a022928600dda2c5a97b7a0992eba744b25df6976b3",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
@@ -307,6 +307,36 @@
           "ay",
           "su_ay_endeksi",
           "su_yaz_kis"
+        ]
+      }
+    },
+    {
+      "path": "data/external/nem_toprak_gunluk.parquet",
+      "sha256": "802b81da992e7fe75b3938ea699b2444c3c1cc6f46a682ecad67ce4d7a5ef25b",
+      "license": "CC-BY-4.0",
+      "redistribution": "allowed",
+      "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-18",
+        "evidence": "Ayni Open-Meteo arsiv ucundan, hava_gunluk ile ayni CC BY 4.0 kosullari."
+      },
+      "source": {
+        "uri": "https://archive-api.open-meteo.com/v1/archive",
+        "snapshot_ref": "2020-01-01..2026-08-12; 96 ilce; nem/ciy/toprak nemi/VPD/bulut/ET0 saatlikten gunluge",
+        "retrieved_at": "2026-08-18",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 220000,
+        "required_columns": [
+          "ilce_key",
+          "tarih",
+          "nem_ort",
+          "toprak_nem_ort",
+          "vpd_max",
+          "et0_toplam"
         ]
       }
     }

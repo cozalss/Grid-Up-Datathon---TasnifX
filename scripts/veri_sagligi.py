@@ -250,6 +250,34 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
         asgari_satir=200,
     ),
     Kaynak(
+        ad="nem_toprak_gunluk",
+        yol="data/external/nem_toprak_gunluk.parquet",
+        tarih_kolonu="tarih",
+        anahtar_kolonu="ilce_key",
+        beklenen_ilce=96,
+        asgari_satir=220_000,
+        fizik=(
+            (
+                "nem %0-100 araliginda",
+                lambda d: d["nem_min"].min() >= 0 and d["nem_max"].max() <= 100,
+            ),
+            (
+                "ET0 yazin kisin en az IKI KATI (buharlasma sicakla artar)",
+                lambda d: (
+                    d.loc[_ay(d, "tarih").isin([6, 7]), "et0_toplam"].mean()
+                    > 2 * max(d.loc[_ay(d, "tarih").isin([12, 1]), "et0_toplam"].mean(), 1e-9)
+                ),
+            ),
+            (
+                "toprak nemi KISIN yazdan yuksek (Akdeniz yagis rejimi)",
+                lambda d: (
+                    d.loc[_ay(d, "tarih").isin([1, 2]), "toprak_nem_ort"].mean()
+                    > d.loc[_ay(d, "tarih").isin([7, 8]), "toprak_nem_ort"].mean()
+                ),
+            ),
+        ),
+    ),
+    Kaynak(
         ad="ilceler_referans_csv",
         yol="data/reference/ilceler_gdz_adm.csv",
         # Parquet'in CSV ikizi: Kaggle notebook'unda pyarrow olmasa da
