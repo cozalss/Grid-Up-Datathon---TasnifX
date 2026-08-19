@@ -24,7 +24,7 @@ izlenecek adımları içerir.
 | EPDK bölge sınıfı | `gridup.features.demografi.epdk_bolge_sinifi` | Resmi kentsel/kentaltı/kırsal eşikleri |
 | Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
 | Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
-| Test paketi | `tests/` | 1206 test |
+| Test paketi | `tests/` | 1214 test |
 
 ---
 
@@ -205,45 +205,88 @@ değiştirmeyin** — hangisinin işe yaradığını bilemezsiniz.
    ```
    `horizon` **zorunlu**. Test bloğu bir aylıksa 1 günlük lag yoktur.
 
-3. **Hava** — ölçülen katkı +2,5 dk. Ortalama değil `max` ve quantile; bölge
-   geneli agregat da ekleyin: `add_regional_aggregates`, `add_physical_derivatives`.
+3. **Harici veri — tek komut, ölçülmüş sıra.** `attach_external(panel,
+   key_column=…, time_column=…, horizon=H)` on iki aileyi tek çağrıyla bağlar
+   (hava, hava kalitesi, konvektif/CAPE, nem-toprak, güneş, yangın, deprem,
+   turizm yıllık+aylık, İZSU, EPİAŞ). Eksik kaynak sessiz NaN değil raporlanan
+   atlamadır; **%0 eşleşme hata verir**. `families=[…]` ile aile seçilir.
 
-4. **Komşu ilçe** — ölçülen katkı +0,2 dk (marjinal ama ucuz):
-   `nearest_neighbours` + `add_neighbour_target_lag(horizon=H)`.
+   **LOGO ablasyonu, gerçek GDZ verisi, 2026-08-18** (delta = aile silinince
+   MAE'nin kötüleşmesi; tam model 312,46, sıfır-baseline 366,97; tohum
+   gürültüsü ±1,2 dk → |delta| < 2 gürültü bandındadır):
 
-   > **UYARI — tatil ve güneş aileleri gerçek veride NEGATİF ölçüldü**
-   > (−4,7 ve −5,0 dk: çıkarılınca skor İYİLEŞTİ). Fold gürültüsü büyük
-   > olduğu için kesin hüküm değil; ama bu ikisini ancak CV kazancı
-   > ölçerek ekleyin, asla varsayılan olarak değil. Okul takvimi ailesi de
-   > (`add_school_calendar_features`) aynı kurala tabi: hazır, ama ölçmeden girmez.
+   | Aile | delta | Yorum |
+   |---|---:|---|
+   | lag | **+15,88** | Tartışmasız birinci; ilk kurulacak aile |
+   | konvektif (CAPE) | **+4,12** | Yıldırım vekili — ikinci en değerli |
+   | epias (ulusal tüketim) | **+3,13** | "Dekorasyon" sanılıyordu, değil |
+   | izsu (su profili) | **+2,69** | 2 kolon, yalnızca İzmir, yine de kazandırıyor |
+   | hava_saatlik (basınç/rüzgâr saati) | **+2,65** | Cephe geçişi sinyali |
+   | komsu | +2,13 | Ucuz, gürültü bandının hemen üstünde |
+   | deprem | +1,07 | Gürültü bandında |
+   | hava_kalitesi | +0,70 | Gürültü bandında |
+   | takvim | +0,45 | Gürültü bandında |
+   | turizm (yıllık/aylık) | 0,00 | Bu veride etkisiz (2021-22 penceresi) |
+   | nem_toprak | −0,15 | Etkisiz |
+   | yangın | −0,34 | Etkisiz |
+   | **hava (günlük)** | **−0,58** | Tek başına ölçülünce katkı YOK |
+   | **güneş** | **−1,16** | Çıkarılınca skor iyileşti |
+   | **tatil** | **−3,19** | En zararlı aile — varsayılan olarak ekleme |
 
-5. **Model çeşitliliği** — sıra gerçek veride ölçüldü, 3. dalga feature
-   setiyle (Hawkes bozunumu + toplu-olay payı dahil;
-   `experiments/benchmark_gercek.json`): önce **catboost_mae** (MAE 304,9 —
-   2023 birincisinin reçetesi bu feature setiyle kazanan tekil), sonra
-   `lgb_mae` (310,1), sonra **iki aşamalı + medyan kuralı**
-   (`fit_conditional_quantile_ladder` + `conditional_quantile_from_hurdle`,
-   316,9 — eşikli 317,0'a farkı 0,1'e indi: sinyali Hawkes feature'ları
-   taşıyınca kuralın kazancı eridi), sonra `lgb_sqrt` (324,0) ve
-   `lgb_tweedie` (327,8 — tekil zayıf ama harmanda ağırlık alıyor). Sayım
-   hedefiyse `COUNT_OBJECTIVES` ile süpürün. Kalibrasyonu varsaymayın:
+   > **Sürpriz ve ders:** "hava en değerli harici veridir" beklentisi bu
+   > veride tutmadı — günlük hava tek başına nötr, değeri **saatlik türevleri**
+   > (basınç düşüşü, eşik üstü rüzgâr saati) ve **CAPE** taşıyor. Tatil ve
+   > güneş aileleri negatif ölçüldü; ölçmeden eklemeyin.
+
+4. **Komşu ilçe** — `nearest_neighbours` + `add_neighbour_target_lag(horizon=H)`
+   (delta +2,13; ucuz).
+
+5. **Model çeşitliliği** — sıra gerçek veride ölçüldü
+   (`experiments/benchmark_gercek.json`, 2026-08-18 koşusu; ilçe kimliği +
+   genişleyen ilçe istatistikleri feature setine girdikten sonra):
+
+   | Model | MAE | Not |
+   |---|---:|---|
+   | iki_asama_medyan | **301,81** | Hurdle + koşullu medyan kuralı |
+   | catboost_mae | **302,73** | 2023 birincisinin reçetesi |
+   | lgb_mae | 306,77 | |
+   | iki_asama | 310,60 | Eşikli hurdle |
+   | iki_asama_medyan_kalibre | 314,10 | Kalibrasyon İYİLEŞTİRMEDİ |
+   | lgb_tweedie | 316,93 | Tekil zayıf, harmanda çeşitlilik |
+   | lgb_sqrt | 320,14 | Fit-uzayı erken durdurmayla (önce 393 = artefakttı) |
+   | xgb | 368,13 | |
+   | lgb_l2 | 369,15 | **Sıfır-baseline'ın (366,97) altında** — MAE'de L2 eğitme |
+
+   **İlçe kimliği + genişleyen ilçe istatistikleri** (`add_expanding_features`,
+   `horizon=UFUK`) her modeli iyileştirdi: catboost 304,30→302,73,
+   lgb_mae 310,58→306,77, iki_asama_medyan 314,50→301,81. Sayım hedefiyse
+   `COUNT_OBJECTIVES` ile süpürün. Kalibrasyonu varsaymayın:
    `calibrate_positive_probability` ölçer — gerçek veride İYİLEŞTİRMEDİ
-   (Brier 0,207→0,241), eşik 0,680 verinin gerçeğiydi. Örnek ağırlığını
-   (`recency_activity_weights`) Hawkes'la birlikte KULLANMAYIN: aynı yenilik
-   sinyali iki kanaldan verilince kaybetti (lgb_mae 310,1→335,3, ölçüldü).
+   (Brier 0,193→0,217). Örnek ağırlığını (`recency_activity_weights`)
+   Hawkes'la birlikte KULLANMAYIN: aynı yenilik sinyali iki kanaldan verilince
+   kaybetti (lgb_mae 310,1→335,3, ölçüldü).
 
 6. **Feature seçimi** — önce `null_importance_filter` (dakikalar), sonra
    `shap_backward_selection` (saatler; 2024 birincisi Pikachow da aynısını
    yaptı: SHAP ile 490→97 feature).
 
-7. **Harmanlama** — `hill_climb_weights` OOF üzerinde, **kapsam maskesiyle**,
-   **TÜM üyelerle** ve **kararlılık cezasıyla** (`stability_penalty=0.5` +
-   fold dilimleri; gerçek veride 302,6 — catboost_mae 0,75 + lgb_tweedie
-   0,25. "En iyi 3" kısayolu önceki dalgada 311,8'e geriletti — harmanı üye
-   kalitesi değil hata çeşitliliği taşır). Stacking'e zaman ayırmayın: aynı
-   ölçümde baseline'ın bile altında kaldı.
+7. **Harmanlama — YUVALANMIŞ kontrol olmadan güvenme.** Örnek-içi
+   hill-climb harmanı 298,59 diyor (catboost_mae + lgb_tweedie +
+   iki_asama_medyan + iki_asama). Ama ağırlıklar **geçmiş fold'larda öğrenilip
+   sonraki fold'da** skorlanınca: harman **359,00**, aynı satırlarda tek başına
+   catboost_mae **349,71** → **harman GEÇMİYOR**. Örnek-içi skor, üye sayısı
+   kadar serbestlik dereceli bir optimizasyonun kendi verisinde ölçülmesidir.
+   `benchmark_gercek.py` artık bu kontrolü otomatik yapar (`harman.yuvalanmis`).
 
-8. **Son gün** — `multi_seed_refit` + `postprocess_predictions`.
+   **Tohum gürültüsü ölçüldü:** catboost_mae 5 tohumda 301,21–304,80
+   (yayılım 1,24, aralık 3,59). 5-tohum ortalaması 302,22 — tekil ortalamadan
+   **0,90 MAE kazanç**, üstelik yapısal yanlılık olmadan. Yani: **harman
+   yerine tohum ortalaması**. Stacking'e zaman ayırmayın (1078,82).
+
+8. **Son gün** — `multi_seed_refit(..., sample_weight=…, target_transform=…)`
+   + `postprocess_predictions`. Refit artık CV'deki ağırlık/dönüşümü aynen
+   taşır (denetim öncesi taşımıyordu: benchmark'ın ölçtüğü konfigürasyon
+   gönderime aktarılamıyordu).
 
 ---
 

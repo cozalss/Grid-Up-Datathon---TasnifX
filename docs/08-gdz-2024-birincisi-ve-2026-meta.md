@@ -76,19 +76,23 @@ birleşme son tarihi **24 Ağustos 23:59** — erken birleş.
 
 ## 3 · Bu turda uygulanan ve ÖLÇÜLEN değişiklikler
 
-Benchmark, gerçek 68k GDZ verisinde yeniden koşuldu
-(`scripts/benchmark_gercek.py`, 44 sn):
+**Kanonik sayılar `experiments/benchmark_gercek.json` dosyasındadır** (son koşu
+2026-08-18, 177 sn, 61 feature). Bu bölüm o koşunun özetidir; çelişki görürsen
+JSON kazanır.
 
 | Değişiklik | Ölçüm | Hüküm |
 |---|---|---|
-| **MAE-optimal medyan kuralı** (koşullu merdiven + q\*=1−0.5/p) | 317,23 → **312,74** | ✅ yeni en iyi tekil model |
-| **sqrt hedef dönüşümü** (`sqrt_transform_target`) | **315,51** — en iyi düz model | ✅ Rohlik reçetesi bizde de çalışıyor |
-| **İzotonik kalibrasyon** (`calibrate_positive_probability`) | Brier 0,205→0,212, MAE 317,0 | ❌ kazandırmadı — eşik 0,606 verinin gerçeği |
-| **Tüm-üye hill-climb** ("en iyi 3" yerine) | 311,83 → **305,78** | ✅ çeşitlilik > kalite, ölçüldü |
-| `add_previous_month_features` + `add_upcoming_holiday_features` | test: 20/20 | 🆕 gün-1'de ablasyonla ölçülecek |
+| **İlçe kimliği + genişleyen ilçe istatistikleri** (`add_expanding_features`, ufuk=31) | catboost 304,30→**302,73**; lgb_mae 310,58→306,77; iki_asama_medyan 314,50→**301,81** | ✅ repodaki en geniş etkili tek feature değişikliği |
+| **MAE-optimal medyan kuralı** (koşullu merdiven + q\*=1−0.5/p) | **301,81** — en iyi tekil | ✅ hurdle + medyan kuralı |
+| **sqrt hedef dönüşümü** | 393,00 → **320,14** | ⚠️ 393 bir ARTEFAKTTI: koruma erken durdurmayı kapatıp 2000 sabit ağaç koşturuyordu. Artık `early_stopping_space="fit"`. Yine de kazanmıyor |
+| **İzotonik kalibrasyon** | Brier 0,193→0,217 | ❌ kazandırmadı |
+| **Tüm-üye hill-climb harmanı** | örnek-içi 298,59 ama **yuvalanmış 359,00** vs tek başına catboost **349,71** | ❌ yuvalanmış kontrolde GEÇMİYOR — gün-1'de kurma |
+| **5 tohumlu CatBoost ortalaması** | tekil ort. 303,12 → **302,22** (yayılım 1,24; aralık 3,59) | ✅ yanlılıksız, ucuz; harmanın yerine bu |
+| **12 harici aile ablasyonu** (`attach_external`) | lag +15,9 · CAPE +4,1 · EPİAŞ +3,1 · İZSU +2,7 · saatlik hava +2,7 · **tatil −3,2** · **güneş −1,2** · **günlük hava −0,6** | ✅ öncelik listesi artık ölçüm (docs/07 §4-3) |
 
 > **Kapsam uyarısı (değişmedi):** bu sayılar 2021-22 verisi, `kesinti_dk`
-> hedefi, 47 ilçe. 1. günde yeni veride yeniden ölçülür.
+> hedefi, 47 ilçe. 1. günde yeni veride yeniden ölçülür. Tohum gürültüsü
+> ±1,24 dk ölçüldüğü için 2 dk'nın altındaki farklar hüküm taşımaz.
 
 ## 4 · Bilerek YAPILMAYANLAR
 

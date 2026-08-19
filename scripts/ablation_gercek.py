@@ -74,11 +74,11 @@ from gridup.features import (  # noqa: E402
     add_cyclical_features,
     add_lag_features,
     add_neighbour_target_lag,
-    add_physical_derivatives,
     add_rolling_features,
     add_turkish_holiday_features,
     nearest_neighbours,
 )
+from gridup.features.external import attach_external  # noqa: E402
 from gridup.features.temporal import add_ramadan_features  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
@@ -110,9 +110,23 @@ RISKLER = {
     "tatil": "cekirdek",
     "lag": "cekirdek",
     "frekans": "cekirdek",
-    "hava": "harici",
-    "gunes": "harici",
     "komsu": "deneysel",
+    # Harici aileler artik features.external.attach_external'dan TEK kaynaktan
+    # gelir (2026-08-18 denetimi P1-5: on bir kaynagin sekizi hicbir pipeline
+    # tarafindan cagrilmiyordu). Her biri ayri aile => LOGO tablosunda ayri
+    # satir => "hangi harici veri ise yariyor" olcumle yanitlanir.
+    "hava": "harici",
+    "hava_saatlik": "harici",
+    "hava_kalitesi": "harici",
+    "konvektif": "harici",
+    "nem_toprak": "harici",
+    "gunes": "harici",
+    "yangin": "harici",
+    "deprem": "harici",
+    "turizm_yillik": "harici",
+    "turizm_aylik": "harici",
+    "izsu": "harici",
+    "epias": "harici",
 }
 
 
@@ -164,39 +178,6 @@ def _tatil(frame: pd.DataFrame) -> pd.DataFrame:
     return add_ramadan_features(out, ZAMAN)
 
 
-def _hava(frame: pd.DataFrame) -> pd.DataFrame:
-    """Gunluk hava + fiziksel turevler.
-
-    Ayni gunun havasi MESRUDUR: tahmin aninda hava TAHMINI (forecast) elde
-    olur ve deterministik kaynaktan gelir -- hedeften turemez.
-    """
-    hava = (
-        pd.read_parquet(HAVA)
-        .drop(columns=["konum", "konum_key", "il_key"])
-        .rename(columns={"tarih": ZAMAN})
-    )
-    once = len(frame)
-    out = frame.merge(hava, on=[GRUP, ZAMAN], how="left", validate="many_to_one")
-    if len(out) != once:
-        raise RuntimeError("hava merge satir sayisini degistirdi")
-    return add_physical_derivatives(out, group_columns=[GRUP], time_column=ZAMAN)
-
-
-def _gunes(frame: pd.DataFrame, ref: pd.DataFrame) -> pd.DataFrame:
-    """Gunes geometrisi (gun uzunlugu, GHI...) -- tamamen deterministik."""
-    esleme = dict(zip(ref[GRUP], ref["anahtar"], strict=True))
-    gunes = pd.read_parquet(GUNES).rename(columns={"tarih": ZAMAN})
-    once = len(frame)
-    out = (
-        frame.assign(anahtar=frame[GRUP].map(esleme))
-        .merge(gunes, on=["anahtar", ZAMAN], how="left", validate="many_to_one")
-        .drop(columns=["anahtar"])
-    )
-    if len(out) != once:
-        raise RuntimeError("gunes merge satir sayisini degistirdi")
-    return out
-
-
 def _lag(frame: pd.DataFrame) -> pd.DataFrame:
     """Hedefin gecmisi -- horizon=31 kaydirmali oldugu icin MESRU."""
     out = add_lag_features(
@@ -242,11 +223,10 @@ def aileleri_kur(
     satir sayisini/sirasini degistirirse fold'lar baska satirlara isaret eder
     ve hata VERMEZ -- o yuzden her adimdan sonra satir kimligi dogrulanir.
     """
+    # Cekirdek aileler yerel; HARICI aileler tek kapidan (attach_external).
     adimlar = [
         ("takvim", _takvim),
         ("tatil", _tatil),
-        ("hava", _hava),
-        ("gunes", lambda f: _gunes(f, ref)),
         ("lag", _lag),
         ("komsu", lambda f: _komsu(f, ref)),
     ]
@@ -265,7 +245,30 @@ def aileleri_kur(
             for c in frame.columns
             if c not in onceki and c not in yasak and pd.api.types.is_numeric_dtype(frame[c])
         ]
-        print(f"  {ad:<8} {len(aile_kolonlari[ad]):>2} kolon")
+        print(f"  {ad:<14} {len(aile_kolonlari[ad]):>3} kolon")
+
+    # HARICI AILELER -- tek cagri, aile bazli kolon haritasiyla.
+    ek = attach_external(
+        frame,
+        key_column=GRUP,
+        time_column=ZAMAN,
+        horizon=UFUK,
+        root=KOK,
+    )
+    if len(ek.frame) != len(panel):
+        raise RuntimeError("attach_external satir sayisini degistirdi")
+    if not (ek.frame[GRUP].to_numpy() == panel[GRUP].to_numpy()).all():
+        raise RuntimeError("attach_external satir sirasini bozdu")
+    frame = ek.frame
+    for ad, kolonlar in ek.families.items():
+        sayisal = [
+            c for c in kolonlar if c not in yasak and pd.api.types.is_numeric_dtype(frame[c])
+        ]
+        if sayisal:
+            aile_kolonlari[ad] = sayisal
+            print(f"  {ad:<14} {len(sayisal):>3} kolon")
+    for ad, neden in ek.skipped.items():
+        print(f"  {ad:<14} ATLANDI: {neden}")
     return frame, aile_kolonlari
 
 
@@ -328,7 +331,8 @@ def main() -> int:
 
     print("\n4/4  LEAVE-ONE-GROUP-OUT")
     gruplar = [
-        FeatureGroup(ad, tuple(kols), risk=RISKLER[ad]) for ad, kols in aile_kolonlari.items()
+        FeatureGroup(ad, tuple(kols), risk=RISKLER.get(ad, "harici"))
+        for ad, kols in aile_kolonlari.items()
     ]
     tablo = leave_one_group_out(
         ozellik[kolonlar],

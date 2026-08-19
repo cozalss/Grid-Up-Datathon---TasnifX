@@ -74,6 +74,7 @@ from gridup.evaluation import OuterEvidence, paired_model_decision  # noqa: E402
 from gridup.features import (  # noqa: E402
     add_calendar_features,
     add_event_decay_features,
+    add_expanding_features,
     add_lag_features,
     add_mass_event_features,
     add_turkish_holiday_features,
@@ -371,6 +372,37 @@ def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
         group_columns=[GRUP],
     )
 
+    # ILCE KIMLIGI + ILCENIN KENDI GECMIS SEVIYESI (2026-08-18 denetimi, P1-2)
+    # ---------------------------------------------------------------------
+    # Onceki feature setinde ilceyi AYIRT EDEN hicbir kolon yoktu: frekans
+    # kodlamasi dolu izgarada sabit (1/47), model ilceleri yalnizca lag
+    # DEGERLERINDEN ayirt edebiliyordu. Expanding istatistik "bu ilce genelde
+    # ne kadar kesinti yasar" sorusunu ufuk-kaydirmali (shift=UFUK) yanitlar;
+    # ayni fonksiyon zaten sizinti duvarinin arkasindadir.
+    # Olculdu (ayni fold'lar, catboost_mae): 304.30 -> 299.31 (-4.99),
+    # lgb_mae 310.58 -> 306.35. Repodaki en buyuk tekil feature kazanci.
+    ozellik = add_expanding_features(
+        ozellik,
+        HEDEF,
+        time_column=ZAMAN,
+        horizon=UFUK,
+        group_columns=[GRUP],
+        aggregations=("mean", "median", "std"),
+    )
+    # Sifir payi: "bu ilce gunlerin kacinda hic kesinti yasamamis" -- iki
+    # asamali modelin sifir kutlesi bilgisini tek modele de tasir.
+    sifir_gostergesi = f"{HEDEF}_sifir_mi"
+    ozellik = ozellik.assign(**{sifir_gostergesi: (ozellik[HEDEF] == 0).astype("float64")})
+    ozellik = add_expanding_features(
+        ozellik,
+        sifir_gostergesi,
+        time_column=ZAMAN,
+        horizon=UFUK,
+        group_columns=[GRUP],
+        aggregations=("mean",),
+    )
+    ozellik = ozellik.drop(columns=[sifir_gostergesi])
+
     # include_year=False: test donemi train'den sonra -- yil ekstrapolasyon riski.
     ozellik = add_calendar_features(ozellik, ZAMAN, include_year=False)
     ozellik = add_turkish_holiday_features(ozellik, ZAMAN)
@@ -422,6 +454,12 @@ def ozellik_kur(panel: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     kolonlar = [
         c for c in ozellik.columns if c not in dus and pd.api.types.is_numeric_dtype(ozellik[c])
     ]
+    # ILCE KIMLIGI kategorik feature olarak: GBDT'ler (ozellikle CatBoost)
+    # yuksek kardinaliteli kategoriyi sizintisiz kodlar. GRUP kolonunun
+    # KOPYASI eklenir -- orijinal anahtar kolonu join/fold icin dokunulmaz
+    # kalsin. Kategorik oldugu icin yukaridaki sayisal filtreye takilmaz.
+    ozellik = ozellik.assign(ilce_kimlik=ozellik[GRUP].astype("category"))
+    kolonlar.append("ilce_kimlik")
     yasak_kacak = [c for c in kolonlar if c in HAM_KOLONLAR]
     if yasak_kacak:  # pragma: no cover - savunma
         raise RuntimeError(f"Ham kolon feature listesine sizdi: {yasak_kacak}")
@@ -441,7 +479,7 @@ def tek_modelleri_kos(
     y: np.ndarray,
     folds: list[tuple[np.ndarray, np.ndarray]],
     agirliklar: np.ndarray | None,
-) -> tuple[dict[str, dict[str, float]], dict[str, np.ndarray], dict[str, np.ndarray]]:
+) -> tuple[dict[str, dict[str, Any]], dict[str, np.ndarray], dict[str, np.ndarray]]:
     """Bes tek modeli ayni fold'larda kosturur; skor + OOF + kapsam dondurur.
 
     ``agirliklar`` verilirse her modelin egitimine gecirilir (cross_validate
@@ -461,7 +499,7 @@ def tek_modelleri_kos(
         "xgb": ("xgboost", starter_params("xgboost", "regression")),
     }
 
-    skorlar: dict[str, dict[str, float]] = {}
+    skorlar: dict[str, dict[str, Any]] = {}
     oof: dict[str, np.ndarray] = {}
     kapsam: dict[str, np.ndarray] = {}
     for ad, (kind, params) in tarifler.items():
@@ -471,7 +509,7 @@ def tek_modelleri_kos(
             y,
             folds,
             kind=kind,
-            metric="mae",  # type: ignore[arg-type]
+            metric="mae",
             params=_butceli(kind, params),
             sample_weight=agirliklar,
             early_stopping_rounds=ERKEN_DURDURMA,
@@ -481,6 +519,10 @@ def tek_modelleri_kos(
         skorlar[ad] = {
             "mae": float(sonuc.overall_score),
             "fold_std": float(sonuc.fold_std),
+            # Fold skorlari JSON'a YAZILIR: eslestirilmis karsilastirma (ayni
+            # fold'da A-B farki) fold_std'den cok daha keskin bir kanittir ve
+            # artefaktlardan yeniden hesaplanabilir olmali (denetim P1-13).
+            "fold_scores": [float(v) for v in sonuc.fold_scores],
             "sure_sn": float(sonuc.elapsed_seconds),
         }
         oof[ad] = sonuc.oof_predictions
@@ -494,6 +536,11 @@ def tek_modelleri_kos(
     # sqrt(y) uzayinda L2, ham MAE'yi VE yerli Tweedie'yi gecti. Karsi kanit da
     # var (Rohlik Orders 3.: log1p CV'yi bozdu) -- yani donusum teoriden
     # okunamaz, burada OLCULUR. Skor HAM uzayda: once geri-kare, sonra MAE.
+    # sqrt + FIT UZAYI erken durdurma (2026-08-18 denetimi, P1-4). Onceki
+    # surumde ham-uzay esdegeri olmadigi icin guard erken durdurmayi
+    # KAPATIYORDU ve 2000 sabit agac kosuluyordu -> 393.00 MAE, yani "sqrt
+    # kotu" sonucu bir ARTEFAKTTI. early_stopping_space="fit" ile durdurma
+    # sqrt uzayinda (l2) yapilir, skor yine HAM uzayda MAE'dir.
     print("  lgb_sqrt kosuyor...")
     sonuc = cross_validate(
         x,
@@ -504,13 +551,16 @@ def tek_modelleri_kos(
         params=_butceli("lightgbm", starter_params("lightgbm", "regression")),
         sample_weight=agirliklar,
         target_transform="sqrt",
-        early_stopping_rounds=0,
+        early_stopping_metric="rmse",
+        early_stopping_space="fit",
+        early_stopping_rounds=ERKEN_DURDURMA,
         verbose=False,
     )
     maske = sonuc.oof_covered
     skorlar["lgb_sqrt"] = {
         "mae": float(sonuc.overall_score),
         "fold_std": float(sonuc.fold_std),
+        "fold_scores": [float(v) for v in sonuc.fold_scores],
         "sure_sn": float(sonuc.elapsed_seconds),
     }
     oof["lgb_sqrt"] = sonuc.oof_predictions
@@ -520,6 +570,61 @@ def tek_modelleri_kos(
         f"sure={sonuc.elapsed_seconds:.0f} sn"
     )
     return skorlar, oof, kapsam
+
+
+def tohum_kararliligi(
+    x: pd.DataFrame,
+    y: np.ndarray,
+    folds: list[tuple[np.ndarray, np.ndarray]],
+    *,
+    tohumlar: Sequence[int] = (42, 1, 2, 3, 4),
+) -> dict[str, Any]:
+    """Kazanan tekil modeli birden fazla tohumla kosar: gurultu ve ortalama kazanci.
+
+    NEDEN (2026-08-18 denetimi, P1-1): "harman 0.55 MAE kazandiriyor" iddiasini
+    degerlendirmek icin GURULTUNUN buyuklugu bilinmeli. Ayrica tohum ortalamasi
+    (multi_seed_refit'in yaptigi sey) harmandan farkli olarak yapisal bir
+    yanlilik tasimaz -- ne kadar kazandirdigini OLCUP kaydediyoruz.
+
+    Her tohum ayni fold'larda kosar; OOF tahminleri ortalanip tek bir "tohum
+    ortalamasi" skoru da hesaplanir.
+    """
+    catboost = starter_params("catboost", "regression", objective="mae")
+    catboost["eval_metric"] = "MAE"
+    mae_fn, _, _ = get_metric("mae")
+    skorlar: list[float] = []
+    oof_yigin: list[np.ndarray] = []
+    maske: np.ndarray | None = None
+    for tohum in tohumlar:
+        params = _butceli("catboost", dict(catboost))
+        params["random_seed"] = int(tohum)
+        sonuc = cross_validate(
+            x,
+            y,
+            folds,
+            kind="catboost",
+            metric="mae",
+            params=params,
+            early_stopping_rounds=ERKEN_DURDURMA,
+            early_stopping_metric="mae",
+            verbose=False,
+        )
+        skorlar.append(float(sonuc.overall_score))
+        oof_yigin.append(sonuc.oof_predictions)
+        maske = sonuc.oof_covered if maske is None else (maske & sonuc.oof_covered)
+        print(f"    tohum {tohum}: mae={sonuc.overall_score:.2f}")
+
+    assert maske is not None
+    ortalama_oof = np.mean(np.vstack(oof_yigin), axis=0)
+    ortalama_mae = float(mae_fn(y[maske], ortalama_oof[maske]))
+    return {
+        "tohumlar": list(tohumlar),
+        "tekil_mae": [round(v, 2) for v in skorlar],
+        "tohum_yayilimi": round(float(np.std(skorlar)), 3),
+        "tohum_araligi": round(float(max(skorlar) - min(skorlar)), 2),
+        "tohum_ortalamasi_mae": round(ortalama_mae, 2),
+        "ortalama_kazanci": round(float(np.mean(skorlar)) - ortalama_mae, 3),
+    }
 
 
 def iki_asama_kos(
@@ -566,7 +671,12 @@ def iki_asama_kos(
     fold_std = float(np.std(fold_skorlari)) if fold_skorlari else 0.0
 
     print(f"    mae={mae:.2f}  fold_std={fold_std:.2f}  sure={sure:.0f} sn  (esik={esik:.3f})")
-    skor = {"mae": mae, "fold_std": fold_std, "sure_sn": float(sure)}
+    skor = {
+        "mae": mae,
+        "fold_std": fold_std,
+        "fold_scores": fold_skorlari,
+        "sure_sn": float(sure),
+    }
     return skor, birlesik, maske, float((y == 0).mean()), esik, sonuc.oof_probability
 
 
@@ -577,7 +687,7 @@ def medyan_kurali_kos(
     olasilik: np.ndarray,
     maske: np.ndarray,
     agirliklar: np.ndarray | None,
-) -> tuple[dict[str, dict[str, float]], dict[str, np.ndarray], dict[str, Any]]:
+) -> tuple[dict[str, dict[str, Any]], dict[str, np.ndarray], dict[str, Any]]:
     """MAE-optimal medyan kurali: kosullu kuantil merdiveni + q* = 1 - 0.5/p.
 
     NEDEN (2024-2026 arastirma taramasi, #1 oneri)
@@ -606,7 +716,7 @@ def medyan_kurali_kos(
     kalibrasyon = calibrate_positive_probability(olasilik, y, folds, covered=maske, verbose=False)
     mae_fn, _, _ = get_metric("mae")
 
-    skorlar: dict[str, dict[str, float]] = {}
+    skorlar: dict[str, dict[str, Any]] = {}
     ooflar: dict[str, np.ndarray] = {}
     secenekler = {
         "iki_asama_medyan": olasilik,
@@ -625,6 +735,7 @@ def medyan_kurali_kos(
         skorlar[ad] = {
             "mae": mae,
             "fold_std": float(np.std(fold_skorlari)) if fold_skorlari else 0.0,
+            "fold_scores": fold_skorlari,
             "sure_sn": float(sure),
         }
         ooflar[ad] = tahmin
@@ -643,8 +754,90 @@ def medyan_kurali_kos(
     return skorlar, ooflar, kalibrasyon_ozeti
 
 
+def nested_harman(
+    uyeler: Sequence[str],
+    oof: dict[str, np.ndarray],
+    y: np.ndarray,
+    folds: Sequence[tuple[np.ndarray, np.ndarray]],
+    ortak_maske: np.ndarray,
+) -> dict[str, Any]:
+    """Harman agirligini GECMIS fold'larda ogrenip SONRAKI fold'da skorlar.
+
+    NEDEN (2026-08-18 denetimi, P1-1): ``harman_ve_stack`` agirliklari TUM
+    OOF uzerinde tirmanip ayni OOF'ta skorluyor. Bu, harmanin lehine
+    yapisal bir yanliliktir: uye sayisi kadar serbestlik dereceli bir
+    optimizasyon, skorlandigi veriye bakarak yapiliyor. Olculdu (bagimsiz
+    denetim): ornek-ici harman 303.44, ayni fold'larda YUVALANMIS harman
+    305.49, tek basina catboost_mae 304.30 -- yani "harman kazandi" sonucu
+    olcum yontemi degisince kayboluyordu. Tohum gurultusu ~4 MAE oldugu icin
+    0.55'lik "kazanc" zaten gurultunun altindaydi.
+
+    Yontem (rolling-origin blend): k'nci fold icin agirliklar 1..k-1
+    fold'larinin valid satirlarindan ogrenilir, skor YALNIZCA k'nci fold'un
+    valid satirlarinda alinir. Ilk fold agirlik ogrenemez (gecmisi yok),
+    disarida kalir. Boylece rapor edilen sayi, "yarin bu harmani kurup
+    kullansam ne olurdu" sorusunun cevabidir.
+
+    Returns:
+        ``fold_mae`` (fold basina yuvalanmis harman skoru), ``mae``
+        (agirlikli ortalama), ``agirliklar`` (fold basina) ve karsilastirma
+        icin ayni fold'lardaki en iyi TEK uye.
+    """
+    mae_fn, _, _ = get_metric("mae")
+    fold_kayitlari: list[dict[str, Any]] = []
+    toplam_hata, toplam_satir = 0.0, 0
+    tekil_hata: dict[str, float] = dict.fromkeys(uyeler, 0.0)
+
+    for sira in range(1, len(folds)):
+        gecmis = np.concatenate([folds[onceki][1] for onceki in range(sira)])
+        gecmis = gecmis[ortak_maske[gecmis]]
+        simdiki = folds[sira][1]
+        simdiki = simdiki[ortak_maske[simdiki]]
+        if gecmis.size == 0 or simdiki.size == 0:
+            continue
+
+        agirliklar = hill_climb_weights(
+            {ad: oof[ad][gecmis] for ad in uyeler},
+            y[gecmis],
+            metric="mae",
+            covered=np.ones(gecmis.size, dtype=bool),
+            verbose=False,
+        )
+        tahmin = np.zeros(simdiki.size)
+        for ad, w in agirliklar.items():
+            tahmin += w * oof[ad][simdiki]
+        skor = float(mae_fn(y[simdiki], tahmin))
+        toplam_hata += skor * simdiki.size
+        toplam_satir += simdiki.size
+        for ad in uyeler:
+            tekil_hata[ad] += float(mae_fn(y[simdiki], oof[ad][simdiki])) * simdiki.size
+        fold_kayitlari.append(
+            {
+                "fold": sira,
+                "n_valid": int(simdiki.size),
+                "mae": skor,
+                "agirliklar": {ad: round(float(w), 4) for ad, w in agirliklar.items() if w > 0},
+            }
+        )
+
+    if not fold_kayitlari:
+        return {"mae": None, "aciklama": "yuvalanmis harman icin yeterli fold yok"}
+
+    tekil = {ad: tekil_hata[ad] / toplam_satir for ad in uyeler}
+    en_iyi_tekil = min(tekil, key=lambda ad: tekil[ad])
+    harman_mae = toplam_hata / toplam_satir
+    return {
+        "mae": harman_mae,
+        "fold_kayitlari": fold_kayitlari,
+        "ayni_satirlarda_en_iyi_tekil": en_iyi_tekil,
+        "ayni_satirlarda_tekil_mae": {ad: round(v, 2) for ad, v in tekil.items()},
+        "harman_tekilden_iyi_mi": bool(harman_mae < tekil[en_iyi_tekil]),
+        "fark": round(harman_mae - tekil[en_iyi_tekil], 3),
+    }
+
+
 def harman_ve_stack(
-    modeller: dict[str, dict[str, float]],
+    modeller: dict[str, dict[str, Any]],
     oof: dict[str, np.ndarray],
     kapsam: dict[str, np.ndarray],
     y: np.ndarray,
@@ -720,11 +913,24 @@ def harman_ve_stack(
     )
     stack_mae = float(stack["score"])
     print(f"  stack : mae={stack_mae:.2f}")
+
+    # YUVALANMIS KONTROL: yukaridaki harman skoru ornek-icidir (agirliklar ayni
+    # OOF'ta ogrenildi). Gonderim karari bu sayiya degil, asagidakine bakar.
+    nested = nested_harman(uyeler, oof, y, folds, ortak_maske)
+    harman["yuvalanmis"] = nested
+    if nested.get("mae") is not None:
+        durum = "GECIYOR" if nested["harman_tekilden_iyi_mi"] else "GECMIYOR"
+        print(
+            f"  yuvalanmis harman: mae={nested['mae']:.2f} vs "
+            f"tek uye {nested['ayni_satirlarda_en_iyi_tekil']} "
+            f"{nested['ayni_satirlarda_tekil_mae'][nested['ayni_satirlarda_en_iyi_tekil']]:.2f} "
+            f"-> harman {durum}"
+        )
     return harman, stack_mae
 
 
 def recete_yaz(
-    modeller: dict[str, dict[str, float]],
+    modeller: dict[str, dict[str, Any]],
     harman: dict[str, Any],
     stack_mae: float,
     kazanan: str | None,
@@ -776,20 +982,54 @@ def recete_yaz(
         if kazanan is not None
         else f"Bilimsel kazanan ilan edilmedi: {karar_gerekcesi}"
     )
+    nested = harman.get("yuvalanmis", {})
+    if nested.get("mae") is not None:
+        tekil_ad = nested["ayni_satirlarda_en_iyi_tekil"]
+        tekil_mae = nested["ayni_satirlarda_tekil_mae"][tekil_ad]
+        if nested["harman_tekilden_iyi_mi"]:
+            harman_hukmu = (
+                f"YUVALANMIS kontrolde de geciyor (agirliklar gecmis fold'larda "
+                f"ogrenilip sonraki fold'da skorlandi: {nested['mae']:.2f} vs "
+                f"{tekil_ad} {tekil_mae:.2f}) -- gun-1'de kurmaya deger"
+            )
+            harman_onerisi = (
+                f"Oneri: gun-1'de {tek} ile basla, ayni fold'larda {ek_metin} "
+                f"uyelerini ekleyip hill-climb harmanini kur; agirliklari HER ZAMAN "
+                "gecmis fold'larda ogren (nested), ayni OOF'ta tirmanip ayni OOF'ta "
+                "skorlama."
+            )
+        else:
+            harman_hukmu = (
+                f"ama YUVALANMIS kontrolde GECMIYOR: agirliklar gecmis fold'larda "
+                f"ogrenilip sonraki fold'da skorlanunca {nested['mae']:.2f}, ayni "
+                f"satirlarda tek basina {tekil_ad} {tekil_mae:.2f} "
+                f"(fark {nested['fark']:+.2f}). Ornek-ici harman skoru, uye sayisi "
+                "kadar serbestlik dereceli bir optimizasyonun kendi verisinde "
+                "olculmesidir; tohum gurultusu ~4 MAE oldugu icin bu 'kazanc' "
+                "zaten gurultunun altinda"
+            )
+            harman_onerisi = (
+                f"Oneri: gun-1'de {tek} modelini 5 TOHUMLA yeniden egitip "
+                "(multi_seed_refit, tohum ortalamasi) gonder; harmani ancak "
+                "yuvalanmis kontrolu gecerse ekle. Tohum ortalamasi olculmus ve "
+                "bedava bir varyans dususudur, harman ise bu veride degildir."
+            )
+    else:
+        harman_hukmu = "yuvalanmis kontrol icin yeterli fold yok"
+        harman_onerisi = f"Oneri: gun-1'de {tek} ile basla ve 5 tohumla yeniden egit."
+
     return (
         f"Veri gununde ilk kosulacak tek model {tek} (MAE {tek_mae:.2f}; hep-sifir "
         f"baseline {sifir_baseline:.2f}, sifir orani %{sifir_orani * 100:.1f}). "
         f"2023 birincisinin recetesi catboost_mae bu veride MAE {cat_mae:.2f} ile "
         f"{cat_sira}. sirada -- {cat_hukmu}. Iki asamali model (MAE {iki_mae:.2f}) "
         f"{iki_hukmu}{esik_notu}. MAE-optimal medyan kurali {medyan_mae:.2f}, "
-        f"kalibre olasilikla {kalibre_mae:.2f}; sqrt donusumu (Rohlik recetesi) "
-        f"{sqrt_mae:.2f}. Tum uyeler uzerinde hill-climb harmani MAE "
-        f"{harman['mae']:.2f} (agirlik alan uyeler: {', '.join(harman['uyeler'])}), "
-        f"ridge stacking {stack_mae:.2f} (purged semada ilk "
-        f"fold'lar meta-egitim kapsami disinda kaliyor). {kazanan_metni} "
-        f"Oneri: gun-1'de {tek} ile basla, ayni fold'larda {ek_metin} uyelerini "
-        f"ekleyip hill-climb harmanini kur; stacking'e fold kapsami "
-        f"genislemeden donme."
+        f"kalibre olasilikla {kalibre_mae:.2f}; sqrt donusumu (Rohlik recetesi, "
+        f"fit-uzayi erken durdurmayla) {sqrt_mae:.2f}. Tum uyeler uzerinde "
+        f"hill-climb harmani MAE {harman['mae']:.2f} (agirlik alan uyeler: "
+        f"{', '.join(harman['uyeler'])}) -- {harman_hukmu}; ridge stacking "
+        f"{stack_mae:.2f} (purged semada ilk fold'lar meta-egitim kapsami disinda "
+        f"kaliyor). {kazanan_metni} {harman_onerisi}"
     )
 
 
@@ -846,6 +1086,15 @@ def main() -> int:
         oof[ad] = tahminler
         kapsam[ad] = iki_maske
 
+    print("3c/4 tohum kararliligi (catboost_mae x5)...")
+    tohum_ozeti = tohum_kararliligi(ozellik[kolonlar], y, folds)
+    print(
+        f"  tohum yayilimi {tohum_ozeti['tohum_yayilimi']:.2f} MAE, "
+        f"aralik {tohum_ozeti['tohum_araligi']:.2f}; 5-tohum ortalamasi "
+        f"{tohum_ozeti['tohum_ortalamasi_mae']:.2f} "
+        f"(tekil ortalamasindan {tohum_ozeti['ortalama_kazanci']:+.2f})"
+    )
+
     print("4/4 harman + stacking...")
     harman, stack_mae = harman_ve_stack(modeller, oof, kapsam, y, folds)
 
@@ -877,6 +1126,7 @@ def main() -> int:
         # testin id sizintisini ayirt edemedigini gosterdi.
         "feature_kolonlari": list(kolonlar),
         "kalibrasyon": kalibrasyon_ozeti,
+        "tohum_kararliligi": tohum_ozeti,
         "gun1_recetesi": recete_yaz(
             modeller,
             harman,

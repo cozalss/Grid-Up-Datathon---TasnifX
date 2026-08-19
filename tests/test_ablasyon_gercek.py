@@ -26,7 +26,10 @@ BETIK = KOK / "scripts" / "ablation_gercek.py"
 SONUC = KOK / "experiments" / "ablasyon_gercek.json"
 
 #: Gorev tanimindaki yedi aile -- eksigi/fazlasi sozlesme ihlalidir.
-AILELER = {"takvim", "tatil", "hava", "gunes", "lag", "komsu", "frekans"}
+#: Cekirdek aileler ablation_gercek'in kendi adimlaridir; HARICI aileler
+#: features.external.EXTERNAL_FAMILIES'ten gelir (2026-08-18, P1-5). Kaynak
+#: dosyasi olmayan harici aile ATLANIR, bu yuzden alt kume kontrolu yapilir.
+CEKIRDEK_AILELER = {"takvim", "tatil", "lag", "komsu"}
 
 ZORUNLU_ALANLAR = {
     "tam_mae",
@@ -57,8 +60,19 @@ def test_zorunlu_alanlar_tam(sonuc):
         assert sonuc[alan] >= 0
 
 
-def test_yedi_ailenin_hepsi_olculmus(sonuc):
-    assert set(sonuc["aileler"]) == AILELER
+def test_cekirdek_ve_harici_ailelerin_hepsi_olculmus(sonuc):
+    """Cekirdek aileler ZORUNLU; harici aileler EXTERNAL_FAMILIES'in alt kumesi.
+
+    Denetim oncesi yalnizca hava ve gunes olculuyordu; 2026-08-18'den beri
+    attach_external'in tum aileleri LOGO tablosunda ayri satir (P1-5).
+    """
+    from gridup.features.external import EXTERNAL_FAMILIES
+
+    olculen = set(sonuc["aileler"])
+    assert olculen >= CEKIRDEK_AILELER, f"cekirdek aile eksik: {CEKIRDEK_AILELER - olculen}"
+    harici = olculen - CEKIRDEK_AILELER
+    assert harici <= set(EXTERNAL_FAMILIES), f"bilinmeyen aile: {harici - set(EXTERNAL_FAMILIES)}"
+    assert len(harici) >= 5, f"harici aileler baglanmamis gorunuyor: {sorted(harici)}"
     for ad, bilgi in sonuc["aileler"].items():
         assert isinstance(bilgi["mae_ailesiz"], (int, float)), ad
         assert bilgi["mae_ailesiz"] > 0, ad
@@ -81,8 +95,8 @@ def test_delta_tanimi_tutarli(sonuc):
 
 def test_siralama_deltaya_gore_azalan(sonuc):
     """Siralama = veri gununun oncelik listesi -- en cok katki veren onde."""
-    assert set(sonuc["siralama"]) == AILELER
-    assert len(sonuc["siralama"]) == len(AILELER), "tekrarli aile adi var"
+    assert set(sonuc["siralama"]) == set(sonuc["aileler"])
+    assert len(sonuc["siralama"]) == len(sonuc["aileler"]), "tekrarli aile adi var"
     deltalar = [sonuc["aileler"][ad]["delta"] for ad in sonuc["siralama"]]
     assert deltalar == sorted(deltalar, reverse=True), (
         f"siralama delta'ya gore azalan degil: {deltalar}"

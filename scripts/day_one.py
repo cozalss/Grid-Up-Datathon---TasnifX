@@ -51,6 +51,7 @@ from gridup.experiment import (  # noqa: E402
 from gridup.features import (  # noqa: E402
     add_calendar_features,
     add_turkish_holiday_features,
+    attach_external,
     shared_origin,
 )
 from gridup.metrics import get_metric  # noqa: E402
@@ -444,6 +445,12 @@ def main() -> int:
     parser.add_argument("--metric", help="Resmi metrik (zorunlu; sessiz varsayim yok)")
     parser.add_argument("--task", default=None, choices=("regression", "binary", "multiclass"))
     parser.add_argument(
+        "--harici-yok",
+        dest="harici_yok",
+        action="store_true",
+        help="Harici veri ailelerini (hava/yangin/turizm...) BAGLAMA",
+    )
+    parser.add_argument(
         "--yes",
         action="store_true",
         help="Rutin onaylari otomatik gec (KRITIK sizinti kapisi HARIC)",
@@ -693,6 +700,36 @@ def main() -> int:
 
     train_features = build_base(train)
     test_features = build_base(test) if test is not None else None
+
+    # HARICI VERI -- tek kapi (features.external.attach_external). Panel
+    # anahtari ilce ise 12 aile (hava, hava kalitesi, CAPE, nem/toprak, gunes,
+    # yangin, deprem, turizm x2, izsu, EPIAS) ayni cagriyla baglanir; eksik
+    # kaynak SESSIZ NaN degil raporlanan atlamadir, %0 eslesme HATA verir.
+    # --harici-yok ile kapatilir (sema tanimadiginda zaman kaybettirmesin).
+    if not args.harici_yok and args.group_column and time_column:
+        try:
+            ek_train = attach_external(
+                train_features,
+                key_column=args.group_column,
+                time_column=time_column,
+                horizon=horizon,
+                root=ROOT,
+            )
+            for satir in ek_train.summary().splitlines():
+                print(f"  {satir}")
+            train_features = ek_train.frame
+            if test_features is not None:
+                ek_test = attach_external(
+                    test_features,
+                    key_column=args.group_column,
+                    time_column=time_column,
+                    horizon=horizon,
+                    families=list(ek_train.families),
+                    root=ROOT,
+                )
+                test_features = ek_test.frame
+        except (ValueError, KeyError, RuntimeError) as hata:
+            print(f"  UYARI: harici veri baglanamadi ({hata}); harici kolonsuz devam ediliyor.")
     # Global frekans sayimi CV'den once yapilirsa erken temporal fold'lar
     # validation doneminin kategori dagilimini gorur. Fold-ici transformer
     # kurulana kadar day-one bu aileyi bilincli olarak kullanmaz.

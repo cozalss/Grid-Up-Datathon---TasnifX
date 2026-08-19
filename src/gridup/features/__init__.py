@@ -27,6 +27,7 @@ from .categorical import (
     reduce_rare_categories,
 )
 from .demografi import epdk_bolge_sinifi
+from .external import EXTERNAL_FAMILIES, ExternalAttachment, attach_external
 from .national import (
     add_annual_district_attribute,
     add_national_series,
@@ -69,6 +70,9 @@ from .weather import (
 
 __all__ = [
     "add_point_event_features",
+    "attach_external",
+    "ExternalAttachment",
+    "EXTERNAL_FAMILIES",
     "daily_point_intensity",
     "add_national_series",
     "add_annual_district_attribute",

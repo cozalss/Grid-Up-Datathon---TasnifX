@@ -46,6 +46,7 @@ BEKLENEN_ALANLAR = {
     "gun1_recetesi",
     "feature_kolonlari",
     "kalibrasyon",
+    "tohum_kararliligi",
     "statistically_conclusive",
     "decision_reason",
     "benchmark_decision",
@@ -67,8 +68,13 @@ def test_sema_tam(sonuc: dict) -> None:
     assert set(sonuc) == BEKLENEN_ALANLAR
     assert set(sonuc["modeller"]) == BEKLENEN_MODELLER
     for ad, bilgi in sonuc["modeller"].items():
-        assert set(bilgi) == {"mae", "fold_std", "sure_sn"}, ad
-        for alan, deger in bilgi.items():
+        # fold_scores 2026-08-18 denetiminde eklendi: eslestirilmis karsilastirma
+        # (ayni fold'da A-B farki) artefaktlardan yeniden hesaplanabilmeli.
+        assert set(bilgi) == {"mae", "fold_std", "fold_scores", "sure_sn"}, ad
+        assert isinstance(bilgi["fold_scores"], list) and bilgi["fold_scores"], ad
+        assert all(isinstance(v, float) and math.isfinite(v) for v in bilgi["fold_scores"]), ad
+        for alan in ("mae", "fold_std", "sure_sn"):
+            deger = bilgi[alan]
             assert isinstance(deger, float) and math.isfinite(deger), f"{ad}.{alan}"
 
 
@@ -117,7 +123,7 @@ def test_harman_ic_tutarli(sonuc: dict) -> None:
     """Hill climbing en iyi tek uyeden BASLAR -- ayni satir kumesinde uyelerinden
     kotu bir harman matematiksel olarak mumkun degildir. Agirliklar toplami 1."""
     harman = sonuc["harman"]
-    assert set(harman) == {"mae", "uyeler", "agirliklar"}
+    assert set(harman) == {"mae", "uyeler", "agirliklar", "yuvalanmis"}
     # Harman artik TUM uyeler uzerinde hill-climb yapar; agirligi 0 cikanlar
     # raporda yer almaz. En az 1, en fazla uye sayisi kadar olabilir.
     assert 1 <= len(harman["uyeler"]) <= len(BEKLENEN_MODELLER)
@@ -128,6 +134,45 @@ def test_harman_ic_tutarli(sonuc: dict) -> None:
 
     uye_maeleri = [sonuc["modeller"][ad]["mae"] for ad in harman["uyeler"]]
     assert harman["mae"] <= min(uye_maeleri) + 1e-6
+
+
+def test_harman_yuvalanmis_kontrolden_geciyor_mu_kaydediliyor(sonuc: dict) -> None:
+    """Ornek-ici harman skoru yanlidir; karar YUVALANMIS olcume dayanmali.
+
+    2026-08-18 denetimi (P1-1): agirliklar tum OOF'ta tirmanilip ayni OOF'ta
+    skorlaniyordu. Artik agirliklar gecmis fold'larda ogrenilip SONRAKI fold'da
+    skorlaniyor ve sonuc JSON'a yaziliyor -- gun-1 recetesi buna bakar.
+    """
+    nested = sonuc["harman"]["yuvalanmis"]
+    assert set(nested) >= {
+        "mae",
+        "fold_kayitlari",
+        "ayni_satirlarda_en_iyi_tekil",
+        "ayni_satirlarda_tekil_mae",
+        "harman_tekilden_iyi_mi",
+        "fark",
+    }
+    assert isinstance(nested["harman_tekilden_iyi_mi"], bool)
+    assert nested["mae"] > 1.0
+    # Yuvalanmis skor ornek-ici skordan IYI OLAMAZ (ayni veriye bakmiyor).
+    assert nested["mae"] >= sonuc["harman"]["mae"]
+    # Recete metni kararla tutarli olmali.
+    recete = sonuc["gun1_recetesi"]
+    if nested["harman_tekilden_iyi_mi"]:
+        assert "YUVALANMIS kontrolde de geciyor" in recete
+    else:
+        assert "GECMIYOR" in recete and "5 TOHUMLA" in recete
+
+
+def test_tohum_kararliligi_gurultuyu_olcuyor(sonuc: dict) -> None:
+    """Kucuk MAE farklarinin anlamli olup olmadigini tohum yayilimi belirler."""
+    tohum = sonuc["tohum_kararliligi"]
+    assert len(tohum["tohumlar"]) == len(set(tohum["tohumlar"])) >= 3
+    assert len(tohum["tekil_mae"]) == len(tohum["tohumlar"])
+    assert tohum["tohum_yayilimi"] >= 0.0
+    assert tohum["tohum_araligi"] >= 0.0
+    # Tohum ortalamasi tekil skorlarin en kotusunden iyi olmali.
+    assert tohum["tohum_ortalamasi_mae"] <= max(tohum["tekil_mae"]) + 1e-6
 
 
 def test_gun1_recetesi_olculen_sayilarla_konusuyor(sonuc: dict) -> None:

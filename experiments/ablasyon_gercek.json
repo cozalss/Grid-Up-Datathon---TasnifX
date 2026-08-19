@@ -1,113 +1,167 @@
 {
-  "tam_mae": 313.6376,
+  "tam_mae": 312.4613,
   "sifir_baseline": 366.9741,
-  "fold_std": 94.305,
+  "fold_std": 94.6626,
   "aileler": {
     "lag": {
-      "mae_ailesiz": 335.9808,
-      "delta": 22.3431,
+      "mae_ailesiz": 328.3401,
+      "delta": 15.8788,
       "kolon_sayisi": 11
     },
-    "hava": {
-      "mae_ailesiz": 316.1055,
-      "delta": 2.4679,
-      "kolon_sayisi": 24
+    "konvektif": {
+      "mae_ailesiz": 316.5791,
+      "delta": 4.1179,
+      "kolon_sayisi": 8
+    },
+    "epias": {
+      "mae_ailesiz": 315.5935,
+      "delta": 3.1323,
+      "kolon_sayisi": 10
+    },
+    "izsu": {
+      "mae_ailesiz": 315.1522,
+      "delta": 2.691,
+      "kolon_sayisi": 2
+    },
+    "hava_saatlik": {
+      "mae_ailesiz": 315.1124,
+      "delta": 2.6511,
+      "kolon_sayisi": 7
     },
     "komsu": {
-      "mae_ailesiz": 313.8216,
-      "delta": 0.184,
+      "mae_ailesiz": 314.5956,
+      "delta": 2.1344,
       "kolon_sayisi": 3
     },
-    "frekans": {
-      "mae_ailesiz": 313.6376,
-      "delta": 0.0,
-      "kolon_sayisi": 1
+    "deprem": {
+      "mae_ailesiz": 313.5329,
+      "delta": 1.0716,
+      "kolon_sayisi": 42
+    },
+    "hava_kalitesi": {
+      "mae_ailesiz": 313.1631,
+      "delta": 0.7018,
+      "kolon_sayisi": 8
     },
     "takvim": {
-      "mae_ailesiz": 313.4501,
-      "delta": -0.1876,
+      "mae_ailesiz": 312.9099,
+      "delta": 0.4487,
       "kolon_sayisi": 15
     },
-    "tatil": {
-      "mae_ailesiz": 308.9774,
-      "delta": -4.6602,
+    "turizm_aylik": {
+      "mae_ailesiz": 312.4613,
+      "delta": 0.0,
+      "kolon_sayisi": 2
+    },
+    "turizm_yillik": {
+      "mae_ailesiz": 312.4613,
+      "delta": 0.0,
+      "kolon_sayisi": 4
+    },
+    "nem_toprak": {
+      "mae_ailesiz": 312.3094,
+      "delta": -0.1519,
       "kolon_sayisi": 15
+    },
+    "yangin": {
+      "mae_ailesiz": 312.1242,
+      "delta": -0.3371,
+      "kolon_sayisi": 42
+    },
+    "hava": {
+      "mae_ailesiz": 311.8813,
+      "delta": -0.58,
+      "kolon_sayisi": 25
     },
     "gunes": {
-      "mae_ailesiz": 308.6053,
-      "delta": -5.0323,
+      "mae_ailesiz": 311.3001,
+      "delta": -1.1612,
       "kolon_sayisi": 7
+    },
+    "tatil": {
+      "mae_ailesiz": 309.2691,
+      "delta": -3.1921,
+      "kolon_sayisi": 15
     }
   },
   "siralama": [
     "lag",
-    "hava",
+    "konvektif",
+    "epias",
+    "izsu",
+    "hava_saatlik",
     "komsu",
-    "frekans",
+    "deprem",
+    "hava_kalitesi",
     "takvim",
-    "tatil",
-    "gunes"
+    "turizm_aylik",
+    "turizm_yillik",
+    "nem_toprak",
+    "yangin",
+    "hava",
+    "gunes",
+    "tatil"
   ],
   "gain_top15": [
     [
       "kesinti_dk_ufuk31_kayan93_mean",
-      31583.6
+      21136.4
     ],
     [
       "gun_yilin_gunu_sin",
-      30114.4
+      12702.8
     ],
     [
       "kesinti_dk_ufuk31_kayan93_std",
-      9857.9
+      8540.4
     ],
     [
       "tatil_mesafe",
-      9759.1
+      5447.3
     ],
     [
       "kesinti_dk_ufuk31_kayan31_std",
-      7922.2
+      4941.0
+    ],
+    [
+      "tr_consumption_mean_ufuk31_kayan28_max",
+      3186.1
     ],
     [
       "kesinti_dk_ufuk31_kayan31_mean",
-      6290.0
+      2734.4
     ],
     [
       "gun_yilin_gunu",
-      4936.4
+      1783.8
     ],
     [
-      "gun_gun",
-      3170.2
-    ],
-    [
-      "islak_ruzgar",
-      2761.7
-    ],
-    [
-      "kesinti_dk_ufuk31_kayan31_max",
-      2696.0
-    ],
-    [
-      "gunes_radyasyon",
-      2475.6
-    ],
-    [
-      "sicaklik_ort",
-      2296.3
+      "tr_consumption_mean_ufuk31_kayan7_max",
+      1568.0
     ],
     [
       "hissedilen_max",
-      2148.8
+      1369.1
+    ],
+    [
+      "tr_consumption_max_ufuk31_kayan28_mean",
+      1246.2
     ],
     [
       "gun_yilin_gunu_cos",
-      2104.0
+      1171.3
     ],
     [
-      "ramazan_gunu",
-      1957.0
+      "islak_ruzgar",
+      1148.7
+    ],
+    [
+      "tr_consumption_mean_ufuk31_kayan28_mean",
+      1145.3
+    ],
+    [
+      "kesinti_dk_ufuk31_kayan31_max",
+      934.6
     ]
   ],
   "panel": {

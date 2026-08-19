@@ -619,25 +619,31 @@ yarıştırdık (`scripts/benchmark_gercek.py` → `experiments/benchmark_gercek
 
 | Reçete | MAE (dk) | Not |
 |---|---|---|
-| **catboost_mae** | **304.89** | Görünür OOF lideri; henüz bilimsel kazanan değil |
-| lgb_mae | 310.14 | En iyi LightGBM — kayıp = metrik |
-| iki_asama_medyan | 316.95 | Koşullu merdiven + q\\*=1−0.5/p kuralı |
-| iki_asama (eşikli) | 317.04 | Eşik 0.680; medyan kuralının farkı 0.1 dk'ya indi |
-| lgb_sqrt | 324.03 | Rohlik reçetesi: sqrt(y)+L2, geri-kare |
-| lgb_tweedie | 327.83 | Sıfır-şişkin hedefe uygun, hızlı aday — harmanda değerli |
-| iki_asama_medyan_kalibre | 328.15 | İzotonik kalibrasyon BOZDU (Brier 0.207→0.241) |
-| xgb | 402.83 | Baseline'ın altında |
-| lgb_l2 | 403.78 | Metrik MAE iken L2 kaybı ~94 dk kaybettiriyor |
+| **iki_asama_medyan** | **301.81** | Hurdle + koşullu medyan kuralı (q\\*=1−0.5/p) |
+| **catboost_mae** | **302.73** | 2023 birincisinin reçetesi; 5 tohumda 301.2–304.8 |
+| lgb_mae | 306.77 | En iyi düz LightGBM — kayıp = metrik |
+| iki_asama (eşikli) | 310.60 | |
+| iki_asama_medyan_kalibre | 314.10 | İzotonik kalibrasyon BOZDU (Brier 0.193→0.217) |
+| lgb_tweedie | 316.93 | Sıfır-şişkin hedefe uygun; harmanda çeşitlilik |
+| lgb_sqrt | 320.14 | Rohlik reçetesi: sqrt(y)+L2, fit-uzayı erken durdurmayla |
+| xgb | 368.13 | Baseline'ın hemen üstünde |
+| lgb_l2 | 369.15 | Metrik MAE iken L2 kaybı ~66 dk kaybettiriyor |
 | hep-sıfır | 366.97 | Alt çizgi; bunu geçemeyen model rafa kalkar |
 
-Bu tablo **3. dalga** feature setiyle ölçüldü: önceki 49 kolona Hawkes-esinli
-üstel bozunum (3g/14g yarı ömür) ve bölgesel toplu-olay payı eklendi (56 kolon,
-ikisi de ufuk=31 kaydırmalı) — sayıların önceki dalgadan (en iyi tekil 312.74)
-oynamasının nedeni bu. Örnek ağırlığı (`recency_activity_weights`) tek başına
-kazandırmıştı ama Hawkes ile ÇATIŞTI (aynı yenilik sinyali iki kanaldan →
-lgb_mae 310.14→335.30); ölçüm sonucu kanonik koşu ağırlıksız.
+Bu tablo **61 kolonluk** feature setiyle ölçüldü: Hawkes-esinli üstel bozunum
+(3g/14g yarı ömür), bölgesel toplu-olay payı ve — 2026-08-18 denetiminden sonra —
+**ilçe kimliği + genişleyen ilçe istatistikleri** (`add_expanding_features`,
+ufuk=31 kaydırmalı: bu ilçe genelde ne kadar kesinti yaşar, günlerin kaçında
+sıfır). Sonuncusu her modeli iyileştirdi (catboost 304.30→302.73, lgb_mae
+310.58→306.77, iki_asama_medyan 314.50→301.81): model ilçeleri daha önce yalnızca
+lag DEĞERLERİNDEN ayırt edebiliyordu.
 
-Dört ölçülmüş ders:
+`lgb_sqrt`'in 393→320 düzelmesi bir **ölçüm hatası düzeltmesidir**, feature
+kazancı değil: sqrt dönüşümünde ham-uzay eşdeğeri olmadığı için koruma erken
+durdurmayı kapatıyor, model 2000 sabit ağaç koşuyordu. Artık erken durdurma
+fit uzayında (sqrt) yapılıyor, skor yine ham uzayda MAE.
+
+Beş ölçülmüş ders:
 
 - **Kayıp fonksiyonu model seçiminden önce gelir.** Aynı LightGBM, kayıp
   `l2 → mae` değişince ~94 dk kazanıyor. Yarışma metriği neyse kayıp odur.
@@ -654,6 +660,11 @@ Dört ölçülmüş ders:
   0.9975) ve tüm skorları ~60 dk iyimser gösterdi. Yukarıdaki sayılar, `id`
   dahil ham olay kolonlarının tamamı sızıntı duvarının arkasına alındıktan
   sonraki dürüst ölçümdür.
+- **Tohum gürültüsü, küçük farkların üst sınırıdır.** Aynı CatBoost 5 tohumda
+  301.21–304.80 arası skorladı (yayılım 1.24 dk). Bu tablodaki 1–2 dk'lık
+  farklar bu bandın içindedir; karar verirken eşleştirilmiş fold farkına bakın,
+  tek skora değil. 5-tohum **ortalaması** 302.22 — tekil ortalamadan 0.90 dk
+  daha iyi, üstelik hiçbir yapısal yanlılık taşımadan.
 """),
     code("""
 y = train_features[TARGET].to_numpy()
@@ -674,12 +685,21 @@ result = cross_validate(
 print(result.summary())
 """),
     markdown("""
-## 4 · Harman — ve kapsam maskesi neden şart
+## 4 · Harman — ve neden bu veride KURMUYORUZ
 
 Gerçek GDZ ölçümünde hill-climb harmanı aynı OOF üzerinde tekil modellerden
-daha düşük göründü. Bu yalnızca `apparent_oof_best` sonucudur: ağırlıklar aynı
-OOF'ta seçildiği için bağımsız, eşleştirilmiş en az 6 outer anchor olmadan
-bilimsel kazanan ilan edilmez (`scripts/benchmark_gercek.py`). Bir ölçülmüş ders:
+daha düşük göründü (298.59). Bu yalnızca `apparent_oof_best` sonucudur ve
+2026-08-18 denetimi bunu **yuvalanmış kontrolle** sınadı: ağırlıklar geçmiş
+fold'larda öğrenilip **sonraki** fold'da skorlanınca harman **359.00**, aynı
+satırlarda tek başına catboost_mae **349.71** — yani harman geçmiyor. Örnek-içi
+harman skoru, üye sayısı kadar serbestlik dereceli bir optimizasyonun kendi
+verisinde ölçülmesidir; tohum gürültüsü ~1.2 dk iken 0.5 dk'lık "kazanç" zaten
+bandın içindedir. `benchmark_gercek.py` bu kontrolü artık otomatik yapar
+(`harman.yuvalanmis`) ve reçete metnini ona göre yazar.
+
+**Gün-1 kararı:** harman yerine **5 tohumlu yeniden eğitim** (`multi_seed_refit`)
+— ölçülmüş, yanlılıksız, 0.90 dk. Harmanı ancak yuvalanmış kontrolü geçerse
+ekleyin. Bir ölçülmüş ders daha:
 "en iyi 3 üyeyi
 harmanla" kısayolu bir önceki dalgada 311.83 verdi, çünkü en iyi üçü birbirinin
 kopyası çıktı — harmanı üye kalitesi değil **hata çeşitliliği** taşır; hill-climb
