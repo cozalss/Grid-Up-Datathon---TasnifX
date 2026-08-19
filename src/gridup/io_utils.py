@@ -434,10 +434,22 @@ def _decode_head(path: Path) -> tuple[str, str]:
     with path.open("rb") as handle:
         raw = handle.read(_SNIFF_BYTES)
 
+    # SINIR TUZAGI (2026-08-18 denetimi, P1-10): 64 KB'lik ornek, cok baytli
+    # bir UTF-8 karakterinin ORTASINDA bitebilir. O zaman utf-8 basarisiz olur,
+    # cp1254/iso-8859-9 her bayti kabul ettigi icin dosyanin TAMAMI yanlis
+    # kodlamayla okunur ve tum Turkce ilce adlari sessizce bozulur (join %0).
+    # Olculdu: gercek 11 MB'lik GDZ dosyasinda bu kesme noktasina denk gelme
+    # olasiligi ~%2,8. Cozum: hata SONDAKI 3 bayt icindeyse ornegi kirp.
     for encoding in _ENCODING_CANDIDATES:
         try:
             return raw.decode(encoding), encoding
-        except UnicodeDecodeError:
+        except UnicodeDecodeError as hata:
+            if hata.start >= len(raw) - 3:
+                kirpik = raw[: hata.start]
+                try:
+                    return kirpik.decode(encoding), encoding
+                except UnicodeDecodeError:
+                    continue
             continue
 
     raise ValueError(

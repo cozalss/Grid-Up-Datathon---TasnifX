@@ -59,6 +59,12 @@ from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
 from gridup.pipeline import FoldPlan, runtime_recipe_fingerprint  # noqa: E402
 from gridup.recipe import CVRecipe, FeatureRecipe, ModelRecipe, PipelineRecipe  # noqa: E402
+from gridup.refit import (  # noqa: E402
+    estimate_full_data_rounds,
+    extract_best_iterations,
+    fold_train_fraction,
+    multi_seed_refit,
+)
 from gridup.stores import SQLiteExperimentStore  # noqa: E402
 from gridup.turkish import join_key, normalize_columns  # noqa: E402
 from gridup.validation import (  # noqa: E402
@@ -445,6 +451,12 @@ def main() -> int:
     parser.add_argument("--metric", help="Resmi metrik (zorunlu; sessiz varsayim yok)")
     parser.add_argument("--task", default=None, choices=("regression", "binary", "multiclass"))
     parser.add_argument(
+        "--tek-tohum",
+        dest="tek_tohum",
+        action="store_true",
+        help="Son adimda 5 tohumlu yeniden egitimi ATLA (CV fold ortalamasi kullanilir)",
+    )
+    parser.add_argument(
         "--harici-yok",
         dest="harici_yok",
         action="store_true",
@@ -613,7 +625,15 @@ def main() -> int:
         print(f"  Gercek satir:   {coverage.get('actual_rows', 0):,.0f}")
         print(f"  Doluluk:        %{ratio * 100:.1f}")
         if ratio < 0.95 and confirm("Panel seyrek. Sifirla doldurulsun mu?", auto=args.yes):
-            train = build_panel(train, entity_columns=[args.group_column], time_column=time_column)
+            # value_columns=[hedef]: aksi halde TUM sayisal kolonlar toplanir
+            # ve statik kovaryatlar (nufus, kVA, id) olay sayisiyla carpilir --
+            # train'de toplanmis, test'te ham deger olur (sessiz kayma).
+            train = build_panel(
+                train,
+                entity_columns=[args.group_column],
+                time_column=time_column,
+                value_columns=[args.target],
+            )
             print(f"  Panel kuruldu: {train.shape}")
     else:
         print("  Zaman veya grup kolonu verilmedi -- panel kontrolu atlandi.")
@@ -632,6 +652,7 @@ def main() -> int:
 
     horizon = 1
     bosluk_gun = 0
+    ic_ice = False
     if time_column and test is not None and time_column in test.columns:
         test_times = parse_time_series(test[time_column])
         # UFUK = train'in son gunu -> test blogunun son gunu; AMBARGO = aradaki
@@ -640,14 +661,38 @@ def main() -> int:
         # (olculdu, 2026-08-18 denetimi P1-3).
         geometri = forecast_geometry(parse_time_series(train[time_column]), test_times)
         horizon, bosluk_gun = geometri.horizon_days, geometri.gap_days
+        ic_ice = geometri.interleaved
         print(f"\n  {geometri.summary()}")
-        print("  -> lag/rolling feature'lari bu ufka gore kaydirilmali; CV ambargosu = bosluk")
+        if ic_ice:
+            # IC ICE (rastgele) BOLME: test tarihleri train'in ICINE giriyor.
+            # Zaman-ileri sema uygulanamaz -- eski surumde ufuk 455 gun cikip
+            # "hicbir fold uretilemedi" ile duruyordu (olculdu 2026-08-18, P1-8).
+            print(
+                "  -> test tarihleri train ICINE giriyor: zaman-ileri sema UYGULANAMAZ. "
+                "Grup varsa GroupKFold, yoksa KFold kullanilacak."
+            )
+        else:
+            print("  -> lag/rolling feature'lari bu ufka gore kaydirilmali; CV ambargosu = bosluk")
         harici_kapsam_raporu(test_times.min(), test_times.max())
 
     splitter_name: str
     test_span_days: int | None = None
     embargo_days = 0
-    if time_column:
+    if time_column and ic_ice:
+        # Zaman ekseni var ama bolme zamansal DEGIL: grup varsa gruba gore
+        # (ayni ilce iki tarafta olmasin), yoksa duz KFold.
+        if args.group_column:
+            splitter_name = "GroupKFold"
+            splitter = build_splitter("GroupKFold", n_splits=recipe.cv.n_splits)
+            folds = list(splitter.split(train, groups=train[args.group_column]))
+        else:
+            scheme = "StratifiedKFold" if target_kind != "regression" else "KFold"
+            splitter_name = scheme
+            splitter = build_splitter(scheme, n_splits=recipe.cv.n_splits, seed=recipe.seed)
+            stratify = train[args.target] if target_kind != "regression" else None
+            folds = list(splitter.split(train, stratify))
+        print(f"  Sema: {splitter_name} (ic ice test bolmesi)")
+    elif time_column:
         train[time_column] = parse_time_series(train[time_column])
         embargo = pd.Timedelta(days=bosluk_gun)
         # DOGRULAMA PENCERESI = TEST BLOGU UZUNLUGU.
@@ -786,6 +831,38 @@ def main() -> int:
         return 0
 
     predictions = result.test_predictions
+
+    # 5-TOHUMLU YENIDEN EGITIM (varsayilan). CV test tahmini fold modellerinin
+    # duz ortalamasidir: en eski fold'un modeli, test'e en yakin fold'unkiyle
+    # ayni agirligi alir. multi_seed_refit TUM veriyle egitir ve tohum
+    # ortalamasi alir -- benchmark'ta olculdu: catboost 5 tohumda 301.21-304.80
+    # (yayilim 1.24), ortalamasi 302.22 = tekil ortalamadan 0.90 daha iyi,
+    # YAPISAL YANLILIK OLMADAN (harmanin aksine; harman yuvalanmis kontrolde
+    # gecmedi). Tur sayisi CV'nin erken durdurmasindan devralinir.
+    # --tek-tohum ile kapatilir (hizli tur icin).
+    if not args.tek_tohum:
+        try:
+            turlar = estimate_full_data_rounds(
+                extract_best_iterations(result.models),
+                n_folds=len(folds),
+                mean_train_fraction=fold_train_fraction(folds, n_rows=len(train_features)),
+            )
+            refit = multi_seed_refit(
+                train_features[columns],
+                y,
+                test_features[columns],
+                kind="lightgbm",
+                params=params,
+                n_estimators=turlar,
+                seeds=(0, 1, 2, 3, 4),
+                sample_weight=None,
+                target_transform=target_transform,
+                verbose=False,
+            )
+            print(f"  5 tohumlu yeniden egitim: {turlar} tur, {refit.summary().splitlines()[0]}")
+            predictions = refit.predictions
+        except (ValueError, RuntimeError) as hata:
+            print(f"  UYARI: yeniden egitim basarisiz ({hata}); CV fold ortalamasi kullanildi.")
 
     predictions = postprocess_predictions(
         predictions,

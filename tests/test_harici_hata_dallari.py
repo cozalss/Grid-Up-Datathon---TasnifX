@@ -158,3 +158,50 @@ def test_district_estimate_eksik_kolonlar_keyerror() -> None:
         district_monthly_estimate(yillik.drop(columns=["il_key"]), aylik)
     with pytest.raises(KeyError, match="monthly icinde"):
         district_monthly_estimate(yillik, aylik.drop(columns=["ay"]))
+
+
+# --- %0 eslesme kapisi (P1-11) ----------------------------------------------
+
+
+def test_yillik_oznitelik_sifir_eslesmede_hata_verir() -> None:
+    """Anahtar bicimi bozuksa join SESSIZ NaN degil, hata uretmeli."""
+    yillik = pd.DataFrame({"ilce_key": ["BOZUK"], "yil": [2025], "geceleme": [1.0]})
+    with pytest.raises(ValueError, match="HIC eslesmedi"):
+        add_annual_district_attribute(
+            _panel(), yillik, key_column="ilce_key", time_column="tarih",
+            value_columns=["geceleme"],
+        )  # fmt: skip
+
+
+def test_mevsimsel_profil_sifir_eslesmede_hata_verir() -> None:
+    profil = pd.DataFrame({"ilce_key": ["BOZUK"] * 12, "ay": range(1, 13), "su": range(12)})
+    with pytest.raises(ValueError, match="HIC eslesmedi"):
+        add_seasonal_district_profile(_panel(), profil, key_column="ilce_key", time_column="tarih")
+
+
+def test_aylik_oznitelik_sifir_eslesmede_hata_verir() -> None:
+    aylik = pd.DataFrame(
+        {"il_key": ["BOZUK"] * 12, "yil": [2025] * 12, "ay": list(range(1, 13)), "geceleme": 1.0}
+    )
+    panel = pd.DataFrame({"il_key": ["mugla"], "tarih": pd.to_datetime(["2026-07-15"])})
+    with pytest.raises(ValueError, match="HIC eslesmedi"):
+        add_monthly_attribute(
+            panel, aylik, key_column="il_key", time_column="tarih",
+            value_columns=["geceleme"],
+        )  # fmt: skip
+
+
+def test_dusuk_eslesmede_uyari_verilir() -> None:
+    """Yarisi eslesmiyorsa hata degil UYARI (kismi kapsam mesru olabilir)."""
+    yillik = pd.DataFrame({"ilce_key": ["bornova"], "yil": [2025], "geceleme": [1.0]})
+    panel = pd.DataFrame(
+        {
+            "ilce_key": ["bornova"] * 2 + ["yok"] * 8,
+            "tarih": pd.to_datetime(["2026-03-01"] * 10),
+        }
+    )
+    with pytest.warns(UserWarning, match="eslesti"):
+        add_annual_district_attribute(
+            panel, yillik, key_column="ilce_key", time_column="tarih",
+            value_columns=["geceleme"],
+        )  # fmt: skip

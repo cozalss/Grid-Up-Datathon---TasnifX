@@ -564,7 +564,51 @@ def test_2024_semasi_uctan_uca_submission_uretiyor(tmp_path):
     assert "objective: mae" in kosu.stdout
     assert "desen bulundu" in kosu.stdout
     assert "Yazildi:" in kosu.stdout
+    # P1-7: gonderim yolu artik 5 tohumlu yeniden egitimden geciyor (CV fold
+    # ortalamasi degil). Benchmark'ta olculdu: tohum ortalamasi tekil
+    # ortalamadan 0.90 MAE iyi, yapisal yanlilik olmadan.
+    assert "5 tohumlu yeniden egitim" in kosu.stdout, kosu.stdout[-1500:]
     yol = KOK / "submissions" / "gun1_baseline.csv"
     yazilan = pd.read_csv(yol)
     assert list(yazilan.columns) == ["unique_id", "bildirimsiz_sum"]
     assert list(yazilan["unique_id"]) == list(sample["unique_id"]), "sample sirasi korunmali"
+
+
+@pytest.mark.slow
+def test_ic_ice_test_bolmesinde_kfold_a_dusuyor(tmp_path):
+    """P1-8: rastgele (ic ice) bolmede zaman-ileri sema uygulanamaz.
+
+    Denetimde olculdu: eski surum ufku 455 gun hesaplayip
+    "Hicbir fold uretilemedi" ile EXIT=1 veriyordu. Artik GroupKFold'a duser
+    ve submission uretir.
+    """
+    dizin = tmp_path / "icice"
+    dizin.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(3)
+    gunler = pd.date_range("2025-01-01", periods=120, freq="D")
+    ilceler = ["a", "b", "c", "d"]
+    frame = pd.DataFrame(
+        [
+            {"ID": f"R{i:05d}", "TARIH": g.strftime("%Y-%m-%d"), "ILCE": ilce,
+             "HEDEF": float(rng.gamma(2.0, 10.0))}
+            for i, (g, ilce) in enumerate((g, i2) for g in gunler for i2 in ilceler)
+        ]
+    )  # fmt: skip
+    karisik = frame.sample(frac=1.0, random_state=1).reset_index(drop=True)
+    egitim = karisik.iloc[:400]
+    deneme = karisik.iloc[400:]
+    egitim.to_csv(dizin / "train.csv", index=False, encoding="utf-8")
+    deneme.drop(columns=["HEDEF"]).to_csv(dizin / "test.csv", index=False, encoding="utf-8")
+
+    # Once KAPI: ic ice bolme kritik sizinti bulgusudur ve --yes ile acilmaz.
+    kapali = _betigi_kos(dizin, [])
+    assert kapali.returncode == 1
+    assert "Zaman ortusmesi" in kapali.stdout and "DURDURULDU" in kapali.stdout
+
+    # Organizator rastgele boldugunu ACIKCA kabul edince: KFold'a duser,
+    # "Hicbir fold uretilemedi" ile COKMEZ ve submission uretir.
+    kosu = _betigi_kos(dizin, ["--sizintiyi-kabul-ediyorum"])
+    assert kosu.returncode == 0, kosu.stdout[-2500:]
+    assert "IC ICE" in kosu.stdout or "ic ice" in kosu.stdout
+    assert "Hicbir fold uretilemedi" not in kosu.stdout
+    assert "Yazildi:" in kosu.stdout

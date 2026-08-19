@@ -41,6 +41,7 @@ __all__ = [
     "normalize_columns",
     "diagnose_join",
     "strip_qualifier",
+    "split_il_ilce",
 ]
 
 # ``.lower()`` cagrilmadan ONCE i-ciftini eslememiz gerekir; birlesik noktayi
@@ -195,6 +196,42 @@ def strip_qualifier(name: str) -> str:
     return metin
 
 
+#: "il-ilce" / "il|ilce" / "IL / ILCE" gibi BILESIK anahtarlarda kullanilan
+#: ayiricilar. 2024 GDZ'de test id'si "2025-07-01-izmir-aliaga" bicimindeydi
+#: ve ilce kolonu "izmir-aliaga" olarak geliyordu (docs/01:35).
+_BILESIK_AYRACLAR = ("|", "/", "-", "_")
+
+
+def split_il_ilce(name: str) -> tuple[str | None, str]:
+    """Bilesik "il + ilce" dizgesini ``(il, ilce)`` olarak ayirir.
+
+    ``strip_qualifier`` SOL parcayi alir ("Koprubasi / Manisa" -> "Koprubasi")
+    cunku orada niteleyici SAGDADIR. Bilesik anahtarlarda ise ilce SAGDADIR
+    ("izmir-karabaglar" -> "karabaglar"). Ikisini ayni fonksiyonda cozmek
+    imkansizdir; bu yuzden ayri kapi (2026-08-18 denetimi, P1-12: bilesik
+    dizgeler referans tablosuyla %0 esliyordu).
+
+    Ayirici yoksa ``(None, ad)`` doner -- yani "bu zaten yalin bir ilce adi".
+
+    Returns:
+        ``(il, ilce)``; ikisi de HAM (normalize edilmemis) metindir.
+    """
+    metin = str(name).strip()
+    for ayirici in _BILESIK_AYRACLAR:
+        if ayirici in metin:
+            sol, _, sag = metin.partition(ayirici)
+            sol, sag = sol.strip(), sag.strip()
+            if sol and sag:
+                return sol, sag
+    return None, metin
+
+
+def _bilesikten_ilce(normalized: str) -> str:
+    """Normalize bilesik anahtardan ilce parcasini alir."""
+    _, ilce = split_il_ilce(normalized)
+    return join_key(ilce)
+
+
 def _niteleyiciyi_at(normalized: str) -> str:
     """Normalize edilmis anahtardan niteleyici ekini atar."""
     return join_key(strip_qualifier(normalized))
@@ -248,15 +285,27 @@ def diagnose_join(
         if _niteleyiciyi_at(anahtar) in right_norm
     }
 
+    # BILESIK ANAHTAR KURTARMA (P1-12): "izmir-karabaglar" gibi anahtarlarda
+    # ilce SAGDADIR; niteleyici kurtarmasi (sol parca) burada ise yaramaz.
+    kalan_sonrasi = kalan_sol - set(nitelikli)
+    bilesik = {
+        anahtar: _bilesikten_ilce(anahtar)
+        for anahtar in kalan_sonrasi
+        if _bilesikten_ilce(anahtar) != join_key(anahtar)
+        and _bilesikten_ilce(anahtar) in right_norm
+    }
+
     return {
         "left_unique": len(left_set),
         "right_unique": len(right_set),
         "raw_matched": raw_matched,
         "normalized_matched": normalized_matched,
         "recovered": normalized_matched - raw_matched,
-        "left_only": tr_sorted(kalan_sol - set(nitelikli))[:max_examples],
+        "left_only": tr_sorted(kalan_sol - set(nitelikli) - set(bilesik))[:max_examples],
         "right_only": tr_sorted(right_norm - left_norm)[:max_examples],
         "combining_dot_keys": dotted[:max_examples],
         # "koprubasi / manisa" -> "koprubasi" gibi, ek atilinca eslesenler.
         "qualifier_recoverable": dict(list(nitelikli.items())[:max_examples]),
+        # "izmir-karabaglar" -> "karabaglar" gibi, bilesik anahtar ayrilinca eslesenler.
+        "composite_recoverable": dict(list(bilesik.items())[:max_examples]),
     }

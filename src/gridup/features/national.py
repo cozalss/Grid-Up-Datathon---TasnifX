@@ -40,6 +40,7 @@ Ablasyonla olculmeden "faydali" varsayilmamalidir.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 
 import pandas as pd
@@ -58,6 +59,30 @@ __all__ = [
 #: sebekeye bindirdigi yuk (ADM/GDZ'nin DERMS gundemi) icin toplam uretime
 #: orani, ham MWh'dan daha anlamlidir.
 RENEWABLE_COLUMNS: tuple[str, ...] = ("wind", "sun", "geothermal", "biomass", "river")
+
+
+#: Anahtar bazli join'lerde kabul edilebilir en dusuk eslesme orani.
+#: Altinda uyari, SIFIRDA hata -- %0 eslesme sessiz NaN sutunu demektir ve
+#: 2026-08-18 denetiminde iki kez yakalandi (P1-11).
+MIN_ESLESME_ORANI = 0.5
+
+
+def _eslesmeyi_dogrula(sonuc: pd.DataFrame, kolon: str, *, kaynak: str) -> float:
+    """Join sonrasi dolu satir oranini olcer; %0 hata, dusuk oran uyari."""
+    oran = float(sonuc[kolon].notna().mean()) if len(sonuc) else 0.0
+    if oran == 0.0:
+        raise ValueError(
+            f"{kaynak}: birlestirme HIC eslesmedi (%0). Anahtar bicimleri ayni mi "
+            "(gridup.turkish.join_key / split_il_ilce)? Sessiz NaN yerine durduruldu."
+        )
+    if oran < MIN_ESLESME_ORANI:
+        warnings.warn(
+            f"{kaynak}: satirlarin yalnizca %{100 * oran:.1f}'i eslesti; "
+            "anahtar ve tarih kapsamini kontrol et.",
+            UserWarning,
+            stacklevel=3,
+        )
+    return oran
 
 
 def daily_from_hourly(
@@ -228,6 +253,7 @@ def add_annual_district_attribute(
     cikti["_eslesme_anahtar"] = cikti[key_column].astype(str)
     cikti["_eslesme_yil"] = pd.to_datetime(cikti[time_column]).dt.year
     cikti = cikti.merge(tablo, on=["_eslesme_anahtar", "_eslesme_yil"], how="left")
+    _eslesmeyi_dogrula(cikti, next(iter(yeniden.values())), kaynak="add_annual_district_attribute")
 
     if population is not None:
         nufus_anahtar = population_key_column or key_column
@@ -324,4 +350,5 @@ def add_seasonal_district_profile(
     cikti["_profil_anahtar"] = cikti[key_column].astype(str)
     cikti["_profil_ay"] = pd.to_datetime(cikti[time_column]).dt.month.astype("int16")
     cikti = cikti.merge(tablo, on=["_profil_anahtar", "_profil_ay"], how="left")
+    _eslesmeyi_dogrula(cikti, next(iter(yeniden.values())), kaynak="add_seasonal_district_profile")
     return cikti.drop(columns=["_profil_anahtar", "_profil_ay"])

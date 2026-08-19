@@ -60,6 +60,8 @@ from collections.abc import Sequence
 
 import pandas as pd
 
+from .national import _eslesmeyi_dogrula
+
 __all__ = ["add_monthly_attribute", "district_monthly_estimate", "MIN_LAG_MONTHS"]
 
 #: Yayin gecikmesinin altina inen lag reddedilir (bkz. modul basligi).
@@ -130,6 +132,7 @@ def add_monthly_attribute(
     cikti["_anahtar"] = cikti[key_column].astype(str)
     cikti["_eslesme"] = _ay_indeksi(zaman.dt.year, zaman.dt.month)
     cikti = cikti.merge(tablo, on=["_anahtar", "_eslesme"], how="left")
+    _eslesmeyi_dogrula(cikti, next(iter(yeniden.values())), kaynak="add_monthly_attribute")
     return cikti.drop(columns=["_anahtar", "_eslesme"])
 
 
