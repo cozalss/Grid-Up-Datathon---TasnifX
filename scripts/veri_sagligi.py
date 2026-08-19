@@ -72,6 +72,12 @@ class Kaynak:
     fizik: tuple[tuple[str, object], ...] = ()
     #: Tarih sonu kontrolunu ATLAMA gerekcesi. Bos degilse kontrol atlanir.
     son_kontrolu_atla: str = ""
+    #: Kaynagin KENDI kapsam baslangici (panelinkinden gec olabilir) ve NEDENI.
+    #: Bos birakilirsa PANEL_BAS kullanilir. Bu alan, "kapsam sinirini sessizce
+    #: gecistirmek" ile "sinirI BEYAN ETMEK" arasindaki farki kurar: beyan
+    #: edilen sinir yine DENETLENIR, yalnizca dogru tarihe karsi.
+    kapsam_basi: pd.Timestamp | None = None
+    kapsam_basi_gerekce: str = ""
 
 
 def _ay(frame: pd.DataFrame, kolon: str) -> pd.Series:
@@ -300,6 +306,36 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
         ),
     ),
     Kaynak(
+        ad="konvektif_gunluk",
+        yol="data/external/konvektif_gunluk.parquet",
+        tarih_kolonu="tarih",
+        anahtar_kolonu="ilce_key",
+        beklenen_ilce=96,
+        asgari_satir=180_000,
+        # KAPSAM SINIRI BEYAN EDILDI. Kaynak ``historical-forecast-api``,
+        # ERA5 arsivi degil ARSIVLENMIS TAHMIN kosularindan dikiliyor ve
+        # 2021-05'ten once veri yok (ikili aramayla olculdu 2026-08-18:
+        # 2021-03 BOS, 2021-06 DOLU). CAPE ERA5 arsivinde HIC yok (%100 NaN),
+        # bu yuzden alternatif kaynak yok.
+        #
+        # Bosluk panelin BASINDA, sonunda DEGIL -- yani test penceresi (2026)
+        # dolu. Tehlikeli desen "egitimde dolu / testte bos"tur; bu onun
+        # TERSI ve guvenli tarafta.
+        kapsam_basi=pd.Timestamp("2021-05-01"),
+        kapsam_basi_gerekce="historical-forecast-api arsivi 2021-05'te basliyor",
+        nan_esikleri={"cin_min": 0.05},
+        fizik=(
+            (
+                "CAPE yazin kisin en az BES KATI (konvektif instabilite)",
+                lambda d: (
+                    d.loc[_ay(d, "tarih").isin([6, 7, 8]), "cape_max"].mean()
+                    > 5 * max(d.loc[_ay(d, "tarih").isin([12, 1, 2]), "cape_max"].mean(), 1e-9)
+                ),
+            ),
+            ("CAPE negatif olamaz", lambda d: float(d["cape_max"].min()) >= 0),
+        ),
+    ),
+    Kaynak(
         ad="ilceler_referans_csv",
         yol="data/reference/ilceler_gdz_adm.csv",
         # Parquet'in CSV ikizi: Kaggle notebook'unda pyarrow olmasa da
@@ -355,8 +391,19 @@ def denetle(kaynak: Kaynak, bugun: pd.Timestamp) -> tuple[list[str], list[str]]:
             if t.isna().all():
                 hatalar.append(f"'{kaynak.tarih_kolonu}' hic ayristirilamadi")
             else:
-                if (t.min() - PANEL_BAS).days > SON_TOLERANS_GUN:
-                    hatalar.append(f"panel basi kapsanmiyor: ilk kayit {t.min().date()}")
+                beklenen_bas = kaynak.kapsam_basi or PANEL_BAS
+                if (t.min() - beklenen_bas).days > SON_TOLERANS_GUN:
+                    hatalar.append(
+                        f"kapsam basi tutmuyor: ilk kayit {t.min().date()}, "
+                        f"beklenen {beklenen_bas.date()}"
+                    )
+                if kaynak.kapsam_basi is not None and (kaynak.kapsam_basi - t.min()).days > 45:
+                    # Beyan edilenden ERKEN veri gelmis: sinir degismis olabilir,
+                    # beyani guncelle. Sessiz kabul, beyani anlamsizlastirirdi.
+                    uyarilar.append(
+                        f"beyan edilen kapsam basi {kaynak.kapsam_basi.date()} ama veri "
+                        f"{t.min().date()}'de basliyor -- beyani guncelle"
+                    )
                 acik = (bugun - t.max()).days
                 if not kaynak.son_kontrolu_atla and acik > SON_TOLERANS_GUN:
                     hatalar.append(f"son tarafta {acik} gunluk bosluk (son kayit {t.max().date()})")

@@ -369,6 +369,35 @@
           "toz_tasinim_saat"
         ]
       }
+    },
+    {
+      "path": "data/external/konvektif_gunluk.parquet",
+      "sha256": "07f4718de9ae20b22a035bfc8e15a266d67412b9ba8bad7b2800695e62129e4f",
+      "license": "CC-BY-4.0",
+      "redistribution": "allowed",
+      "attribution": "Weather data by Open-Meteo.com under CC BY 4.0 (Historical Forecast API).",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-18",
+        "evidence": "Open-Meteo Historical Forecast API, ayni CC BY 4.0 kosullari; anahtar gerekmiyor."
+      },
+      "source": {
+        "uri": "https://historical-forecast-api.open-meteo.com/v1/forecast",
+        "snapshot_ref": "2021-05-01..2026-08-13; 96 ilce; CAPE/lifted index/CIN saatlikten gunluge. KAPSAM SINIRI: arsiv 2021-05'te basliyor (olculdu), ERA5'te CAPE hic yok",
+        "retrieved_at": "2026-08-18",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 180000,
+        "required_columns": [
+          "ilce_key",
+          "tarih",
+          "cape_max",
+          "cape_ort",
+          "li_min"
+        ]
+      }
     }
   ]
 }
