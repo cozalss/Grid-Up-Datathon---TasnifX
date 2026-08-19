@@ -134,10 +134,15 @@ def test_juri_notebooku_gercek_ambargoyu_kaydeder() -> None:
 
     ``CVRecipe.embargo_days`` varsayilani 0'dir ve bu "henuz yapilandirilmamis
     sablon" demektir. Notebook jeneratoru bu alani bos birakirsa, juriye giden
-    notebook fold'lari ``embargo=max(HORIZON, 30)`` ile uretir ama kaydinda
-    "0 gun ambargo" yazar -- yani belgelenen sema, kosan semadan BASKA olur.
-    Bu bir sizinti degil, bir KAYIT YALANIDIR ve Kapi 2 (notebook
-    degerlendirmesi) tam olarak bunu okur.
+    notebook fold'lari gercek bir ambargoyla uretir ama kaydinda "0 gun
+    ambargo" yazar -- yani belgelenen sema, kosan semadan BASKA olur. Bu bir
+    sizinti degil, bir KAYIT YALANIDIR ve Kapi 2 (notebook degerlendirmesi)
+    tam olarak bunu okur.
+
+    2026-08-18 denetimi (P1-3) ambargo TANIMINI degistirdi: artik
+    ``forecast_geometry`` train-test boslugunu verir (``EMBARGO_DAYS``) ve
+    ufuk train sonundan test sonuna olculur. Sozlesme ayni: fold uretimindeki
+    deger ile provenance kaydi AYNI degiskeni kullanmali.
     """
     from pathlib import Path
 
@@ -148,7 +153,17 @@ def test_juri_notebooku_gercek_ambargoyu_kaydeder() -> None:
         "Notebook jeneratoru CVRecipe'i ambargosuz kuruyor: provenance kaydi "
         "gercekte kosan semadan farkli olur."
     )
-    assert "embargo_days=max(HORIZON, 30)" in metin, (
-        "Notebook'un CVRecipe kaydi, fold uretimindeki "
-        "embargo=pd.Timedelta(days=max(HORIZON, 30)) ile ayni degeri tasimali."
+    assert "embargo=pd.Timedelta(days=EMBARGO_DAYS)" in metin, (
+        "Fold uretimi ambargoyu forecast_geometry'den almali (EMBARGO_DAYS)."
+    )
+    assert "embargo_days=EMBARGO_DAYS" in metin, (
+        "Notebook'un CVRecipe kaydi, fold uretimindeki EMBARGO_DAYS ile ayni "
+        "degiskeni tasimali; aksi halde kayit ile kosan sema ayrisir."
+    )
+    assert "test_span_days=HORIZON" in metin, (
+        "CVRecipe test_span_days'i de kaydetmeli: fold penceresi ufka esit uretiliyor."
+    )
+    assert "forecast_geometry(" in metin, (
+        "Ufuk/ambargo tek kaynaktan (validation.forecast_geometry) turetilmeli; "
+        "(test.max - test.min + 1) formulu train-test boslugunu yok sayiyordu."
     )

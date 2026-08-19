@@ -128,7 +128,9 @@ from gridup import (
 from gridup.compat import categorical_columns
 from gridup.profiling import quick_look
 from gridup.turkish import codepoints, has_combining_dot, join_key, strip_qualifier
-from gridup.validation import leakage_report, purged_time_series_split, suggest_scheme
+from gridup.validation import (
+    forecast_geometry, leakage_report, purged_time_series_split, suggest_scheme,
+)
 
 set_global_seed(42)
 
@@ -354,12 +356,18 @@ if TIME_COLUMN:
     print(f"test:  {test_times.min()} -> {test_times.max()}")
     print(f"bosluk: {test_times.min() - train_times.max()}")
 
-    # Tahmin ufku = test blogunun boyu. CV bunu birebir taklit etmeli
-    # (2023 birincisinin test_size=744 saat = 31 gun secmesinin sebebi).
-    HORIZON = int((test_times.max() - test_times.min()).days) + 1
+    # UFUK = train'in son gunu -> test blogunun son gunu (bosluk DAHIL).
+    # (test.max - test.min + 1) formulu boslugu yok sayar: 10 gunluk boslukta
+    # CV lag'i 20 gun, test lag'i 30 gun bayatti (olculdu 2026-08-18).
+    # AMBARGO = train-test boslugu; bitisikse 0. Gecmis-hedef feature'lari
+    # zaten horizon kadar kaydirildigi icin fazladan ambargo CV'yi dagitim
+    # rejiminden UZAKLASTIRIR (her fold 30+ gun bayat egitim gorur).
+    geo = forecast_geometry(train_times, test_times)
+    HORIZON, EMBARGO_DAYS = geo.horizon_days, geo.gap_days
+    print(geo.summary())
     folds = purged_time_series_split(
         train_times, n_splits=4,
-        embargo=pd.Timedelta(days=max(HORIZON, 30)),
+        embargo=pd.Timedelta(days=EMBARGO_DAYS),
         test_span=pd.Timedelta(days=HORIZON),
     )
     for i, (tr, va) in enumerate(folds, 1):
@@ -450,7 +458,9 @@ from gridup.refit import (estimate_full_data_rounds, extract_best_iterations,
                           fold_train_fraction, multi_seed_refit)
 from gridup.selection import null_importance_filter, shap_backward_selection
 from gridup.stores import SQLiteExperimentStore
-from gridup.validation import adversarial_validation, build_splitter, purged_time_series_split
+from gridup.validation import (
+    adversarial_validation, build_splitter, forecast_geometry, purged_time_series_split,
+)
 
 set_global_seed(42)
 
@@ -514,13 +524,14 @@ değil.
 if TIME_COLUMN:
     train[TIME_COLUMN] = pd.to_datetime(train[TIME_COLUMN])
     test[TIME_COLUMN] = pd.to_datetime(test[TIME_COLUMN])
-    HORIZON = int((test[TIME_COLUMN].max() - test[TIME_COLUMN].min()).days) + 1
-    print(f"Tahmin ufku (test blok uzunlugu): {HORIZON} gun")
+    # UFUK = train sonu -> test sonu; AMBARGO = aradaki bosluk (01'de gerekcesi).
+    geo = forecast_geometry(train[TIME_COLUMN], test[TIME_COLUMN])
+    HORIZON, EMBARGO_DAYS = geo.horizon_days, geo.gap_days
+    print(geo.summary())
     # test_span = ufuk: fold'lar zaman uzunlugu esit pencereler olsun.
-    # embargo >= ufuk: kayan pencereler fold sinirini asmasin.
     folds = purged_time_series_split(
         train[TIME_COLUMN], n_splits=4,
-        embargo=pd.Timedelta(days=max(HORIZON, 30)),
+        embargo=pd.Timedelta(days=EMBARGO_DAYS),
         test_span=pd.Timedelta(days=HORIZON),
     )
 elif GROUP_COLUMN:
@@ -740,13 +751,14 @@ güven; r < 0.5 ise CV şemanı düzeltmeden devam etme.
 run_recipe = PipelineRecipe(
     seed=42,
     # embargo_days ACIKCA yazilir: fold'lar yukarida
-    # embargo=pd.Timedelta(days=max(HORIZON, 30)) ile uretildi. Bu alan
-    # bos birakilirsa provenance kaydi "0 gun ambargo" der ve juriye giden
+    # embargo=pd.Timedelta(days=EMBARGO_DAYS) ile uretildi. Bu alan bos
+    # birakilirsa provenance kaydi "0 gun ambargo" der ve juriye giden
     # notebook, gercekte kosandan BASKA bir semayi belgeler.
     cv=CVRecipe(
         n_splits=len(folds),
         splitter="purged_time_series",
-        embargo_days=max(HORIZON, 30),
+        test_span_days=HORIZON,
+        embargo_days=EMBARGO_DAYS,
     ),
     features=FeatureRecipe(
         horizon=HORIZON,

@@ -192,6 +192,7 @@ def build_paired_history_features(
         raise KeyError(f"Zaman kolonu '{time_column}' train icinde yok.")
 
     original_train = train
+    kopru_maskesi: np.ndarray | None = None
     if test is None:
         combined = train.copy()
         n_train = len(train)
@@ -217,6 +218,9 @@ def build_paired_history_features(
             test_for_history[value_column] = np.nan
         n_train = len(train)
         combined = pd.concat([train, test_for_history], ignore_index=True, sort=False)
+        combined, kopru_maskesi = _bosluk_kopru_satirlari(
+            combined, time_column=time_column, group_columns=group_columns
+        )
 
     transformed = add_lag_features(
         combined,
@@ -237,6 +241,10 @@ def build_paired_history_features(
             aggregations=rolling_aggregations,
         )
 
+    if kopru_maskesi is not None:
+        # Kopru satirlari feature URETIMINE girer (lag'i tarih bazli yapar) ama
+        # ciktiya ASLA girmez: hedefleri NaN'dir ve panelde karsiligi yoktur.
+        transformed = transformed.loc[~kopru_maskesi].reset_index(drop=True)
     train_result = transformed.iloc[:n_train].set_axis(train.index)
     test_result = None
     if test is not None:
@@ -248,6 +256,58 @@ def build_paired_history_features(
         test_result,
         _added_columns(original_train, train_result),
     )
+
+
+def _bosluk_kopru_satirlari(
+    combined: pd.DataFrame,
+    *,
+    time_column: str,
+    group_columns: Sequence[str] | None,
+) -> tuple[pd.DataFrame, np.ndarray | None]:
+    """Train sonu ile test basi arasindaki EKSIK GUNLERI gecici satirla doldurur.
+
+    NEDEN (2026-08-18 denetimi, P1-3 uzantisi): ``add_lag_features``
+    ``shift(horizon)`` ile SATIR kaydirir. Train ve test bitisikse (gunluk
+    dolu panel) satir kaydirmasi tarih kaydirmasina esittir. Arada VERISIZ
+    bir bosluk varsa esitlik BOZULUR ve ayni kolon iki farkli sey demeye
+    baslar. Olculdu: 100 gun train + 10 gun bosluk + 20 gun test, ufuk 30 ->
+    CV satirlari 30 gun oncesini, TEST satirlari 40 gun oncesini goruyordu.
+    Sizinti degil (yon guvenli) ama model, egitimde ogrendigi bayatliktan
+    BASKA bir bayatlikla tahmin yapiyordu.
+
+    Cozum: bosluk gunleri her grup icin gecici (hedefi NaN) satir olarak
+    eklenir, feature'lar uretilir, sonra bu satirlar ATILIR. Boylece
+    ``shift(h)`` tam olarak h GUN geriye gider. Bosluk yoksa hicbir sey
+    yapilmaz -- eski davranis birebir korunur (ve maliyet sifirdir).
+
+    Returns:
+        ``(genisletilmis_frame, kopru_maskesi)``. Bosluk yoksa
+        ``(combined, None)``.
+    """
+    zaman = pd.to_datetime(combined[time_column], errors="raise")
+    gunler = zaman.dt.normalize()
+    mevcut = pd.DatetimeIndex(gunler.unique()).sort_values()
+    if len(mevcut) < 2:
+        return combined, None
+    tam = pd.date_range(mevcut.min(), mevcut.max(), freq="D")
+    eksik = tam.difference(mevcut)
+    if eksik.empty:
+        return combined, None
+
+    anahtarlar = list(group_columns or [])
+    if anahtarlar:
+        gruplar = combined[anahtarlar].drop_duplicates()
+        kopru = gruplar.merge(pd.DataFrame({time_column: eksik}), how="cross")
+    else:
+        kopru = pd.DataFrame({time_column: eksik})
+    for kolon in combined.columns:
+        if kolon not in kopru.columns:
+            kopru[kolon] = np.nan
+    kopru = kopru[combined.columns]
+    genis = pd.concat([combined, kopru], ignore_index=True, sort=False)
+    maske = np.zeros(len(genis), dtype=bool)
+    maske[len(combined) :] = True
+    return genis, maske
 
 
 def runtime_recipe_fingerprint(recipe: dict[str, object], **resolved_behavior: object) -> str:
