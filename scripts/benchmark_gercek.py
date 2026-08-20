@@ -50,6 +50,7 @@ Cikti: experiments/benchmark_gercek.json
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -70,7 +71,11 @@ from gridup import (  # noqa: E402
     set_global_seed,
 )
 from gridup.ensemble import hill_climb_weights, stack_oof  # noqa: E402
-from gridup.evaluation import OuterEvidence, paired_model_decision  # noqa: E402
+from gridup.evaluation import (  # noqa: E402
+    OuterAnchor,
+    OuterEvidence,
+    paired_model_decision,
+)
 from gridup.features import (  # noqa: E402
     add_calendar_features,
     add_event_decay_features,
@@ -632,7 +637,7 @@ def iki_asama_kos(
     y: np.ndarray,
     folds: list[tuple[np.ndarray, np.ndarray]],
     agirliklar: np.ndarray | None,
-) -> tuple[dict[str, float], np.ndarray, np.ndarray, float, float, np.ndarray]:
+) -> tuple[dict[str, Any], np.ndarray, np.ndarray, float, float, np.ndarray]:
     """Iki asamali (hurdle) modeli kosturur; birlesik OOF ve sifir oranini dondurur.
 
     Sifir orani ~%35 -- fit_two_stage'in kendi dokumani %40 altinda duz
@@ -1033,7 +1038,39 @@ def recete_yaz(
     )
 
 
+def outer_kanit_yukle(yol: Path) -> OuterEvidence:
+    """``outer_anchor_kosusu.py`` ciktisini ``OuterEvidence``e cevirir.
+
+    Kapinin istedigi yapisal provenance burada kurulur: her anchor kendi
+    zaman sinirini ve recipe/fold parmak izini tasir. Dosya bozuksa ya da
+    anchor'lar ayni aday kumesini paylasmiyorsa ``OuterEvidence`` kendisi
+    reddeder -- sessiz kabul yok.
+    """
+    veri = json.loads(yol.read_text(encoding="utf-8"))
+    anchors = tuple(
+        OuterAnchor(
+            anchor_id=str(kayit["anchor_id"]),
+            train_end=str(kayit["train_end"]),
+            validation_start=str(kayit["validation_start"]),
+            validation_end=str(kayit["validation_end"]),
+            scores={ad: float(deger) for ad, deger in kayit["scores"].items()},
+            recipe_fingerprint=str(kayit["recipe_fingerprint"]),
+            fold_fingerprint=str(kayit["fold_fingerprint"]),
+        )
+        for kayit in veri["anchors"]
+    )
+    return OuterEvidence(anchors=anchors)
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--outer",
+        default=None,
+        help="outer_anchor_kosusu.py ciktisi (JSON); kazanan kapisini atesler",
+    )
+    args = parser.parse_args()
+
     if not VERI.exists():
         print(
             f"HATA: {VERI} yok. Indir: kaggle datasets download -d "
@@ -1108,7 +1145,21 @@ def main() -> int:
     # dolayisiyla minimum skor, ozellikle harman icin, dis kanit degildir.
     # Nested/rolling outer anchor kosusu henuz yok: karar kapisi bilincli olarak
     # kapali kalir ve OOF minimumu yalnizca ``apparent_oof_best`` diye kaydedilir.
-    karar = bilimsel_kazanan_karari(adaylar)
+    outer_kanit = None
+    if args.outer:
+        outer_yolu = Path(args.outer)
+        if not outer_yolu.exists():
+            print(f"UYARI: {outer_yolu} yok; kazanan kapisi kapali kalacak.")
+        else:
+            outer_kanit = outer_kanit_yukle(outer_yolu)
+            print()
+            print(
+                f"Dis capa kaniti yuklendi: {len(outer_kanit.anchors)} anchor ({outer_yolu.name})"
+            )
+            # Kapi YALNIZCA outer'da olculen adaylari karsilastirabilir.
+            olculen = set(outer_kanit.anchors[0].scores)
+            adaylar = {ad: skor for ad, skor in adaylar.items() if ad in olculen}
+    karar = bilimsel_kazanan_karari(adaylar, outer_evidence=outer_kanit)
     kazanan = karar["winner"]
 
     sonuc = {

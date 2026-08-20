@@ -1,0 +1,175 @@
+{
+  "capa_sayisi": 8,
+  "capa_penceresi_gun": 31,
+  "ic_fold": 2,
+  "adaylar": [
+    "catboost_mae",
+    "lgb_mae",
+    "lgb_tweedie",
+    "harman"
+  ],
+  "hedef": "kesinti_dk",
+  "anchors": [
+    {
+      "anchor_id": "capa08",
+      "train_end": "2021-12-17",
+      "validation_start": "2021-12-18",
+      "validation_end": "2022-01-17",
+      "scores": {
+        "catboost_mae": 452.2444,
+        "lgb_mae": 460.3307,
+        "lgb_tweedie": 497.3638,
+        "harman": 452.2444
+      },
+      "recipe_fingerprint": "288c0b0a6fa1df343c7b433d465e1d27ca2d6e0a6ad56671358281fc5543bf21",
+      "fold_fingerprint": "cdd0f2139de65f92906da4c0a54e600dec026a72b9321c359382e6f1322566a0",
+      "harman_agirliklari": {
+        "catboost_mae": 1.0
+      },
+      "n_egitim": 10528,
+      "n_valid": 1457
+    },
+    {
+      "anchor_id": "capa07",
+      "train_end": "2022-01-17",
+      "validation_start": "2022-01-18",
+      "validation_end": "2022-02-17",
+      "scores": {
+        "catboost_mae": 471.0399,
+        "lgb_mae": 524.6039,
+        "lgb_tweedie": 506.1854,
+        "harman": 471.0399
+      },
+      "recipe_fingerprint": "288c0b0a6fa1df343c7b433d465e1d27ca2d6e0a6ad56671358281fc5543bf21",
+      "fold_fingerprint": "9458943eabea6fe677b0e6b440bfc97c583719dda335e31b7936aaf190ee2668",
+      "harman_agirliklari": {
+        "catboost_mae": 1.0
+      },
+      "n_egitim": 11985,
+      "n_valid": 1457
+    },
+    {
+      "anchor_id": "capa06",
+      "train_end": "2022-02-17",
+      "validation_start": "2022-02-18",
+      "validation_end": "2022-03-20",
+      "scores": {
+        "catboost_mae": 381.4509,
+        "lgb_mae": 420.2345,
+        "lgb_tweedie": 387.5374,
+        "harman": 378.15
+      },
+      "recipe_fingerprint": "288c0b0a6fa1df343c7b433d465e1d27ca2d6e0a6ad56671358281fc5543bf21",
+      "fold_fingerprint": "3f16a0b7665fd5936c8c664c47fbe1986ac6cd54a23567d61a76dc215cda9a2c",
+      "harman_agirliklari": {
+        "catboost_mae": 0.8718,
+        "lgb_mae": 0.0171,
+        "lgb_tweedie": 0.1111
+      },
+      "n_egitim": 13442,
+      "n_valid": 1457
+    },
+    {
+      "anchor_id": "capa05",
+      "train_end": "2022-03-20",
+      "validation_start": "2022-03-21",
+      "validation_end": "2022-04-20",
+      "scores": {
+        "catboost_mae": 480.3849,
+        "lgb_mae": 488.2615,
+        "lgb_tweedie": 476.8163,
+        "harman": 478.8307
+      },
+      "recipe_fingerprint": "288c0b0a6fa1df343c7b433d465e1d27ca2d6e0a6ad56671358281fc5543bf21",
+      "fold_fingerprint": "035a048fce6bcdcd3ab4f6773c76d6e62479d83b6e8e1f20f974cacc73cceceb",
+      "harman_agirliklari": {
+        "catboost_mae": 0.6779,
+        "lgb_mae": 0.1812,
+        "lgb_tweedie": 0.1409
+      },
+      "n_egitim": 14899,
+      "n_valid": 1457
+    },
+    {
+      "anchor_id": "capa04",
+      "train_end": "2022-04-20",
+      "validation_start": "2022-04-21",
+      "validation_end": "2022-05-21",
+      "scores": {
+        "catboost_mae": 206.402,
+        "lgb_mae": 248.9438,
+        "lgb_tweedie": 260.7776,
+        "harman": 229.2688
+      },
+      "recipe_fingerprint": "288c0b0a6fa1df343c7b433d465e1d27ca2d6e0a6ad56671358281fc5543bf21",
+      "fold_fingerprint": "77f622c684b6a5d71aef4cc3d6b1f53d23223b8fe80f651d4c24e619aa40a912",
+      "harman_agirliklari": {
+        "catboost_mae": 0.4975,
+        "lgb_mae": 0.194,
+        "lgb_tweedie": 0.3085
+      },
+      "n_egitim": 16356,
+      "n_valid": 1457
+    },
+    {
+      "anchor_id": "capa03",
+      "train_end": "2022-05-21",
+      "validation_start": "2022-05-22",
+      "validation_end": "2022-06-21",
+      "scores": {
+        "catboost_mae": 387.3927,
+        "lgb_mae": 394.875,
+        "lgb_tweedie": 371.1656,
+        "harman": 373.9269
+      },
+      "recipe_fingerprint": "288c0b0a6fa1df343c7b433d465e1d27ca2d6e0a6ad56671358281fc5543bf21",
+      "fold_fingerprint": "e3623eb974fc1ec6240d3cfda47f8499131829f0f1f4f42be02fdcaa01318c1e",
+      "harman_agirliklari": {
+        "catboost_mae": 0.641,
+        "lgb_tweedie": 0.359
+      },
+      "n_egitim": 17813,
+      "n_valid": 1457
+    },
+    {
+      "anchor_id": "capa02",
+      "train_end": "2022-06-21",
+      "validation_start": "2022-06-22",
+      "validation_end": "2022-07-22",
+      "scores": {
+        "catboost_mae": 410.3623,
+        "lgb_mae": 415.7127,
+        "lgb_tweedie": 397.461,
+        "harman": 404.0818
+      },
+      "recipe_fingerprint": "288c0b0a6fa1df343c7b433d465e1d27ca2d6e0a6ad56671358281fc5543bf21",
+      "fold_fingerprint": "174ae6cb424af4b024a0572f4b3af7a8b11d51cad9f668855d1199b2f158d3c0",
+      "harman_agirliklari": {
+        "catboost_mae": 0.75,
+        "lgb_tweedie": 0.25
+      },
+      "n_egitim": 19270,
+      "n_valid": 1457
+    },
+    {
+      "anchor_id": "capa01",
+      "train_end": "2022-07-22",
+      "validation_start": "2022-07-23",
+      "validation_end": "2022-08-22",
+      "scores": {
+        "catboost_mae": 306.3478,
+        "lgb_mae": 294.2988,
+        "lgb_tweedie": 339.4222,
+        "harman": 317.6837
+      },
+      "recipe_fingerprint": "288c0b0a6fa1df343c7b433d465e1d27ca2d6e0a6ad56671358281fc5543bf21",
+      "fold_fingerprint": "7a6b1f599c3115d89be62e503c3bdeb4d20e8ffda3e46722aa7969f3fe044bb8",
+      "harman_agirliklari": {
+        "catboost_mae": 0.5988,
+        "lgb_tweedie": 0.4012
+      },
+      "n_egitim": 20727,
+      "n_valid": 1457
+    }
+  ]
+}

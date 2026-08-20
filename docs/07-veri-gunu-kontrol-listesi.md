@@ -315,6 +315,27 @@ değiştirmeyin** — hangisinin işe yaradığını bilemezsiniz.
    **0,90 MAE kazanç**, üstelik yapısal yanlılık olmadan. Yani: **harman
    yerine tohum ortalaması**. Stacking'e zaman ayırmayın (1078,82).
 
+   **DIŞ ÇAPA KANITI (bağımsız, 8 çapa — `scripts/outer_anchor_kosusu.py`).**
+   Yuvalanmış kontrol tek bir bölünmedir; kazanan kapısı en az ALTI bağımsız,
+   eşleştirilmiş çapa ister. Kosu üretildi (2021-12-18 → 2022-08-22, 31 günlük
+   pencere, her çapada ağırlıklar YALNIZCA o çapanın iç CV'sinde tırmanıldı):
+
+   | Aday | Ortalama MAE | En iyi–en kötü çapa | Çapa galibiyeti |
+   |------|-------------:|--------------------:|----------------:|
+   | catboost_mae | **386,95** | 206,40 – 480,38 | 3/8 |
+   | harman       | 388,15 | 229,27 – 478,83 | 1/8 |
+   | lgb_tweedie  | 404,59 | 260,78 – 506,19 | 3/8 |
+   | lgb_mae      | 405,91 | 248,94 – 524,60 | 1/8 |
+
+   Karar: **KAZANAN: YOK.** catboost_mae ortalamada önde ama çapa galibiyetini
+   lgb_tweedie ile PAYLAŞIYOR (3–3) ve harmanla arası 1,20 MAE — çapalar arası
+   yayılım 274 MAE. Yani sıralama istatistiksel olarak kararsız; "OOF'ta birinci"
+   demek gerçek üstünlük demek değil. Uygulamada anlamı: **tek modele değil,
+   catboost_mae 5-tohum ortalamasına oynayın**; harmanı yalnızca çeşitlilik
+   sigortası olarak, ikinci gönderim slotunda tutun.
+   Yarışma günü yeniden koşun: `python scripts/outer_anchor_kosusu.py` sonra
+   `python scripts/benchmark_gercek.py --outer experiments/outer_anchors.json`.
+
 8. **Son gün** — `multi_seed_refit(..., sample_weight=…, target_transform=…)`
    + `postprocess_predictions`. Refit artık CV'deki ağırlık/dönüşümü aynen
    taşır (denetim öncesi taşımıyordu: benchmark'ın ölçtüğü konfigürasyon

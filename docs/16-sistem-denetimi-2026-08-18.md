@@ -55,8 +55,20 @@ sqrt artefaktı 393→320 düzeldi; harman iddiası yuvalanmış kontrolde çür
 ölçüldü: **CAPE +4,12 · EPİAŞ +3,13 · İZSU +2,69 · saatlik hava +2,65**,
 buna karşılık **tatil −3,19 · güneş −1,16 · günlük hava −0,58**.
 
-**Kalan P1:** P1-13 (8 dış çapa ile kazanan kapısı), P1-14 (sayım hedefi
-JSON'u — EPİAŞ paneliyle kısmen karşılandı), P1-15 (40 dk Optuna).
+**Kalan P1:** P1-14 (sayım hedefi JSON'u — EPİAŞ paneliyle kısmen
+karşılandı), P1-15 (40 dk Optuna — betik hazır, koşu veri düzeltmesi bitince).
+
+**P1-13 kapandı (2026-08-20).** `scripts/outer_anchor_kosusu.py` 8 bağımsız,
+kronolojik dış çapa üretti (2021-12-18 → 2022-08-22, 31 günlük pencere; her
+çapada model seçimi ve harman ağırlıkları YALNIZCA o çapanın iç CV'sinde
+belirlendi, outer dilim hiçbir ayara dokunmadı). Sonuç:
+catboost_mae **386,95** (3/8 çapa) · harman 388,15 (1/8) ·
+lgb_tweedie 404,59 (3/8) · lgb_mae 405,91 (1/8).
+Kapı artık gerçek kanıtla ateşleniyor ve verdiği hüküm **"KAZANAN: YOK"** —
+catboost_mae çapa galibiyetini lgb_tweedie ile paylaşıyor, çapalar arası
+yayılım 274 MAE. Yani OOF sıralaması **güvenilir bir üstünlük kanıtı değil**;
+gönderim tek modele değil 5-tohum ortalamasına dayanmalı, harman ikinci
+slotta çeşitlilik sigortası olarak kalmalı. Ayrıntı: docs/07 §7.
 
 ### EPİAŞ verisi — fırsat ve KURAL SORUSU
 
@@ -116,7 +128,7 @@ maddeler ★ ile işaretli.
 | ✅ P1-10 ★ | UTF-8 dosyada 64 KB sınırı çok baytlı karakteri bölerse **sessizce cp1254** okunur → tüm ilçe adları bozuk, join %0 (11 MB gerçek dosyada ~%2,8 olasılık) | `io_utils.py:69,435-441`; yeniden üretildi | `UnicodeDecodeError.start >= len−3` ise kırp/incremental decoder; >64 KB test |
 | ✅ P1-11 | Harici join'ler eşleşme oranını hiç teşhis etmiyor (%0 eşleşme = sessiz NaN) | `national.py:227`, `tourism.py:117`; `diagnose_join` yalnızca 2 script'te | merge sonrası %0 → ValueError, <%50 → warn (3 fonksiyon) |
 | ✅ P1-12 | "il-ilçe" bileşik dizgeler (`izmir-karabağlar`) referansla eşleşmiyor; `strip_qualifier` sol tarafı alıyor | `turkish.py:190`; ölçüm | `split_il_ilce()` yardımcısı; `diagnose_join`'e ekle |
-| P1-13 | Bilimsel kazanan kapısı **hiç ateşlenemiyor** (6 dış çapa ister, hiçbir betik üretmiyor); fold skorları JSON'da yok; `fold_std≈90` mevsim seviyesi, gürültü değil | `benchmark_gercek.py:137,862`; `evaluation.py:128` | fold skorlarını sakla; eşleştirilmiş farklar; `n_splits=8` aylık çapa |
+| ✅ P1-13 ★ | Bilimsel kazanan kapısı **hiç ateşlenemiyor** (6 dış çapa ister, hiçbir betik üretmiyor); fold skorları JSON'da yok | `benchmark_gercek.py:137,862`; `evaluation.py:128` | `outer_anchor_kosusu.py` 8 bağımsız çapa üretiyor; `--outer` bayrağı kapıyı besliyor; kapı ateşlendi → **KAZANAN: YOK** |
 | P1-14 | Benchmark hedefi dakika; 2024 hedefi **sayım**dı. Sayımda sıralama aynı (catboost_mae 2,363 en iyi) ama commit'li kanıt yok | `benchmark_gercek.py:113-118`; docs/14 | `--hedef adet` anahtarı, iki JSON commit |
 | P1-15 | Hiperparametre gerçek veride hiç ayarlanmadı; 100 deneme ≈ 40 dk | tüm üyeler `starter_params` | 40 dk Optuna; yalnızca eşleştirilmiş kazanç > tohum gürültüsüyse al |
 

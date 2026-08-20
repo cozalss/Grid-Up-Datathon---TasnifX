@@ -9,7 +9,7 @@
         388.082649631331,
         345.7482907511701
       ],
-      "sure_sn": 1.6032363999984227
+      "sure_sn": 1.5122179999598302
     },
     "lgb_mae": {
       "mae": 306.7665788980259,
@@ -20,7 +20,7 @@
         398.8864373695641,
         279.812381998144
       ],
-      "sure_sn": 2.4804281999822706
+      "sure_sn": 2.269756799971219
     },
     "lgb_tweedie": {
       "mae": 316.9263461936847,
@@ -31,7 +31,7 @@
         391.2782324327199,
         307.69686782343035
       ],
-      "sure_sn": 3.0431301000062376
+      "sure_sn": 2.833212499972433
     },
     "catboost_mae": {
       "mae": 302.7290270794429,
@@ -42,7 +42,7 @@
         388.88836422306196,
         286.73399778451557
       ],
-      "sure_sn": 19.248021200008225
+      "sure_sn": 14.829784100002144
     },
     "xgb": {
       "mae": 368.1327133329257,
@@ -53,7 +53,7 @@
         377.65177016824424,
         341.9561868221202
       ],
-      "sure_sn": 2.1204252999741584
+      "sure_sn": 2.0131979000288993
     },
     "lgb_sqrt": {
       "mae": 320.14127774115093,
@@ -64,7 +64,7 @@
         409.55009226657324,
         275.8366535625286
       ],
-      "sure_sn": 1.5057007999857888
+      "sure_sn": 1.405658499978017
     },
     "iki_asama": {
       "mae": 310.5954315345012,
@@ -75,7 +75,7 @@
         435.82883715943984,
         275.6025771130593
       ],
-      "sure_sn": 4.008106200024486
+      "sure_sn": 3.578738800017163
     },
     "iki_asama_medyan": {
       "mae": 301.8054852914813,
@@ -86,7 +86,7 @@
         414.9368884872802,
         273.0859534525356
       ],
-      "sure_sn": 34.69698119995883
+      "sure_sn": 33.891293599968776
     },
     "iki_asama_medyan_kalibre": {
       "mae": 314.1036503240084,
@@ -97,7 +97,7 @@
         439.4550748902142,
         275.55618102577705
       ],
-      "sure_sn": 34.69698119995883
+      "sure_sn": 33.891293599968776
     }
   },
   "harman": {
@@ -166,15 +166,52 @@
   "stack_mae": 1078.8237012632208,
   "kazanan": null,
   "statistically_conclusive": false,
-  "decision_reason": "Ayni OOF uzerinde secilen/optimize edilen aday bilimsel kazanan ilan edilmedi: en az 6 bagimsiz, eslestirilmis outer fold/anchor kaniti yok.",
+  "decision_reason": "Bagimsiz outer anchor guven araliklari OOF'ta secilen adayin tum rakiplerini pratik etki esigiyle gectigini gostermiyor; sonuc istatistiksel olarak kararsiz.",
   "benchmark_decision": {
     "apparent_oof_best": "harman",
     "winner": null,
     "statistically_conclusive": false,
-    "decision_reason": "Ayni OOF uzerinde secilen/optimize edilen aday bilimsel kazanan ilan edilmedi: en az 6 bagimsiz, eslestirilmis outer fold/anchor kaniti yok.",
-    "n_anchors": 0,
+    "decision_reason": "Bagimsiz outer anchor guven araliklari OOF'ta secilen adayin tum rakiplerini pratik etki esigiyle gectigini gostermiyor; sonuc istatistiksel olarak kararsiz.",
+    "n_anchors": 8,
     "required_anchors": 6,
-    "pairwise_decisions": []
+    "pairwise_decisions": [
+      {
+        "candidate_name": "harman",
+        "baseline_name": "lgb_mae",
+        "winner": "harman",
+        "statistically_conclusive": true,
+        "decision_reason": "candidate_better",
+        "mean_paired_difference": -17.754337500000013,
+        "ci_low": -39.32469999999999,
+        "ci_high": -4.337950000000021,
+        "practical_effect": 0.0,
+        "n_anchors": 8
+      },
+      {
+        "candidate_name": "harman",
+        "baseline_name": "lgb_tweedie",
+        "winner": "harman",
+        "statistically_conclusive": true,
+        "decision_reason": "candidate_better",
+        "mean_paired_difference": -16.437887500000016,
+        "ci_low": -31.989050000000027,
+        "ci_high": -0.16851250000001272,
+        "practical_effect": 0.0,
+        "n_anchors": 8
+      },
+      {
+        "candidate_name": "harman",
+        "baseline_name": "catboost_mae",
+        "winner": null,
+        "statistically_conclusive": false,
+        "decision_reason": "inconclusive",
+        "mean_paired_difference": 1.2001624999999905,
+        "ci_low": -6.150350000000017,
+        "ci_high": 7.579612499999989,
+        "practical_effect": 0.0,
+        "n_anchors": 8
+      }
+    ]
   },
   "sifir_baseline": 366.97409059711737,
   "sifir_orani": 0.35002704652001443,
@@ -266,5 +303,5 @@
     "tohum_ortalamasi_mae": 302.22,
     "ortalama_kazanci": 0.9
   },
-  "gun1_recetesi": "Veri gununde ilk kosulacak tek model iki_asama_medyan (MAE 301.81; hep-sifir baseline 366.97, sifir orani %35.0). 2023 birincisinin recetesi catboost_mae bu veride MAE 302.73 ile 2. sirada -- recete iyi bir baslangic ama tek basina kazanmiyor, kor kopyalanmamali. Iki asamali model (MAE 310.60) duz modellerin en iyisini (catboost_mae 302.73) gecmiyor; dokumanin %40-alti-sifir uyarisiyla tutarli (optimum esik 0.72). MAE-optimal medyan kurali 301.81, kalibre olasilikla 314.10; sqrt donusumu (Rohlik recetesi, fit-uzayi erken durdurmayla) 320.14. Tum uyeler uzerinde hill-climb harmani MAE 298.59 (agirlik alan uyeler: catboost_mae, lgb_tweedie, iki_asama_medyan, iki_asama) -- ama YUVALANMIS kontrolde GECMIYOR: agirliklar gecmis fold'larda ogrenilip sonraki fold'da skorlanunca 359.00, ayni satirlarda tek basina catboost_mae 349.71 (fark +9.29). Ornek-ici harman skoru, uye sayisi kadar serbestlik dereceli bir optimizasyonun kendi verisinde olculmesidir; tohum gurultusu ~4 MAE oldugu icin bu 'kazanc' zaten gurultunun altinda; ridge stacking 1078.82 (purged semada ilk fold'lar meta-egitim kapsami disinda kaliyor). Bilimsel kazanan ilan edilmedi: Ayni OOF uzerinde secilen/optimize edilen aday bilimsel kazanan ilan edilmedi: en az 6 bagimsiz, eslestirilmis outer fold/anchor kaniti yok. Oneri: gun-1'de iki_asama_medyan modelini 5 TOHUMLA yeniden egitip (multi_seed_refit, tohum ortalamasi) gonder; harmani ancak yuvalanmis kontrolu gecerse ekle. Tohum ortalamasi olculmus ve bedava bir varyans dususudur, harman ise bu veride degildir."
+  "gun1_recetesi": "Veri gununde ilk kosulacak tek model iki_asama_medyan (MAE 301.81; hep-sifir baseline 366.97, sifir orani %35.0). 2023 birincisinin recetesi catboost_mae bu veride MAE 302.73 ile 2. sirada -- recete iyi bir baslangic ama tek basina kazanmiyor, kor kopyalanmamali. Iki asamali model (MAE 310.60) duz modellerin en iyisini (catboost_mae 302.73) gecmiyor; dokumanin %40-alti-sifir uyarisiyla tutarli (optimum esik 0.72). MAE-optimal medyan kurali 301.81, kalibre olasilikla 314.10; sqrt donusumu (Rohlik recetesi, fit-uzayi erken durdurmayla) 320.14. Tum uyeler uzerinde hill-climb harmani MAE 298.59 (agirlik alan uyeler: catboost_mae, lgb_tweedie, iki_asama_medyan, iki_asama) -- ama YUVALANMIS kontrolde GECMIYOR: agirliklar gecmis fold'larda ogrenilip sonraki fold'da skorlanunca 359.00, ayni satirlarda tek basina catboost_mae 349.71 (fark +9.29). Ornek-ici harman skoru, uye sayisi kadar serbestlik dereceli bir optimizasyonun kendi verisinde olculmesidir; tohum gurultusu ~4 MAE oldugu icin bu 'kazanc' zaten gurultunun altinda; ridge stacking 1078.82 (purged semada ilk fold'lar meta-egitim kapsami disinda kaliyor). Bilimsel kazanan ilan edilmedi: Bagimsiz outer anchor guven araliklari OOF'ta secilen adayin tum rakiplerini pratik etki esigiyle gectigini gostermiyor; sonuc istatistiksel olarak kararsiz. Oneri: gun-1'de iki_asama_medyan modelini 5 TOHUMLA yeniden egitip (multi_seed_refit, tohum ortalamasi) gonder; harmani ancak yuvalanmis kontrolu gecerse ekle. Tohum ortalamasi olculmus ve bedava bir varyans dususudur, harman ise bu veride degildir."
 }
