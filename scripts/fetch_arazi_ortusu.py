@@ -272,6 +272,20 @@ def main() -> int:
     #: sifira giderken bolme patlamasin diye kucuk bir taban eklenir.
     ortu["agac_yerlesim_orani"] = ortu["agac_orani"] / (ortu["yerlesim_orani"] + 1e-3)
 
+    # OLU KOLONLARI DUS. Ilk surumde 11 WorldCover sinifinin TAMAMI tasiniyordu;
+    # gerekce "eksik sinif ile sifir oranli sinif karistirilmasin" idi. Bu
+    # gerekce YANLISTI: ``ortu_piksel`` zaten kac piksel okundugunu kaydediyor,
+    # yani sifir oran belirsiz degil. Buna karsilik butun ilcelerde ayni degeri
+    # tasiyan bir kolon SIFIR bilgi tasir ve deponun kapsam kapisi onu hakli
+    # olarak reddediyor (olculdu: kar_buz, mangrov, yosun -- Ege'de ucu de 0).
+    # Kural OSM ailesiyle AYNI; dusulenler raporlanir, sessizce yok olmaz.
+    oran_kolonlari = [k for k in SINIFLAR.values() if k in ortu.columns]
+    olu = [k for k in oran_kolonlari if ortu[k].nunique(dropna=False) <= 1]
+    if olu:
+        print(f"\n  DUSULEN olu sinif ({len(olu)}): {', '.join(olu)}")
+        print("    -> bu ortu siniflari Ege'de hic gorulmuyor (tum ilcelerde ayni deger).")
+        ortu = ortu.drop(columns=olu)
+
     bos = ortu["ortu_piksel"] == 0
     print("\n2/2  ozet")
     print(f"  piksel okunamayan ilce : {int(bos.sum())}")

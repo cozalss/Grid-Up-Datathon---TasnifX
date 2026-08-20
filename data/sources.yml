@@ -466,7 +466,7 @@
     },
     {
       "path": "data/external/arazi_ortusu_ilce.parquet",
-      "sha256": "a747fa654657ac807577b60ed5718ad1ad00f7b39820f0d6dad13c2753d8b789",
+      "sha256": "5a08203825b1690d8763744ebdf838d5c278c4cf08771cced19ac290cfae57dc",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "ESA WorldCover 10m 2021 v200 (c) ESA WorldCover project / Contains modified Copernicus Sentinel data (2021), processed by ESA WorldCover consortium. Zanaga et al., doi:10.5281/zenodo.7254221. CC BY 4.0.",

@@ -294,6 +294,43 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
         ),
     ),
     Kaynak(
+        ad="arazi_ortusu_ilce",
+        yol="data/external/arazi_ortusu_ilce.parquet",
+        anahtar_kolonu="ilce_key",
+        beklenen_ilce=96,
+        asgari_satir=96,
+        # STATIK tablo: zaman kolonu yok, dolayisiyla tarih/hizalama kontrolu
+        # uygulanmaz. Bu bir muafiyet degil -- olcum ESA WorldCover 2021
+        # yayinidir ve gun icinde degismez.
+        son_kontrolu_atla="Statik ilce ozelligi; zaman ekseni yok (WorldCover 2021 v200).",
+        fizik=(
+            (
+                "Oranlar 0-1 arasinda ve toplamlari 1'e yakin (sinif kesirleri)",
+                lambda d: bool(
+                    d.filter(like="_orani")
+                    .drop(columns=["agac_yerlesim_orani"], errors="ignore")
+                    .pipe(lambda x: ((x >= 0) & (x <= 1)).all().all())
+                ),
+            ),
+            (
+                "Kentsel Izmir ilcesi (karabaglar) YERLESIM oraninda kirsal Mugla"
+                " ilcesinden (kavaklidere) yuksek",
+                lambda d: (
+                    float(d.loc[d.ilce_key == "karabaglar", "yerlesim_orani"].iloc[0])
+                    > float(d.loc[d.ilce_key == "kavaklidere", "yerlesim_orani"].iloc[0])
+                ),
+            ),
+            (
+                "Ve AGAC oraninda tersi -- iki yonlu kontrol, tek yonlu bir"
+                " esik kaymasi ikisini birden gecemez",
+                lambda d: (
+                    float(d.loc[d.ilce_key == "kavaklidere", "agac_orani"].iloc[0])
+                    > float(d.loc[d.ilce_key == "karabaglar", "agac_orani"].iloc[0])
+                ),
+            ),
+        ),
+    ),
+    Kaynak(
         ad="turizm_aylik_il",
         yol="data/external/turizm_aylik_il.parquet",
         asgari_satir=5_000,
