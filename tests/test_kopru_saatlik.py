@@ -191,3 +191,56 @@ def test_ayni_uc_nokta_tek_istekte_gruplaniyor() -> None:
     assert len(gruplar) == 2, f"Beklenen iki uc nokta, gelen: {list(gruplar)}"
     assert len(gruplar[modul.FORECAST_URL]) == 3, "Hava/toprak/konvektif ayni istekte olmali."
     assert len(gruplar[modul.AIR_QUALITY_URL]) == 1
+
+
+def test_arsiv_ucu_tahmin_satirlarini_saymiyor() -> None:
+    """``past_days`` referansi TAHMIN OLMAYAN son gun olmali.
+
+    OLCULDU 2026-08-20: koprü IKINCI kez kosunca tablolar zaten gelecege
+    uzaniyordu (2026-08-26) ve ``bugun - tablo_ucu`` NEGATIF cikti ->
+    ``past_days=-3`` -> API her ilce icin HTTP 400.
+
+    Yani betik ILK kosuda calisip IKINCI kosuda tamamen bozuluyordu. Yarisma
+    gunu yapilacak sey tam olarak ikinci kosudur: veri tazelenir, koprü
+    yeniden kurulur. Bu test o senaryoyu birebir kurar.
+    """
+    modul = _modul()
+    arsiv = _tablo("2026-08-01", "2026-08-10", deger=1000.0)
+    tahmin = _tablo("2026-08-11", "2026-08-26", deger=999.0)
+    ikinci_kosu = modul.kopruyu_birlestir(arsiv, tahmin)
+
+    assert ikinci_kosu["tarih"].max() == pd.Timestamp("2026-08-26"), "test kurgusu hatali"
+    assert modul._arsiv_ucu(ikinci_kosu) == pd.Timestamp("2026-08-10"), (
+        "Arsiv ucu, tahmin satirlarindan etkilendi -- past_days negatife duser."
+    )
+    # Bayrak yoksa tum tablonun son gunu kullanilir (ilk kosu durumu).
+    assert modul._arsiv_ucu(arsiv) == pd.Timestamp("2026-08-10")
+
+
+def test_dikis_kontrolu_tahmin_satirlarini_kendisiyle_kiyaslamaz() -> None:
+    """Dikis ARSIVLE olculur; onceki tahmini yeni tahminle kiyaslamak
+    farki yapay olarak kucultur ve kontrolu anlamsizlastirir.
+
+    Burada arsiv 1000, ESKI tahmin 999, YENI tahmin 1050. Kontrol arsivle
+    yapilirsa fark 50 gorunur (ve tolerans asilir); eski tahminle yapilirsa
+    ortusme sadece tahmin satirlarina duser ve gercek ayrisma gizlenir.
+    """
+    modul = _modul()
+    kopru = modul.Kopru(
+        ad="test",
+        yol="yok",
+        degiskenler=(),
+        topla=lambda f, k: f,
+        dikis_kolonu="basinc_ort",
+        dikis_toleransi=2.0,
+    )
+    arsiv = _tablo("2026-08-01", "2026-08-10", deger=1000.0)
+    eski_tahmin = _tablo("2026-08-11", "2026-08-20", deger=999.0)
+    onceki_kosu = modul.kopruyu_birlestir(arsiv, eski_tahmin)
+
+    yeni_tahmin = _tablo("2026-08-08", "2026-08-26", deger=1050.0)
+    fark = modul.dikis_farki(onceki_kosu, yeni_tahmin, kopru)
+
+    assert fark == pytest.approx(50.0), (
+        f"Dikis farki {fark}; arsiv satirlariyla olculmemis olabilir."
+    )

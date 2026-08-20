@@ -284,6 +284,15 @@ def forecast_cek(
     return frame
 
 
+def _arsiv_ucu(frame: pd.DataFrame) -> pd.Timestamp:
+    """Tablonun TAHMIN OLMAYAN son gunu; bayrak yoksa tum tablonun son gunu."""
+    if TAHMIN_KOLONU in frame.columns:
+        gercek = frame.loc[frame[TAHMIN_KOLONU].astype("int8") == 0, "tarih"]
+        if not gercek.empty:
+            return pd.Timestamp(gercek.max()).normalize()
+    return pd.Timestamp(frame["tarih"].max()).normalize()
+
+
 def dikis_farki(arsiv: pd.DataFrame, tahmin: pd.DataFrame, kopru: Kopru) -> float:
     """Ortusen gunlerde arsiv ve tahmin arasindaki ortalama mutlak fark.
 
@@ -291,6 +300,11 @@ def dikis_farki(arsiv: pd.DataFrame, tahmin: pd.DataFrame, kopru: Kopru) -> floa
         ValueError: Hic ortusme yoksa -- dikis kontrolsuz birlestirme,
             kontrolun kendisini anlamsiz kilar.
     """
+    # Dikis, ARSIV satirlariyla olculur. Onceki kosunun tahmin satirlarini
+    # yeni tahminle karsilastirmak farki yapay olarak kucultur ve kontrolu
+    # anlamsizlastirir -- ayni modelin ciktisi kendisiyle kiyaslanir.
+    if TAHMIN_KOLONU in arsiv.columns:
+        arsiv = arsiv[arsiv[TAHMIN_KOLONU].astype("int8") == 0]
     a = arsiv.set_index(["ilce_key", "tarih"])[kopru.dikis_kolonu]
     t = tahmin.set_index(["ilce_key", "tarih"])[kopru.dikis_kolonu]
     ortak = a.index.intersection(t.index)
@@ -357,9 +371,20 @@ def main() -> int:
         mevcut[kopru.ad] = frame
 
     bugun = pd.Timestamp.today().normalize()
-    # past_days: EN ESKI arsiv ucunu bile ortusme payiyla yakalayacak kadar.
-    en_eski_uc = min(f["tarih"].max() for f in mevcut.values())
-    past_days = int((bugun - en_eski_uc).days) + ORTUSME_GUN
+
+    # past_days EN ESKI ARSIV ucundan hesaplanir -- tablonun max tarihinden
+    # DEGIL.
+    #
+    # OLCULDU 2026-08-20: koprü IKINCI kez kosunca tablolar zaten gelecege
+    # uzaniyordu (2026-08-26) ve ``bugun - tablo_ucu`` NEGATIF cikti:
+    # ``past_days=-3`` -> API her ilce icin HTTP 400. Yani betik ilk kosuda
+    # calisip ikinci kosuda tamamen bozuluyordu -- ve yarisma gunu yapilacak
+    # sey tam olarak ikinci kosudur.
+    #
+    # Dogru referans, TAHMIN OLMAYAN son gundur: koprünun kapatmasi gereken
+    # bosluk oradan baslar.
+    en_eski_uc = min(_arsiv_ucu(f) for f in mevcut.values())
+    past_days = max(int((bugun - en_eski_uc).days) + ORTUSME_GUN, ORTUSME_GUN)
     if past_days > MAX_PAST_DAYS:
         print(
             f"HATA: en eski tablo ucu {en_eski_uc.date()}, bugunden {past_days} gun geride; "

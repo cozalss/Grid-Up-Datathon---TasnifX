@@ -353,6 +353,45 @@ panel ufku 2026-08-15 · sınırlayan kaynak: epias_tuketim
 
 ---
 
+## 4d. Tazeleme sırası — tek komut
+
+Veri tazelemenin bir **sırası** vardır ve sırayı bozmak paneli sessizce bozar:
+
+```
+arşiv çekicileri  ->  köprüler  ->  kapılar
+```
+
+Çekiciler tabloyu kontrol noktalarından **yeniden üretir**; bu, önceki köprü
+koşusunun eklediği tahmin satırlarını siler. Yani "nem tablosunu tazeleyeyim"
+demek, farkında olmadan panelin ileri ucunu delmektir — ve o delik yalnızca
+`veri_sagligi.py` çalıştırılırsa görünür.
+
+**Yarışma günü tam olarak yapılacak hata budur:** veri tazelenir, kimse
+köprüyü yeniden kurmaz, panelin son günlerinde bazı aileler boş kalır ve CV
+bunu **görmez** (çünkü CV de aynı boş veriyle koşar).
+
+`scripts/veri_tazele.py` sırayı garanti eder ve sonunda kapıları koşar.
+İki mod var: tam tazeleme (saatler, arşiv kotası) ve `--yalniz-kopru`
+(dakikalar, ayrı kotalar).
+
+### Boru hattını çalıştırmak yeni bir hata buldu
+
+İlk koşuda çalışıp **ikinci koşuda tamamen bozulan** bir hata vardı:
+`past_days`, tablonun *max* tarihinden hesaplanıyordu. Köprü bir kez
+kurulduktan sonra tablo geleceğe uzanıyor (2026-08-26) ve
+`bugün − tablo_ucu` **negatif** çıkıyordu → `past_days=-3` → her ilçe için
+HTTP 400.
+
+Yarışma günü yapılacak şey tam olarak ikinci koşudur. Referans artık
+**tahmin olmayan** son gün; dikiş kontrolü de arşiv satırlarıyla yapılıyor
+(önceki tahmini yeni tahminle kıyaslamak, aynı modelin çıktısını kendisiyle
+kıyaslamak olurdu ve farkı yapay olarak sıfırlardı).
+
+İkisi de `test_arsiv_ucu_tahmin_satirlarini_saymiyor` ve
+`test_dikis_kontrolu_tahmin_satirlarini_kendisiyle_kiyaslamaz` ile kilitlendi.
+
+---
+
 ## 4c. Son durum — ölçülen
 
 | Kapı | Sonuç |
@@ -360,8 +399,9 @@ panel ufku 2026-08-15 · sınırlayan kaynak: epias_tuketim
 | `veri_sagligi.py` | 17 kaynak · **0 hata** · 3 uyarı (tahmin türevli kuyruklar) |
 | `kapsam_deseni.py` | 209 kolon · **0 hata** · 14 uyarı |
 | `verify_sources.py` | 15 artefakt · **0 hata** · 15 uyarı (yeniden üretilebilirlik) |
+| `veri_tazele.py --yalniz-kopru` | 6 adım · **hepsi geçti** (exit 0) |
 | `scan_secrets.py` | **0 bulgu** |
-| `pytest` | **1271 geçti** · 51 atlandı · **0 hata** |
+| `pytest` | **1273 geçti** · 61 atlandı · **0 hata** |
 
 Panel tablolarının tamamı **2026-08-26**'da bitiyor, delik yok. Köprü dikiş
 farkları: basınç 0,325 hPa · CAPE 0,000 · PM10 0,000 · nem 4,743 (toleranslar
