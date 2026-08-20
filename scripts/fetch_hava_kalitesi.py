@@ -59,7 +59,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fetch_weather import (  # noqa: E402
     cap_end_date,
-    checkpoint_covers,
+    ckpt_birlestir,
+    eksik_aralik,
     rate_limit_beklemesi,
 )
 
@@ -233,13 +234,18 @@ def main() -> int:
     for sira, satir in enumerate(ilceler.itertuples(index=False), start=1):
         k = str(satir.ilce_key)
         ckpt = CKPT_DIR / f"{k}.parquet"
-        if not args.fresh and checkpoint_covers(ckpt, args.start, son):
+        # Yalnizca eksik kuyruk -- bkz. fetch_weather.eksik_aralik gerekcesi.
+        aralik = None if args.fresh else eksik_aralik(ckpt, args.start, son)
+        if not args.fresh and aralik is None:
             print(f"[{sira:3d}/{len(ilceler)}] {k:16s} kontrol noktasindan")
             continue
-        print(f"[{sira:3d}/{len(ilceler)}] {k:16s} ", end="", flush=True)
+        cek_bas, cek_son = (args.start, son) if args.fresh else aralik
+        print(f"[{sira:3d}/{len(ilceler)}] {k:16s} {cek_bas}..{cek_son} ", end="", flush=True)
         try:
-            saatlik = _cek(k, float(satir.lat), float(satir.lon), args.start, son)
+            saatlik = _cek(k, float(satir.lat), float(satir.lon), cek_bas, cek_son)
             gunluk = gunluge_indir(saatlik, k)
+            if not args.fresh:
+                gunluk = ckpt_birlestir(ckpt, gunluk, anahtarlar=("ilce_key", "tarih"))
             atomic_write_dataframe(gunluk, ckpt)
             print(f"{len(saatlik):,} saat -> {len(gunluk):,} gun")
         except (RuntimeError, requests.RequestException) as hata:

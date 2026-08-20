@@ -147,11 +147,17 @@ def test_kontrol_noktasi_kapsam_ile_atlanir(betik: Path) -> None:
     if not kullaniyor:
         pytest.skip(f"{betik.name} kontrol noktasi dizini kullanmiyor")
 
-    assert "checkpoint_covers(" in kaynak, (
+    # Iki gecerli bicim var ve ikisi de AYNI soruyu sorar:
+    #   checkpoint_covers(...)  -> "kapsiyor mu?"  (atla / bastan indir)
+    #   eksik_aralik(...)       -> "neresi eksik?" (yalnizca kuyrugu indir)
+    # Ikincisi ustundur -- kotayi 300+ kat az yakar -- ama sozlesme acisindan
+    # ikisi de kabul edilir. Onemli olan dosyanin VARLIGINA guvenilmemesi.
+    assert "checkpoint_covers(" in kaynak or "eksik_aralik(" in kaynak, (
         f"{betik.name} kontrol noktasi kullaniyor ama kapsam kontrolu YOK. "
         "Dosyanin varligi, istenen [start, end] araligini kapsadigi anlamina "
         "gelmez; `--end` ileri tasindiginda betik sessizce eski veriyi "
         "yeniden yayinlar. Dogrusu: "
+        "`aralik = eksik_aralik(ckpt, args.start, end)` ya da "
         "`if not args.fresh and checkpoint_covers(ckpt, args.start, end): continue`"
     )
 
@@ -344,3 +350,103 @@ def test_referans_tablosu_yayin_dogrulamasindan_geciyor() -> None:
     assert len(frame) == 96, f"96 ilce bekleniyordu, {len(frame)} geldi"
     assert frame["ilce_key"].is_unique, "ilce_key tekil degil"
     assert not frame[["lat", "lon"]].isna().any().any(), "koordinat eksik"
+
+
+def test_eksik_aralik_yalnizca_kuyrugu_istiyor(tmp_path: Path) -> None:
+    """Kontrol noktasi kismen kapsiyorsa YALNIZCA eksik kuyruk cekilmeli.
+
+    OLCULDU 2026-08-20: cekiciler "kapsamiyor" gordugunde TUM araligi bastan
+    indiriyordu. Gercek ihtiyac sondaki birkac gundu::
+
+        nem_toprak   eksik  7 gun  ama 2430 gun isteniyordu = 347x
+        konvektif    eksik  6 gun  ama 1944 gun isteniyordu = 324x
+        hava_gunluk  eksik 10 gun  ama 2430 gun isteniyordu = 243x
+
+    Open-Meteo kotasi istenen VERI MIKTARINA gore agirliklandirilir; 347 kat
+    fazla veri istemek kotayi 347 kat hizli tuketir ve gunluk tazelemeyi
+    saatlere cikarir. Yarisma gunu veri tazeleyememek somut bir kayiptir.
+    """
+    import pandas as pd
+
+    modul = _modul_yukle("fetch_weather")
+    ckpt = tmp_path / "c.parquet"
+    pd.DataFrame({"tarih": pd.date_range("2020-01-01", "2026-08-12", freq="D")}).to_parquet(ckpt)
+
+    aralik = modul.eksik_aralik(ckpt, "2020-01-01", "2026-08-19")
+    assert aralik is not None, "Eksik kuyruk varken None dondu."
+    bas, son = aralik
+    assert son == "2026-08-19"
+    # 1 gun ortusme payiyla: 08-11'den baslar, yani ~9 gun -- 2400 degil.
+    gun = (pd.Timestamp(son) - pd.Timestamp(bas)).days + 1
+    assert gun <= 15, f"Kuyruk yerine {gun} gun isteniyor -- kota bosa yaniyor."
+    assert pd.Timestamp(bas) < pd.Timestamp("2026-08-12"), "Ortusme payi yok; revizyon kacar."
+
+
+def test_eksik_aralik_tam_kapsamda_none_donuyor(tmp_path: Path) -> None:
+    """Kapsanan aralik icin hic istek atilmamali."""
+    import pandas as pd
+
+    modul = _modul_yukle("fetch_weather")
+    ckpt = tmp_path / "c.parquet"
+    pd.DataFrame({"tarih": pd.date_range("2020-01-01", "2026-08-19", freq="D")}).to_parquet(ckpt)
+    assert modul.eksik_aralik(ckpt, "2020-01-01", "2026-08-19") is None
+    assert modul.eksik_aralik(ckpt, "2020-01-01", "2026-08-01") is None
+
+
+def test_eksik_aralik_bas_boslugunda_tum_araligi_istiyor(tmp_path: Path) -> None:
+    """Bastaki bosluk icin tum aralik: iki parcayi birlestirmek risklidir."""
+    import pandas as pd
+
+    modul = _modul_yukle("fetch_weather")
+    ckpt = tmp_path / "c.parquet"
+    pd.DataFrame({"tarih": pd.date_range("2021-05-01", "2026-08-19", freq="D")}).to_parquet(ckpt)
+    assert modul.eksik_aralik(ckpt, "2020-01-01", "2026-08-19") == ("2020-01-01", "2026-08-19")
+
+
+def test_konvektif_kendi_kapsam_basina_kirpiyor() -> None:
+    """CAPE 2021-05'te basliyor; daha erken bir ``--start`` KIRPILMALI.
+
+    Kirpilmazsa kalici bir "bas boslugu" olusur: kontrol noktasi 2021-05'te
+    baslar, istek 2020-01'de baslar ve ``eksik_aralik`` bunu kapanmamis
+    bosluk sanip HER KOSUDA tum araligi bastan indirir. Kaynak tek basina
+    hicbir kazanc gostermez -- olculdu ve bu testle kapatildi.
+    """
+    kaynak = (BETIK_DIZINI / "fetch_konvektif.py").read_text(encoding="utf-8")
+    assert "KAPSAM_BASI" in kaynak
+    assert "args.start = KAPSAM_BASI" in kaynak, (
+        "fetch_konvektif, kapsam basindan onceki bir --start'i KIRPMIYOR. "
+        "Cagiran tum kaynaklara ayni --start'i gecerse her kosuda tam cekim olur."
+    )
+
+
+def test_ckpt_birlestir_yeni_degeri_tercih_ediyor(tmp_path: Path) -> None:
+    """Ortusen gunde YENI cekim kazanir -- ERA5 son gunlerini REVIZE eder.
+
+    ERA5T (on surum) birkac gun sonra nihai ERA5 ile degistirilir; daha gec
+    cekilmis deger daha dogrudur. Eskiyi tercih etmek revizyonu kalici olarak
+    kaybettirirdi.
+    """
+    import pandas as pd
+
+    modul = _modul_yukle("fetch_weather")
+    ckpt = tmp_path / "c.parquet"
+    eski = pd.DataFrame(
+        {
+            "ilce_key": ["a"] * 3,
+            "tarih": pd.date_range("2026-08-10", periods=3, freq="D"),
+            "deger": [1.0, 2.0, 3.0],
+        }
+    )
+    eski.to_parquet(ckpt)
+    yeni = pd.DataFrame(
+        {
+            "ilce_key": ["a"] * 3,
+            "tarih": pd.date_range("2026-08-12", periods=3, freq="D"),
+            "deger": [30.0, 40.0, 50.0],
+        }
+    )
+    birlesik = modul.ckpt_birlestir(ckpt, yeni, anahtarlar=("ilce_key", "tarih"))
+
+    assert len(birlesik) == 5, "Gunler birlestirilmedi."
+    ortusen = birlesik.loc[birlesik["tarih"] == pd.Timestamp("2026-08-12"), "deger"].iloc[0]
+    assert ortusen == 30.0, "Ortusen gunde ESKI deger kazandi -- revizyon kaybolur."

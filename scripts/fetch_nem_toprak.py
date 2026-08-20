@@ -86,7 +86,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fetch_weather import (  # noqa: E402
     ARCHIVE_URL,
     cap_end_date,
-    checkpoint_covers,
+    ckpt_birlestir,
+    eksik_aralik,
     rate_limit_beklemesi,
 )
 
@@ -305,13 +306,23 @@ def main() -> int:
     for sira, satir in enumerate(ilceler.itertuples(index=False), start=1):
         ilce_key = str(satir.ilce_key)
         ckpt = CKPT_DIR / f"{ilce_key}.parquet"
-        if not args.fresh and checkpoint_covers(ckpt, args.start, end):
+        # YALNIZCA EKSIK KUYRUK cekilir. Tum araligi bastan istemek kotayi
+        # 347 kat hizli tuketiyordu (olculdu 2026-08-20): 7 gunluk eksik icin
+        # 2430 gun. gunluge_indir saf groupby("tarih") oldugu icin kismi
+        # cekimin sonucu tam cekimle BIREBIR aynidir.
+        aralik = None if args.fresh else eksik_aralik(ckpt, args.start, end)
+        if not args.fresh and aralik is None:
             print(f"[{sira:3d}/{len(ilceler)}] {ilce_key:16s} kontrol noktasindan")
             continue
-        print(f"[{sira:3d}/{len(ilceler)}] {ilce_key:16s} ", end="", flush=True)
+        cek_bas, cek_son = (args.start, end) if args.fresh else aralik
+        print(
+            f"[{sira:3d}/{len(ilceler)}] {ilce_key:16s} {cek_bas}..{cek_son} ", end="", flush=True
+        )
         try:
-            saatlik = _kos(ilce_key, float(satir.lat), float(satir.lon), args.start, end)
+            saatlik = _kos(ilce_key, float(satir.lat), float(satir.lon), cek_bas, cek_son)
             gunluk = gunluge_indir(saatlik, ilce_key)
+            if not args.fresh:
+                gunluk = ckpt_birlestir(ckpt, gunluk, anahtarlar=("ilce_key", "tarih"))
             atomic_write_dataframe(gunluk, ckpt)
             print(f"{len(saatlik):,} saat -> {len(gunluk):,} gun")
         except (RuntimeError, requests.RequestException) as hata:

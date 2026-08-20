@@ -66,7 +66,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fetch_weather import (  # noqa: E402
     cap_end_date,
-    checkpoint_covers,
+    ckpt_birlestir,
+    eksik_aralik,
     rate_limit_beklemesi,
 )
 
@@ -213,6 +214,19 @@ def main() -> int:
     ap.add_argument("--fresh", action="store_true")
     args = ap.parse_args()
 
+    # KAPSAM BASINA KIRP. Cagiran (or. veri_tazele.py) tum kaynaklara ayni
+    # --start'i gecmek isteyebilir; oncesini istemek yalnizca kotayi bos
+    # yakmaz, KALICI bir "bas boslugu" da uretir: kontrol noktasi 2021-05'te
+    # baslar, istek 2020-01'de baslar, ``eksik_aralik`` bunu kapanmamis
+    # bosluk sanip HER KOSUDA tum araligi bastan indirir (olculdu 2026-08-20:
+    # konvektif tek kaynak olarak kazanc gostermiyordu, sebebi buydu).
+    if pd.Timestamp(args.start) < pd.Timestamp(KAPSAM_BASI):
+        print(
+            f"UYARI: {args.start} istendi ama CAPE urunu {KAPSAM_BASI}'de basliyor; "
+            f"baslangic {KAPSAM_BASI} olarak kirpildi."
+        )
+        args.start = KAPSAM_BASI
+
     son, uyari = cap_end_date(args.end)
     if uyari:
         print(f"UYARI: {uyari}")
@@ -229,13 +243,18 @@ def main() -> int:
     for sira, satir in enumerate(ilceler.itertuples(index=False), start=1):
         k = str(satir.ilce_key)
         ckpt = CKPT_DIR / f"{k}.parquet"
-        if not args.fresh and checkpoint_covers(ckpt, args.start, son):
+        # Yalnizca eksik kuyruk -- bkz. fetch_weather.eksik_aralik gerekcesi.
+        aralik = None if args.fresh else eksik_aralik(ckpt, args.start, son)
+        if not args.fresh and aralik is None:
             print(f"[{sira:3d}/{len(ilceler)}] {k:16s} kontrol noktasindan")
             continue
-        print(f"[{sira:3d}/{len(ilceler)}] {k:16s} ", end="", flush=True)
+        cek_bas, cek_son = (args.start, son) if args.fresh else aralik
+        print(f"[{sira:3d}/{len(ilceler)}] {k:16s} {cek_bas}..{cek_son} ", end="", flush=True)
         try:
-            saatlik = _cek(k, float(satir.lat), float(satir.lon), args.start, son)
+            saatlik = _cek(k, float(satir.lat), float(satir.lon), cek_bas, cek_son)
             gunluk = gunluge_indir(saatlik, k)
+            if not args.fresh:
+                gunluk = ckpt_birlestir(ckpt, gunluk, anahtarlar=("ilce_key", "tarih"))
             atomic_write_dataframe(gunluk, ckpt)
             print(f"{len(saatlik):,} saat -> {len(gunluk):,} gun")
         except (RuntimeError, requests.RequestException) as hata:

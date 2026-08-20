@@ -285,6 +285,89 @@ def checkpoint_covers(path: Path, start: str, end: str, *, column: str = "tarih"
     )
 
 
+#: Kismi cekimde arsivle kac gun ORTUSULSUN. 1 gun, kaynagin son gunu
+#: kismi/revize gelmisse onu tazelemeye yeter; daha fazlasi bedava degil.
+EK_CEKIM_ORTUSME_GUN = 1
+
+
+def eksik_aralik(
+    path: Path,
+    start: str,
+    end: str,
+    *,
+    column: str = "tarih",
+    ortusme_gun: int = EK_CEKIM_ORTUSME_GUN,
+) -> tuple[str, str] | None:
+    """Kontrol noktasinin KAPSAMADIGI araligi doner; tam kapsiyorsa ``None``.
+
+    NEDEN BU FONKSIYON -- OLCULDU 2026-08-20:
+    Cekiciler "kontrol noktasi araligi kapsamiyor" gordugunde TUM araligi
+    bastan indiriyordu. Gercek ihtiyac ise sondaki birkac gundu::
+
+        nem_toprak   eksik   7 gun  ama cekici 2430 gun istiyor = 347x
+        konvektif    eksik   6 gun  ama cekici 1944 gun istiyor = 324x
+        hava_gunluk  eksik  10 gun  ama cekici 2430 gun istiyor = 243x
+
+    Open-Meteo kotasi istenen VERI MIKTARINA gore agirliklandirilir; 347 kat
+    fazla veri istemek kotayi 347 kat hizli tuketir. Gunluk tazeleme saatler
+    surer hale gelir ve yarisma gunu veri tazelemek imkansizlasir.
+
+    Bu fonksiyon yalnizca EKSIK KUYRUGU dondurerek o carpani ortadan kaldirir.
+
+    Bastaki bosluk (kontrol noktasi ``start``ten sonra basliyor) icin TUM
+    aralik dondurulur: bas boslugu nadirdir ve iki parcayi birlestirmek
+    yerine bastan indirmek daha guvenlidir.
+    """
+    if not path.exists():
+        return start, end
+    try:
+        span = pd.read_parquet(path, columns=[column])[column]
+    except (OSError, ValueError, KeyError):
+        return start, end
+    if span.empty:
+        return start, end
+
+    ilk = pd.Timestamp(span.min()).normalize()
+    son = pd.Timestamp(span.max()).normalize()
+    istenen_bas = pd.Timestamp(start).normalize()
+    istenen_son = pd.Timestamp(end).normalize()
+
+    if ilk > istenen_bas:
+        return start, end
+    if son >= istenen_son:
+        return None
+    yeni_bas = son - pd.Timedelta(days=ortusme_gun)
+    yeni_bas = max(yeni_bas, istenen_bas)
+    return yeni_bas.date().isoformat(), end
+
+
+def ckpt_birlestir(path: Path, yeni: pd.DataFrame, *, anahtarlar: Sequence[str]) -> pd.DataFrame:
+    """Mevcut kontrol noktasiyla birlestirir; ORTUSEN satirlarda YENI kazanir.
+
+    Yeni kazanir cunku ERA5 son gunlerini REVIZE eder (ERA5T -> nihai ERA5);
+    daha gec cekilmis deger daha dogrudur.
+    """
+    if not path.exists():
+        return yeni
+    try:
+        eski = pd.read_parquet(path)
+    except (OSError, ValueError):
+        return yeni
+    if eski.empty:
+        return yeni
+    ortak = [k for k in eski.columns if k in yeni.columns]
+    if set(eski.columns) != set(yeni.columns):
+        # Sema degismis: eski kontrol noktasi artik gecerli degil. Sessizce
+        # yarim birlestirmektense yeni veriyi tek basina kullan.
+        return yeni
+    birlesik = pd.concat([yeni, eski[ortak]], ignore_index=True)
+    return (
+        birlesik.drop_duplicates(subset=list(anahtarlar), keep="first")
+        .sort_values(list(anahtarlar))
+        .reset_index(drop=True)
+    )
+
+
 def cap_end_date(end: str, *, today: date | None = None) -> tuple[str, str | None]:
     """Bitis tarihini arsivin gercekten sundugu en son gune kirpar.
 
