@@ -131,11 +131,23 @@ single-seed training"* (Fertilizers). Bizde altyapı hazır
 
 ---
 
-## C · Feature hacmi — 61 vs "binlerce"
+## C · Feature hacmi — iddia DÜZELTİLDİ (2026-08-21)
 
-Playbook #3: *"Thousands of new features made the difference."* Bizde 61 feature
-var ve ablasyonla budanmış. Budama doğru; ama **üretim havuzu çok küçük.**
-Eksik olan sistematik üretim:
+> **Bu bölümün ilk hâli yanlıştı.** "Bizde 61 feature var, havuz çok küçük"
+> demiştim. 61, **`benchmark_gercek.py`'nin çekirdek reçetesinin** sayısıdır —
+> o betik harici aileleri hiç bağlamaz, model karşılaştırması için bilerek dar
+> tutulmuştur. Gerçek havuz ölçüldü (96 ilçelik EPİAŞ paneli, 123.264 satır,
+> `attach_external` tüm ailelerle):
+>
+> **14 aile → 219 harici kolon**, 2,9 saniyede, 143 MB.
+>
+> Yani havuz "çok küçük" değil. İki betiğin feature seti farklı ve ben birinin
+> sayısını diğerinin iddiası sanmışım.
+
+Playbook #3 (*"Thousands of new features made the difference"*) yine de geçerli
+bir yön gösteriyor, ama gerekçe değişiyor: eksik olan **ham kolon sayısı değil,
+sistematik ETKİLEŞİM üretimi**. 219 kolonun neredeyse tamamı tekil ölçüm;
+çarpım/oran/pencere kombinasyonları yok:
 
 - ilçe × hava etkileşimleri (rüzgâr × ağaç örtüsü, yağış × eğim)
 - çoklu pencere rolling (3/7/14/28/56 gün; mean/max/std/quantile)
