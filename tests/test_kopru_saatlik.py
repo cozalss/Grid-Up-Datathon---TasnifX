@@ -149,12 +149,45 @@ def test_kopruler_arsiv_cekicilerinin_kendi_fonksiyonunu_kullanir() -> None:
     saatlik = modul._modul("fetch_hourly_weather")
     konvektif = modul._modul("fetch_konvektif")
     nem = modul._modul("fetch_nem_toprak")
+    hava_kalitesi = modul._modul("fetch_hava_kalitesi")
     beklenen = {
         "hava_saatlik_turev": saatlik.aggregate_daily,
         "konvektif_gunluk": konvektif.gunluge_indir,
         "nem_toprak_gunluk": nem.gunluge_indir,
+        "hava_kalitesi_gunluk": hava_kalitesi.gunluge_indir,
     }
     for kopru in modul._kopruleri_kur():
         assert kopru.topla is beklenen[kopru.ad], (
             f"{kopru.ad} kendi toplama fonksiyonunu kullanmiyor -- kopya mantik riski."
         )
+
+
+def test_ileri_ufuk_en_zayif_kaynaga_gore_kirpiliyor() -> None:
+    """Panel EN ZAYIF kaynagi kadar uzar -- daha fazla degil.
+
+    Hava kalitesi API'si ileriye yalnizca 7 gun verir (olculdu 2026-08-20),
+    hava/toprak/konvektif 16 gun. Havayi +16'ya uzatip hava kalitesini +7'de
+    birakmak, 8..16. gunlerde tam olarak kacinmaya calistigimiz asimetriyi
+    yeniden kurardi: o araliktaki her satirda hava ailesi DOLU, hava kalitesi
+    ailesi BOS olurdu.
+    """
+    modul = _modul()
+    kopruler = modul._kopruleri_kur()
+
+    ufuk, not_ = modul.ileri_ufuk(kopruler, 16)
+    assert ufuk == modul.MAX_AIR_QUALITY_DAYS, f"Ufuk en zayif kaynaga kirpilmadi: {ufuk} gun"
+    assert "hava_kalitesi" in not_, "Kirpmayi yapan kaynak raporlanmiyor."
+
+    # Tavanin altindaki bir istek KIRPILMAZ ve gereksiz not uretmez.
+    ufuk, not_ = modul.ileri_ufuk(kopruler, 3)
+    assert (ufuk, not_) == (3, "")
+
+
+def test_ayni_uc_nokta_tek_istekte_gruplaniyor() -> None:
+    """Ilce basina uc nokta SAYISI kadar istek atilmali, koprü sayisi kadar degil."""
+    modul = _modul()
+    gruplar = modul.uc_noktaya_gore(modul._kopruleri_kur())
+
+    assert len(gruplar) == 2, f"Beklenen iki uc nokta, gelen: {list(gruplar)}"
+    assert len(gruplar[modul.FORECAST_URL]) == 3, "Hava/toprak/konvektif ayni istekte olmali."
+    assert len(gruplar[modul.AIR_QUALITY_URL]) == 1

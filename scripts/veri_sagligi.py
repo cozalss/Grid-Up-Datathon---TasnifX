@@ -489,6 +489,26 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
 )
 
 
+def son_dolu_gozlem(kaynak: Kaynak) -> pd.Timestamp | None:
+    """Kaynakta SATIRI OLAN en son tarih -- kokeni ne olursa olsun.
+
+    Hizalama kontrolu bunu kullanir, cunku panelde DELIK acan sey satirin
+    yoklugudur, kokeni degil. Koprü ile doldurulmus bir gun feature uretir;
+    hic satiri olmayan bir gun uretmez.
+    """
+    yol = ROOT / kaynak.yol
+    if not yol.is_file() or not kaynak.tarih_kolonu:
+        return None
+    try:
+        frame = pd.read_parquet(yol, columns=[kaynak.tarih_kolonu])
+    except (OSError, ValueError, KeyError):
+        return None
+    tarihler = pd.to_datetime(frame[kaynak.tarih_kolonu], errors="coerce").dropna()
+    if tarihler.empty:
+        return None
+    return pd.Timestamp(tarihler.max()).normalize()
+
+
 def son_gercek_gozlem(kaynak: Kaynak) -> pd.Timestamp | None:
     """Kaynagin son GERCEK gozlem tarihi; dosya yoksa/okunamazsa ``None``.
 
@@ -534,14 +554,18 @@ def hizalama_denetle(
     onun yerini tutmaz.
     """
     uclar: dict[str, pd.Timestamp] = {}
+    gercekler: dict[str, pd.Timestamp] = {}
     hesaplanmislar: set[str] = set()
     for kaynak in kaynaklar:
         if not kaynak.panel_tablosu:
             continue
-        son = son_gercek_gozlem(kaynak)
+        son = son_dolu_gozlem(kaynak)
         if son is None:
             continue
         uclar[kaynak.ad] = son
+        gercek = son_gercek_gozlem(kaynak)
+        if gercek is not None:
+            gercekler[kaynak.ad] = gercek
         if kaynak.hesaplanmis:
             hesaplanmislar.add(kaynak.ad)
 
@@ -588,7 +612,29 @@ def hizalama_denetle(
             f"Cekicileri --end {bugun.date()} ile tekrar calistir. Dokum: {dokum}"
         )
 
-    return hatalar, []
+    # KOKEN ayri bir sorudur ve HATA DEGIL UYARIDIR.
+    #
+    # Koprü ile doldurulmus bir gun panelde delik acmaz -- feature uretir.
+    # Ama degeri ARSIV (ERA5 yeniden analizi) degil TAHMIN modelinden gelir
+    # ve tahminin hata karakteri farklidir. Bunu hata saymak yanlis olurdu
+    # (delik yok), gormezden gelmek de yanlis olurdu (veri daha zayif).
+    #
+    # Bu yuzden: kac gunun tahmin turevli oldugu SAYILIR ve soylenir.
+    uyarilar: list[str] = []
+    for ad, dolu_uc in sorted(uclar.items()):
+        gercek_uc = gercekler.get(ad)
+        if gercek_uc is None or ad in hesaplanmislar:
+            continue
+        tahmin_gun = int((dolu_uc - gercek_uc).days)
+        if tahmin_gun > PANEL_HIZALAMA_TOLERANS_GUN:
+            uyarilar.append(
+                f"{ad}: son {tahmin_gun} gun ({gercek_uc.date()}..{dolu_uc.date()}) "
+                "ARSIV degil TAHMIN turevli. Panelde delik yok, ama bu gunlerin "
+                "degerleri yeniden analizden gelmiyor. Arsivle degistirmek icin "
+                "ilgili cekiciyi --end ile tekrar calistirip koprüyu yenile."
+            )
+
+    return hatalar, uyarilar
 
 
 def denetle(kaynak: Kaynak, bugun: pd.Timestamp) -> tuple[list[str], list[str]]:

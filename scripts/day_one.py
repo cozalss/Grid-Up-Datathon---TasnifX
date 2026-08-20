@@ -454,7 +454,16 @@ def main() -> int:
         "--tek-tohum",
         dest="tek_tohum",
         action="store_true",
-        help="Son adimda 5 tohumlu yeniden egitimi ATLA (CV fold ortalamasi kullanilir)",
+        help="Son adimda cok tohumlu yeniden egitimi ATLA (CV fold ortalamasi kullanilir)",
+    )
+    parser.add_argument(
+        "--tohum",
+        type=int,
+        default=5,
+        help=(
+            "Yeniden egitimde kac tohum ortalanacak (varsayilan 5). Kazanc ~1/sqrt(n) "
+            "ile doyar; buyutmeden once benchmark'in 'tohum_egrisi' ciktisina bak"
+        ),
     )
     parser.add_argument(
         "--harici-yok",
@@ -854,12 +863,15 @@ def main() -> int:
                 kind="lightgbm",
                 params=params,
                 n_estimators=turlar,
-                seeds=(0, 1, 2, 3, 4),
+                seeds=tuple(range(args.tohum)),
                 sample_weight=None,
                 target_transform=target_transform,
                 verbose=False,
             )
-            print(f"  5 tohumlu yeniden egitim: {turlar} tur, {refit.summary().splitlines()[0]}")
+            print(
+                f"  {args.tohum} tohumlu yeniden egitim: {turlar} tur, "
+                f"{refit.summary().splitlines()[0]}"
+            )
             predictions = refit.predictions
         except (ValueError, RuntimeError) as hata:
             print(f"  UYARI: yeniden egitim basarisiz ({hata}); CV fold ortalamasi kullanildi.")

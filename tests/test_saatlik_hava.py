@@ -22,17 +22,38 @@ ROOT = Path(__file__).resolve().parents[1]
 SAATLIK_PATH = ROOT / "data" / "external" / "hava_saatlik_turev.parquet"
 REFERANS_PATH = ROOT / "data" / "reference" / "ilceler_gdz_adm.parquet"
 
-BEKLENEN_KOLONLAR = [
-    "ilce_key",
-    "tarih",
-    "basinc_min",
-    "basinc_ort",
-    "ruzgar_15ms_saat",
-    "ruzgar_20ms_saat",
-    "hamle_20ms_saat",
-    "yon_std",
-    "yon_degisim",
-]
+
+def _cekici():
+    """Kolon sozlesmesini CEKICININ KENDISINDEN okur.
+
+    Onceki surum listeyi burada ELLE tasiyordu. 2026-08-20'de esikler
+    olculerek yeniden kalibre edilince (``ruzgar_20ms_saat`` 2,3 milyon
+    saatte bir kez tetiklenmemisti) bu kopya sessizce eskidi ve test,
+    dogru veriyi YANLIS diye reddetti.
+
+    Sozlesmeyi kaynagindan okumak testi anlamsizlastirmaz: burada
+    dogrulanan sey, DOSYANIN cekicinin beyan ettigi sozlesmeye uymasidir --
+    bayat bir parquet hala yakalanir.
+    """
+    import importlib.util
+    import sys
+
+    yol = ROOT / "scripts" / "fetch_hourly_weather.py"
+    sys.path.insert(0, str(ROOT / "scripts"))
+    sys.path.insert(0, str(ROOT / "src"))
+    spec = importlib.util.spec_from_file_location("fetch_hourly_weather", yol)
+    assert spec is not None and spec.loader is not None
+    modul = importlib.util.module_from_spec(spec)
+    sys.modules["fetch_hourly_weather"] = modul
+    spec.loader.exec_module(modul)
+    return modul
+
+
+BEKLENEN_KOLONLAR = list(_cekici().FINAL_COLUMNS)
+
+#: Koprü (``scripts/kopru_saatlik.py``) tabloya bu KOKEN kolonunu ekler.
+#: Feature degildir; varligi opsiyoneldir.
+KOPRU_KOLONU = "tahmin"
 
 
 @pytest.fixture(scope="module")
@@ -48,7 +69,12 @@ def saatlik() -> pd.DataFrame:
 class TestSema:
     def test_kolonlar_birebir_sozlesme(self, saatlik: pd.DataFrame) -> None:
         """Fazla kolon da eksik kolon kadar hatadir -- sema birebir eslesmelidir."""
-        assert list(saatlik.columns) == BEKLENEN_KOLONLAR
+        gercek = [k for k in saatlik.columns if k != KOPRU_KOLONU]
+        assert gercek == BEKLENEN_KOLONLAR, (
+            "Tablo, cekicinin beyan ettigi kolon sozlesmesine uymuyor. "
+            "Parquet bayat olabilir: scripts/fetch_hourly_weather.py "
+            "--yeniden-topla ile ham veriden yeniden uret."
+        )
 
     def test_tekrar_eden_satir_yok(self, saatlik: pd.DataFrame) -> None:
         assert saatlik.duplicated(subset=["ilce_key", "tarih"]).sum() == 0
@@ -85,7 +111,7 @@ class TestMakullik:
     def test_saat_kolonlari_0_ile_24_arasinda(self, saatlik: pd.DataFrame) -> None:
         """Gunde 24 saat vardir; Turkiye kalici UTC+3 (yaz saati yok), 25
         saatlik gun de olamaz."""
-        for kolon in ["ruzgar_15ms_saat", "ruzgar_20ms_saat", "hamle_20ms_saat"]:
+        for kolon in _cekici().SAYIM_KOLONLARI:
             degerler = saatlik[kolon].dropna()
             assert degerler.between(0, 24).all(), f"{kolon} aralik disi"
 

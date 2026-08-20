@@ -70,7 +70,7 @@ from gridup import (  # noqa: E402
     read_table,
     set_global_seed,
 )
-from gridup.ensemble import hill_climb_weights, stack_oof  # noqa: E402
+from gridup.ensemble import hill_climb_weights, median_blend, stack_oof  # noqa: E402
 from gridup.evaluation import (  # noqa: E402
     OuterAnchor,
     OuterEvidence,
@@ -622,6 +622,16 @@ def tohum_kararliligi(
     assert maske is not None
     ortalama_oof = np.mean(np.vstack(oof_yigin), axis=0)
     ortalama_mae = float(mae_fn(y[maske], ortalama_oof[maske]))
+    # TOHUM EGRISI (2026-08-20, docs/18 bolum B3): "5 mi 25 mi 100 mu" sorusu
+    # kanitla cevaplanir. Ilk k tohumun ortalamasi k=1..N icin olculur; kazanc
+    # ~1/sqrt(k) ile doyar. Egri, tohum sayisini artirmanin nerede tohum
+    # gurultusunun altina dustugunu GOSTERIR -- playbook'un "100 tohum" tavsiyesi
+    # bu veride dogrulanmadan alinmaz.
+    egri: list[dict[str, float]] = []
+    for k in range(1, len(oof_yigin) + 1):
+        kismi = float(mae_fn(y[maske], np.mean(np.vstack(oof_yigin[:k]), axis=0)[maske]))
+        egri.append({"tohum_sayisi": k, "mae": round(kismi, 3)})
+
     return {
         "tohumlar": list(tohumlar),
         "tekil_mae": [round(v, 2) for v in skorlar],
@@ -629,6 +639,10 @@ def tohum_kararliligi(
         "tohum_araligi": round(float(max(skorlar) - min(skorlar)), 2),
         "tohum_ortalamasi_mae": round(ortalama_mae, 2),
         "ortalama_kazanci": round(float(np.mean(skorlar)) - ortalama_mae, 3),
+        "tohum_egrisi": egri,
+        "son_tohumun_katkisi": round(egri[-2]["mae"] - egri[-1]["mae"], 3)
+        if len(egri) >= 2
+        else None,
     }
 
 
@@ -765,6 +779,8 @@ def nested_harman(
     y: np.ndarray,
     folds: Sequence[tuple[np.ndarray, np.ndarray]],
     ortak_maske: np.ndarray,
+    *,
+    toplayici: str = "ortalama",
 ) -> dict[str, Any]:
     """Harman agirligini GECMIS fold'larda ogrenip SONRAKI fold'da skorlar.
 
@@ -783,11 +799,28 @@ def nested_harman(
     disarida kalir. Boylece rapor edilen sayi, "yarin bu harmani kurup
     kullansam ne olurdu" sorusunun cevabidir.
 
+    TOPLAYICI (2026-08-20, docs/18 bolum B2): ``"ortalama"`` agirlikli
+    aritmetik ortalama, ``"medyan"`` agirlikli medyandir. Metrik MAE oldugu
+    icin ikincisi teorik olarak dogru toplayicidir (MAE'yi minimize eden
+    tahmin medyandir). Ilk denetimde YALNIZCA ortalama denenmis ve harman
+    reddedilmisti; bu parametre ayni fold'larda ikisini de olcup karari
+    toplayici seciminden BAGIMSIZ hale getirir.
+
+    Args:
+        toplayici: ``"ortalama"`` | ``"medyan"``. Agirliklar her iki durumda
+            da ayni sekilde (MAE hedefli hill-climb) ogrenilir; degisen
+            yalnizca uyelerin nasil birlestirildigidir.
+
     Returns:
         ``fold_mae`` (fold basina yuvalanmis harman skoru), ``mae``
         (agirlikli ortalama), ``agirliklar`` (fold basina) ve karsilastirma
         icin ayni fold'lardaki en iyi TEK uye.
+
+    Raises:
+        ValueError: taninmayan ``toplayici``.
     """
+    if toplayici not in ("ortalama", "medyan"):
+        raise ValueError(f"Bilinmeyen toplayici: {toplayici!r} (ortalama|medyan)")
     mae_fn, _, _ = get_metric("mae")
     fold_kayitlari: list[dict[str, Any]] = []
     toplam_hata, toplam_satir = 0.0, 0
@@ -808,9 +841,12 @@ def nested_harman(
             covered=np.ones(gecmis.size, dtype=bool),
             verbose=False,
         )
-        tahmin = np.zeros(simdiki.size)
-        for ad, w in agirliklar.items():
-            tahmin += w * oof[ad][simdiki]
+        if toplayici == "medyan":
+            tahmin = median_blend({ad: oof[ad][simdiki] for ad in uyeler}, agirliklar)
+        else:
+            tahmin = np.zeros(simdiki.size)
+            for ad, w in agirliklar.items():
+                tahmin += w * oof[ad][simdiki]
         skor = float(mae_fn(y[simdiki], tahmin))
         toplam_hata += skor * simdiki.size
         toplam_satir += simdiki.size
@@ -836,6 +872,7 @@ def nested_harman(
         "fold_kayitlari": fold_kayitlari,
         "ayni_satirlarda_en_iyi_tekil": en_iyi_tekil,
         "ayni_satirlarda_tekil_mae": {ad: round(v, 2) for ad, v in tekil.items()},
+        "toplayici": toplayici,
         "harman_tekilden_iyi_mi": bool(harman_mae < tekil[en_iyi_tekil]),
         "fark": round(harman_mae - tekil[en_iyi_tekil], 3),
     }
@@ -921,14 +958,23 @@ def harman_ve_stack(
 
     # YUVALANMIS KONTROL: yukaridaki harman skoru ornek-icidir (agirliklar ayni
     # OOF'ta ogrenildi). Gonderim karari bu sayiya degil, asagidakine bakar.
-    nested = nested_harman(uyeler, oof, y, folds, ortak_maske)
+    # IKI TOPLAYICI birden, AYNI fold'larda (docs/18 B2). Metrik MAE oldugu
+    # icin medyan teorik olarak dogru toplayici; ilk denetimde yalnizca
+    # ortalama denenmis ve harman o yuzden reddedilmis olabilir. Karar artik
+    # toplayici seciminden bagimsiz veriliyor -- ikisi de gecemezse harman
+    # gercekten gecmiyordur.
+    nested = nested_harman(uyeler, oof, y, folds, ortak_maske, toplayici="ortalama")
+    nested_medyan = nested_harman(uyeler, oof, y, folds, ortak_maske, toplayici="medyan")
     harman["yuvalanmis"] = nested
-    if nested.get("mae") is not None:
-        durum = "GECIYOR" if nested["harman_tekilden_iyi_mi"] else "GECMIYOR"
+    harman["yuvalanmis_medyan"] = nested_medyan
+    for etiket, kayit in (("ortalama", nested), ("medyan", nested_medyan)):
+        if kayit.get("mae") is None:
+            continue
+        durum = "GECIYOR" if kayit["harman_tekilden_iyi_mi"] else "GECMIYOR"
+        en_iyi = kayit["ayni_satirlarda_en_iyi_tekil"]
         print(
-            f"  yuvalanmis harman: mae={nested['mae']:.2f} vs "
-            f"tek uye {nested['ayni_satirlarda_en_iyi_tekil']} "
-            f"{nested['ayni_satirlarda_tekil_mae'][nested['ayni_satirlarda_en_iyi_tekil']]:.2f} "
+            f"  yuvalanmis harman ({etiket}): mae={kayit['mae']:.2f} vs "
+            f"tek uye {en_iyi} {kayit['ayni_satirlarda_tekil_mae'][en_iyi]:.2f} "
             f"-> harman {durum}"
         )
     return harman, stack_mae
@@ -987,26 +1033,38 @@ def recete_yaz(
         if kazanan is not None
         else f"Bilimsel kazanan ilan edilmedi: {karar_gerekcesi}"
     )
-    nested = harman.get("yuvalanmis", {})
+    # IKI TOPLAYICI: karar, ikisinin IYISINE bakar (docs/18 B2). Metrik MAE
+    # oldugu icin medyan toplayici teoride dogru olandir; ortalama uzerinden
+    # verilen eski "harman gecmiyor" hukmu, yanlis adayin reddi olabilirdi.
+    # Ikisi de gecemezse harman gercekten gecmiyordur.
+    nested_adaylar = [
+        kayit
+        for kayit in (harman.get("yuvalanmis", {}), harman.get("yuvalanmis_medyan", {}))
+        if kayit.get("mae") is not None
+    ]
+    nested = min(nested_adaylar, key=lambda k: float(k["mae"])) if nested_adaylar else {}
+    toplayici_adi = nested.get("toplayici", "ortalama")
     if nested.get("mae") is not None:
         tekil_ad = nested["ayni_satirlarda_en_iyi_tekil"]
         tekil_mae = nested["ayni_satirlarda_tekil_mae"][tekil_ad]
         if nested["harman_tekilden_iyi_mi"]:
             harman_hukmu = (
-                f"YUVALANMIS kontrolde de geciyor (agirliklar gecmis fold'larda "
-                f"ogrenilip sonraki fold'da skorlandi: {nested['mae']:.2f} vs "
-                f"{tekil_ad} {tekil_mae:.2f}) -- gun-1'de kurmaya deger"
+                f"YUVALANMIS kontrolde de geciyor ({toplayici_adi} toplayiciyla; "
+                f"agirliklar gecmis fold'larda ogrenilip sonraki fold'da skorlandi: "
+                f"{nested['mae']:.2f} vs {tekil_ad} {tekil_mae:.2f}) -- gun-1'de "
+                "kurmaya deger"
             )
             harman_onerisi = (
                 f"Oneri: gun-1'de {tek} ile basla, ayni fold'larda {ek_metin} "
-                f"uyelerini ekleyip hill-climb harmanini kur; agirliklari HER ZAMAN "
-                "gecmis fold'larda ogren (nested), ayni OOF'ta tirmanip ayni OOF'ta "
-                "skorlama."
+                f"uyelerini ekleyip hill-climb harmanini {toplayici_adi.upper()} "
+                "toplayiciyla kur; agirliklari HER ZAMAN gecmis fold'larda ogren "
+                "(nested), ayni OOF'ta tirmanip ayni OOF'ta skorlama."
             )
         else:
             harman_hukmu = (
-                f"ama YUVALANMIS kontrolde GECMIYOR: agirliklar gecmis fold'larda "
-                f"ogrenilip sonraki fold'da skorlanunca {nested['mae']:.2f}, ayni "
+                f"ama YUVALANMIS kontrolde GECMIYOR (ortalama VE medyan toplayici, "
+                f"ikisi de): agirliklar gecmis fold'larda "
+                f"ogrenilip sonraki fold'da skorlanunca en iyisi {nested['mae']:.2f}, ayni "
                 f"satirlarda tek basina {tekil_ad} {tekil_mae:.2f} "
                 f"(fark {nested['fark']:+.2f}). Ornek-ici harman skoru, uye sayisi "
                 "kadar serbestlik dereceli bir optimizasyonun kendi verisinde "
@@ -1069,7 +1127,15 @@ def main() -> int:
         default=None,
         help="outer_anchor_kosusu.py ciktisi (JSON); kazanan kapisini atesler",
     )
+    parser.add_argument(
+        "--tohum",
+        type=int,
+        default=5,
+        help="Tohum kararliligi kac tohumla olculsun (egri de bu kadar uzar)",
+    )
     args = parser.parse_args()
+    if args.tohum < 2:
+        parser.error("--tohum en az 2 olmali (yayilim tek tohumla olculemez)")
 
     if not VERI.exists():
         print(
@@ -1124,7 +1190,11 @@ def main() -> int:
         kapsam[ad] = iki_maske
 
     print("3c/4 tohum kararliligi (catboost_mae x5)...")
-    tohum_ozeti = tohum_kararliligi(ozellik[kolonlar], y, folds)
+    # Tohum listesi 42 ile baslar (repodaki kanonik tohum), sonra 0,1,2,...
+    # boylece --tohum buyutuldugunde onceki kosunun ilk k tohumu KORUNUR ve
+    # egri kosular arasinda karsilastirilabilir kalir.
+    tohumlar = (42, *range(args.tohum - 1))
+    tohum_ozeti = tohum_kararliligi(ozellik[kolonlar], y, folds, tohumlar=tohumlar)
     print(
         f"  tohum yayilimi {tohum_ozeti['tohum_yayilimi']:.2f} MAE, "
         f"aralik {tohum_ozeti['tohum_araligi']:.2f}; 5-tohum ortalamasi "

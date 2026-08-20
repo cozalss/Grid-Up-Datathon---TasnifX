@@ -72,12 +72,21 @@ from fetch_weather import rate_limit_beklemesi  # noqa: E402
 from gridup.io_utils import atomic_write_dataframe  # noqa: E402
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 REFERANS = ROOT / "data" / "reference" / "ilceler_gdz_adm.parquet"
 
 #: Forecast API'sinin geriye donuk verebilecegi en fazla gun.
 MAX_PAST_DAYS = 92
-#: Ileriye verebilecegi en fazla gun.
+#: Hava/toprak/konvektif forecast'inin ileri tavani.
 MAX_FORECAST_DAYS = 16
+#: Hava kalitesi forecast'inin ileri tavani -- OLCULDU 2026-08-20: 7 gun.
+#:
+#: PANEL ANCAK EN ZAYIF KAYNAGI KADAR UZAYABILIR. Havayi +16'ya uzatip hava
+#: kalitesini +7'de birakmak, 8..16. gunlerde tam olarak kapatmaya
+#: calistigimiz asimetriyi yeniden kurardi: o gunlerde hava ailesi DOLU,
+#: hava kalitesi ailesi BOS olurdu. Bu yuzden ileri ufuk, koprülerin
+#: TAVANLARININ EN KUCUGU olarak secilir (bkz. ``ileri_ufuk``).
+MAX_AIR_QUALITY_DAYS = 7
 
 #: Arsivle kac gun ORTUSSUN. Dikis kontrolu bu gunlerde yapilir; iki gun,
 #: tek gunluk bir tesadufi uyumun kontrolu gecmesini engelleyecek kadar.
@@ -122,6 +131,13 @@ class Kopru:
     #: Dikis kontrolu icin referans kolon ve izin verilen mutlak fark.
     dikis_kolonu: str
     dikis_toleransi: float
+    #: Hangi uc noktadan cekilecek. Ayni uc noktayi paylasan koprüler TEK
+    #: istekte birlikte cekilir.
+    uc_nokta: str = FORECAST_URL
+    #: Bu kaynagin ileriye verebildigi en fazla gun.
+    ileri_gun_tavani: int = MAX_FORECAST_DAYS
+    #: Uc noktaya ozgu ek istek parametreleri.
+    ek_parametreler: tuple[tuple[str, str], ...] = (("wind_speed_unit", "ms"),)
 
 
 def _kopruleri_kur() -> tuple[Kopru, ...]:
@@ -129,6 +145,7 @@ def _kopruleri_kur() -> tuple[Kopru, ...]:
     saatlik = _modul("fetch_hourly_weather")
     konvektif = _modul("fetch_konvektif")
     nem = _modul("fetch_nem_toprak")
+    hava_kalitesi = _modul("fetch_hava_kalitesi")
     return (
         Kopru(
             ad="hava_saatlik_turev",
@@ -152,6 +169,20 @@ def _kopruleri_kur() -> tuple[Kopru, ...]:
             dikis_toleransi=150.0,
         ),
         Kopru(
+            ad="hava_kalitesi_gunluk",
+            yol="data/external/hava_kalitesi_gunluk.parquet",
+            degiskenler=tuple(hava_kalitesi.HOURLY_VARIABLES),
+            topla=hava_kalitesi.gunluge_indir,
+            uc_nokta=AIR_QUALITY_URL,
+            ileri_gun_tavani=MAX_AIR_QUALITY_DAYS,
+            ek_parametreler=(),
+            # PM10 gunluk ortalamasi ~19 ug/m3 (olculdu). 10 birimlik fark,
+            # model farkiyla aciklanamayacak kadar buyuktur; koordinat
+            # kaymasi ya da birim degisikligi bunun cok ustunu verir.
+            dikis_kolonu="pm10_ort",
+            dikis_toleransi=10.0,
+        ),
+        Kopru(
             ad="nem_toprak_gunluk",
             yol="data/external/nem_toprak_gunluk.parquet",
             degiskenler=tuple(nem.HOURLY_VARIABLES),
@@ -173,6 +204,31 @@ def tum_degiskenler(kopruler: Sequence[Kopru]) -> list[str]:
     return list(gorulen)
 
 
+def ileri_ufuk(kopruler: Sequence[Kopru], istenen: int) -> tuple[int, str]:
+    """Panelin uzayabilecegi en fazla gun ve SINIRI KOYAN kaynak.
+
+    Panel ancak EN ZAYIF kaynagi kadar uzayabilir. Bir kaynagi digerlerinden
+    daha ileri tasimak, o araligi tam olarak kacinmaya calistigimiz hale
+    getirir: bazi aileler dolu, bazilari bos.
+    """
+    tavan = min(k.ileri_gun_tavani for k in kopruler)
+    sinirlayan = min(kopruler, key=lambda k: k.ileri_gun_tavani).ad
+    if istenen <= tavan:
+        return istenen, ""
+    return tavan, (
+        f"Istenen {istenen} gun, {sinirlayan} kaynaginin tavani {tavan} gun. "
+        f"Panel en zayif kaynagi kadar uzar -- {tavan} gune kirpildi."
+    )
+
+
+def uc_noktaya_gore(kopruler: Sequence[Kopru]) -> dict[str, list[Kopru]]:
+    """Ayni uc noktayi paylasan koprüleri gruplar -- grup basina TEK istek."""
+    gruplar: dict[str, list[Kopru]] = {}
+    for kopru in kopruler:
+        gruplar.setdefault(kopru.uc_nokta, []).append(kopru)
+    return gruplar
+
+
 def forecast_cek(
     ad: str,
     lat: float,
@@ -181,22 +237,24 @@ def forecast_cek(
     *,
     past_days: int,
     forecast_days: int,
+    uc_nokta: str = FORECAST_URL,
+    ek_parametreler: Sequence[tuple[str, str]] = (),
     retries: int = 3,
 ) -> pd.DataFrame:
     """Tek ilcenin koprü penceresini ceker. Sessiz bos frame DONMEZ."""
-    params = {
+    params: dict[str, object] = {
         "latitude": lat,
         "longitude": lon,
         "hourly": ",".join(degiskenler),
         "past_days": min(past_days, MAX_PAST_DAYS),
-        "forecast_days": min(forecast_days, MAX_FORECAST_DAYS),
+        "forecast_days": forecast_days,
         "timezone": "Europe/Istanbul",
-        "wind_speed_unit": "ms",
     }
+    params.update(dict(ek_parametreler))
     son_hata: Exception | None = None
     for deneme in range(1, retries + 1):
         try:
-            yanit = requests.get(FORECAST_URL, params=params, timeout=120)
+            yanit = requests.get(uc_nokta, params=params, timeout=120)
             if yanit.status_code == 429:
                 bekle, gerekce = rate_limit_beklemesi(yanit, deneme)
                 print(f"  {ad}: hiz siniri; {bekle} sn ({gerekce}) [{deneme}/{retries}]")
@@ -247,12 +305,22 @@ def dikis_farki(arsiv: pd.DataFrame, tahmin: pd.DataFrame, kopru: Kopru) -> floa
 def kopruyu_birlestir(arsiv: pd.DataFrame, tahmin: pd.DataFrame) -> pd.DataFrame:
     """Yalnizca arsivde OLMAYAN gunleri ekler; arsiv her zaman kazanir.
 
-    Arsiv (ERA5) tahminden dogrudur; ortusen bir gunde tahmini tercih etmek
-    veriyi bilerek kotulestirmek olurdu.
+    Iki kural birlikte calisir:
+
+    1. ARSIV KAZANIR. Arsiv (ERA5 yeniden analizi) tahminden dogrudur;
+       ortusen bir gunde tahmini tercih etmek veriyi bilerek kotulestirmek
+       olurdu.
+    2. ONCEKI KOSUNUN TAHMIN KUYRUGU ATILIR. Tahmin satirlari birikmez,
+       YENILENIR. Aksi halde uc gun once uretilmis bir tahmin, bugun ayni
+       gun icin uretilen (ve o gune cok daha yakin oldugu icin daha iyi)
+       tahmini ezerdi -- ve tablo, ufku kisaltmak istesek bile eski kuyrugu
+       tasimaya devam ederdi.
     """
     eski = arsiv.copy()
     if TAHMIN_KOLONU not in eski.columns:
         eski[TAHMIN_KOLONU] = 0
+    else:
+        eski = eski[eski[TAHMIN_KOLONU].astype("int8") == 0].copy()
     yeni = tahmin.copy()
     yeni[TAHMIN_KOLONU] = 1
 
@@ -300,36 +368,49 @@ def main() -> int:
         )
         return 1
 
-    degiskenler = tum_degiskenler(kopruler)
+    ufuk, kirpma_notu = ileri_ufuk(kopruler, args.gun)
+    gruplar = uc_noktaya_gore(kopruler)
+
     print(f"SAATLIK KOPRU  ({bugun.date()})")
     print("=" * 74)
     for kopru in kopruler:
         print(f"  {kopru.ad:22s} arsiv ucu {mevcut[kopru.ad]['tarih'].max().date()}")
-    print(f"  pencere: bugun-{past_days} .. bugun+{args.gun} · {len(degiskenler)} degisken/istek")
+    if kirpma_notu:
+        print(f"  NOT: {kirpma_notu}")
+    print(f"  pencere: bugun-{past_days} .. bugun+{ufuk} · {len(gruplar)} uc nokta")
 
     parcalar: dict[str, list[pd.DataFrame]] = {k.ad: [] for k in kopruler}
     basarisiz: list[str] = []
     for sira, satir in enumerate(ilceler.itertuples(index=False), start=1):
         anahtar = str(satir.ilce_key)
         print(f"[{sira:3d}/{len(ilceler)}] {anahtar:16s} ", end="", flush=True)
-        try:
-            saatlik = forecast_cek(
-                anahtar,
-                float(satir.lat),
-                float(satir.lon),
-                degiskenler,
-                past_days=past_days,
-                forecast_days=args.gun,
-            )
-        except RuntimeError as hata:
-            print(f"BASARISIZ -- {hata}")
-            basarisiz.append(anahtar)
+        saat_sayilari: list[int] = []
+        dustu = False
+        for uc_nokta, grup in gruplar.items():
+            try:
+                saatlik = forecast_cek(
+                    anahtar,
+                    float(satir.lat),
+                    float(satir.lon),
+                    tum_degiskenler(grup),
+                    past_days=past_days,
+                    forecast_days=ufuk,
+                    uc_nokta=uc_nokta,
+                    ek_parametreler=grup[0].ek_parametreler,
+                )
+            except RuntimeError as hata:
+                print(f"BASARISIZ -- {hata}")
+                basarisiz.append(anahtar)
+                dustu = True
+                break
+            for kopru in grup:
+                alt = saatlik[["zaman", *kopru.degiskenler]]
+                parcalar[kopru.ad].append(kopru.topla(alt, anahtar))
+            saat_sayilari.append(len(saatlik))
+            time.sleep(args.pause)
+        if dustu:
             continue
-        for kopru in kopruler:
-            alt = saatlik[["zaman", *kopru.degiskenler]]
-            parcalar[kopru.ad].append(kopru.topla(alt, anahtar))
-        print(f"{len(saatlik):,} saat")
-        time.sleep(args.pause)
+        print("+".join(f"{n:,}" for n in saat_sayilari) + " saat")
 
     if basarisiz:
         print(f"\nHATA: {len(basarisiz)} ilce alinamadi: {basarisiz[:8]}")

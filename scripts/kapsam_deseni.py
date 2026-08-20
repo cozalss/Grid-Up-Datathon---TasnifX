@@ -84,17 +84,62 @@ def panel_kur(son: pd.Timestamp) -> pd.DataFrame:
     ).to_frame(index=False)
 
 
-def panel_sonu() -> pd.Timestamp:
-    """Panelin son gunu: GOZLENEN hava tablosunun son gercek gozlemi.
+#: Panelin ufkunu SINIRLAYAN kaynaklar: (ad, gorece yol, tarih kolonu).
+#:
+#: Panel ancak HEPSININ birden veri sundugu gune kadar tam doludur. Bu liste
+#: bilerek acik yazilmistir -- hangi kaynagin ufku kestigini raporlayabilmek
+#: icin.
+#:
+#: KRITIK AYRIM: hava TAHMIN EDILEBILIR, ulusal tuketim EDILEMEZ.
+#: Open-Meteo yarin icin sicaklik verir; EPIAS yarinin tuketimini VEREMEZ,
+#: cunku o henuz gerceklesmemistir. Yani paneli hava koprüsuyle bugun+7'ye
+#: tasimak, o yedi gunde EPIAS ailesini zorunlu olarak bos birakir. Bu bir
+#: veri kusuru degil, fizik: gelecege uzanan bir panelin ufku, TAHMIN
+#: EDILEMEYEN en yavas kaynagi tarafindan belirlenir.
+UFKU_SINIRLAYANLAR: tuple[tuple[str, str, str], ...] = (
+    ("hava_gunluk", "data/external/hava_gunluk.parquet", "tarih"),
+    ("hava_saatlik_turev", "data/external/hava_saatlik_turev.parquet", "tarih"),
+    ("hava_kalitesi", "data/external/hava_kalitesi_gunluk.parquet", "tarih"),
+    ("konvektif", "data/external/konvektif_gunluk.parquet", "tarih"),
+    ("nem_toprak", "data/external/nem_toprak_gunluk.parquet", "tarih"),
+    ("epias_tuketim", "data/external/epias/tuketim_saatlik.parquet", "zaman"),
+    ("epias_uretim", "data/external/epias/uretim_saatlik.parquet", "zaman"),
+)
 
-    Bugunu kullanmak yaniltici olurdu -- arsiv birkac gun geriden gelir ve
-    o bosluk her kolonu ayni sekilde bos gosterip deseni gizlerdi.
+
+def panel_ufku() -> tuple[pd.Timestamp, str]:
+    """Her kaynagin veri sundugu EN UZAK ortak gun ve sinirlayan kaynak.
+
+    Kokene (arsiv mi koprü mü) bakilmaz: onemli olan feature uretilebiliyor
+    olmasidir. Ama "en genis" degil "en dar" alinir -- tek bir kaynagin
+    ulasamadigi bir gun, o kaynagin tum ailesini o gunde bos birakir ve
+    kapinin aradigi desen tam olarak budur.
+
+    (Ilk surum burada hava tablosunun son gercek gozlemini kullaniyordu.
+    O secim koprülu bolgeyi denetim disinda birakiyordu -- yani kapinin
+    bakmasi gereken tek yeri.)
     """
-    yol = ROOT / "data" / "external" / "hava_gunluk.parquet"
-    kolonlar = ["tarih", "hava_tahmin"]
-    frame = pd.read_parquet(yol, columns=kolonlar)
-    gercek = frame[~frame["hava_tahmin"].astype(bool)]
-    return pd.Timestamp(pd.to_datetime(gercek["tarih"]).max()).normalize()
+    uclar: dict[str, pd.Timestamp] = {}
+    for ad, gorece, kolon in UFKU_SINIRLAYANLAR:
+        yol = ROOT / gorece
+        if not yol.is_file():
+            continue
+        try:
+            frame = pd.read_parquet(yol, columns=[kolon])
+        except (OSError, ValueError, KeyError):
+            continue
+        tarihler = pd.to_datetime(frame[kolon], errors="coerce").dropna()
+        if not tarihler.empty:
+            uclar[ad] = pd.Timestamp(tarihler.max()).normalize()
+    if not uclar:
+        raise FileNotFoundError("Ufku belirleyecek hicbir harici tablo bulunamadi.")
+    sinirlayan = min(uclar, key=lambda a: uclar[a])
+    return uclar[sinirlayan], sinirlayan
+
+
+def panel_sonu() -> pd.Timestamp:
+    """``panel_ufku``nun yalnizca tarih kismi (geri uyumluluk icin)."""
+    return panel_ufku()[0]
 
 
 def desen_olc(
@@ -168,7 +213,7 @@ def main() -> int:
     ayristirici.add_argument("--kati", action="store_true", help="Uyarilari da hata say")
     args = ayristirici.parse_args()
 
-    son = panel_sonu()
+    son, sinirlayan = panel_ufku()
     panel = panel_kur(son)
     print(f"KAPSAM DESENI KAPISI  ({PANEL_BAS.date()} .. {son.date()})")
     print("=" * 74)
@@ -176,6 +221,7 @@ def main() -> int:
         f"  panel {len(panel):,} satir · test blogu son {args.test_gun} gun · "
         f"esik %{100 * args.esik:.0f}"
     )
+    print(f"  ufku sinirlayan kaynak: {sinirlayan} ({son.date()})")
 
     with warnings.catch_warnings():
         # Dusuk eslesme uyarilari burada BEKLENIYOR; olculen sey zaten o.

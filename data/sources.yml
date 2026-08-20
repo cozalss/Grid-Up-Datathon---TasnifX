@@ -17,7 +17,7 @@
   "artifacts": [
     {
       "path": "data/external/hava_gunluk.parquet",
-      "sha256": "2589018fbb7657d4d63a2fba23a823855df29f0bd1c46d0c271b3d8a17d05017",
+      "sha256": "c6965918ca7f8d070faac24dd19027831954a879c7144f27edd44cc79af05d8e",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
@@ -75,7 +75,7 @@
     },
     {
       "path": "data/reference/ilceler_gdz_adm.parquet",
-      "sha256": "183ee502661637efa75cac382101fa99e0d7705e6f8fcd04b99220b8fa29d5e3",
+      "sha256": "2abd70cb16ca058c846b9afbaa9ca116b09483c5fed785b3e74066460b44c3f2",
       "license": "MIT",
       "redistribution": "allowed",
       "attribution": "District records from turkiye-api (ubeydeozdmr/turkiye-api, MIT) with Open-Meteo geocoding (CC BY 4.0).",
@@ -137,7 +137,7 @@
     },
     {
       "path": "data/external/hava_saatlik_turev.parquet",
-      "sha256": "14fe59748f7f9220737af2844a79007a449e17b390af926aa87ed0f24a3cef43",
+      "sha256": "636ec37c03110434c72d358600c951c9915c9161da7a8cacfc47e378c9c3a9d5",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0; hourly series aggregated locally to daily derivatives.",
@@ -148,8 +148,8 @@
       },
       "source": {
         "uri": "https://archive-api.open-meteo.com/v1/archive",
-        "snapshot_ref": "2020-01-01..2026-08-15 hourly-derived",
-        "retrieved_at": "2026-08-15",
+        "snapshot_ref": "Open-Meteo ERA5 arsivi 2020-01-01..2026-08-19 (96 ilce, saatlik) + forecast koprüsu 2026-08-20..2026-08-26 (tahmin=1; kopru_saatlik.py, dikis basinc_ort 0.325 hPa)",
+        "retrieved_at": "2026-08-20",
         "immutable": false
       },
       "schema": {
@@ -158,14 +158,19 @@
         "required_columns": [
           "ilce_key",
           "tarih",
-          "basinc_min",
-          "ruzgar_15ms_saat"
+          "basinc_ort",
+          "basinc_dusus_3s",
+          "ruzgar_8ms_saat",
+          "hamle_20ms_saat",
+          "ruzgar_q90",
+          "yon_sin",
+          "yon_cos"
         ]
       }
     },
     {
       "path": "data/external/depremler.parquet",
-      "sha256": "2abe735ba7b1ce8bae6740be35bc8291fffaacf76a9d7c5188ba36cc978e821b",
+      "sha256": "dc83d8bdd0c1ca41af5c9f3bdab211b1f6fefa98d41c62d6c257e1abb46ae2d3",
       "license": "AFAD-institutional-clearance",
       "redistribution": "allowed",
       "attribution": "AFAD (T.C. Icisleri Bakanligi Afet ve Acil Durum Yonetimi Baskanligi) earthquake catalog, with USGS FDSN fallback (USGS data is US public domain).",
@@ -182,7 +187,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 373,
+        "min_rows": 2976,
         "required_columns": [
           "tarih",
           "lat",
@@ -211,7 +216,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 40000,
+        "min_rows": 42066,
         "required_columns": [
           "tarih",
           "lat",
@@ -301,7 +306,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 300,
+        "min_rows": 352,
         "required_columns": [
           "ilce_key",
           "ay",
@@ -312,7 +317,7 @@
     },
     {
       "path": "data/external/nem_toprak_gunluk.parquet",
-      "sha256": "802b81da992e7fe75b3938ea699b2444c3c1cc6f46a682ecad67ce4d7a5ef25b",
+      "sha256": "4625ddb32fba948d813f29d29a1637da4c91c686e1f2ede70130dfedf7e5fefc",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
@@ -329,7 +334,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 220000,
+        "min_rows": 228614,
         "required_columns": [
           "ilce_key",
           "tarih",
@@ -342,7 +347,7 @@
     },
     {
       "path": "data/external/hava_kalitesi_gunluk.parquet",
-      "sha256": "c0b7b69252a4f7766c2839f8fe5f8e58f0f21e2c26f2a66f7fad1c701707c2c8",
+      "sha256": "fed74deb4f71d2cbadc5fe06f88bfb07fdcd7931e3df51aedb9c528d24793686",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Air quality data by Open-Meteo.com under CC BY 4.0 (CAMS tabanli).",
@@ -359,7 +364,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 220000,
+        "min_rows": 228614,
         "required_columns": [
           "ilce_key",
           "tarih",
@@ -389,8 +394,15 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 380000,
-        "required_columns": ["province", "district", "date", "startTime", "endTime", "reason"]
+        "min_rows": 397702,
+        "required_columns": [
+          "province",
+          "district",
+          "date",
+          "startTime",
+          "endTime",
+          "reason"
+        ]
       }
     },
     {
@@ -412,13 +424,20 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 100000,
-        "required_columns": ["il_key", "ilce_key", "gun", "kesinti_adet", "kesinti_dk", "kapsanan_gun"]
+        "min_rows": 120798,
+        "required_columns": [
+          "il_key",
+          "ilce_key",
+          "gun",
+          "kesinti_adet",
+          "kesinti_dk",
+          "kapsanan_gun"
+        ]
       }
     },
     {
       "path": "data/external/konvektif_gunluk.parquet",
-      "sha256": "07f4718de9ae20b22a035bfc8e15a266d67412b9ba8bad7b2800695e62129e4f",
+      "sha256": "314057c283b981fde390b7df17d6ca6479e15d23fad7bb967547c5d1de6c2dff",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0 (Historical Forecast API).",
@@ -435,7 +454,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 180000,
+        "min_rows": 182891,
         "required_columns": [
           "ilce_key",
           "tarih",

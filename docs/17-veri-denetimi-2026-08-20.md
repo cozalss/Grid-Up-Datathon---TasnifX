@@ -322,6 +322,53 @@ bulunan iki hatayı (3.2 ve 3.3) yalnızca ikincisi gördü.
 
 ---
 
+## 4b. Panel ufku — hangi güne kadar *her şey* dolu
+
+Köprüler kurulunca yeni bir soru ortaya çıktı: panel ileriye ne kadar uzamalı?
+
+İki ölçüm yanıtı belirledi:
+
+**1. Panel ancak en zayıf kaynağı kadar uzayabilir.** Hava kalitesi API'si
+ileriye yalnızca **7 gün** verir; hava/toprak/konvektif 16 gün. Havayı +16'ya
+uzatıp hava kalitesini +7'de bırakmak, 8-16. günlerde tam olarak kaçındığımız
+asimetriyi yeniden kurardı. Bu yüzden ufuk, köprülerin **tavanlarının en
+küçüğü** olarak seçilir ve sınırı koyan kaynak raporlanır.
+
+**2. Bazı kaynaklar tahmin edilemez.** Open-Meteo yarının sıcaklığını verir;
+EPİAŞ yarının **tüketimini veremez**, çünkü o henüz gerçekleşmemiştir. Yani
+paneli havayla ileriye taşımak, o günlerde EPİAŞ ailesini zorunlu olarak boş
+bırakır. Bu bir veri kusuru değil, fiziktir.
+
+Bu ayrım `kapsam_deseni.py`'yi yeniden şekillendirdi: kapı artık paneli
+**en dar kaynağın** ulaştığı güne kadar kurar ve sınırlayanı yazar. Böylece
+ölçtüğü şey "panel ne kadar uzayabilir" değil, **"her şeyin dolu olduğu en
+uzak nokta nerede"** olur.
+
+Ölçülen son durum:
+
+```
+panel ufku 2026-08-15 · sınırlayan kaynak: epias_tuketim
+209 feature kolonu · 0 hata · 14 uyarı
+```
+
+---
+
+## 4c. Son durum — ölçülen
+
+| Kapı | Sonuç |
+|---|---|
+| `veri_sagligi.py` | 17 kaynak · **0 hata** · 3 uyarı (tahmin türevli kuyruklar) |
+| `kapsam_deseni.py` | 209 kolon · **0 hata** · 14 uyarı |
+| `verify_sources.py` | 15 artefakt · **0 hata** · 15 uyarı (yeniden üretilebilirlik) |
+| `scan_secrets.py` | **0 bulgu** |
+| `pytest` | **1271 geçti** · 51 atlandı · **0 hata** |
+
+Panel tablolarının tamamı **2026-08-26**'da bitiyor, delik yok. Köprü dikiş
+farkları: basınç 0,325 hPa · CAPE 0,000 · PM10 0,000 · nem 4,743 (toleranslar
+2,0 / 150 / 10 / 8).
+
+---
+
 ## 5. Açık kalanlar
 
 Dürüstlük gereği kapatılmayan maddeler:
@@ -336,6 +383,19 @@ Dürüstlük gereği kapatılmayan maddeler:
   gizlenmemiştir.
 - **İZSU 30/96'da kalıyor.** Yukarıda gösterildiği gibi bu güvenli sınıftır;
   genişletmek İZSU'nun yayımlamadığı veriyi gerektirir.
+- **EPİAŞ tazelenemedi.** Ulusal tüketim/üretim 2026-08-15'te duruyor.
+  Yenileme denendi, kimlik doğrulama başarısız oldu: birincil uçta HTTP 503,
+  yedek uçta HTTP 401 (iki kez, aynı yanıtlar). Servis kesintisi mi kimlik
+  bilgisi sorunu mu ayırt edilemedi — bu, panelin ufkunu 08-15'te sınırlayan
+  tek kaynak. Mevcut veri sağlam ve kapılar yeşil; ama EPİAŞ dönerse
+  `python scripts/fetch_epias_load.py --start 2020-01-01 --end <bugün-1>`
+  ufku dört gün genişletir.
+- **Üç tablonun son 13-17 günü tahmin türevli** (`hava_gunluk` 17,
+  `nem_toprak` 14, `konvektif` 13). Panelde delik yok; değerler ERA5 yeniden
+  analizinden değil tahmin modelinden geliyor. Sağlık kapısı bunu **uyarı**
+  olarak sayıyor, susturmuyor. Arşivle değiştirmek için ilgili çekiciyi
+  `--end` ile yeniden çalıştırıp köprüyü yenilemek gerekir; Open-Meteo saatlik
+  kotası nedeniyle bu birkaç saat sürer.
 - **Deprem olaylarının 240'ı beş ilin dışında.** `point_events` **mesafeyle**
   çalışır, il adıyla değil — Balıkesir'deki bir deprem Manisa ilçesinin 50 km
   yarıçapına düşebilir. Yani "il dışında" otomatik olarak "işe yaramaz"

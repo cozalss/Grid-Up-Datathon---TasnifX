@@ -28,6 +28,7 @@ __all__ = [
     "stack_oof",
     "prune_by_correlation",
     "power_mean_blend",
+    "median_blend",
     "tune_power_mean",
     "POWER_MEAN_EPSILON",
     "POWER_MEAN_GRID",
@@ -342,6 +343,12 @@ def hill_climb_weights(
 #: Kuvvet ortalamasinda log/negatif-us korumasi icin taban deger.
 POWER_MEAN_EPSILON = 1e-9
 
+#: Agirlikli medyanda "birikim tam 0,5" sayilan tolerans. Esit agirlikta
+#: birikim hatasi ~1e-16 * uye_sayisi mertebesinde kalir; 1e-12 bunu rahatca
+#: kapsar ama gercek bir agirlik farkini (en kucugu 1e-9 mertebesinde olurdu)
+#: yanlislikla "esit" saymaz.
+_MEDIAN_TOL = 1e-12
+
 #: ``tune_power_mean`` varsayilan taramasi. ASHRAE 1.-2.sinin araligi bu
 #: civardaydi; 1.0 (aritmetik ortalama) HER ZAMAN izgaraya dahil edilir.
 POWER_MEAN_GRID = (0.5, 1.0, 2.0)
@@ -424,6 +431,95 @@ def power_mean_blend(
     if p < 0:
         kirpik = np.maximum(kirpik, POWER_MEAN_EPSILON)
     return np.power(np.power(kirpik, p) @ w, 1.0 / p)
+
+
+def median_blend(
+    predictions: dict[str, np.ndarray],
+    weights: dict[str, float] | None = None,
+) -> np.ndarray:
+    """Uye tahminlerinin (agirlikli) MEDYANI -- MAE metriginin dogru toplayicisi.
+
+    NEDEN AYRI BIR TOPLAYICI (docs/18 bolum B2)
+    -------------------------------------------
+    MAE'yi minimize eden tahmin ORTALAMA degil MEDYANDIR. Harmani agirlikli
+    ortalamayla kurmak, metrikle celisen bir toplayici secmektir: tek bir
+    uyenin cuvalladigi satirda ortalama surüklenir, medyan yerinde kalir.
+    MAE metrikli yarismalarda ust siralarin ortak pratigi budur.
+
+    Bu yuzden ``power_mean_blend`` (p=1) ile ayni agirliklardan FARKLI bir
+    tahmin uretir; ikisi birbirinin yerine gecmez, ayri adaylardir ve ayni
+    yuvalanmis/dis-capa kapisindan gecmek zorundadir.
+
+    TANIM (interpolasyonlu agirlikli medyan)
+    ----------------------------------------
+    Her satirda uyeler degere gore siralanir, agirliklar birikimli toplanir
+    ve birikim 0,5'i ilk gectigi uye secilir. Birikim TAM 0,5'e esitse iki
+    komsu deger ortalanir -- bu incelik olmadan esit agirlikli cift uyede
+    sonuc ``np.median``dan sapardi ("alt agirlikli medyan" tanimi iki orta
+    degerin kucugunu secer). Sozlesme: **esit agirlik => np.median**.
+
+    Args:
+        predictions: ``{model_adi: tahmin dizisi}`` -- hepsi ayni uzunlukta.
+        weights: ``{model_adi: agirlik}`` ya da ``None``. ``None`` verilirse
+            duz ``np.median`` kullanilir. Verilirse ad kumesi predictions ile
+            AYNI olmali; eksik/fazla ad sessiz gecmez.
+
+    Returns:
+        Harmanlanmis tahmin dizisi (float64).
+
+    Raises:
+        ValueError: predictions bos; dizi uzunluklari farkli; agirlik kumesi
+            uyusmuyor; negatif agirlik; agirlik toplami sifir.
+    """
+    if not predictions:
+        raise ValueError("Bos tahmin sozlugu.")
+    names = list(predictions)
+    boylar = {name: len(np.asarray(predictions[name]).ravel()) for name in names}
+    if len(set(boylar.values())) != 1:
+        raise ValueError(f"Tahmin dizileri ayni uzunlukta degil: {boylar}")
+    matrix = np.column_stack(
+        [np.asarray(predictions[name], dtype="float64").ravel() for name in names]
+    )
+
+    if weights is None:
+        return np.median(matrix, axis=1)
+
+    eksik = sorted(set(names) - set(weights))
+    fazla = sorted(set(weights) - set(names))
+    if eksik or fazla:
+        raise ValueError(
+            f"weights ve predictions ayni adlari tasimali. Eksik agirlik: {eksik}, "
+            f"fazla agirlik: {fazla}."
+        )
+    w = np.array([float(weights[name]) for name in names], dtype="float64")
+    if (w < 0).any():
+        raise ValueError("Negatif agirlik: agirlikli medyan negatif agirlikla tanimsiz.")
+    toplam = w.sum()
+    if toplam <= 0:
+        raise ValueError("Agirlik toplami sifir -- en az bir pozitif agirlik gerekli.")
+    w = w / toplam
+
+    sira = np.argsort(matrix, axis=1, kind="stable")
+    sirali_deger = np.take_along_axis(matrix, sira, axis=1)
+    birikim = np.cumsum(w[sira], axis=1)
+
+    # Birikim 0,5'i ilk gectigi sutun. Son sutunda birikim daima 1,0 oldugu
+    # icin argmax her satirda gecerli bir indeks bulur.
+    idx = (birikim >= 0.5 - _MEDIAN_TOL).argmax(axis=1)
+    satir = np.arange(matrix.shape[0])
+    sonuc = sirali_deger[satir, idx]
+
+    # TAM 0,5 durumu: iki orta degeri ortala ki esit agirlik np.median'a
+    # birebir indirgensin. Kayan nokta birikiminde 0,5 nadiren tam tutar,
+    # bu yuzden dar bir tolerans kullanilir (esit agirlikta hata ~1e-16*m).
+    esit = np.abs(birikim[satir, idx] - 0.5) <= _MEDIAN_TOL
+    komsu_var = idx + 1 < matrix.shape[1]
+    ortala = esit & komsu_var
+    if ortala.any():
+        ust = sirali_deger[satir[ortala], idx[ortala] + 1]
+        sonuc = sonuc.copy()
+        sonuc[ortala] = 0.5 * (sonuc[ortala] + ust)
+    return sonuc
 
 
 def tune_power_mean(
