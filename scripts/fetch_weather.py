@@ -34,6 +34,7 @@ Kullanim::
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from collections.abc import Sequence
@@ -45,7 +46,11 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from gridup.io_utils import publish_dataframe, validate_published_dataframe  # noqa: E402
+from gridup.io_utils import (  # noqa: E402
+    metadata_path,
+    publish_dataframe,
+    validate_published_dataframe,
+)
 from gridup.turkish import join_key  # noqa: E402
 
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
@@ -585,12 +590,25 @@ def main() -> int:
     time_column = "tarih" if not args.hourly else "zaman"
     if output_path.exists() and not args.fresh:
         try:
+            # KAYNAK DIZESI TAM ESITLIKLE ARANMAZ.
+            #
+            # Koprü (fetch_weather_bridge.py) tabloyu BILESIK kaynakla
+            # yeniden yayimlar: "archive + forecast". Tam esitlik istemek bu
+            # tabloyu "dogrulanamadi" sayar, cekici onbellegi TAMAMEN atar ve
+            # 96 ilceyi 2430 gunle bastan indirir -- yani kismi tazeleme hic
+            # devreye girmez ve kota bosa yanar (olculdu 2026-08-20).
+            #
+            # BUTUNLUK yine tam olarak dogrulaniyor: dosya boyutu, SHA-256 ve
+            # zorunlu kolonlar. Gevsetilen tek sey kaynak dizesinin BICIMI;
+            # arsivin o dizede GECMESI ayrica araniyor.
             existing = validate_published_dataframe(
                 output_path,
                 required_columns=("konum", time_column),
                 min_rows=1,
-                source=ARCHIVE_URL,
             )
+            kayitli = json.loads(metadata_path(output_path).read_text(encoding="utf-8"))
+            if ARCHIVE_URL not in str(kayitli.get("source", "")):
+                raise ValueError(f"yayin kaynagi arsivi icermiyor: {kayitli.get('source')!r}")
         except (OSError, ValueError) as error:
             print(f"Mevcut hava cache'i dogrulanamadi; kullanilmayacak: {error}")
             existing = None

@@ -450,3 +450,45 @@ def test_ckpt_birlestir_yeni_degeri_tercih_ediyor(tmp_path: Path) -> None:
     assert len(birlesik) == 5, "Gunler birlestirilmedi."
     ortusen = birlesik.loc[birlesik["tarih"] == pd.Timestamp("2026-08-12"), "deger"].iloc[0]
     assert ortusen == 30.0, "Ortusen gunde ESKI deger kazandi -- revizyon kaybolur."
+
+
+def test_hava_cekicisi_bilesik_kaynagi_reddetmiyor() -> None:
+    """Koprülu tabloyu "dogrulanamadi" sayip onbellegi ATMAMALI.
+
+    fetch_weather_bridge tabloyu BILESIK kaynakla yeniden yayimlar:
+    "archive + forecast". fetch_weather ise onbellegi ``source=ARCHIVE_URL``
+    ile TAM ESITLIK arayarak dogruluyordu. Sonuc (olculdu 2026-08-20):
+
+        "Mevcut hava cache'i dogrulanamadi; kullanilmayacak"
+        96 konum indirilecek, 2020-01-01 - 2026-08-19
+
+    Yani koprü bir kez kurulduktan sonra cekici onbellegi HER ZAMAN atiyor ve
+    96 ilceyi 2430 gunle bastan indiriyordu -- kismi tazeleme hic devreye
+    girmiyordu ve kota bosa yaniyordu (202 kat fazla veri).
+
+    Butunluk gevsetilmedi: boyut, SHA-256 ve zorunlu kolonlar hala tam
+    dogrulaniyor. Yalnizca kaynak dizesinin BICIMI esnetildi; arsivin o
+    dizede gecmesi ayrica araniyor.
+    """
+    kaynak = (BETIK_DIZINI / "fetch_weather.py").read_text(encoding="utf-8")
+    assert "ARCHIVE_URL not in str(" in kaynak, (
+        "fetch_weather, yayin kaynagini ICERME ile kontrol etmiyor. "
+        "Tam esitlik ararsa koprülu tabloyu tanimaz ve onbellegi atar."
+    )
+    # Butunluk kontrolu KALKMAMIS olmali.
+    assert "validate_published_dataframe(" in kaynak
+    assert 'required_columns=("konum", time_column)' in kaynak
+
+
+def test_hava_cekicisi_kapsami_arsiv_satirlarindan_olcuyor() -> None:
+    """Kapsam TAHMIN satirlarindan olculursa cekici HICBIR SEY yapmaz.
+
+    Tablo koprü ile 2026-08-26'ya uzatilmis olur; tum satirlara bakan bir
+    kapsam olcumu her konumu "tam kapsamli" gosterir ve arsivdeki gercek
+    bosluk (tahmin turevli gunler) --fresh olmadan asla kapanmaz.
+    """
+    kaynak = (BETIK_DIZINI / "fetch_weather.py").read_text(encoding="utf-8")
+    assert 'arsiv[arsiv["hava_tahmin"]' in kaynak and 'arsiv.loc[arsiv["konum"]' in kaynak, (
+        "Kapsam, tum tablodan olculuyor. Arsiv satirlari (hava_tahmin=0) "
+        "ayrilmali -- yoksa koprü satirlari kapsam sanilir."
+    )
