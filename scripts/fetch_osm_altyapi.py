@@ -41,6 +41,7 @@ Cikti: data/external/osm_altyapi_ilce.parquet
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import sys
 import time
@@ -58,7 +59,16 @@ from gridup.io_utils import publish_dataframe  # noqa: E402
 REFERANS = KOK / "data" / "reference" / "ilceler_gdz_adm.parquet"
 CIKTI = KOK / "data" / "external" / "osm_altyapi_ilce.parquet"
 
-OVERPASS = "https://overpass-api.de/api/interpreter"
+#: Overpass ORNEKLERI, sirayla denenir. Tek sunucuya 96 ardisik agir sorgu
+#: atmak kotayi tuketiyor (olculdu: 40. ilcede kalici HTTP 504). Ornekler
+#: ayni veriyi servis eder; rotasyon yuku dagitir ve biri bakimdayken kosu
+#: durmaz.
+OVERPASS_ORNEKLERI = (
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+)
+OVERPASS = OVERPASS_ORNEKLERI[0]
 #: Overpass sunuculari User-Agent'siz istegi 406 ile reddediyor (olculdu).
 BASLIKLAR = {"User-Agent": "GridUpDatathon/1.0 (+veri hazirligi; iletisim: repo sahibi)"}
 
@@ -83,12 +93,18 @@ HAT_TIPLERI = {
     "cable": "osm_kablo_km",
 }
 
+#: Sorgu YALNIZCA kullandigimiz etiketleri ister. ``["power"]`` genel filtresi
+#: power=plant/portal/catenary_mast gibi ise yaramayan her seyi de cekiyordu ve
+#: ``out geom`` bunlarin poligonlarini da dolduruyordu -- 504'lerin asil sebebi
+#: bu agirliktir.
+#:
+#: NOKTALAR ICIN ``out body`` SART, ``out tags`` DEGIL: ``out tags`` koordinat
+#: dondurmez ve yaricap filtresi lat/lon ister (olculdu: KeyError 'lat').
 SORGU = """
 [out:json][timeout:180];
-(
-  node(around:{yaricap_m},{lat},{lon})["power"];
-  way(around:{yaricap_m},{lat},{lon})["power"];
-);
+node(around:{yaricap_m},{lat},{lon})["power"~"^({nokta})$"];
+out body;
+way(around:{yaricap_m},{lat},{lon})["power"~"^({hat})$"];
 out tags geom;
 """
 
@@ -106,7 +122,7 @@ def ilce_altyapisi(
     lat: float,
     lon: float,
     yaricap_km: float,
-    deneme: int = 3,
+    deneme: int = 6,
 ) -> dict[str, float]:
     """Bir ilce dairesindeki OSM guc altyapisi: nokta sayilari + hat uzunluklari.
 
@@ -114,14 +130,26 @@ def ilce_altyapisi(
     **orta noktasi daire icinde kalan segmentler** uzerinden toplanir. Overpass
     daireye DEGEN yolun tamamini dondurur; tamamini saymak, sinirdaki uzun bir
     iletim hattini tumuyle bu ilceye yazardi.
+
+    DAYANIKLILIK: her denemede SIRADAKI Overpass ornegine gecilir ve bekleme
+    ustel buyur. Tek sunucuda israr etmek olculdu ve calismadi -- 40. ilcede
+    kalici 504 geldi, cunku 504 "bu istek agir" degil "bu SUNUCU su an dolu"
+    demektir; ayni sunucuya beklemek yerine baskasina gitmek dogru cevaptir.
     """
-    sorgu = SORGU.format(yaricap_m=int(yaricap_km * 1000), lat=lat, lon=lon)
+    sorgu = SORGU.format(
+        yaricap_m=int(yaricap_km * 1000),
+        lat=lat,
+        lon=lon,
+        nokta="|".join(NOKTA_TIPLERI),
+        hat="|".join(HAT_TIPLERI),
+    )
     son_hata: Exception | None = None
     for tur in range(deneme):
+        adres = OVERPASS_ORNEKLERI[tur % len(OVERPASS_ORNEKLERI)]
         try:
-            yanit = oturum.post(OVERPASS, data={"data": sorgu}, timeout=240)
+            yanit = oturum.post(adres, data={"data": sorgu}, timeout=240)
             if yanit.status_code in (429, 502, 503, 504):
-                raise RuntimeError(f"Overpass mesgul: HTTP {yanit.status_code}")
+                raise RuntimeError(f"HTTP {yanit.status_code} ({adres.split('/')[2]})")
             yanit.raise_for_status()
             ogeler = yanit.json()["elements"]
             break
@@ -129,7 +157,7 @@ def ilce_altyapisi(
             son_hata = hata
             # Ustel geri cekilme: sunucu yuku gecici, hemen tekrar denemek
             # kotayi tuketir ve kalici 429'a yol acar.
-            time.sleep(5 * (tur + 1))
+            time.sleep(min(60, 5 * 2**tur))
     else:
         raise RuntimeError(f"Overpass {deneme} denemede yanit vermedi: {son_hata}")
 
@@ -169,16 +197,41 @@ def main() -> int:
         return 1
     referans = pd.read_parquet(REFERANS)
 
+    # CHECKPOINT: 96 ardisik ag cagrisinda bir hata TUM kosuyu cope atmasin.
+    # Tamamlanan ilceler diske yazilir; betik yeniden kosunca kalan yerden
+    # devam eder. Overpass'a gereksiz yuk bindirmemek de bir nezaket kurali.
+    ara_dosya = Path(args.out).with_suffix(".kismi.json")
+    tamamlanan: dict[str, dict[str, Any]] = {}
+    if ara_dosya.exists():
+        tamamlanan = json.loads(ara_dosya.read_text(encoding="utf-8"))
+        print(f"  checkpoint bulundu: {len(tamamlanan)} ilce zaten cekilmis, atlaniyor")
+
     print(f"1/2  {len(referans)} ilce, Overpass ({args.bekleme:.0f} sn bekleme)")
     oturum = requests.Session()
     oturum.headers.update(BASLIKLAR)
     satirlar: list[dict[str, Any]] = []
     for sira, kayit in enumerate(referans.itertuples(index=False), start=1):
+        anahtar = f"{kayit.il_key}|{kayit.ilce_key}"
+        if anahtar in tamamlanan:
+            satirlar.append(tamamlanan[anahtar])
+            continue
         alan = float(kayit.alan_km2)
         yaricap = min(MAX_YARICAP_KM, max(MIN_YARICAP_KM, math.sqrt(alan / math.pi)))
-        olcum = ilce_altyapisi(
-            oturum, lat=float(kayit.lat), lon=float(kayit.lon), yaricap_km=yaricap
-        )
+        try:
+            olcum = ilce_altyapisi(
+                oturum, lat=float(kayit.lat), lon=float(kayit.lon), yaricap_km=yaricap
+            )
+        except Exception as hata:  # noqa: BLE001 -- ilerlemeyi kaybetmemek her hatadan onemli
+            # Ilerlemeyi KAYBETME. Genis yakalama BILEREK: bu dongu 96 ag
+            # cagrisidir ve beklenmedik bir hata (semada degisiklik, bozuk
+            # yanit) saatlerce suren ilerlemeyi cope atardi. Olculdu: ikinci
+            # kosuda KeyError geldi, dar ``RuntimeError`` yakalamasi kacirdi
+            # ve checkpoint yazilmadi. Hata YUTULMAZ -- basilir ve exit 1.
+            ara_dosya.write_text(json.dumps(tamamlanan, ensure_ascii=False), encoding="utf-8")
+            print(f"\nHATA ({sira}/{len(referans)}, {anahtar}): {hata}")
+            print(f"Ilerleme kaydedildi ({len(tamamlanan)} ilce): {ara_dosya}")
+            print("Betigi tekrar kosun; kalan yerden devam eder.")
+            return 1
         daire_km2 = math.pi * yaricap**2
         satir: dict[str, Any] = {
             "il_key": kayit.il_key,
@@ -194,6 +247,8 @@ def main() -> int:
         satir["osm_hat_yogunlugu"] = round(satir["osm_toplam_hat_km"] / daire_km2, 4)
         satir["osm_kule_yogunlugu"] = round(olcum["osm_kule"] / daire_km2, 4)
         satirlar.append(satir)
+        tamamlanan[anahtar] = satir
+        ara_dosya.write_text(json.dumps(tamamlanan, ensure_ascii=False), encoding="utf-8")
         if sira % 10 == 0 or sira == len(referans):
             print(f"  {sira}/{len(referans)}")
         time.sleep(args.bekleme)
@@ -214,7 +269,25 @@ def main() -> int:
             f"  {kolon:20s} sifir {sifir:3d}/{len(altyapi)}  "
             f"medyan {altyapi[kolon].median():8.1f} km"
         )
-    tamamen_bos = int((altyapi["osm_toplam_hat_km"] + altyapi["osm_direk"] == 0).sum())
+    # SABIT KOLONLARI DUS. Butun ilcelerde ayni degeri tasiyan bir kolon
+    # (pratikte: OSM'de hic haritalanmamis bir tip, hepsi 0) SIFIR bilgi
+    # tasir; modele girerse yalnizca feature sayisini sisirir ve "bu aile
+    # 9 kolon getirdi" gibi yaniltici bir izlenim yaratir. Dusulenler
+    # RAPORLANIR -- sessizce yok olmaz, cunku "sifir" burada bir OLCUM
+    # sonucudur: o altyapi tipi Turkiye OSM'inde yok demektir.
+    olcumler = [k for k in altyapi.columns if k.startswith("osm_")]
+    olcum_kolonlari = [k for k in olcumler if k != "osm_yaricap_km"]
+    sabitler = [k for k in olcum_kolonlari if altyapi[k].nunique(dropna=False) <= 1]
+    if len(sabitler) == len(olcum_kolonlari):
+        print("\nHATA: TUM olcum kolonlari sabit -- OSM bu bolgede hicbir sey tasimiyor.")
+        print("Aile yayinlanmadi; feature olarak eklemenin anlami yok.")
+        return 1
+    if sabitler:
+        print(f"\n  DUSULEN sabit kolon ({len(sabitler)}): {', '.join(sabitler)}")
+        print("    -> bu altyapi tipleri Turkiye OSM'inde haritalanmamis (hepsi ayni deger).")
+        altyapi = altyapi.drop(columns=sabitler)
+
+    tamamen_bos = int((altyapi.get("osm_toplam_hat_km", 0) == 0).sum())
     print(f"  HIC altyapi bulunamayan ilce: {tamamen_bos}/{len(altyapi)}")
     if tamamen_bos > len(altyapi) // 2:
         print(
@@ -227,10 +300,16 @@ def main() -> int:
     publish_dataframe(
         altyapi,
         yol,
-        required_columns=("il_key", "ilce_key", "osm_direk", "osm_toplam_hat_km"),
+        # Yalnizca ANAHTARLAR zorunlu: hangi olcum kolonunun hayatta kalacagi
+        # OSM kapsamasina baglidir (sabit olanlar dusulur) ve semayi ona
+        # baglamak, kapsamanin degistigi gun yayini sebepsiz kirardi.
+        required_columns=("il_key", "ilce_key"),
         min_rows=len(referans),
         source=f"{OVERPASS} (OpenStreetMap power=*, ODbL 1.0)",
     )
+    # Checkpoint yalnizca YAYIN BASARILI olduktan sonra silinir; publish
+    # dogrulamadan gecemezse ilerleme yerinde kalir.
+    ara_dosya.unlink(missing_ok=True)
     print(f"\nYazildi: {yol}  ({len(altyapi)} satir, {len(altyapi.columns)} kolon)")
     print("ATIF (ODbL, zorunlu): (c) OpenStreetMap katkicilari")
     return 0

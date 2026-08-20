@@ -229,6 +229,36 @@ verilirse yükseltilmeli.
 **Son sözü ablasyon söyler.** İkisi de LOGO ablasyonundan geçmeden gönderime
 girmez — literatürdeki 2,6× bizim hedefimize birebir taşınmaz, yön kanıtıdır.
 
+### ⚠️ OSM bulgusu — literatürün varsayımı Türkiye'de TUTMUYOR
+
+Çekim öncesi iki ilçe provası (Konak = kentsel, Bozdoğan = kırsal) şunu gösterdi:
+
+| Tip | Konak | Bozdoğan |
+|---|---:|---:|
+| `power=pole` (**dağıtım direği**) | **0** | **0** |
+| `power=minor_line` (**dağıtım hattı**) | **0 km** | **0 km** |
+| `power=tower` (iletim direği) | 16 | 77 |
+| `power=line` (iletim hattı) | 3,0 km | 39,7 km |
+
+Yani **Türkiye OSM'inde dağıtım şebekesi haritalanmamış.** arXiv 2404.03115'in
+kullandığı feature'ın (direk sayısı) tam karşılığı bizde **yok**; elimizde
+yalnızca **iletim** altyapısı var.
+
+Bu, ailenin değersiz olduğu anlamına gelmez — iletim yoğunluğu, bir ilçenin
+şebeke içindeki ağırlığı için makul bir vekildir. Ama beklenti düşürülmeli:
+literatürdeki kazancın kaynağı dağıtım seviyesi maruziyetiydi ve o kısım eksik.
+
+Betik bu yüzden **tüm ilçelerde aynı değeri taşıyan kolonları düşürür ve
+raporlar**. Sabit bir kolon sıfır bilgi taşır; modele girerse yalnızca feature
+sayısını şişirir ve "bu aile 9 kolon getirdi" gibi yanıltıcı bir izlenim yaratır.
+Düşülenler sessizce yok olmaz: burada "sıfır" bir **ölçüm sonucudur** — o altyapı
+tipi Türkiye OSM'inde yok demektir.
+
+**Bu, varsaymayıp ölçmenin karşılığıdır.** "Literatür diyor ki direk sayısı en
+güçlü feature" deyip 9 kolon eklemiş olsaydık, bunların çoğu sabit sıfır olarak
+modele girecek, ablasyonda "OSM ailesi hiçbir şey katmıyor" çıkacak ve nedenini
+bilmeyecektik.
+
 **Kritik kural:** 1-6'nın hepsi mevcut kapılardan geçmek zorunda —
 LOGO ablasyonu + yuvalanmış kontrol + dış çapa. Ölçülmeyen hiçbir şey
 gönderime girmez. Bu repoda "iyi fikir" değil, "ölçülmüş kazanç" para eder;
