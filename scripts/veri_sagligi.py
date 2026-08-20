@@ -331,6 +331,34 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
         ),
     ),
     Kaynak(
+        ad="osm_altyapi_ilce",
+        yol="data/external/osm_altyapi_ilce.parquet",
+        anahtar_kolonu="ilce_key",
+        beklenen_ilce=96,
+        asgari_satir=96,
+        son_kontrolu_atla="Statik ilce ozelligi; zaman ekseni yok (OSM anlik goruntu).",
+        fizik=(
+            (
+                "Iletim altyapisi haritalanmis: ilcelerin en az yarisinda kule VAR",
+                # OSM gonullu kaynaklidir; TR'de dagitim sebekesi (pole/minor_line)
+                # seyrek ama ILETIM (tower/line) iyi haritali -- olculdu:
+                # kule 8/96 sifir, hat 9/96 sifir. Esik yarida: kapsama ciddi
+                # bicimde gerilerse (silme, API degisimi) kapi calsin.
+                lambda d: float((d["osm_kule"] > 0).mean()) >= 0.5,
+            ),
+            (
+                "Hat uzunlugu ve kule sayisi AYNI YONDE (ikisi de sebeke yogunlugu)",
+                # Fiziksel tutarlilik: kulesi cok olan ilcede hat da uzundur.
+                # Negatif korelasyon, yaricap/segment hesabinin bozuldugunu gosterir.
+                lambda d: float(d["osm_kule"].corr(d["osm_toplam_hat_km"])) > 0.3,
+            ),
+            (
+                "Yogunluklar negatif degil",
+                lambda d: bool((d.filter(like="_yogunlugu") >= 0).all().all()),
+            ),
+        ),
+    ),
+    Kaynak(
         ad="turizm_aylik_il",
         yol="data/external/turizm_aylik_il.parquet",
         asgari_satir=5_000,

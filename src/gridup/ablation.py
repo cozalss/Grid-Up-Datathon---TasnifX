@@ -67,10 +67,120 @@ from .models import CVResult, ModelKind, cross_validate
 __all__ = [
     "RISK_LEVELS",
     "AblationResult",
+    "AileHukmu",
     "FeatureGroup",
     "ablation_ensemble",
+    "aile_hukmu",
     "leave_one_group_out",
 ]
+
+#: Bir hukmun "belirgin" sayilmasi icin ortalamanin kac standart hataya
+#: karsilik gelmesi gerektigi. 2 ~ %95 guven araligi sifiri icermiyor
+#: demektir. Az sayida tohumla (3-5) t-dagilimi normalden genistir; bu
+#: yuzden 2 bilerek MUHAFAZAKAR degil, ama "bilmiyorum" demeye egilimli.
+BELIRGINLIK_KATSAYISI = 2.0
+
+
+@dataclass(frozen=True)
+class AileHukmu:
+    """Bir ailenin katkisina verilen hukum: FAYDALI / ZARARLI / KARARSIZ."""
+
+    karar: str
+    ortalama: float
+    sapma: float
+    standart_hata: float
+    n_olcum: int
+    gerekce: str
+
+    def __str__(self) -> str:
+        return (
+            f"{self.karar:<8} {self.ortalama:+.2f} +- {self.sapma:.2f} MAE "
+            f"({self.n_olcum} olcum) -- {self.gerekce}"
+        )
+
+
+def aile_hukmu(deltalar: Sequence[float], *, gurultu: float) -> AileHukmu:
+    """Cok tohumlu ESLESTIRILMIS farklardan hukum uretir.
+
+    NEDEN BU FONKSIYON VAR (2026-08-21 olcumu)
+    ------------------------------------------
+    Ayni ayna verisinde ayni ablasyon iki kez kosuldu ve yedi ailenin
+    besinde ISARET DEGISTI (konvektif +4,12 -> -0,41; epias +3,13 -> -1,51).
+    Sebep: tohum gurultusu ~1,24 MAE, aile etkileri +-2 MAE. Etki gurultuyle
+    ayni mertebede oldugu icin kucuk etkilerin isareti yazi-turadir.
+
+    Buna ragmen ablasyon TEK kosunun ham deltasini siralama olarak
+    raporluyordu -- yani yanlis guven uretiyordu. "CAPE en faydali aile"
+    cumlesi bir olcum degil, bir yazi-tura sonucuydu.
+
+    IKI ESIK BIRDEN ARANIR
+    ----------------------
+    * **Istatistiksel**: ``|ortalama| > BELIRGINLIK_KATSAYISI * standart hata``.
+      Yani tohumlar arasi yayilim, etkiyi yutmuyor.
+    * **Pratik**: ``|ortalama| > gurultu``. Yayilim cok kucuk oldugunda
+      istatistik her seyi "anlamli" ilan etmeye baslar; ama tohum
+      gurultusunun altinda kalan bir kazanc gonderimde bir sey degistirmez.
+
+    Ikisini birden gecmeyen aile KARARSIZ'dir. "Bilmiyorum" demek burada
+    basarisizlik degil: yarisma gunu gurultuye inanip 2 gun yanlis yone
+    kosmayi engelleyen sey tam olarak budur.
+
+    Args:
+        deltalar: Her tohum icin ``MAE_ailesiz - MAE_tam``. Pozitif = aile
+            FAYDALI (cikarinca skor bozuluyor). Eslestirilmis olmali:
+            ayni tohum, ayni fold'lar.
+        gurultu: Olculmus tohum gurultusu (MAE). Pratik esik budur.
+
+    Returns:
+        ``AileHukmu``.
+
+    Raises:
+        ValueError: ``deltalar`` bos ya da ``gurultu`` negatif.
+    """
+    if not len(deltalar):
+        raise ValueError("aile_hukmu: en az bir olcum gerekli.")
+    if gurultu < 0:
+        raise ValueError(f"aile_hukmu: gurultu negatif olamaz, verilen {gurultu}.")
+
+    dizi = np.asarray(deltalar, dtype="float64")
+    ortalama = float(dizi.mean())
+    # ddof=1: tohumlar bir ORNEKLEMDIR, populasyon degil. Tek olcumde std
+    # tanimsizdir (nan) -- bu dogru, cunku tek olcumden yayilim bilinmez.
+    sapma = float(dizi.std(ddof=1)) if dizi.size > 1 else float("nan")
+
+    if dizi.size < 2:
+        return AileHukmu(
+            karar="KARARSIZ",
+            ortalama=ortalama,
+            sapma=float("nan"),
+            standart_hata=float("nan"),
+            n_olcum=int(dizi.size),
+            gerekce="tek olcum -- yayilim bilinmiyor, hukum verilemez",
+        )
+
+    standart_hata = sapma / float(np.sqrt(dizi.size))
+    belirgin = abs(ortalama) > BELIRGINLIK_KATSAYISI * standart_hata
+    pratik = abs(ortalama) > gurultu
+
+    if not belirgin:
+        gerekce = (
+            f"yayilim etkiyi yutuyor ({BELIRGINLIK_KATSAYISI:.0f}x standart hata "
+            f"{BELIRGINLIK_KATSAYISI * standart_hata:.2f} >= |{ortalama:.2f}|)"
+        )
+        return AileHukmu("KARARSIZ", ortalama, sapma, standart_hata, int(dizi.size), gerekce)
+    if not pratik:
+        gerekce = (
+            f"tutarli ama PRATIK esigin altinda (|{ortalama:.2f}| <= tohum gurultusu {gurultu:.2f})"
+        )
+        return AileHukmu("KARARSIZ", ortalama, sapma, standart_hata, int(dizi.size), gerekce)
+
+    karar = "FAYDALI" if ortalama > 0 else "ZARARLI"
+    gerekce = (
+        f"etki hem yayilimi ({BELIRGINLIK_KATSAYISI * standart_hata:.2f}) hem "
+        f"tohum gurultusunu ({gurultu:.2f}) asiyor"
+    )
+    return AileHukmu(karar, ortalama, sapma, standart_hata, int(dizi.size), gerekce)
+
 
 #: Risk katmanlari, en guvenilirden en kirilgana.
 #:   cekirdek -- yarisma verisinin kendisinden turer, her zaman vardir

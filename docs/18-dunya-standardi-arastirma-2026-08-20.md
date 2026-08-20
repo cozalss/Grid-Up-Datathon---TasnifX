@@ -293,8 +293,64 @@ LOGO ablasyonu, bu örneklem büyüklüğünde gürültüye boğuluyor.**
    bağlanmalı — çok tohumlu, eşleştirilmiş fold farkıyla. Aksi hâlde
    yarışma günü saatler harcanıp gürültü okunur.
 
-**Gün-1 kararı:** arazi örtüsünü bağla (ucuz, en kötü ihtimalle nötr),
-`tatil`i kapat, geri kalanın sıralamasına güvenme.
+### Düzeltildi ve yeniden koşuldu (5 tohum, eşleştirilmiş) — sonuç sert
+
+Ablasyon çok tohumlu hâle getirildi: her tohum için hem tam hem ailesiz model
+**aynı tohum ve aynı fold'larla** koşuluyor, fark o çift içinde alınıyor.
+Ölçülen tohum gürültüsü: **1,078 MAE**. Hüküm için etki hem yayılımı hem bu
+eşiği aşmak zorunda.
+
+```
+ 1. lag              FAYDALI    +6,03 +-2,29
+ 2. konvektif        KARARSIZ   +0,21 +-1,85
+ 3. arazi_ortusu     KARARSIZ   -0,22 +-2,92
+ ...
+14. gunes            ZARARLI    -1,11 +-0,79
+15. hava             ZARARLI    -3,18 +-1,81
+16. tatil            ZARARLI    -7,94 +-1,39
+
+4/16 aile hüküm aldı; 12'si KARARSIZ.
+```
+
+**Tek koşunun sıralaması çöktü.** Karşılaştırma:
+
+| Aile | Tek koşu | 5 tohum | |
+|---|---:|---|---|
+| arazi_ortusu | **+2,26 (2. sıra)** | −0,22 ± 2,92 | **KARARSIZ** |
+| hava_kalitesi | +2,18 (3. sıra) | −0,57 ± 1,60 | KARARSIZ |
+| nem_toprak | +1,82 (4. sıra) | −0,27 ± 1,38 | KARARSIZ |
+| izsu | +1,26 (5. sıra) | −0,60 ± 1,41 | KARARSIZ |
+| hava | +0,23 (8. sıra) | −3,18 ± 1,81 | **ZARARLI** |
+
+Yani "arazi örtüsü ikinci sırada" cümlesi **bir ölçüm değil, bir yazı-tura
+sonucuydu** — ve bu, aynı gün eklenmiş, sahibinin görmek istediği sonuçtu.
+Aletin düzeltilmesi onu da düşürdü. Doğrusu bu.
+
+### Okuma uyarısı — LOGO MARJİNAL katkı ölçer
+
+`hava` ailesinin ZARARLI çıkması "hava durumu kesintiyi etkilemiyor" demek
+**değildir**. LOGO şunu sorar: *diğer her şey varken bu aile ne ekliyor?*
+Panelde dört tane daha hava türevli aile var (`hava_saatlik`, `hava_kalitesi`,
+`konvektif`, `nem_toprak`). Günlük hava, onların yanında **artık bilgi
+taşımıyor** ve 24 kolonu 22 bin satırlık panele eklemek aşırı uyuma yol
+açıyor. Doğru okuma: *hava sinyali zaten başka ailelerde mevcut, bu 24 kolon
+fazlalık.*
+
+### Gerçek gün-1 kararı
+
+1. **`lag` ilk kurulacak aile** — kanıtlanmış tek faydalı aile, +6,03.
+2. **`tatil`, `hava`, `gunes` kapalı başla** — üçü de kanıtlanmış zararlı.
+   `tatil` iki bağımsız yöntemde de negatif çıktı; en sağlam bulgu.
+3. **Kalan 12 aile için "bilmiyoruz".** Bağlamak da atmak da savunulabilir;
+   sıralamaya bakıp karar verme.
+4. **Arazi örtüsünü yine de bağla** — ama gerekçe "faydalı olduğu" DEĞİL,
+   maliyetinin sıfır olması: 10 statik kolon, sızıntı riski yok, kod hazır.
+   Gerçek veride yeniden ölçülecek.
+
+**En önemlisi:** bu sayıların hiçbiri gerçek yarışma verisine taşınmaz. Hedef,
+ilçe kümesi, dönem ve metrik değişince işaretler yine değişecektir. Taşınan
+şey **alet**: 15:00'ten sonra ablasyon koştuğumuzda artık gürültüyü sinyal
+sanmayacağız.
 
 ### ⚠️ OSM bulgusu — literatürün varsayımı Türkiye'de TUTMUYOR
 

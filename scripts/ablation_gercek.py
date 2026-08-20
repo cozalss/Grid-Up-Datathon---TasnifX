@@ -52,7 +52,9 @@ KULLANIM
 
 from __future__ import annotations
 
+import argparse
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -68,7 +70,7 @@ from gridup import (  # noqa: E402
     read_table,
     set_global_seed,
 )
-from gridup.ablation import FeatureGroup, leave_one_group_out  # noqa: E402
+from gridup.ablation import FeatureGroup, aile_hukmu, leave_one_group_out  # noqa: E402
 from gridup.features import (  # noqa: E402
     add_calendar_features,
     add_cyclical_features,
@@ -272,7 +274,26 @@ def aileleri_kur(
     return frame, aile_kolonlari
 
 
+#: Tohum listesi. 42 basta (deponun kanonik tohumu) ki --tohum buyutuldugunde
+#: onceki kosunun ilk k tohumu KORUNSUN ve sonuclar karsilastirilabilir kalsin.
+TOHUMLAR: tuple[int, ...] = (42, 0, 1, 2, 3, 4, 5, 6, 7, 8)
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--tohum",
+        type=int,
+        default=5,
+        help=(
+            "Kac tohumla olculsun (varsayilan 5). 1 verirsen hukum verilemez -- "
+            "yayilim bilinmeden 'faydali' demek eski hatanin ta kendisi"
+        ),
+    )
+    args = parser.parse_args()
+    if not 1 <= args.tohum <= len(TOHUMLAR):
+        parser.error(f"--tohum 1..{len(TOHUMLAR)} arasinda olmali")
+
     if not VERI.exists():
         print(f"HATA: {VERI} yok.")
         print(
@@ -334,34 +355,72 @@ def main() -> int:
         FeatureGroup(ad, tuple(kols), risk=RISKLER.get(ad, "harici"))
         for ad, kols in aile_kolonlari.items()
     ]
-    tablo = leave_one_group_out(
-        ozellik[kolonlar],
-        y,
-        folds,
-        groups=gruplar,
-        kind="lightgbm",
-        metric="mae",
-        params=params,
-        verbose=True,
-    )
-    # LOGO kendi taban kosusunu yapar; ayni fold+params+seed ile tam modelle
-    # AYNI cikmali. Cikmadiysa determinizm bozuktur ve deltalar guvenilmez.
-    taban = float(tablo.attrs["taban_skor"])
-    if abs(taban - tam.overall_score) > 1e-6:
-        print(
-            f"  UYARI: LOGO tabani ({taban:.6f}) tam modelden "
-            f"({tam.overall_score:.6f}) farkli -- determinizm kontrol et"
+    # COK TOHUMLU, ESLESTIRILMIS OLCUM (2026-08-21).
+    #
+    # NEDEN: ayni ayna verisinde ayni ablasyon iki kez kosuldu ve YEDI ailenin
+    # BESINDE isaret degisti (konvektif +4,12 -> -0,41; epias +3,13 -> -1,51).
+    # Tohum gurultusu ~1,24 MAE, aile etkileri +-2 MAE -- yani kucuk etkilerin
+    # isareti yazi-turaydi. Tek kosunun ham deltasini SIRALAMA olarak
+    # raporlamak yanlis guven uretiyordu.
+    #
+    # ESLESTIRME: her tohum icin hem tam model hem ailesiz model AYNI tohum ve
+    # AYNI fold'larla kosulur; delta o cift icinde alinir. Ortak gurultu boylece
+    # sadelesir ve geriye ailenin kendi etkisi kalir.
+    tohum_deltalari: dict[str, list[float]] = {g.ad: [] for g in gruplar}
+    kolon_sayilari: dict[str, int] = {}
+    ailesiz_son: dict[str, float] = {}
+    taban_skorlar: list[float] = []
+
+    for tohum in TOHUMLAR[: args.tohum]:
+        tohum_params = dict(params)
+        tohum_params["random_state"] = int(tohum)
+        tablo = leave_one_group_out(
+            ozellik[kolonlar],
+            y,
+            folds,
+            groups=gruplar,
+            kind="lightgbm",
+            metric="mae",
+            params=tohum_params,
+            verbose=False,
         )
+        taban = float(tablo.attrs["taban_skor"])
+        taban_skorlar.append(taban)
+        for satir in tablo.itertuples():
+            tohum_deltalari[satir.grup].append(float(satir.skor_grupsuz) - taban)
+            kolon_sayilari[satir.grup] = int(satir.feature_sayisi)
+            ailesiz_son[satir.grup] = float(satir.skor_grupsuz)
+        print(f"  tohum {tohum}: taban MAE {taban:.2f}")
+
+    # OLCULEN gurultu tabani: tohumlar arasi TAM MODEL yayilimi. Sabit bir
+    # varsayim degil, bu kosunun kendi olcumu -- veri degisince esik de degisir.
+    tohum_gurultusu = (
+        float(np.std(taban_skorlar, ddof=1)) if len(taban_skorlar) > 1 else float("nan")
+    )
+    print(f"\n  OLCULEN tohum gurultusu (tam model yayilimi): {tohum_gurultusu:.3f} MAE")
 
     aileler = {}
-    for satir in tablo.itertuples():
-        aileler[satir.grup] = {
-            "mae_ailesiz": round(float(satir.skor_grupsuz), 4),
-            # delta = mae_ailesiz - mae_tam; pozitif = aile katki veriyor.
-            "delta": round(float(satir.skor_grupsuz) - float(tam.overall_score), 4),
-            "kolon_sayisi": int(satir.feature_sayisi),
+    for ad, deltalar in tohum_deltalari.items():
+        # Tek tohumda gurultu olculemez (nan); esigi 0 yaparak aile_hukmu'nun
+        # kendi "tek olcum -> KARARSIZ" kuralina birakiyoruz.
+        esik = 0.0 if math.isnan(tohum_gurultusu) else tohum_gurultusu
+        hukum = aile_hukmu(deltalar, gurultu=esik)
+        aileler[ad] = {
+            "mae_ailesiz_son_tohum": round(ailesiz_son[ad], 4),
+            "delta": round(hukum.ortalama, 4),
+            "delta_sapma": None if math.isnan(hukum.sapma) else round(hukum.sapma, 4),
+            "delta_tohumlar": [round(d, 4) for d in deltalar],
+            "karar": hukum.karar,
+            "gerekce": hukum.gerekce,
+            "kolon_sayisi": kolon_sayilari[ad],
         }
-    siralama = sorted(aileler, key=lambda ad: aileler[ad]["delta"], reverse=True)
+    # Siralama once KARARA, sonra buyukluge gore: "kararsiz" bir aile, ham
+    # deltasi buyuk diye faydali bir ailenin ustune cikmamali.
+    karar_sirasi = {"FAYDALI": 0, "KARARSIZ": 1, "ZARARLI": 2}
+    siralama = sorted(
+        aileler,
+        key=lambda ad: (karar_sirasi[aileler[ad]["karar"]], -aileler[ad]["delta"]),
+    )
 
     onem = tam.feature_importance.sort_values("importance", ascending=False).head(15)
     gain_top15 = [
@@ -373,6 +432,9 @@ def main() -> int:
         "tam_mae": round(float(tam.overall_score), 4),
         "sifir_baseline": round(sifir_baseline, 4),
         "fold_std": round(float(tam.fold_std), 4),
+        "n_tohum": int(args.tohum),
+        "tohum_gurultusu": round(tohum_gurultusu, 4),
+        "taban_skorlar": [round(v, 4) for v in taban_skorlar],
         "aileler": aileler,
         "siralama": siralama,
         "gain_top15": gain_top15,
@@ -381,14 +443,29 @@ def main() -> int:
     CIKTI.parent.mkdir(parents=True, exist_ok=True)
     CIKTI.write_text(json.dumps(sonuc, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
 
-    print(f"\n{'=' * 70}")
-    print("VERI GUNU ONCELIK LISTESI (delta = aile silinince MAE kaybi)")
+    print(f"\n{'=' * 78}")
+    print(
+        f"VERI GUNU ONCELIK LISTESI -- {args.tohum} tohum, eslestirilmis fark\n"
+        f"  delta = MAE(ailesiz) - MAE(tam), ayni tohum ve fold'larda.\n"
+        f"  Hukum icin etki HEM yayilimi HEM olculen tohum gurultusunu "
+        f"({tohum_gurultusu:.2f}) asmali."
+    )
+    print("=" * 78)
     for sira, ad in enumerate(siralama, start=1):
         bilgi = aileler[ad]
+        sapma = bilgi["delta_sapma"]
+        sapma_metni = f"+-{sapma:.2f}" if sapma is not None else "  ?  "
         print(
-            f"  {sira}. {ad:<8} delta={bilgi['delta']:+8.2f}  "
-            f"({bilgi['kolon_sayisi']} kolon, ailesiz MAE={bilgi['mae_ailesiz']:.2f})"
+            f"  {sira:>2}. {ad:<16} {bilgi['karar']:<9} "
+            f"{bilgi['delta']:+7.2f} {sapma_metni}  ({bilgi['kolon_sayisi']} kolon)"
         )
+    kararli = [ad for ad in siralama if aileler[ad]["karar"] != "KARARSIZ"]
+    print(
+        f"\n  {len(kararli)}/{len(siralama)} aile hukum aldi; "
+        f"{len(siralama) - len(kararli)} tanesi KARARSIZ (gurultuden ayirt edilemedi)."
+    )
+    if not kararli:
+        print("  DIKKAT: hicbir aile gurultuyu gecmedi -- bu siralamaya gore KARAR VERME.")
     print(f"\nYazildi: {CIKTI.relative_to(KOK)}")
     print(f"TAMAM ({time.perf_counter() - baslangic:.0f} sn)")
     return 0

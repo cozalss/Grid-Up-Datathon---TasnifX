@@ -491,6 +491,32 @@
           "yerlesim_orani"
         ]
       }
+    },
+    {
+      "path": "data/external/osm_altyapi_ilce.parquet",
+      "sha256": "74c4e593373989ff145e1ff98951a1dfaf907d8650d6d4360da1c93887ee052d",
+      "license": "ODbL-1.0",
+      "redistribution": "allowed",
+      "attribution": "(c) OpenStreetMap contributors, ODbL 1.0 (https://www.openstreetmap.org/copyright). Turetilmis veritabani ayni lisansla paylasilir.",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-21",
+        "evidence": "OpenStreetMap verisi ODbL 1.0 altinda yayimlanir; yeniden dagitim atif ve share-alike sartiyla serbesttir. Burada yayinlanan sey ham OSM degil, ilce bazinda TURETILMIS sayim/uzunluk toplamlaridir."
+      },
+      "source": {
+        "uri": "https://overpass-api.de/api/interpreter",
+        "snapshot_ref": "Overpass power=* , 96 ilce, alan-esdeger daire (r=sqrt(alan/pi), 3-25 km); hat uzunlugu orta noktasi daire icinde kalan segmentlerden; scripts/fetch_osm_altyapi.py",
+        "retrieved_at": "2026-08-21",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 96,
+        "required_columns": [
+          "il_key",
+          "ilce_key"
+        ]
+      }
     }
   ]
 }

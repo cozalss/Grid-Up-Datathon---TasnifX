@@ -2,104 +2,273 @@
   "tam_mae": 313.2608,
   "sifir_baseline": 366.9741,
   "fold_std": 96.47,
+  "n_tohum": 5,
+  "tohum_gurultusu": 1.0776,
+  "taban_skorlar": [
+    312.5511,
+    313.7241,
+    313.4172,
+    315.3451,
+    314.5902
+  ],
   "aileler": {
-    "lag": {
-      "mae_ailesiz": 321.768,
-      "delta": 8.5072,
-      "kolon_sayisi": 11
-    },
-    "arazi_ortusu": {
-      "mae_ailesiz": 315.5223,
-      "delta": 2.2615,
-      "kolon_sayisi": 10
-    },
-    "hava_kalitesi": {
-      "mae_ailesiz": 315.436,
-      "delta": 2.1752,
-      "kolon_sayisi": 8
-    },
-    "nem_toprak": {
-      "mae_ailesiz": 315.084,
-      "delta": 1.8232,
-      "kolon_sayisi": 15
-    },
-    "izsu": {
-      "mae_ailesiz": 314.5237,
-      "delta": 1.2629,
-      "kolon_sayisi": 2
-    },
-    "gunes": {
-      "mae_ailesiz": 314.1132,
-      "delta": 0.8524,
-      "kolon_sayisi": 7
-    },
-    "komsu": {
-      "mae_ailesiz": 314.0788,
-      "delta": 0.818,
-      "kolon_sayisi": 3
-    },
-    "hava": {
-      "mae_ailesiz": 313.487,
-      "delta": 0.2262,
-      "kolon_sayisi": 24
-    },
-    "hava_saatlik": {
-      "mae_ailesiz": 312.9309,
-      "delta": -0.3299,
-      "kolon_sayisi": 23
-    },
-    "konvektif": {
-      "mae_ailesiz": 312.8552,
-      "delta": -0.4056,
-      "kolon_sayisi": 8
-    },
-    "deprem": {
-      "mae_ailesiz": 312.6352,
-      "delta": -0.6256,
-      "kolon_sayisi": 42
-    },
-    "epias": {
-      "mae_ailesiz": 311.7495,
-      "delta": -1.5113,
-      "kolon_sayisi": 10
-    },
-    "yangin": {
-      "mae_ailesiz": 311.7143,
-      "delta": -1.5465,
-      "kolon_sayisi": 63
-    },
     "takvim": {
-      "mae_ailesiz": 311.683,
-      "delta": -1.5778,
-      "kolon_sayisi": 15
-    },
-    "turizm_il_aylik": {
-      "mae_ailesiz": 308.912,
-      "delta": -4.3488,
-      "kolon_sayisi": 1
+      "delta": -0.8267,
+      "delta_sapma": 2.0693,
+      "delta_tohumlar": [
+        1.9818,
+        0.6732,
+        -1.5895,
+        -2.8475,
+        -2.3515
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.85 >= |-0.83|)",
+      "kolon_sayisi": 15,
+      "mae_ailesiz_son_tohum": 312.2387
     },
     "tatil": {
-      "mae_ailesiz": 305.4335,
-      "delta": -7.8273,
-      "kolon_sayisi": 15
+      "delta": -7.9407,
+      "delta_sapma": 1.3896,
+      "delta_tohumlar": [
+        -6.3887,
+        -7.0682,
+        -9.1732,
+        -9.6148,
+        -7.4585
+      ],
+      "karar": "ZARARLI",
+      "gerekce": "etki hem yayilimi (1.24) hem tohum gurultusunu (1.08) asiyor",
+      "kolon_sayisi": 15,
+      "mae_ailesiz_son_tohum": 307.1317
+    },
+    "lag": {
+      "delta": 6.0251,
+      "delta_sapma": 2.2855,
+      "delta_tohumlar": [
+        10.0777,
+        5.2591,
+        4.5614,
+        5.3137,
+        4.9134
+      ],
+      "karar": "FAYDALI",
+      "gerekce": "etki hem yayilimi (2.04) hem tohum gurultusunu (1.08) asiyor",
+      "kolon_sayisi": 11,
+      "mae_ailesiz_son_tohum": 319.5035
+    },
+    "komsu": {
+      "delta": -0.6026,
+      "delta_sapma": 1.4229,
+      "delta_tohumlar": [
+        -0.2325,
+        1.167,
+        -0.9733,
+        -2.7377,
+        -0.2367
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.27 >= |-0.60|)",
+      "kolon_sayisi": 3,
+      "mae_ailesiz_son_tohum": 314.3535
+    },
+    "hava": {
+      "delta": -3.1801,
+      "delta_sapma": 1.8109,
+      "delta_tohumlar": [
+        -0.373,
+        -3.538,
+        -2.6019,
+        -4.3849,
+        -5.003
+      ],
+      "karar": "ZARARLI",
+      "gerekce": "etki hem yayilimi (1.62) hem tohum gurultusunu (1.08) asiyor",
+      "kolon_sayisi": 24,
+      "mae_ailesiz_son_tohum": 309.5872
+    },
+    "hava_saatlik": {
+      "delta": -0.8589,
+      "delta_sapma": 1.6468,
+      "delta_tohumlar": [
+        1.372,
+        -0.9815,
+        -0.2691,
+        -3.1743,
+        -1.2418
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.47 >= |-0.86|)",
+      "kolon_sayisi": 23,
+      "mae_ailesiz_son_tohum": 313.3484
+    },
+    "hava_kalitesi": {
+      "delta": -0.5692,
+      "delta_sapma": 1.6016,
+      "delta_tohumlar": [
+        1.215,
+        0.029,
+        -0.1325,
+        -3.1092,
+        -0.8482
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.43 >= |-0.57|)",
+      "kolon_sayisi": 8,
+      "mae_ailesiz_son_tohum": 313.742
+    },
+    "konvektif": {
+      "delta": 0.214,
+      "delta_sapma": 1.8459,
+      "delta_tohumlar": [
+        1.924,
+        2.4536,
+        -1.2884,
+        -0.5417,
+        -1.4774
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.65 >= |0.21|)",
+      "kolon_sayisi": 8,
+      "mae_ailesiz_son_tohum": 313.1128
+    },
+    "nem_toprak": {
+      "delta": -0.2711,
+      "delta_sapma": 1.3831,
+      "delta_tohumlar": [
+        -0.8021,
+        0.9361,
+        1.0111,
+        -2.3344,
+        -0.1664
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.24 >= |-0.27|)",
+      "kolon_sayisi": 15,
+      "mae_ailesiz_son_tohum": 314.4238
+    },
+    "gunes": {
+      "delta": -1.1122,
+      "delta_sapma": 0.7936,
+      "delta_tohumlar": [
+        0.1876,
+        -1.7235,
+        -1.3646,
+        -0.9446,
+        -1.7156
+      ],
+      "karar": "ZARARLI",
+      "gerekce": "etki hem yayilimi (0.71) hem tohum gurultusunu (1.08) asiyor",
+      "kolon_sayisi": 7,
+      "mae_ailesiz_son_tohum": 312.8745
+    },
+    "yangin": {
+      "delta": -0.3024,
+      "delta_sapma": 1.8211,
+      "delta_tohumlar": [
+        2.498,
+        -2.5763,
+        -0.1555,
+        -0.6839,
+        -0.5946
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.63 >= |-0.30|)",
+      "kolon_sayisi": 63,
+      "mae_ailesiz_son_tohum": 313.9956
+    },
+    "deprem": {
+      "delta": -0.8609,
+      "delta_sapma": 1.3813,
+      "delta_tohumlar": [
+        0.011,
+        -0.855,
+        0.824,
+        -2.7541,
+        -1.5305
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.24 >= |-0.86|)",
+      "kolon_sayisi": 42,
+      "mae_ailesiz_son_tohum": 313.0597
+    },
+    "turizm_il_aylik": {
+      "delta": -0.9016,
+      "delta_sapma": 0.7193,
+      "delta_tohumlar": [
+        -0.2082,
+        -1.456,
+        -0.2108,
+        -1.796,
+        -0.8368
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "tutarli ama PRATIK esigin altinda (|-0.90| <= tohum gurultusu 1.08)",
+      "kolon_sayisi": 1,
+      "mae_ailesiz_son_tohum": 313.7534
+    },
+    "izsu": {
+      "delta": -0.6032,
+      "delta_sapma": 1.4138,
+      "delta_tohumlar": [
+        0.1029,
+        0.9445,
+        -1.584,
+        0.0504,
+        -2.5298
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 1.26 >= |-0.60|)",
+      "kolon_sayisi": 2,
+      "mae_ailesiz_son_tohum": 312.0603
+    },
+    "epias": {
+      "delta": -1.5335,
+      "delta_sapma": 2.3794,
+      "delta_tohumlar": [
+        0.5122,
+        -2.9337,
+        1.0914,
+        -4.6284,
+        -1.7089
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 2.13 >= |-1.53|)",
+      "kolon_sayisi": 10,
+      "mae_ailesiz_son_tohum": 312.8812
+    },
+    "arazi_ortusu": {
+      "delta": -0.2185,
+      "delta_sapma": 2.9237,
+      "delta_tohumlar": [
+        2.9381,
+        0.2143,
+        2.1795,
+        -3.6402,
+        -2.7841
+      ],
+      "karar": "KARARSIZ",
+      "gerekce": "yayilim etkiyi yutuyor (2x standart hata 2.62 >= |-0.22|)",
+      "kolon_sayisi": 10,
+      "mae_ailesiz_son_tohum": 311.8061
     }
   },
   "siralama": [
     "lag",
-    "arazi_ortusu",
-    "hava_kalitesi",
-    "nem_toprak",
-    "izsu",
-    "gunes",
-    "komsu",
-    "hava",
-    "hava_saatlik",
     "konvektif",
-    "deprem",
-    "epias",
+    "arazi_ortusu",
+    "nem_toprak",
     "yangin",
+    "hava_kalitesi",
+    "komsu",
+    "izsu",
     "takvim",
+    "hava_saatlik",
+    "deprem",
     "turizm_il_aylik",
+    "epias",
+    "gunes",
+    "hava",
     "tatil"
   ],
   "gain_top15": [

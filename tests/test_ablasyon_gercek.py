@@ -5,7 +5,8 @@ Bu testler hafif sozlesmeyi kilitler:
 
   1. Betik derlenebilir (veri gununde SyntaxError ile karsilasmayalim).
   2. ``experiments/ablasyon_gercek.json`` gecerli ve zorunlu alanlari tasiyor.
-  3. Ic tutarlilik: delta = mae_ailesiz - tam_mae, siralama delta'ya gore
+  3. Ic tutarlilik: delta = tohum basina eslestirilmis farklarin ortalamasi,
+     siralama once KARARA sonra buyukluge gore
      azalan, panel satir = ilce x gun (tam izgara).
 
 OLCULEN (2026-08-15 kosusu, bu dosyanin dogruladigi JSON):
@@ -74,32 +75,49 @@ def test_cekirdek_ve_harici_ailelerin_hepsi_olculmus(sonuc):
     assert harici <= set(EXTERNAL_FAMILIES), f"bilinmeyen aile: {harici - set(EXTERNAL_FAMILIES)}"
     assert len(harici) >= 5, f"harici aileler baglanmamis gorunuyor: {sorted(harici)}"
     for ad, bilgi in sonuc["aileler"].items():
-        assert isinstance(bilgi["mae_ailesiz"], (int, float)), ad
-        assert bilgi["mae_ailesiz"] > 0, ad
+        assert isinstance(bilgi["mae_ailesiz_son_tohum"], (int, float)), ad
+        assert bilgi["mae_ailesiz_son_tohum"] > 0, ad
+        assert bilgi["karar"] in ("FAYDALI", "ZARARLI", "KARARSIZ"), ad
         assert isinstance(bilgi["delta"], (int, float)), ad
         assert isinstance(bilgi["kolon_sayisi"], int), ad
         assert bilgi["kolon_sayisi"] >= 1, f"{ad} ailesi bos -- kurulum bozuk"
 
 
 def test_delta_tanimi_tutarli(sonuc):
-    """delta = mae_ailesiz - tam_mae; JSON kendi icinde celismemeli.
+    """delta = tohum basina ESLESTIRILMIS farklarin ORTALAMASI.
 
-    Yuvarlama 4 basamak oldugu icin tolerans 1e-3 (iki yuvarlama farki).
+    2026-08-21'e kadar delta tek kosunun ham farkiydi (mae_ailesiz - tam_mae).
+    O tanim terk edildi: ayni veride ayni ablasyon iki kez kosuldugunda yedi
+    ailenin besinde ISARET degisiyordu, cunku etkiler tohum gurultusuyle ayni
+    mertebedeydi. Artik her tohum icin ayri fark alinir ve delta onlarin
+    ortalamasidir; ``mae_ailesiz_son_tohum`` yalnizca teshis icin tasinir ve
+    TEK BASINA delta'yi aciklamaz.
     """
     for ad, bilgi in sonuc["aileler"].items():
-        beklenen = bilgi["mae_ailesiz"] - sonuc["tam_mae"]
+        tohumlar = bilgi["delta_tohumlar"]
+        assert tohumlar, f"{ad}: tohum basina delta listesi bos"
+        beklenen = sum(tohumlar) / len(tohumlar)
         assert abs(bilgi["delta"] - beklenen) < 1e-3, (
-            f"{ad}: delta={bilgi['delta']} ama mae_ailesiz - tam_mae={beklenen:.4f}"
+            f"{ad}: delta={bilgi['delta']} ama tohum ortalamasi {beklenen:.4f}"
         )
 
 
 def test_siralama_deltaya_gore_azalan(sonuc):
-    """Siralama = veri gununun oncelik listesi -- en cok katki veren onde."""
+    """Siralama once KARARA, sonra buyukluge gore.
+
+    Ham delta'ya gore siralamak, gurultuden ayirt EDILEMEYEN bir aileyi
+    (KARARSIZ) kanitlanmis faydali bir ailenin ustune cikarabiliyordu --
+    yani listenin kendisi yanlis guven uretiyordu. Once hukum, sonra buyukluk.
+    """
     assert set(sonuc["siralama"]) == set(sonuc["aileler"])
     assert len(sonuc["siralama"]) == len(sonuc["aileler"]), "tekrarli aile adi var"
-    deltalar = [sonuc["aileler"][ad]["delta"] for ad in sonuc["siralama"]]
-    assert deltalar == sorted(deltalar, reverse=True), (
-        f"siralama delta'ya gore azalan degil: {deltalar}"
+    karar_sirasi = {"FAYDALI": 0, "KARARSIZ": 1, "ZARARLI": 2}
+    anahtarlar = [
+        (karar_sirasi[sonuc["aileler"][ad]["karar"]], -sonuc["aileler"][ad]["delta"])
+        for ad in sonuc["siralama"]
+    ]
+    assert anahtarlar == sorted(anahtarlar), (
+        f"siralama (karar, -delta) duzeninde degil: {anahtarlar}"
     )
 
 
