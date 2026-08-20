@@ -241,6 +241,61 @@ verilirse yükseltilmeli.
 **Son sözü ablasyon söyler.** İkisi de LOGO ablasyonundan geçmeden gönderime
 girmez — literatürdeki 2,6× bizim hedefimize birebir taşınmaz, yön kanıtıdır.
 
+### Ablasyon koştu (2026-08-21, ayna verisi) — ve asıl bulgu sıralama değil
+
+Tam model MAE **313,26** (hep-sıfır 366,97). Aile katkıları:
+
+| Sıra | Aile | Δ MAE | Sıra | Aile | Δ MAE |
+|---|---|---:|---|---|---:|
+| 1 | lag | **+8,51** | 9 | hava_saatlik | −0,33 |
+| 2 | **arazi_ortusu** | **+2,26** | 10 | konvektif | −0,41 |
+| 3 | hava_kalitesi | +2,18 | 11 | deprem | −0,63 |
+| 4 | nem_toprak | +1,82 | 12 | epias | −1,51 |
+| 5 | izsu | +1,26 | 13 | yangin | −1,55 |
+| 6 | gunes | +0,85 | 14 | takvim | −1,58 |
+| 7 | komsu | +0,82 | 15 | turizm_il_aylik | −4,35 |
+| 8 | hava | +0,23 | 16 | tatil | **−7,83** |
+
+Arazi örtüsü **ikinci sırada** — dün eklenen aile, `lag` dışındaki her şeyi
+geçti. Sevindirici. Ama asıl bulgu bu değil.
+
+### ⚠️ BU SIRALAMA GÜVENİLİR DEĞİL — ölçüldü
+
+**`fold_std = 96,47`.** Yani fold'lar arası oynaklık **96 MAE**, aile
+etkileri ise ±8 MAE. Etkiler gürültünün **onda biri** mertebesinde.
+
+Ampirik doğrulaması da var. Aynı ablasyon 2026-08-18'de de koşmuştu; iki
+koşuyu yan yana koyunca **yedi ailenin beşinde işaret DEĞİŞTİ**:
+
+| Aile | 08-18 | 08-21 | |
+|---|---:|---:|---|
+| konvektif (CAPE) | **+4,12** | **−0,41** | işaret döndü |
+| epias | **+3,13** | **−1,51** | işaret döndü |
+| hava_saatlik | **+2,65** | **−0,33** | işaret döndü |
+| gunes | **−1,16** | **+0,85** | işaret döndü |
+| hava | **−0,58** | **+0,23** | işaret döndü |
+| izsu | +2,69 | +1,26 | aynı yön |
+| tatil | −3,19 | −7,83 | aynı yön |
+
+Bu, "veri değişti" ile açıklanamaz — aynı ayna verisi. **Aile düzeyinde
+LOGO ablasyonu, bu örneklem büyüklüğünde gürültüye boğuluyor.**
+
+### Bundan çıkan üç sonuç
+
+1. **Sıralamaya karar verdirmeyin.** "arazi_ortusu 2. sırada" cümlesi tek
+   başına kanıt değil; bir sonraki koşuda 10. olabilir.
+2. **Tekrarlanan tek bulgu `tatil`.** İki koşuda da negatif ve büyük
+   (−3,19 → −7,83). Tatil ailesi muhtemelen gerçekten zarar veriyor.
+   Bu, güvenilebilecek tek aile-düzeyi sonucu.
+3. **Ablasyonun kendisinde metodolojik boşluk var:** ham delta raporluyor,
+   **gürültü tabanı yok**. `tune_gercek.py` bunu doğru yapıyor (eşleştirilmiş
+   fold farkı, tohum gürültüsü 1,24 eşiği). Ablasyon da aynı disipline
+   bağlanmalı — çok tohumlu, eşleştirilmiş fold farkıyla. Aksi hâlde
+   yarışma günü saatler harcanıp gürültü okunur.
+
+**Gün-1 kararı:** arazi örtüsünü bağla (ucuz, en kötü ihtimalle nötr),
+`tatil`i kapat, geri kalanın sıralamasına güvenme.
+
 ### ⚠️ OSM bulgusu — literatürün varsayımı Türkiye'de TUTMUYOR
 
 Çekim öncesi iki ilçe provası (Konak = kentsel, Bozdoğan = kırsal) şunu gösterdi:
