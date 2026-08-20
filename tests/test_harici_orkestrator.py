@@ -109,6 +109,32 @@ def _kaynaklari_yaz(kok: Path, panel: pd.DataFrame) -> None:
         {"zaman": saatler, "consumption": rng.normal(30000, 3000, len(saatler))}
     ).to_parquet(kok / "data/external/epias/tuketim_saatlik.parquet", index=False)
 
+    # STATIK ILCE TABLOLARI (docs/18 bolum A): ilce basina TEK satir, zaman
+    # boyutu yok. Tekillik burada bilerek saglanir -- coklanmis bir statik
+    # tablo paneli buyutur, orkestrator bunu hata yapar.
+    pd.DataFrame(
+        {
+            "il_key": ["izmir"] * len(ilceler),
+            "ilce_key": ilceler,
+            "agac_orani": rng.uniform(0.05, 0.85, len(ilceler)),
+            "yerlesim_orani": rng.uniform(0.01, 0.60, len(ilceler)),
+            "tarim_orani": rng.uniform(0.05, 0.50, len(ilceler)),
+            "ortu_piksel": 10000,
+            "ortu_yaricap_km": 12.0,
+        }
+    ).to_parquet(kok / "data/external/arazi_ortusu_ilce.parquet", index=False)
+    pd.DataFrame(
+        {
+            "il_key": ["izmir"] * len(ilceler),
+            "ilce_key": ilceler,
+            "osm_direk": rng.integers(0, 200, len(ilceler)).astype(float),
+            "osm_kule": rng.integers(0, 50, len(ilceler)).astype(float),
+            "osm_toplam_hat_km": rng.uniform(0.0, 80.0, len(ilceler)),
+            "osm_direk_yogunlugu": rng.uniform(0.0, 1.5, len(ilceler)),
+            "osm_yaricap_km": 12.0,
+        }
+    ).to_parquet(kok / "data/external/osm_altyapi_ilce.parquet", index=False)
+
 
 def test_tum_aileler_baglaniyor_ve_satir_sirasi_korunuyor(tmp_path: Path) -> None:
     panel = _panel()

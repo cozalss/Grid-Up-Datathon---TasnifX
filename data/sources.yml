@@ -463,6 +463,34 @@
           "li_min"
         ]
       }
+    },
+    {
+      "path": "data/external/arazi_ortusu_ilce.parquet",
+      "sha256": "a747fa654657ac807577b60ed5718ad1ad00f7b39820f0d6dad13c2753d8b789",
+      "license": "CC-BY-4.0",
+      "redistribution": "allowed",
+      "attribution": "ESA WorldCover 10m 2021 v200 (c) ESA WorldCover project / Contains modified Copernicus Sentinel data (2021), processed by ESA WorldCover consortium. Zanaga et al., doi:10.5281/zenodo.7254221. CC BY 4.0.",
+      "verification": {
+        "basis": "published-open-license",
+        "reviewed_at": "2026-08-20",
+        "evidence": "ESA WorldCover v200 is published free of charge under CC BY 4.0 on the AWS Open Data Registry (s3://esa-worldcover); redistribution permitted with attribution."
+      },
+      "source": {
+        "uri": "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map",
+        "snapshot_ref": "WorldCover 2021 v200, 96 ilce, alan-esdeger daire (r=sqrt(alan/pi), 3-25 km), 100 m ornekleme; scripts/fetch_arazi_ortusu.py",
+        "retrieved_at": "2026-08-20",
+        "immutable": true
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 96,
+        "required_columns": [
+          "il_key",
+          "ilce_key",
+          "agac_orani",
+          "yerlesim_orani"
+        ]
+      }
     }
   ]
 }

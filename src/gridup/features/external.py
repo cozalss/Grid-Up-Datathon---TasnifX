@@ -118,6 +118,29 @@ EXTERNAL_FAMILIES: tuple[str, ...] = (
     "turizm_il_aylik",
     "izsu",
     "epias",
+    # STATIK ILCE OZELLIKLERI (docs/18 bolum A). Zaman boyutu yoktur; ufuk
+    # kaydirmasi ve ambargo bunlara UYGULANMAZ cunku gelecege ait bir bilgi
+    # tasimazlar -- arazi ortusu ve sebeke altyapisi gun icinde degismez.
+    # Sirasi sonda: once zamanli aileler, sonra statikler.
+    "arazi_ortusu",
+    "osm_altyapi",
+)
+
+#: Statik ilce tablolari: (aile, gorece yol, feature olmayan kolonlar).
+#: ``ilce_key`` join anahtaridir; ``il_key`` ve olcum-usulu kolonlar (kac
+#: piksel okundu, hangi yaricap kullanildi) KOKEN bilgisidir, feature degil --
+#: panele girerse model "olcum penceresi buyuklugunu" ogrenmeye calisir.
+_STATIK_ILCE_TABLOLARI: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    (
+        "arazi_ortusu",
+        "data/external/arazi_ortusu_ilce.parquet",
+        ("il_key", "ortu_piksel", "ortu_yaricap_km"),
+    ),
+    (
+        "osm_altyapi",
+        "data/external/osm_altyapi_ilce.parquet",
+        ("il_key", "osm_yaricap_km"),
+    ),
 )
 
 #: ilce_key x tarih anahtariyla dogrudan birlesen gunluk tablolar.
@@ -221,6 +244,59 @@ def _gunluk_ilce_ekle(
         )
     oran = _eslesme_orani(cikti, frame, yeni_kolonlar[0], aile)
     return cikti.drop(columns=["_dis_anahtar", "_dis_tarih"]), yeni_kolonlar, oran
+
+
+def _statik_ilce_ekle(
+    sonuc: ExternalAttachment,
+    yol: Path,
+    *,
+    key_column: str,
+    drop_columns: Sequence[str],
+    aile: str,
+) -> None:
+    """Ilce basina TEK satirlik, zaman boyutsuz tabloyu panele baglar.
+
+    NEDEN AYRI BIR YOL: zamanli ailelerde ufuk kaydirmasi ve ambargo kapisi
+    yanlis bir join'i er ge yakalar. Statik tabloda oyle bir kapi YOKTUR --
+    zaman ekseni olmadigi icin sizinti denetimi devreye girmez. Bu yuzden
+    burada uc kontrol elle yapilir:
+
+      1. **Tekillik**: kaynakta ilce basina birden fazla satir varsa merge
+         paneli COKLAR ve hedef sessizce tekrarlanir. ``validate="many_to_one"``
+         bunu hata yapar.
+      2. **Satir sayisi**: birlestirme sonrasi satir sayisi degismemeli.
+      3. **Eslesme orani**: %0 ise ValueError (bkz. ``_eslesme_orani``).
+         Statikte bu ozellikle sinsidir: tum ilceler ayni NaN'i alir ve tablo
+         "dolu ama etkisiz" gorunur.
+    """
+    tablo = pd.read_parquet(yol)
+    if "ilce_key" not in tablo.columns:
+        raise KeyError(
+            f"{yol.name}: 'ilce_key' kolonu yok; statik tablo semasi ilce_key + feature."
+        )
+    tablo = tablo.drop(columns=[k for k in drop_columns if k in tablo.columns])
+    tablo = tablo.rename(columns={"ilce_key": "_dis_anahtar"})
+    tablo["_dis_anahtar"] = tablo["_dis_anahtar"].astype(str)
+
+    cikti = sonuc.frame.copy()
+    cikti["_dis_anahtar"] = cikti[key_column].astype(str)
+    oncesi = len(cikti)
+    yeni_kolonlar = [k for k in tablo.columns if k != "_dis_anahtar"]
+    if not yeni_kolonlar:
+        raise ValueError(f"'{aile}': dusulen kolonlardan sonra feature kalmadi ({yol.name}).")
+    cakisan = [k for k in yeni_kolonlar if k in cikti.columns]
+    if cakisan:
+        raise ValueError(f"'{aile}' ailesinin kolonlari panelde zaten var: {cakisan}")
+
+    cikti = cikti.merge(tablo, on="_dis_anahtar", how="left", validate="many_to_one")
+    if len(cikti) != oncesi:
+        raise RuntimeError(
+            f"'{aile}' birlestirmesi satir sayisini degistirdi ({oncesi} -> {len(cikti)})."
+        )
+    oran = _eslesme_orani(cikti, sonuc.frame, yeni_kolonlar[0], aile)
+    sonuc.frame = cikti.drop(columns=["_dis_anahtar"])
+    sonuc.families[aile] = yeni_kolonlar
+    sonuc.match_rates[aile] = oran
 
 
 def _il_anahtari_ekle(frame: pd.DataFrame, key_column: str, root: Path) -> pd.Series | None:
@@ -341,6 +417,15 @@ def _aile_ekle(
             )
             kolonlar = kolonlar + [k for k in frame.columns if k not in oncesi_kolonlar]
         sonuc.frame, sonuc.families[aile], sonuc.match_rates[aile] = frame, kolonlar, oran
+        return
+
+    statik = {ad: (yol, dus) for ad, yol, dus in _STATIK_ILCE_TABLOLARI}
+    if aile in statik:
+        gorece, dus = statik[aile]
+        yol = kok / gorece
+        if not yol.exists():
+            raise FileNotFoundError(str(yol))
+        _statik_ilce_ekle(sonuc, yol, key_column=key_column, drop_columns=dus, aile=aile)
         return
 
     if aile in {"yangin", "deprem"}:

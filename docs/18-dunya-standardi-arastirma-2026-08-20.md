@@ -186,16 +186,48 @@ Ve GBDT'den **tamamen farklı bir tümevarım yanlılığı** → B1'in aradığ
 
 ## Öncelik sırası (etki ÷ maliyet)
 
-| Sıra | İş | Süre | Neden burada |
+| Sıra | İş | Durum | Neden burada |
 |---|---|---|---|
-| 1 | **ESA WorldCover ilçe sınıf oranları** | ~4 saat | Statik, sızıntısız, lisansı temiz, literatürün merkezi |
-| 2 | **OSM altyapı sayımları + yoğunluklar** | ~1 gün | Literatürdeki en büyük tek ablasyon kazancı |
-| 3 | **Medyan harman + çeşitli aile** (NN, Ridge) | ~1 gün | Kavram hatasının düzeltilmesi; kapılar zaten kurulu |
-| 4 | **Tohum sayısı 5 → 25/100** | ~1 saat | Ölçülmüş kazanç, sıfır risk |
-| 5 | **Feature fabrikası + SHAP budama** | ~2 gün | Havuzu büyüt, sonra buda |
-| 6 | **Maruziyet normalizasyonu** (`hedef / maruziyet`) | ~3 saat | 1-2 geldikten sonra anlamlı |
-| 7 | Optuna ince ayar (P1-15) | 40 dk | Zaten hazır; **veri oturduktan sonra** |
-| — | TabPFN-2.5 | — | **Lisans cevabı gelmeden HAYIR** |
+| 1 | **ESA WorldCover ilçe sınıf oranları** | ✅ **bitti** | Statik, sızıntısız, lisansı temiz, literatürün merkezi |
+| 2 | **OSM altyapı sayımları + yoğunluklar** | ✅ **bitti** | Literatürdeki en büyük tek ablasyon kazancı |
+| 3 | **Medyan harman** | ✅ **bitti** | Kavram hatasının düzeltilmesi; kapılar zaten kurulu |
+| 4 | **Tohum eğrisi + `--tohum N`** | ✅ **bitti** | Sayıyı kanıta bağladı, tahmine değil |
+| 3b | Çeşitli aile (NN, Ridge) harmana | açık | Medyan toplayıcının asıl kazandığı yer |
+| 5 | **Feature fabrikası + SHAP budama** | açık | Havuzu büyüt, sonra buda |
+| 6 | **Maruziyet normalizasyonu** (`hedef / maruziyet`) | açık | 1-2 geldiği için artık anlamlı |
+| 7 | Optuna ince ayar (P1-15) | veri bekliyor | Betik hazır |
+| — | TabPFN-2.5 | **HAYIR** | Lisans cevabı gelmeden kullanılmaz |
+
+### 1-2 · Ne üretildi (2026-08-20)
+
+| Çıktı | Satır | İçerik |
+|---|---|---|
+| `data/external/arazi_ortusu_ilce.parquet` | 96/96 | 11 WorldCover sınıf oranı + `bitki_ortusu_orani`, `agac_yerlesim_orani` |
+| `data/external/osm_altyapi_ilce.parquet` | 96 | direk/kule/trafo/şalt sayıları, iletim & dağıtım hat-km, yoğunluklar |
+
+Ölçülen ağaç örtüsü ilçeler arasında **%3,1 – %82,9** aralığında (ortalama %42,3);
+yerleşim %0 – %63. En ağaçlı Kavaklıdere/Ula/Köyceğiz, en kentsel
+Karabağlar/Konak/Bayraklı — yani sinyal gerçek ve ilçeleri gerçekten ayırıyor.
+
+Her ikisi de `attach_external`'a **statik ilçe ailesi** olarak bağlandı
+(`arazi_ortusu`, `osm_altyapi`). Statik tablolar için ayrı bir birleştirme
+yolu yazıldı; nedeni şu incelik:
+
+> Zamanlı ailelerde yanlış bir join'i er geç ufuk/ambargo kapısı yakalar.
+> **Statik tabloda öyle bir kapı yoktur** — zaman ekseni olmadığı için sızıntı
+> denetimi hiç devreye girmez. Bu yüzden tekillik (`validate="many_to_one"`),
+> satır sayısı korunumu ve %0 eşleşmede `ValueError` elle kuruldu; 8 test bunu
+> sabitliyor.
+
+**Geometri uyarısı:** ilçe poligonumuz yok (referans tabloda merkez + alan var).
+Her ilçe **alanına eşit bir daireyle** temsil edildi. Yani sayılar "ilçe
+sınırlarının tam içi" değil, "ilçe merkezinin çevresinde, ilçe büyüklüğünde bir
+daire". Uzun/kıyı ilçelerinde sapar. İki aile de **aynı** daireyi kullanıyor ki
+ağaç oranı ile direk yoğunluğu aynı alanı ölçsün. Yarışma günü ilçe poligonu
+verilirse yükseltilmeli.
+
+**Son sözü ablasyon söyler.** İkisi de LOGO ablasyonundan geçmeden gönderime
+girmez — literatürdeki 2,6× bizim hedefimize birebir taşınmaz, yön kanıtıdır.
 
 **Kritik kural:** 1-6'nın hepsi mevcut kapılardan geçmek zorunda —
 LOGO ablasyonu + yuvalanmış kontrol + dış çapa. Ölçülmeyen hiçbir şey
