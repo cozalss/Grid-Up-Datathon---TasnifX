@@ -64,8 +64,35 @@ from .weather import add_physical_derivatives
 __all__ = [
     "ExternalAttachment",
     "EXTERNAL_FAMILIES",
+    "KapsamBoslugu",
     "attach_external",
 ]
+
+
+class KapsamBoslugu(ValueError):  # noqa: N818 -- Turkce ad; "Error" eki depo diline aykiri
+    """Kaynak dogru ama BASKA bir donemi kapsiyor -- aile atlanir, hat durmaz.
+
+    NEDEN AYRI BIR SINIF (2026-08-21, gercek veri provasi yakaladi)
+    ---------------------------------------------------------------
+    ``%0 eslesme`` iki tamamen farkli arizadan gelebilir ve ikisinin dogru
+    cevabi ZITTIR:
+
+      * **Anahtar bozuk** -- ilce adlari uyusmuyor. Durmak DOGRUDUR; devam
+        etmek sessiz bir NaN sutunu uretir ve model onu "bilgi yok" diye
+        degil "bu ilcede turizm sifir" diye okur.
+      * **Zaman kapsami ortusmuyor** -- anahtarlar gayet dogru, kaynak sadece
+        baska yillari kapsiyor. Durmak YANLISTIR; eksik olan tek bir ailedir.
+
+    Prova bunu ayna verisinde gosterdi: panel 2021-2022, ``turizm_geceleme``
+    2023-2025. ``year_lag=1`` ile istenen yillar 2020-2021 -- hic ortusmuyor.
+    Eski davranista TUM ``attach_external`` cagrisi ValueError ile duruyordu.
+    Yarisma gunu bu cok muhtemeldir (yarismanin donemi bizim tablolarimizinkiyle
+    ayni olmak zorunda degil) ve tek aile yuzunden gun-1 hattinin komple durmasi
+    kabul edilemez.
+
+    ValueError'dan turer ki bu istisnayi bilmeyen eski yakalamalar kirilmasin.
+    """
+
 
 #: Bir join'in gecerli sayilmasi icin gereken en dusuk eslesme orani.
 #: Altinda uyari, sifirda hata (anahtar tamamen bozuk demektir).
@@ -374,6 +401,11 @@ def attach_external(
         except FileNotFoundError as hata:
             sonuc.skipped[aile] = f"kaynak dosya yok ({hata})"
             continue
+        except KapsamBoslugu as hata:
+            # Kaynak saglam, anahtar saglam -- yalnizca donem ortusmuyor.
+            # Tek aile yuzunden tum hatti durdurmak yanlis olur; atla ve BILDIR.
+            sonuc.skipped[aile] = f"zaman kapsami ortusmuyor ({hata})"
+            continue
         yeni = [k for k in sonuc.frame.columns if k not in oncesi]
         if yeni and aile not in sonuc.families:
             sonuc.families[aile] = yeni
@@ -547,6 +579,33 @@ def _nokta_olay_ekle(
     sonuc.families[aile] = [k for k in sonuc.frame.columns if k not in oncesi]
 
 
+def _yil_kapsamini_dogrula(
+    zaman: pd.Series,
+    kaynak_tablo: pd.DataFrame,
+    *,
+    yil_lag: int,
+    aile: str,
+    kaynak: str,
+) -> None:
+    """Panelin ihtiyac duydugu yillar kaynakta VAR MI -- merge'den once bakar.
+
+    Raises:
+        KapsamBoslugu: hic ortusen yil yok. Anahtar sorunu DEGIL, donem sorunu.
+    """
+    if "yil" not in kaynak_tablo.columns:
+        return
+    # int()'e cevir: numpy skalerleri repr'de "np.int32(2020)" olarak basilir
+    # ve hata mesajini okunmaz hale getirir.
+    gereken = {int(y) - yil_lag for y in pd.to_datetime(zaman).dt.year.unique()}
+    mevcut = {int(y) for y in kaynak_tablo["yil"].dropna().unique()}
+    if gereken & mevcut:
+        return
+    raise KapsamBoslugu(
+        f"'{aile}': panel {sorted(gereken)} yillarini istiyor (yil_lag={yil_lag}), "
+        f"{kaynak} yalnizca {sorted(mevcut)} tasiyor. Anahtarlar degil DONEM ortusmuyor."
+    )
+
+
 def _turizm_yillik_ekle(
     sonuc: ExternalAttachment,
     *,
@@ -559,6 +618,13 @@ def _turizm_yillik_ekle(
     if not yol.exists():
         raise FileNotFoundError(str(yol))
     yillik = pd.read_parquet(yol)
+    # KAPSAM KONTROLU MERGE'DEN ONCE. ``add_annual_district_attribute``
+    # year_lag=1 kullanir: panelin YIL-1 degeri kaynakta olmali. Ortusme
+    # yoksa merge %0 doner ve "anahtar bozuk" hatasi verirdi -- oysa anahtar
+    # saglam, kapsam farkli. Ayrimi burada, iki tarafi da gorurken kuruyoruz.
+    _yil_kapsamini_dogrula(
+        sonuc.frame[time_column], yillik, yil_lag=1, aile="turizm_yillik", kaynak=yol.name
+    )
     nufus = population
     if nufus is None:
         ref_yolu = kok / REFERENCE_RELATIVE
@@ -591,6 +657,12 @@ def _turizm_aylik_ekle(
         raise FileNotFoundError(str(aylik_yolu if not aylik_yolu.exists() else yillik_yolu))
     aylik = pd.read_parquet(aylik_yolu)
     yillik = pd.read_parquet(yillik_yolu)
+    # Ilce tahmini YILLIK tablodan turedigi icin onun kapsamina hapsolur;
+    # ayrica lag_months=12 bir yil geriye bakar. Iki kisit da yil duzeyinde
+    # ayni kontrolle yakalanir.
+    _yil_kapsamini_dogrula(
+        sonuc.frame[time_column], yillik, yil_lag=1, aile="turizm_aylik", kaynak=yillik_yolu.name
+    )
     ref_yolu = kok / REFERENCE_RELATIVE
     ilceler = pd.read_parquet(ref_yolu)[["il_key", "ilce_key"]] if ref_yolu.exists() else None
     tahmin = district_monthly_estimate(yillik, aylik, districts=ilceler)

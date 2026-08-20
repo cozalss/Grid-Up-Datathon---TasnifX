@@ -48,6 +48,7 @@ from gridup.features import (  # noqa: E402
     add_calendar_features,
     add_turkish_holiday_features,
 )
+from gridup.features.external import attach_external  # noqa: E402
 from gridup.features.outage_reason import reason_family_report  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
@@ -175,21 +176,27 @@ def main() -> int:
     ozellik = add_calendar_features(panel, ZAMAN, include_year=False)
     ozellik = add_turkish_holiday_features(ozellik, ZAMAN)
 
-    if HAVA.exists():
-        hava = pd.read_parquet(HAVA)
-        oncesi = len(ozellik)
-        ozellik = ozellik.merge(
-            hava.drop(columns=[c for c in ("konum", "il", "ilce") if c in hava.columns]),
-            left_on=[GRUP, ZAMAN],
-            right_on=["ilce_key", "tarih"],
-            how="left",
-            validate="many_to_one",
-        )
-        assert len(ozellik) == oncesi, "hava merge satir sayisini degistirdi"
-        sicaklik = [c for c in ozellik.columns if "sicaklik" in c]
-        if sicaklik:
-            oran = ozellik[sicaklik[0]].notna().mean()
-            print(f"  hava join eslesme orani: %{oran * 100:.1f}")
+    # HARICI VERI -- ``attach_external`` UZERINDEN (2026-08-21 duzeltmesi).
+    #
+    # KOR NOKTA: bu betik havayi ELLE merge ediyordu ve ``attach_external``i
+    # hic cagirmiyordu. Yani "gercek veri provasi gecti" demek, gun-1'de
+    # gercekten kosacak olan harici veri yolunun test edildigi anlamina
+    # GELMIYORDU -- day_one.py attach_external kullanir, bu betik kullanmazdi.
+    # Ayni gun eklenen iki statik aile (arazi_ortusu, osm_altyapi) provadan
+    # gecmis GORUNUP hic denenmemisti. Prova artik gun-1 ile ayni kapiyi kullanir.
+    oncesi = len(ozellik)
+    ek = attach_external(
+        ozellik,
+        key_column=GRUP,
+        time_column=ZAMAN,
+        horizon=ufuk,
+        root=KOK,
+    )
+    ozellik = ek.frame
+    assert len(ozellik) == oncesi, "attach_external satir sayisini degistirdi"
+    print(f"  {ek.summary()}")
+    if ek.skipped:
+        print(f"  ATLANAN aile: {', '.join(ek.skipped)}")
     # Dagilim/frekans ozellikleri temporal CV'den once tum panelde fit edilmez.
     # Fold-ici encoder entegrasyonu gelene kadar bu aile fail-closed kapali.
 
