@@ -83,7 +83,12 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from fetch_weather import ARCHIVE_URL, RATE_LIMIT_BACKOFF, cap_end_date  # noqa: E402
+from fetch_weather import (  # noqa: E402
+    ARCHIVE_URL,
+    cap_end_date,
+    checkpoint_covers,
+    rate_limit_beklemesi,
+)
 
 from gridup.io_utils import atomic_write_dataframe  # noqa: E402
 
@@ -150,13 +155,11 @@ def _kos(
         try:
             response = requests.get(ARCHIVE_URL, params=params, timeout=timeout)
             if response.status_code == 429:
-                header = response.headers.get("Retry-After")
-                wait = (
-                    int(header)
-                    if header and header.isdigit()
-                    else RATE_LIMIT_BACKOFF[min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)]
+                wait, gerekce = rate_limit_beklemesi(response, attempt)
+                print(
+                    f"  {name}: hiz siniri (429); {wait} sn bekleniyor "
+                    f"({gerekce}) [{attempt}/{retries}]"
                 )
-                print(f"  {name}: hiz siniri (429); {wait} sn bekleniyor [{attempt}/{retries}]")
                 time.sleep(wait)
                 last_error = requests.HTTPError("429 Too Many Requests")
                 continue
@@ -302,7 +305,7 @@ def main() -> int:
     for sira, satir in enumerate(ilceler.itertuples(index=False), start=1):
         ilce_key = str(satir.ilce_key)
         ckpt = CKPT_DIR / f"{ilce_key}.parquet"
-        if ckpt.is_file() and not args.fresh:
+        if not args.fresh and checkpoint_covers(ckpt, args.start, end):
             print(f"[{sira:3d}/{len(ilceler)}] {ilce_key:16s} kontrol noktasindan")
             continue
         print(f"[{sira:3d}/{len(ilceler)}] {ilce_key:16s} ", end="", flush=True)

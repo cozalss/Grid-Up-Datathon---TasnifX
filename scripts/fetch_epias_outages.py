@@ -44,10 +44,14 @@ import sys
 import time
 from datetime import date, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from fetch_weather import rate_limit_beklemesi  # noqa: E402
 
 from gridup.epias import EpiasClient, EpiasRequestError, load_env_file  # noqa: E402
 from gridup.io_utils import publish_dataframe, validate_published_dataframe  # noqa: E402
@@ -94,8 +98,14 @@ def fetch_day(
         except EpiasRequestError as error:
             last_error = error
             if "429" in str(error) and attempt < retries:
-                wait = RATE_LIMIT_BACKOFF[min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)]
-                print(f"    hiz siniri; {wait} sn bekleniyor")
+                # EPIAS istemcisi ham yanit dondurmez; govde metni yerine
+                # hata metnini veriyoruz -- pencere ipucu varsa yakalanir.
+                wait, gerekce = rate_limit_beklemesi(
+                    SimpleNamespace(text=str(error), headers={}),
+                    attempt,
+                    merdiven=RATE_LIMIT_BACKOFF,
+                )
+                print(f"    hiz siniri; {wait} sn bekleniyor ({gerekce})")
                 time.sleep(wait)
                 continue
             if attempt < retries:

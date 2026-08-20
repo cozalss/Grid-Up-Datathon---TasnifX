@@ -36,7 +36,8 @@ from __future__ import annotations
 import argparse
 import sys
 import time
-from datetime import date, timedelta
+from collections.abc import Sequence
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -53,6 +54,67 @@ ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 # araligi + cok konum istegi dakikalik kotayi hizla tuketiyor ve 2-4 sn'lik
 # geri cekilme yetmiyor. Kota dakika bazli oldugu icin bir dakikayi asmali.
 RATE_LIMIT_BACKOFF = (65, 130, 300)
+
+#: 429 gövdesinde limitin HANGI pencereye ait oldugu yazar. Open-Meteo uc
+#: ayri pencere isletir ve mesajlari birbirinden farklidir::
+#:
+#:     "Minutely API request limit exceeded..."
+#:     "Hourly API request limit exceeded. Please try again in the next hour."
+#:     "Daily API request limit exceeded..."
+#:
+#: OLCULDU 2026-08-20 21:41: 96 ilcelik saatlik cekimde SAATLIK limit doldu.
+#: Merdiven (65/130/300 sn) dakikalik limit icin kalibre edilmisti; uc deneme
+#: toplam ~8 dakika eder. Sunucu ise "bir sonraki saat" diyordu -- 19 dakika.
+#: Sonuc: kalan 23 ilcenin her biri sekiz dakika bosuna deneyip DUSUYORDU,
+#: ve bunu yapmasi ~3 saat surecekti.
+#:
+#: Yarisma gunu bu somut bir kayiptir: veriyi tazelemek isteyen ekip,
+#: "yeniden dene" demesi yeterliyken cekimin basarisiz oldugunu gorur.
+#: Asagidaki yardimci, mesajdaki pencereyi okuyup SAAT SINIRINA kadar bekler.
+SAATLIK_LIMIT_TAVANI_SN = 3900  # 65 dk: saat siniri + emniyet payi
+
+
+def rate_limit_beklemesi(
+    yanit: object,
+    deneme: int,
+    *,
+    simdi: datetime | None = None,
+    merdiven: Sequence[int] = RATE_LIMIT_BACKOFF,
+) -> tuple[int, str]:
+    """429 icin ne kadar beklenecegini ve NEDENINI doner.
+
+    Oncelik sirasi:
+      1. ``Retry-After`` basligi -- sunucunun kendi soyledigi sure.
+      2. Govde metni SAATLIK/GUNLUK limit diyorsa: bir sonraki saat basina
+         kadar bekle. Kisa merdiven burada ise yaramaz.
+      3. Aksi halde dakikalik merdiven.
+
+    Returns:
+        ``(saniye, gerekce)``. Gerekce dogrudan kullaniciya yazdirilir --
+        "neden 19 dakika bekliyoruz" sorusu cevapsiz kalmasin.
+    """
+    baslik = getattr(yanit, "headers", {}).get("Retry-After") if yanit is not None else None
+    if baslik and str(baslik).isdigit():
+        return int(baslik), "sunucunun Retry-After basligi"
+
+    govde = ""
+    try:
+        govde = str(getattr(yanit, "text", "") or "").lower()
+    except Exception:  # noqa: BLE001 - govde okunamazsa merdivene dus
+        govde = ""
+
+    if "hour" in govde or "dai" in govde:
+        an = simdi or datetime.now()
+        sonraki_saat = (an + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+        saniye = int((sonraki_saat - an).total_seconds()) + 30  # emniyet payi
+        saniye = max(60, min(saniye, SAATLIK_LIMIT_TAVANI_SN))
+        return saniye, "SAATLIK/GUNLUK limit -- saat basina kadar"
+
+    # ``merdiven`` parametrik: EPIAS kendi kotasi icin ayri kalibre edilmis
+    # bir merdiven tutar (30/90/240). Saatlik-pencere tespiti ise ORTAKTIR --
+    # her saglayicida ayni sessiz kayip bicimini uretir.
+    return int(merdiven[min(deneme - 1, len(merdiven) - 1)]), "dakikalik merdiven"
+
 
 # Istekler arasi varsayilan bekleme. Uzun aralik cekerken artir.
 DEFAULT_PAUSE = 1.5
@@ -164,9 +226,63 @@ def load_reference_locations(path: str = REFERENCE_PATH) -> dict[str, tuple[floa
     }
 
 
-#: Open-Meteo ARSIV API'si gunumuze kadar degil, birkac gun GERIYE kadar
-#: veri sunar (isleme gecikmesi). Bu kadar gun geri cekiyoruz.
-ARCHIVE_LAG_DAYS = 6
+#: Arsiv API'sinin gercek ucu ile bugun arasindaki GUVENLIK PAYI (gun).
+#:
+#: OLCULDU 2026-08-20, iki konumda (Izmir 38.42/27.14, Mugla 37.21/28.36):
+#:
+#:     bugun+0 (2026-08-20) -> HTTP 200, son dolu gun 2026-08-20, 0 bos
+#:     bugun+1 (2026-08-21) -> HTTP 400
+#:     bugun+2, +3, +7      -> HTTP 400
+#:
+#: Yani sinir BUGUNDUR; API bugune kadar bosluksuz veri sunar ve yalnizca
+#: GELECEK bir tarih istenince 400 doner.
+#:
+#: Bu sabit onceden 6 idi ve OLCULMEMISTI -- "birkac gun geriden gelir"
+#: varsayimiydi. Bedeli somuttu: her cekici bitisi 6 gun geriye kirpiyor,
+#: tablolar birbirinden farkli gunlerde bitiyor ve panelin SON gunlerinde
+#: -- yani bir yarismada test blogunun oturdugu yerde -- feature'lar NaN
+#: kaliyordu. Egitimde dolu, testte bos bir feature EKSIK feature'dan daha
+#: kotudur: model ona guvenmeyi ogrenir, sonra kaybeder.
+#:
+#: 1 gun pay BILEREK birakildi: kosu gece yarisina denk gelirse ya da
+#: sunucunun gunu bizimkinden geride kalirsa 400 yemeyelim. 0 yapmak bu
+#: yarim gunluk pencerede tum cekimi kirardi.
+ARCHIVE_LAG_DAYS = 1
+
+
+def checkpoint_covers(path: Path, start: str, end: str, *, column: str = "tarih") -> bool:
+    """Kontrol noktasi istenen araligi KAPSIYOR mu?
+
+    NEDEN BU FONKSIYON ORTAK: uc cekicide ayni hata vardi (olculdu
+    2026-08-20) -- kontrol noktasi yalnizca VAR MI diye soruluyordu::
+
+        if ckpt.is_file() and not args.fresh:
+            continue          # <-- araligi kapsiyor mu? SORULMUYOR
+
+    Sonucu sessiz bayatliktir: ``--end`` ileri tasinir, betik "kontrol
+    noktasindan" yazip 96 ilcenin hepsini atlar, exit 0 doner ve tablo eski
+    tarihte kalir. Hicbir hata mesaji yoktur; yalnizca panelin son gunleri
+    bostur. Hava kalitesi tablosu tam olarak boyle 08-12'de takili kaldi.
+
+    Bozuk/yarim inmis parquet okunamazsa "kapsamiyor" sayilir: sessizce
+    eksik veri tasimaktansa yeniden indirmek ucuzdur.
+
+    Args:
+        column: Kapsam olculecek tarih kolonu -- gunluk tabloda ``tarih``,
+            ham saatlik tabloda ``zaman``.
+    """
+    if not path.exists():
+        return False
+    try:
+        span = pd.read_parquet(path, columns=[column])[column]
+    except (OSError, ValueError, KeyError):
+        return False
+    if span.empty:
+        return False
+    return bool(
+        pd.Timestamp(span.min()) <= pd.Timestamp(start)
+        and pd.Timestamp(span.max()) >= pd.Timestamp(end)
+    )
 
 
 def cap_end_date(end: str, *, today: date | None = None) -> tuple[str, str | None]:
@@ -236,14 +352,10 @@ def fetch_location(
             # yetmedi, ardisik 7 konum dustu. Sunucu Retry-After verirse ona
             # uy, vermezse dakika mertebesinde bekle.
             if response.status_code == 429:
-                header = response.headers.get("Retry-After")
-                wait = (
-                    int(header)
-                    if header and header.isdigit()
-                    else RATE_LIMIT_BACKOFF[min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)]
-                )
+                wait, gerekce = rate_limit_beklemesi(response, attempt)
                 print(
-                    f"  {name}: hiz siniri (429); {wait} sn bekleniyor [deneme {attempt}/{retries}]"
+                    f"  {name}: hiz siniri (429); {wait} sn bekleniyor "
+                    f"({gerekce}) [deneme {attempt}/{retries}]"
                 )
                 time.sleep(wait)
                 last_error = requests.HTTPError("429 Too Many Requests")

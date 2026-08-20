@@ -77,8 +77,8 @@ def forecast_frame(
         try:
             yanit = requests.get(FORECAST_URL, params=params, timeout=60)
             if yanit.status_code == 429:
-                bekle = fw.RATE_LIMIT_BACKOFF[min(deneme - 1, len(fw.RATE_LIMIT_BACKOFF) - 1)]
-                print(f"  {name}: hiz siniri; {bekle} sn")
+                bekle, gerekce = fw.rate_limit_beklemesi(yanit, deneme)
+                print(f"  {name}: hiz siniri; {bekle} sn ({gerekce})")
                 time.sleep(bekle)
                 son_hata = requests.HTTPError("429")
                 continue

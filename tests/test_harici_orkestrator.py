@@ -91,6 +91,10 @@ def _kaynaklari_yaz(kok: Path, panel: pd.DataFrame) -> None:
             "yil": [2025] * 12,
             "ay": list(range(1, 13)),
             "geceleme": [1000.0 * a for a in range(1, 13)],
+            # ``turizm_il_aylik`` ailesinin tasidigi tek olcu. Ham seviye
+            # yerine DOLULUK secildi cunku KTB kapsam rejimi degistiginde
+            # seviye 1.31x ziplarken doluluk 0.92x'te kalir (olculdu).
+            "doluluk": [5.0 * a for a in range(1, 13)],
         }
     ).to_parquet(kok / "data/external/turizm_aylik_il.parquet", index=False)
     pd.DataFrame(
@@ -203,3 +207,69 @@ def test_gecmise_donuk_kaynaklar_ufuk_kadar_kaydirilmis(tmp_path: Path) -> None:
     ilk_gunler = sonuc.frame["gun"] <= sonuc.frame["gun"].min() + pd.Timedelta(days=5)
     epias_kolon = sonuc.families["epias"][0]
     assert sonuc.frame.loc[ilk_gunler, epias_kolon].isna().any()
+
+
+def test_il_aylik_turizm_ham_seviye_tasimaz(tmp_path: Path) -> None:
+    """``turizm_il_aylik`` yalnizca DOLULUK tasir -- ham geceleme ASLA.
+
+    Bu bir stil tercihi degil, OLCULMUS bir karardir (2026-08-20). KTB'nin
+    kapsam rejimi 2022/09 ve 2025/07'de degisti; Ege 5 ilinde rejim sinirinda
+    tanimsal siçrama olculdu:
+
+        ham geceleme 1.31x · yil_payi 1.31x · doluluk 0.92x
+
+    1.31x'lik siçrama 2025/07'de, yani bir yarismada test blogunun oturdugu
+    yerde baslar ve model onu "turizm patladi" diye okur. Doluluk oran
+    oldugu icin pay ve payda birlikte genisler, kirilma sadelesir.
+
+    Bu test kirilirsa: biri il aylik turizmine ham seviye kolonu eklemistir.
+    Once kirilmayi yeniden olc; olcmeden geri koyma.
+    """
+    panel = _panel()
+    _kaynaklari_yaz(tmp_path, panel)
+    sonuc = attach_external(
+        panel,
+        key_column="ilce_key",
+        time_column="gun",
+        horizon=7,
+        root=tmp_path,
+        families=["turizm_il_aylik"],
+    )
+    kolonlar = sonuc.families["turizm_il_aylik"]
+    assert kolonlar, "aile hic kolon uretmedi"
+
+    yasak = [k for k in kolonlar if "geceleme" in k or "gelis" in k or "yil_payi" in k]
+    assert not yasak, (
+        f"Il aylik turizm ailesi rejim-kirilmali kolon tasiyor: {yasak}. "
+        "Yalnizca oran bazli olculer (doluluk) tasinmali -- gerekce docstring'de."
+    )
+    assert all("doluluk" in k for k in kolonlar), (
+        f"Beklenen tek olcu doluluk, gelen kolonlar: {kolonlar}"
+    )
+
+
+def test_il_aylik_turizm_ilce_tablosuna_bagimli_degil(tmp_path: Path) -> None:
+    """Aile, dar kapsamli ILCE tablosu OLMADAN da calismali.
+
+    ``turizm_aylik`` ailesi ilce tablosuna (2023-2025) bagimli oldugu icin
+    panelin 2020-2023 bolumunde tamamen NaN kaliyordu -- egitimde bos,
+    testte dolu, yani kapsam boslugunun tehlikeli cesidi. Yeni aile bu
+    bagimliligi TASIMAMALI; bu test onu dosyayi silerek zorlar.
+    """
+    panel = _panel()
+    _kaynaklari_yaz(tmp_path, panel)
+    (tmp_path / "data/external/turizm_geceleme.parquet").unlink()
+
+    sonuc = attach_external(
+        panel,
+        key_column="ilce_key",
+        time_column="gun",
+        horizon=7,
+        root=tmp_path,
+        families=["turizm_il_aylik"],
+    )
+    kolonlar = sonuc.families["turizm_il_aylik"]
+    assert not sonuc.skipped, f"ilce tablosu yokken aile atlandi: {sonuc.skipped}"
+    assert sonuc.frame[kolonlar].notna().any().all(), (
+        "ilce tablosu yokken aile tamamen NaN uretti -- bagimlilik hala var."
+    )

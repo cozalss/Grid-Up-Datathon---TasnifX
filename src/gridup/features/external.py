@@ -115,6 +115,7 @@ EXTERNAL_FAMILIES: tuple[str, ...] = (
     "deprem",
     "turizm_yillik",
     "turizm_aylik",
+    "turizm_il_aylik",
     "izsu",
     "epias",
 )
@@ -122,17 +123,45 @@ EXTERNAL_FAMILIES: tuple[str, ...] = (
 #: ilce_key x tarih anahtariyla dogrudan birlesen gunluk tablolar.
 #: (aile, gorece yol, atlanacak kolonlar)
 _GUNLUK_ILCE_TABLOLARI: tuple[tuple[str, str, tuple[str, ...]], ...] = (
-    ("hava", "data/external/hava_gunluk.parquet", ("konum", "konum_key", "il_key")),
-    ("hava_saatlik", "data/external/hava_saatlik_turev.parquet", ()),
-    ("hava_kalitesi", "data/external/hava_kalitesi_gunluk.parquet", ()),
-    ("konvektif", "data/external/konvektif_gunluk.parquet", ()),
-    ("nem_toprak", "data/external/nem_toprak_gunluk.parquet", ()),
+    # ``hava_tahmin`` KOKEN BILGISIDIR, feature degil: satirin arsivden mi
+    # tahmin API'sinden mi geldigini soyler. Feature olarak verilirse zararli
+    # bir sey olur -- egitim satirlarinin TAMAMI arsivdir, yani kolon egitimde
+    # sabittir ve model onu hic ogrenemez; buna karsilik gelecege tahmin
+    # uretilirken TAMAMI 1 olur. Egitimde sabit / testte sabit ama BASKA bir
+    # sabit: tasidigi tek sey "bu satir test blogunda" bilgisidir.
+    # Tabloda KALIR (denetim ve hizalama kapisi onu kullanir), panele girmez.
+    (
+        "hava",
+        "data/external/hava_gunluk.parquet",
+        ("konum", "konum_key", "il_key", "hava_tahmin"),
+    ),
+    # ``tahmin`` bayragi -- ``hava_tahmin`` ile AYNI gerekce: satirin arsivden
+    # mi forecast API'sinden mi geldigini soyleyen KOKEN bilgisidir. Egitim
+    # satirlarinin tamami arsiv oldugu icin egitimde sabittir; feature olarak
+    # tasidigi tek sey "bu satir gelecekte" bilgisi olur.
+    # scripts/kopru_saatlik.py bu kolonu ekler.
+    ("hava_saatlik", "data/external/hava_saatlik_turev.parquet", ("tahmin",)),
+    ("hava_kalitesi", "data/external/hava_kalitesi_gunluk.parquet", ("tahmin",)),
+    ("konvektif", "data/external/konvektif_gunluk.parquet", ("tahmin",)),
+    ("nem_toprak", "data/external/nem_toprak_gunluk.parquet", ("tahmin",)),
 )
 
 #: Nokta olay kataloglari: (aile, yol, agirlik kolonu, yaricaplar km).
 _NOKTA_OLAYLAR: tuple[tuple[str, str, str | None, tuple[float, ...]], ...] = (
-    ("yangin", "data/external/yanginlar.parquet", "frp", (25.0, 50.0)),
-    ("deprem", "data/external/depremler.parquet", "buyukluk", (50.0, 100.0)),
+    # Uc yaricap UC AYRI MEKANIZMA olcer, ayni seyin uc olcegi degil:
+    #   10 km -- dogrudan hasar: alev/isi hattin kendisine ulasir, direk ve
+    #            iletken zarar gorur. En seyrek ama en siddetli yol.
+    #   25 km -- duman/aerosol: iyonize duman izolator yuzeyinde ATLAMAYA
+    #            (flashover) yol acar; yangina temas etmeden kesinti olur.
+    #   50 km -- bolgesel yangin havasi vekili: sicak+kuru+ruzgarli rejimin
+    #            kendisi zaten yuk ve ariza artirir.
+    # 10 km OLCULEREK eklendi (2026-08-20): yaricap basina maliyet ~0.4 sn
+    # (232.608 satirlik panelde toplam 1.17 sn olculdu), yani ucuz.
+    ("yangin", "data/external/yanginlar.parquet", "frp", (10.0, 25.0, 50.0)),
+    # Agirlik "buyukluk" DEGIL "enerji": Richter logaritmiktir, dolayisiyla
+    # buyuklukleri toplamak otuz kucuk sarsintiyi bir buyuk depremden onemli
+    # gosterirdi. ``enerji`` = 10^(1.5*(M-4)), bkz. scripts/fetch_deprem.py.
+    ("deprem", "data/external/depremler.parquet", "enerji", (50.0, 100.0)),
 )
 
 
@@ -334,6 +363,8 @@ def _aile_ekle(
         )
     elif aile == "turizm_aylik":
         _turizm_aylik_ekle(sonuc, kok=kok, key_column=key_column, time_column=time_column)
+    elif aile == "turizm_il_aylik":
+        _turizm_il_aylik_ekle(sonuc, kok=kok, key_column=key_column, time_column=time_column)
     elif aile == "izsu":
         _izsu_ekle(sonuc, kok=kok, key_column=key_column, time_column=time_column)
     elif aile == "epias":
@@ -490,6 +521,88 @@ def _turizm_aylik_ekle(
         prefix="turizm_ay",
     )
     sonuc.families["turizm_aylik"] = [k for k in sonuc.frame.columns if k not in oncesi]
+
+
+#: Il aylik turizminden panele TASINAN tek olcu: DOLULUK ORANI.
+#:
+#: NEDEN SADECE BU, ham "geceleme" degil (OLCULDU 2026-08-20):
+#: ``turizm_aylik_il`` uc farkli KAPSAM REJIMI tasiyor -- KTB'nin hangi tesis
+#: turlerini saydigi 2022 Eylul'de ve 2025 Temmuz'da degisti:
+#:
+#:     rejim 1: 2019-2022/08  (isletme belgeli)
+#:     rejim 2: 2022/09-2025/06 (isletme + isletme_basit)
+#:     rejim 3: 2025/07-2026   (isletme_basit)
+#:
+#: Rejim sinirinda seviye TANIMSAL olarak ziplar. Ege 5 ilinde ay bazinda
+#: yillik oranla olculdu (rejim degismeyen aylar kontrol grubu):
+#:
+#:     ham geceleme : 1.31x kirilma
+#:     yil_payi     : 1.31x kirilma  (gecis yilinda yil toplami iki rejimi karistiriyor)
+#:     DOLULUK      : 0.92x          -- pratikte kirilma yok
+#:
+#: 1.31x'lik bir siçrama tam 2025/07'de, yani bir yarismada test blogunun
+#: oturdugu yerde baslar. Model onu "turizm patladi" diye okur; gercekte
+#: yalnizca sayim tanimi genisledi. Doluluk ORAN oldugu icin pay ve payda
+#: birlikte genisler ve kirilma buyuk olcude sadelesir.
+#:
+#: Bu yuzden ``add_year_share=False``: yil payi turevi de kirilmayi tasiyor.
+IL_AYLIK_TURIZM_KOLONLARI = ["doluluk"]
+
+
+def _turizm_il_aylik_ekle(
+    sonuc: ExternalAttachment, *, kok: Path, key_column: str, time_column: str
+) -> None:
+    """Il aylik turizm dolulugunu panele baglar -- ILCE tablosuna BAGIMSIZ.
+
+    NEDEN AYRI BIR AILE: ``turizm_aylik`` ailesi, il aylik serisini
+    ``turizm_geceleme`` (ILCE, yalnizca 2023-2025) ile carparak ilce tahmini
+    uretir; bu yuzden ilce tablosunun dar kapsamina HAPSOLUR. Olculdu
+    (2026-08-20): turizm feature'lari 2020-2023 panel satirlarinin %0'inda,
+    2024-2026'nin %100'unde doluydu.
+
+    Bu, kapsam boslugunun TEHLIKELI cesididir: egitimin ilk dort yili
+    tamamen bos, test blogu tamamen dolu. Model feature'i yalnizca son iki
+    yildan ogrenir ve o iki yilin rejimine asiri uyum saglar.
+
+    Il serisi (81 il, 2019-2026, Ege 5 ilinde %0 NaN) bu kisiti tasimaz:
+    ilce tablosuna hic dokunmadan panelin TAMAMINI kapsar. Ilce cozunurlugu
+    kaybi bilincli takas -- bos bir feature'in cozunurlugu zaten yoktur.
+    """
+    aylik_yolu = kok / "data/external/turizm_aylik_il.parquet"
+    if not aylik_yolu.exists():
+        raise FileNotFoundError(str(aylik_yolu))
+    aylik = pd.read_parquet(aylik_yolu)
+
+    ref_yolu = kok / REFERENCE_RELATIVE
+    if not ref_yolu.exists():
+        raise FileNotFoundError(str(ref_yolu))
+    ilceler = pd.read_parquet(ref_yolu)[["ilce_key", "il_key"]]
+
+    calisma = sonuc.frame.copy()
+    calisma["_il_key"] = (
+        calisma[key_column].astype(str).map(ilceler.set_index("ilce_key")["il_key"].astype(str))
+    )
+    eslesmeyen = int(calisma["_il_key"].isna().sum())
+    if eslesmeyen:
+        raise ValueError(
+            f"{eslesmeyen} panel satirinin ilce anahtari referans tablosunda yok; "
+            "il eslemesi yapilamadi. Sessiz NaN yerine durduruldu."
+        )
+
+    oncesi = list(sonuc.frame.columns)
+    calisma = add_monthly_attribute(
+        calisma,
+        aylik,
+        key_column="_il_key",
+        monthly_key_column="il_key",
+        time_column=time_column,
+        value_columns=IL_AYLIK_TURIZM_KOLONLARI,
+        lag_months=12,
+        add_year_share=False,
+        prefix="turizm_il",
+    )
+    sonuc.frame = calisma.drop(columns=["_il_key"])
+    sonuc.families["turizm_il_aylik"] = [k for k in sonuc.frame.columns if k not in oncesi]
 
 
 def _izsu_ekle(sonuc: ExternalAttachment, *, kok: Path, key_column: str, time_column: str) -> None:

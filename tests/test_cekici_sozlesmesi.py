@@ -69,6 +69,17 @@ def test_cap_end_date_donusu_cift_olarak_acilir(betik: Path) -> None:
     assert not hatalar, f"{betik.name}: " + "; ".join(hatalar)
 
 
+def _modul_yukle(ad: str):
+    """``scripts/<ad>.py`` dosyasini modul olarak yukler."""
+    sys.path.insert(0, str(BETIK_DIZINI))
+    spec = importlib.util.spec_from_file_location(ad, BETIK_DIZINI / f"{ad}.py")
+    assert spec is not None and spec.loader is not None
+    modul = importlib.util.module_from_spec(spec)
+    sys.modules[ad] = modul
+    spec.loader.exec_module(modul)
+    return modul
+
+
 def test_cap_end_date_gercekten_cift_donuyor() -> None:
     """Sozlesmenin kendisi: fonksiyon iki elemanli demet dondurur.
 
@@ -77,14 +88,7 @@ def test_cap_end_date_gercekten_cift_donuyor() -> None:
     degere donerse AST testi yanlis yere bagirmaya baslar -- bu test onu
     ayirt eder.
     """
-    sys.path.insert(0, str(BETIK_DIZINI))
-    spec = importlib.util.spec_from_file_location(
-        "fetch_weather", BETIK_DIZINI / "fetch_weather.py"
-    )
-    assert spec is not None and spec.loader is not None
-    modul = importlib.util.module_from_spec(spec)
-    sys.modules["fetch_weather"] = modul
-    spec.loader.exec_module(modul)
+    modul = _modul_yukle("fetch_weather")
 
     sonuc = modul.cap_end_date("2020-01-01")
     assert isinstance(sonuc, tuple) and len(sonuc) == 2, (
@@ -117,3 +121,226 @@ def test_cekici_yazmadan_once_dogruluyor(betik: Path) -> None:
         f"{betik.name} parquet yaziyor ama reddeden bir dogrulama yolu yok. "
         "Bozuk veri sessizce yayinlanir."
     )
+
+
+@pytest.mark.parametrize("betik", _fetch_betikleri(), ids=lambda p: p.name)
+def test_kontrol_noktasi_kapsam_ile_atlanir(betik: Path) -> None:
+    """Kontrol noktasi VARLIGA degil KAPSAMA gore atlanmalidir.
+
+    2026-08-20'de olculen hata: uc cekici (hava kalitesi, konvektif, nem
+    toprak) kontrol noktasini yalnizca dosya var mi diye sorup atliyordu::
+
+        if ckpt.is_file() and not args.fresh:
+            continue                      # araligi kapsiyor mu? SORULMADI
+
+    Bunun bedeli SESSIZ BAYATLIKTIR ve tam olarak sessiz oldugu icin
+    tehlikelidir: ``--end`` ileri tasinir, betik 96 ilcenin hepsi icin
+    "kontrol noktasindan" yazar, exit 0 doner ve tablo eski tarihte kalir.
+    Hicbir hata mesaji yoktur -- yalnizca panelin son gunleri feature'siz
+    kalir ve model, egitimde dolu / testte bos bir kolona guvenmeyi ogrenir.
+
+    Kural: kontrol noktasi dizini kullanan her cekici ``checkpoint_covers``
+    cagirmak ZORUNDADIR.
+    """
+    kaynak = betik.read_text(encoding="utf-8")
+    kullaniyor = "CKPT_DIR" in kaynak or "CHECKPOINT_DIR" in kaynak
+    if not kullaniyor:
+        pytest.skip(f"{betik.name} kontrol noktasi dizini kullanmiyor")
+
+    assert "checkpoint_covers(" in kaynak, (
+        f"{betik.name} kontrol noktasi kullaniyor ama kapsam kontrolu YOK. "
+        "Dosyanin varligi, istenen [start, end] araligini kapsadigi anlamina "
+        "gelmez; `--end` ileri tasindiginda betik sessizce eski veriyi "
+        "yeniden yayinlar. Dogrusu: "
+        "`if not args.fresh and checkpoint_covers(ckpt, args.start, end): continue`"
+    )
+
+
+def test_checkpoint_covers_gercekten_kapsam_olcuyor(tmp_path: Path) -> None:
+    """Kapinin ISE YARADIGININ kaniti -- her zaman True donen bir fonksiyon
+    da yukaridaki metin taramasini gecerdi.
+
+    Dar araligi olan bir kontrol noktasi dosyasi yazip, genis bir aralik
+    icin REDDEDILDIGINI dogruluyoruz.
+    """
+    import pandas as pd
+
+    modul = _modul_yukle("fetch_weather")
+    yol = tmp_path / "ckpt.parquet"
+    pd.DataFrame({"tarih": pd.date_range("2020-01-01", "2026-08-12", freq="D")}).to_parquet(yol)
+
+    assert modul.checkpoint_covers(yol, "2020-01-01", "2026-08-12"), (
+        "Tam olarak kapsanan aralik reddedildi -- sinir kosulu yanlis."
+    )
+    assert not modul.checkpoint_covers(yol, "2020-01-01", "2026-08-19"), (
+        "Kontrol noktasi 08-12'de bitiyor ama 08-19 istegi KABUL edildi. "
+        "Sessiz bayatlik kapisi calismiyor."
+    )
+    assert not modul.checkpoint_covers(yol, "2019-01-01", "2026-08-12"), (
+        "Kontrol noktasi 2020'de basliyor ama 2019 istegi KABUL edildi."
+    )
+    assert not modul.checkpoint_covers(tmp_path / "yok.parquet", "2020-01-01", "2020-01-02"), (
+        "Var olmayan dosya icin True dondu."
+    )
+
+
+class _SahteYanit:
+    """429 yanitinin test icin yeterli yuzeyi: govde metni + basliklar."""
+
+    def __init__(self, text: str = "", headers: dict[str, str] | None = None) -> None:
+        self.text = text
+        self.headers = headers or {}
+
+
+def test_saatlik_limit_saat_basina_kadar_bekliyor() -> None:
+    """SAATLIK limit geldiginde dakikalik merdiven KULLANILMAMALI.
+
+    Open-Meteo uc ayri pencere isletir (dakikalik/saatlik/gunluk) ve 429
+    govdesinde hangisinin doldugunu yazar. Merdiven (65/130/300 sn) yalnizca
+    DAKIKALIK limit icin dogrudur; uc deneme toplam ~8 dakikadir.
+
+    OLCULDU 2026-08-20 21:41: 96 ilcelik saatlik cekimde SAATLIK limit doldu
+    ve sunucu "bir sonraki saat" dedi -- 19 dakika. Eski merdivenle kalan 23
+    ilcenin her biri sekiz dakika bosuna deneyip DUSECEKTI.
+    """
+    import datetime as dt
+
+    modul = _modul_yukle("fetch_weather")
+    an = dt.datetime(2026, 8, 20, 21, 41, 0)
+    yanit = _SahteYanit(
+        '{"error":true,"reason":"Hourly API request limit exceeded. '
+        'Please try again in the next hour."}'
+    )
+    saniye, gerekce = modul.rate_limit_beklemesi(yanit, 1, simdi=an)
+
+    # 21:41 -> 22:00:30 = 1170 sn
+    assert saniye == 1170, f"saat basina kadar beklenmedi: {saniye} sn"
+    assert "SAATLIK" in gerekce
+    assert saniye > max(modul.RATE_LIMIT_BACKOFF), (
+        "Saatlik limit icin beklenen sure dakikalik merdivenin en uzun basamagindan "
+        "kisa -- cekim limit sifirlanmadan once pes eder."
+    )
+
+
+def test_dakikalik_limit_merdiveni_kullaniyor() -> None:
+    """Dakikalik limitte saat basina kadar beklemek de YANLIS olurdu.
+
+    Duzeltmenin ters yone tasmadigini olcer: 19 dakika beklemek gereksiz
+    yere cekimi durdurur.
+    """
+    import datetime as dt
+
+    modul = _modul_yukle("fetch_weather")
+    yanit = _SahteYanit('{"error":true,"reason":"Minutely API request limit exceeded."}')
+    for deneme, beklenen in enumerate(modul.RATE_LIMIT_BACKOFF, start=1):
+        saniye, gerekce = modul.rate_limit_beklemesi(
+            yanit, deneme, simdi=dt.datetime(2026, 8, 20, 21, 41, 0)
+        )
+        assert saniye == beklenen, f"deneme {deneme}: {saniye} != {beklenen}"
+        assert "dakikalik" in gerekce
+
+
+def test_retry_after_basligi_her_seyi_ezer() -> None:
+    """Sunucu kendi suresini soylediyse ona uyulur -- tahmin yurutulmez."""
+    modul = _modul_yukle("fetch_weather")
+    yanit = _SahteYanit('{"reason":"Hourly API request limit exceeded."}', {"Retry-After": "42"})
+    saniye, gerekce = modul.rate_limit_beklemesi(yanit, 1)
+    assert saniye == 42
+    assert "Retry-After" in gerekce
+
+
+@pytest.mark.parametrize("betik", _fetch_betikleri(), ids=lambda p: p.name)
+def test_429_beklemesi_ortak_yardimciyi_kullanir(betik: Path) -> None:
+    """Hicbir cekici geri cekilme merdivenini KENDI indekslememeli.
+
+    2026-08-20'de bu tam olarak yasandi: ``fetch_weather.py``deki merdiven
+    saatlik limiti tanıyacak sekilde duzeltildi, ama ALTI cekicinin her
+    birinde merdivenin kendi kopyasi vardi ve hicbiri duzelmedi. Cekim
+    yeniden baslatildiginda yine "65 sn bekleniyor" yazdi.
+
+    Kural: 429 beklemesi ``rate_limit_beklemesi`` uzerinden hesaplanir.
+    Merdivenin KENDISI (or. EPIAS'in ayri kalibrasyonu) betikte tanimli
+    kalabilir; ``merdiven=`` parametresiyle gecirilir.
+    """
+    kaynak = betik.read_text(encoding="utf-8")
+    # Tetikleyici GERCEK 429 ele alisi olmali. Duz "429" aramasi yorumlarda
+    # ve URL parcalarindaki rakamlarda da eslesiyordu -- yanlis alarm ureten
+    # bir kapi, okunmayan bir kapidir.
+    ele_aliyor = "status_code == 429" in kaynak or '"429" in str(' in kaynak
+    if not ele_aliyor:
+        pytest.skip(f"{betik.name} 429 ele almiyor")
+
+    kendi_indeksi = "RATE_LIMIT_BACKOFF[min(" in kaynak.replace("fw.", "")
+    assert not kendi_indeksi, (
+        f"{betik.name} geri cekilme merdivenini kendisi indeksliyor. "
+        "Boyle bir kopya, ortak yardimcida yapilan duzeltmeyi ALMAZ -- "
+        "2026-08-20'de saatlik limit duzeltmesi tam olarak boyle kayboldu. "
+        "Dogrusu: `bekle, gerekce = rate_limit_beklemesi(yanit, deneme)`"
+    )
+    assert "rate_limit_beklemesi" in kaynak, (
+        f"{betik.name} 429 ele aliyor ama ortak bekleme yardimcisini cagirmiyor."
+    )
+
+
+@pytest.mark.parametrize("betik", _fetch_betikleri(), ids=lambda p: p.name)
+def test_zaman_serisi_istekleri_yerel_gun_siniri_kullanir(betik: Path) -> None:
+    """Zaman serisi isteyen her cekici ``timezone=Europe/Istanbul`` gecmeli.
+
+    Open-Meteo varsayilan olarak UTC doner. Turkiye kalici UTC+3'tur (yaz
+    saati yok), dolayisiyla varsayilani birakmak her GUNU uc saat kaydirir:
+    bir gunun "maksimum sicakligi" aslinda oncekiyle sonrakinin karisimi
+    olur. Sema kontrolu bunu yakalamaz -- degerler makul kalir, yalnizca
+    YANLIS gune yazilir.
+
+    Kaymanin ne kadar sinsi oldugu olculdu (2026-08-20): saatlik ham veriden
+    hesaplanan gunluk maksimum ile gunluk API'nin maksimumu arasindaki
+    korelasyon dogru hizalamada 0.99883, UC SAAT kaydirilmis halde 0.99124
+    idi. Yani veri, bozukken bile neredeyse kusursuz gorunur.
+
+    Ayni olcum iki tablonun BIRIMLERININ farkli oldugunu da gosterdi
+    (oran tam 3.6000): gunluk tablo km/sa, saatlik turev m/s. Ikisi de kendi
+    icinde tutarlidir; esik karsilastirirken bu fark hatirlanmali.
+    """
+    kaynak = betik.read_text(encoding="utf-8")
+    zaman_serisi = '"hourly"' in kaynak or '"daily"' in kaynak
+    if "open-meteo" not in kaynak or not zaman_serisi:
+        pytest.skip(f"{betik.name} Open-Meteo zaman serisi cekmiyor")
+
+    assert '"Europe/Istanbul"' in kaynak, (
+        f"{betik.name} Open-Meteo'dan zaman serisi cekiyor ama "
+        "timezone=Europe/Istanbul GECMIYOR. Varsayilan UTC'dir ve her gunu "
+        "uc saat kaydirir -- degerler makul gorunur, yalnizca yanlis gune yazilir."
+    )
+
+
+def test_referans_tablosu_yayin_dogrulamasindan_geciyor() -> None:
+    """Ilce referansi ``validate_published_dataframe`` ile OKUNABILMELI.
+
+    ``fetch_weather.py`` ilce listesini bu fonksiyonla okur; yan metadata
+    dosyasi yoksa betik ILK SATIRDA ``ValueError`` ile duser ve hicbir hava
+    verisi cekilemez.
+
+    2026-08-20'de tam olarak bu durumdaydi: ``ilceler_gdz_adm.parquet`` icin
+    ``.metadata.json`` yan dosyasi yoktu (``data/`` gitignore kapsaminda
+    oldugu icin hic islenmemisti) ve ``fetch_weather.py`` calismiyordu.
+    1200'un uzerinde test yesilken bunu HICBIRI gormedi -- cunku hicbiri
+    cekicinin acilis yolunu denemiyordu.
+
+    Yarisma gunu bunun bedeli somuttur: hava verisini tazelemek isteyen ekip,
+    sebebi belirsiz bir hatayla karsilasir.
+    """
+    referans = KOK / "data" / "reference" / "ilceler_gdz_adm.parquet"
+    if not referans.is_file():
+        pytest.skip("ilce referansi bu ortamda yok")
+
+    sys.path.insert(0, str(KOK / "src"))
+    from gridup.io_utils import validate_published_dataframe
+
+    frame = validate_published_dataframe(
+        referans,
+        required_columns=("ilce", "il", "il_key", "ilce_key", "anahtar"),
+        min_rows=5,
+    )
+    assert len(frame) == 96, f"96 ilce bekleniyordu, {len(frame)} geldi"
+    assert frame["ilce_key"].is_unique, "ilce_key tekil degil"
+    assert not frame[["lat", "lon"]].isna().any().any(), "koordinat eksik"

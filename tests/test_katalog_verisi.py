@@ -117,8 +117,33 @@ class TestDepremKatalogu:
         assert depremler["lon"].between(LON_MIN, LON_MAX).all()
 
     def test_buyuklukler_makul(self, depremler):
-        """M>=4 istendi; Ege'de 8 ustu tarihsel olarak gorulmedi."""
-        assert depremler["buyukluk"].between(4.0, 8.0).all()
+        """M>=3 istendi; Ege'de 8 ustu tarihsel olarak gorulmedi.
+
+        Esik 2026-08-20'de 4.0'dan 3.0'a indirildi: M>=4 ile 6,5 yilda yalnizca
+        373 olay vardi ve yogunluk feature'i panel satirlarinin %99.9'unda
+        sifirdi. Bkz. scripts/fetch_deprem.py -- VARSAYILAN_MINMAG.
+        """
+        assert depremler["buyukluk"].between(3.0, 8.0).all()
+
+    def test_enerji_agirligi_logaritmik_olcegi_duzeltiyor(self, depremler):
+        """``enerji`` kolonu VAR ve buyuk depremleri hakim kiliyor.
+
+        Richter LOGARITMIKTIR: buyuklukleri toplayan bir yogunluk feature'i
+        otuz kucuk sarsintiyi bir buyuk depremden onemli gosterir. Esigi
+        M3'e indirmek ANCAK enerji agirligiyla guvenlidir; bu test o
+        guvenligin hala gecerli oldugunu olcer (olculdu 2026-08-20: %97.2).
+        """
+        assert "enerji" in depremler.columns, (
+            "enerji kolonu yok -- yogunluk feature'i ham buyuklugu toplarsa "
+            "M3 esigi buyuk depremlerin isaretini sulandirir."
+        )
+        toplam = float(depremler["enerji"].sum())
+        assert toplam > 0
+        buyuk = float(depremler.loc[depremler["buyukluk"] >= 4.0, "enerji"].sum())
+        assert buyuk / toplam >= 0.90, (
+            f"Toplam sismik enerjinin yalnizca %{100 * buyuk / toplam:.1f}'i "
+            "M>=4.0 olaylarindan geliyor; enerji agirligi bozulmus olabilir."
+        )
 
     def test_derinlik_pozitif(self, depremler):
         assert (depremler["derinlik_km"].dropna() >= 0).all()

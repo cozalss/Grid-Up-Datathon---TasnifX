@@ -55,6 +55,40 @@ PANEL_BAS = pd.Timestamp("2020-01-01")
 #: bunun icin genis ama "aylardir guncellenmemis"i yakalayacak kadar dar.
 SON_TOLERANS_GUN = 45
 
+#: ILCE x GUN panel tablolarinin bitis tarihleri arasinda izin verilen en
+#: buyuk fark (gun).
+#:
+#: NEDEN AYRI VE DAR BIR KURAL: ``SON_TOLERANS_GUN`` her kaynagi BUGUNE gore
+#: olcer ve 45 gun genistir -- "aylardir guncellenmemis" tabloyu yakalar ama
+#: tablolarin BIRBIRINDEN ayrilmasini yakalamaz. Oysa asil sessiz hata odur.
+#:
+#: OLCULDU 2026-08-20 (bu kural konmadan once): hava_gunluk arsivi 08-09'da,
+#: saatlik turev 08-10'da, nem_toprak 08-12'de, hava kalitesi 08-12'de,
+#: konvektif 08-13'te bitiyordu. Yani panelin son gunlerinde her tablo
+#: BASKA bir yerde kesiliyordu ve o araliktaki her satir icin farkli bir
+#: feature kumesi NaN'di. Bir yarismada test blogu tam oraya oturur:
+#: egitimde dolu, testte bos bir feature EKSIK feature'dan DAHA KOTUDUR --
+#: model ona guvenmeyi ogrenir, sonra kaybeder. Sebep de olculdu:
+#: ``ARCHIVE_LAG_DAYS`` 6 gun geriye kirpiyordu, oysa arsiv BUGUNE kadar
+#: veri sunuyor.
+#:
+#: 7 gun: farkli API'lerin gunluk isleme gecikmeleri birbirinden birkac gun
+#: ayrilabilir; bu normaldir. Bir HAFTAYI asan ayrisma normal degildir.
+PANEL_HIZALAMA_TOLERANS_GUN = 7
+
+#: Panel tablolarinin BUGUNE ne kadar yaklasmasi gerektigi (gun).
+#:
+#: NEDEN AYRICA BU: yalnizca tablolarin BIRBIRINE hizali olmasi yetmez --
+#: hepsi birlikte geride kalabilir. Olculdu 2026-08-20: gozlenen panel
+#: tablolarinin ucu 08-09..08-13 arasindaydi, yani birbirlerine 4 gun
+#: mesafede (hizali!) ama BUGUNDEN 7-11 gun geride. Sebep tek bir yanlis
+#: sabitti (``ARCHIVE_LAG_DAYS=6``) ve tam da hepsini AYNI ANDA geri
+#: cektigi icin hizalama kontrolunden gorunmez gecerdi.
+#:
+#: 45 gunluk genel ``SON_TOLERANS_GUN`` bunu yakalayamaz; o kural
+#: "aylardir olu" tabloyu arar. Panel tablolari icin olcu gunlerdir.
+PANEL_TAZELIK_TOLERANS_GUN = 7
+
 
 @dataclass(frozen=True)
 class Kaynak:
@@ -72,6 +106,18 @@ class Kaynak:
     fizik: tuple[tuple[str, object], ...] = ()
     #: Tarih sonu kontrolunu ATLAMA gerekcesi. Bos degilse kontrol atlanir.
     son_kontrolu_atla: str = ""
+    #: Bu kaynak ILCE x GUN panelinin bir parcasi mi? Oyleyse bitis tarihi
+    #: digerleriyle HIZALI olmak zorundadir (bkz. ``hizalama_denetle``).
+    panel_tablosu: bool = False
+    #: Tahmin satirlarini isaretleyen bool kolon (varsa). Hizalama kontrolu
+    #: son GERCEK gozlemi arar; tahmin satirlari tabloyu yapay olarak uzatir.
+    tahmin_kolonu: str = ""
+    #: Tablo OLCUM degil HESAP urunu mu? (or. gunes_gunluk saf astronomidir.)
+    #: Boyle bir tablo gelecege dogru istenildigi kadar uzatilabilir ve gec
+    #: bitmesi bir delik DEGILDIR -- bu yuzden hizalama referansini BELIRLEMEZ.
+    #: Yine de ERKEN bitmesi denetlenir: hesaplanmis tablonun kisa kalmasi
+    #: gercek bir bosluktur ve yalnizca "uretmeyi unuttuk" demektir.
+    hesaplanmis: bool = False
     #: Kaynagin KENDI kapsam baslangici (panelinkinden gec olabilir) ve NEDENI.
     #: Bos birakilirsa PANEL_BAS kullanilir. Bu alan, "kapsam sinirini sessizce
     #: gecistirmek" ile "sinirI BEYAN ETMEK" arasindaki farki kurar: beyan
@@ -103,6 +149,8 @@ def _csv_parquet_ayni(csv_frame: pd.DataFrame) -> bool:
 KAYNAKLAR: tuple[Kaynak, ...] = (
     Kaynak(
         ad="hava_gunluk",
+        panel_tablosu=True,
+        tahmin_kolonu="hava_tahmin",
         yol="data/external/hava_gunluk.parquet",
         tarih_kolonu="tarih",
         anahtar_kolonu="ilce_key",
@@ -128,6 +176,8 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
     ),
     Kaynak(
         ad="hava_saatlik_turev",
+        panel_tablosu=True,
+        tahmin_kolonu="tahmin",
         yol="data/external/hava_saatlik_turev.parquet",
         tarih_kolonu="tarih",
         anahtar_kolonu="ilce_key",
@@ -142,6 +192,8 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
     ),
     Kaynak(
         ad="gunes_gunluk",
+        panel_tablosu=True,
+        hesaplanmis=True,
         yol="data/external/gunes_gunluk.parquet",
         tarih_kolonu="tarih",
         anahtar_kolonu="anahtar",
@@ -182,7 +234,18 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
         # 2026-06-28'den sonra kutuda M>=4 deprem OLMADIGI icin bosluk gorunur;
         # bu veri eksikligi degil, olay yoklugudur (olculdu 2026-08-18).
         son_kontrolu_atla="olay tablosu -- son kayit kapsam sonu demek degil",
-        fizik=(("buyukluk 4.0-9.0 arasi", lambda d: 4.0 <= d["buyukluk"].min() <= 9.0),),
+        fizik=(
+            ("buyukluk 3.0-9.0 arasi", lambda d: 3.0 <= d["buyukluk"].min() <= 9.0),
+            # Esik M4'ten M3'e indirildi (373 -> 3037 olay). Bunun sinyali
+            # SULANDIRMADIGININ kaniti: enerji agirliginin ezici cogunlugu
+            # hala buyuk depremlerde olmali. Olculdu 2026-08-20: %97.2.
+            # Bu oran belirgin duserse ya enerji kolonu bozulmustur ya da
+            # katalog buyuk olaylari kaybetmistir -- ikisi de sessiz kalmasin.
+            (
+                "toplam sismik enerjinin >=%90'i M>=4.0 olaylarindan",
+                lambda d: d.loc[d["buyukluk"] >= 4.0, "enerji"].sum() >= 0.90 * d["enerji"].sum(),
+            ),
+        ),
     ),
     Kaynak(
         ad="epias_tuketim",
@@ -257,6 +320,8 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
     ),
     Kaynak(
         ad="nem_toprak_gunluk",
+        panel_tablosu=True,
+        tahmin_kolonu="tahmin",
         yol="data/external/nem_toprak_gunluk.parquet",
         tarih_kolonu="tarih",
         anahtar_kolonu="ilce_key",
@@ -285,6 +350,7 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
     ),
     Kaynak(
         ad="hava_kalitesi_gunluk",
+        panel_tablosu=True,
         yol="data/external/hava_kalitesi_gunluk.parquet",
         tarih_kolonu="tarih",
         anahtar_kolonu="ilce_key",
@@ -307,6 +373,8 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
     ),
     Kaynak(
         ad="konvektif_gunluk",
+        panel_tablosu=True,
+        tahmin_kolonu="tahmin",
         yol="data/external/konvektif_gunluk.parquet",
         tarih_kolonu="tarih",
         anahtar_kolonu="ilce_key",
@@ -421,6 +489,108 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
 )
 
 
+def son_gercek_gozlem(kaynak: Kaynak) -> pd.Timestamp | None:
+    """Kaynagin son GERCEK gozlem tarihi; dosya yoksa/okunamazsa ``None``.
+
+    ``tahmin_kolonu`` tanimliysa tahmin satirlari DISLANIR. hava_gunluk tam
+    olarak bu yuzden ozel: tablo 2026-09-02'ye kadar uzaniyor gorunur ama
+    2.304 satiri tahmin API'sinden gelir; son gercek gozlem 08-09'dur.
+    Hizalamayi tahmin ucuna gore olcmek, kapiyi ise yaramaz hale getirirdi.
+    """
+    yol = ROOT / kaynak.yol
+    if not yol.is_file() or not kaynak.tarih_kolonu:
+        return None
+    try:
+        frame = pd.read_parquet(yol, columns=[kaynak.tarih_kolonu])
+    except (OSError, ValueError, KeyError):
+        return None
+
+    # Bayrak kolonu AYRI okunur ve YOKLUGU hata degildir: koprü henuz
+    # kurulmamis bir tabloda kolon bulunmaz, o zaman tum satirlar gercektir.
+    # (Bunu tek okumada denemek, eksik kolonda KeyError verip kaynagi
+    # hizalama kontrolunden SESSIZCE dusuruyordu -- kapinin kendisinde
+    # acilmis bir delik. Olculdu ve kapatildi 2026-08-20.)
+    if kaynak.tahmin_kolonu:
+        try:
+            bayrak = pd.read_parquet(yol, columns=[kaynak.tahmin_kolonu])[kaynak.tahmin_kolonu]
+        except (OSError, ValueError, KeyError):
+            bayrak = None
+        if bayrak is not None:
+            frame = frame[~bayrak.astype(bool).to_numpy()]
+    tarihler = pd.to_datetime(frame[kaynak.tarih_kolonu], errors="coerce").dropna()
+    if tarihler.empty:
+        return None
+    return pd.Timestamp(tarihler.max()).normalize()
+
+
+def hizalama_denetle(
+    kaynaklar: tuple[Kaynak, ...], bugun: pd.Timestamp
+) -> tuple[list[str], list[str]]:
+    """Panel tablolarinin bitis tarihleri birbirine YAKIN mi?
+
+    Tek tek her tablo kendi kapsam kontrolunu gecebilir ve panel yine de
+    delik olabilir: onemli olan tablolarin AYNI gunde bitmesidir. Bu kontrol
+    tam olarak o boslugu kapatir ve mevcut kaynak-basi denetimlerin hicbiri
+    onun yerini tutmaz.
+    """
+    uclar: dict[str, pd.Timestamp] = {}
+    hesaplanmislar: set[str] = set()
+    for kaynak in kaynaklar:
+        if not kaynak.panel_tablosu:
+            continue
+        son = son_gercek_gozlem(kaynak)
+        if son is None:
+            continue
+        uclar[kaynak.ad] = son
+        if kaynak.hesaplanmis:
+            hesaplanmislar.add(kaynak.ad)
+
+    gozlenen = {ad: gun for ad, gun in uclar.items() if ad not in hesaplanmislar}
+    if len(gozlenen) < 2:
+        return [], ["Hizalama icin en az iki GOZLENEN panel tablosu gerekli -- atlandi."]
+
+    # Referans OLCULEN tablolarin en gec ucudur. Hesaplanmis bir tablo (saf
+    # astronomi) gelecege uzatilabildigi icin referansi belirlerse kapi
+    # kalici olarak kirmizi kalir -- bu, kapiyi olmamasindan daha kotu yapar:
+    # her kosuda bagiran bir alarm, okunmayan bir alarmdir.
+    referans_ad = max(gozlenen, key=lambda a: gozlenen[a])
+    referans = gozlenen[referans_ad]
+
+    dokum = ", ".join(
+        f"{ad}={uclar[ad].date()}" + (" [hesap]" if ad in hesaplanmislar else "")
+        for ad in sorted(uclar, key=lambda a: uclar[a])
+    )
+
+    # Yalnizca ERKEN bitmek delik acar; gec bitmek bedelsizdir.
+    geride = {
+        ad: int((referans - gun).days)
+        for ad, gun in uclar.items()
+        if (referans - gun).days > PANEL_HIZALAMA_TOLERANS_GUN
+    }
+    hatalar: list[str] = []
+    if geride:
+        liste = ", ".join(f"{ad} ({gun} gun geride)" for ad, gun in sorted(geride.items()))
+        hatalar.append(
+            f"Su panel tablolari referanstan ({referans_ad}={referans.date()}) "
+            f"{PANEL_HIZALAMA_TOLERANS_GUN} gunden fazla geride: {liste}. "
+            "Panelin son gunlerinde bazi feature'lar dolu, bazilari NaN olur -- "
+            f"tum cekicileri ayni --end ile tekrar calistir. Dokum: {dokum}"
+        )
+
+    # HEPSI birlikte geride kalabilir: hizali ama bayat. Ayri kural.
+    bayatlik = int((bugun - referans).days)
+    if bayatlik > PANEL_TAZELIK_TOLERANS_GUN:
+        hatalar.append(
+            f"Panel tablolarinin tamami bayat: en taze olan {referans_ad} bile "
+            f"{bayatlik} gun geride ({referans.date()}, bugun {bugun.date()}); "
+            f"izin verilen {PANEL_TAZELIK_TOLERANS_GUN}. Tablolar birbirine "
+            "hizali olsa BILE panelin son haftalari feature'siz kalir. "
+            f"Cekicileri --end {bugun.date()} ile tekrar calistir. Dokum: {dokum}"
+        )
+
+    return hatalar, []
+
+
 def denetle(kaynak: Kaynak, bugun: pd.Timestamp) -> tuple[list[str], list[str]]:
     """Tek kaynagi denetler. ``(hatalar, uyarilar)`` dondurur."""
     hatalar: list[str] = []
@@ -516,6 +686,16 @@ def main() -> int:
             print(f"           UYARI : {u}")
         toplam_hata += len(hatalar)
         toplam_uyari += len(uyarilar)
+
+    hiz_hatalar, hiz_uyarilar = hizalama_denetle(KAYNAKLAR, bugun)
+    durum = "GECTI" if not hiz_hatalar else "HATA "
+    print(f"  [{durum}] panel bitis hizalamasi")
+    for h in hiz_hatalar:
+        print(f"           HATA  : {h}")
+    for u in hiz_uyarilar:
+        print(f"           UYARI : {u}")
+    toplam_hata += len(hiz_hatalar)
+    toplam_uyari += len(hiz_uyarilar)
 
     print("=" * 66)
     print(f"{len(KAYNAKLAR)} kaynak · {toplam_hata} hata · {toplam_uyari} uyari")

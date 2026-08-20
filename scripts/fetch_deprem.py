@@ -55,6 +55,38 @@ RETRIES = 3
 
 CIKTI_YOLU = Path("data/external/depremler.parquet")
 
+#: Varsayilan alt buyukluk esigi. 4.0'DAN 3.0'A INDIRILDI (2026-08-20).
+#:
+#: OLCULDU: M>=4.0 esigiyle 6,5 yilda toplam 373 olay vardi -- 96 ilce x
+#: ~2400 gun = 230.400 panel satirinda 217 farkli gun. Yani deprem yogunlugu
+#: feature'i satirlarin %99.9'unda SIFIRDI ve modele fiilen hicbir sey
+#: soylemiyordu. Gutenberg-Richter yasasi geregi bir birim dusuk esik ~10 kat
+#: cok olay demektir; M>=3.0 sinyale gercek bir cozunurluk kazandirir.
+#:
+#: Bunun GUVENLI olmasi ENERJI AGIRLIGINA baglidir (asagi bkz.): M3 bir olay
+#: toplama M4'un ~1/32'si kadar katkida bulunur, dolayisiyla esigi dusurmek
+#: buyuk depremlerin isaretini SULANDIRMAZ, yalnizca "sismik olarak hareketli
+#: gun" kavramini olculebilir kilar.
+VARSAYILAN_MINMAG = 3.0
+
+#: Buyuklugun kendisi AGIRLIK OLARAK KULLANILAMAZ: Richter olcegi
+#: LOGARITMIKTIR. M5 bir deprem M3'un yaklasik 1000 KATI enerji birakir, ama
+#: buyukluk degeri olarak yalnizca 1,67 katidir. ``buyukluk`` kolonunu
+#: toplayan bir yogunluk feature'i bu yuzden otuz kucuk sarsintiyi bir buyuk
+#: depremden DAHA ONEMLI gosterir -- tam tersi dogrudur.
+#:
+#: ``enerji`` kolonu bunu duzeltir: log10(E) ~ 1.5*M (Gutenberg-Richter
+#: enerji bagintisi). M4'e gore GORECELI yaziyoruz ki sayilar 1 civarinda
+#: kalsin ve float32'de tasmasin:
+#:
+#:     M3.0 -> 0.032    M4.0 -> 1.0    M5.0 -> 31.6    M6.0 -> 1000
+ENERJI_REFERANS_MAG = 4.0
+
+
+def enerji_agirligi(buyukluk: pd.Series) -> pd.Series:
+    """Buyuklugu, M4'e gore goreceli sismik enerjiye cevirir."""
+    return 10.0 ** (1.5 * (pd.to_numeric(buyukluk, errors="coerce") - ENERJI_REFERANS_MAG))
+
 
 def _yil_dilimleri(start: str, end: str) -> list[tuple[str, str]]:
     """[start, end] araligini yil sinirlarinda dilimlere boler."""
@@ -163,7 +195,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start", default="2020-01-01", help="Baslangic (YYYY-AA-GG)")
     parser.add_argument("--end", default="2026-08-15", help="Bitis (YYYY-AA-GG)")
-    parser.add_argument("--minmag", type=float, default=4.0, help="Alt buyukluk esigi")
+    parser.add_argument(
+        "--minmag",
+        type=float,
+        default=VARSAYILAN_MINMAG,
+        help=f"Alt buyukluk esigi (varsayilan {VARSAYILAN_MINMAG}; gerekce icin modul basligi)",
+    )
     parser.add_argument("--out", default=str(CIKTI_YOLU), help="Cikti parquet yolu")
     args = parser.parse_args()
 
@@ -182,6 +219,7 @@ def main() -> int:
 
     tablo = tablo.dropna(subset=["lat", "lon", "buyukluk"]).sort_values("tarih")
     tablo = tablo.reset_index(drop=True)
+    tablo["enerji"] = enerji_agirligi(tablo["buyukluk"]).astype("float64")
 
     cikti = Path(args.out)
     atomic_write_dataframe(tablo, cikti)
@@ -189,6 +227,13 @@ def main() -> int:
     print(f"Yazildi: {cikti}")
     print(f"  {len(tablo)} olay, {tablo['tarih'].min()} - {tablo['tarih'].max()}")
     print(f"  Buyukluk: {tablo['buyukluk'].min():.1f} - {tablo['buyukluk'].max():.1f}")
+    print(f"  Farkli gun: {tablo['tarih'].nunique()}")
+    # Enerji toplaminin ne kadarini buyuk depremler tasiyor -- esigi
+    # dusurmenin sinyali sulandirmadiginin dogrudan kaniti.
+    buyuk = tablo.loc[tablo["buyukluk"] >= 4.0, "enerji"].sum()
+    toplam = float(tablo["enerji"].sum())
+    if toplam > 0:
+        print(f"  Toplam enerjinin %{100 * buyuk / toplam:.1f}'i M>=4.0 olaylarindan")
     return 0
 
 

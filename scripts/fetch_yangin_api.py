@@ -63,6 +63,9 @@ import pandas as pd
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from fetch_weather import rate_limit_beklemesi  # noqa: E402
 
 from gridup.io_utils import atomic_write_dataframe  # noqa: E402
 
@@ -88,6 +91,12 @@ KAYNAKLAR: tuple[tuple[str, str, str], ...] = (
 )
 
 RETRIES = 3
+
+#: FIRMS icin geri cekilme merdiveni (sn). NASA kotasi 10 dakikalik pencerede
+#: isler; onceki dogacalama ``20 * deneme`` (20/40/60 sn) o pencereyi asamaz
+#: ve uc deneme iki dakikada tukenirdi. Saatlik/gunluk pencere tespiti ise
+#: ortak yardimcidan gelir.
+FIRMS_MERDIVEN = (60, 180, 420)
 
 
 def anahtari_oku() -> str:
@@ -123,8 +132,8 @@ def _cek(anahtar: str, kaynak: str, baslangic: date) -> pd.DataFrame | None:
             yanit = requests.get(url, timeout=120)
             govde = yanit.text.strip()
             if yanit.status_code == 429:
-                bekle = 20 * deneme
-                print(f"    kota/hiz siniri; {bekle} sn bekleniyor")
+                bekle, gerekce = rate_limit_beklemesi(yanit, deneme, merdiven=FIRMS_MERDIVEN)
+                print(f"    kota/hiz siniri; {bekle} sn bekleniyor ({gerekce})")
                 time.sleep(bekle)
                 son_hata = requests.HTTPError("429")
                 continue

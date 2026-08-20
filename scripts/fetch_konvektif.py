@@ -64,7 +64,11 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from fetch_weather import RATE_LIMIT_BACKOFF, cap_end_date  # noqa: E402
+from fetch_weather import (  # noqa: E402
+    cap_end_date,
+    checkpoint_covers,
+    rate_limit_beklemesi,
+)
 
 from gridup.io_utils import atomic_write_dataframe  # noqa: E402
 
@@ -106,8 +110,11 @@ def _cek(ad: str, lat: float, lon: float, bas: str, son: str, *, retries: int = 
         try:
             yanit = requests.get(FORECAST_ARCHIVE, params=params, timeout=120)
             if yanit.status_code == 429:
-                bekle = RATE_LIMIT_BACKOFF[min(deneme - 1, len(RATE_LIMIT_BACKOFF) - 1)]
-                print(f"  {ad}: hiz/kota siniri; {bekle} sn bekleniyor [{deneme}/{retries}]")
+                bekle, gerekce = rate_limit_beklemesi(yanit, deneme)
+                print(
+                    f"  {ad}: hiz/kota siniri; {bekle} sn bekleniyor "
+                    f"({gerekce}) [{deneme}/{retries}]"
+                )
                 time.sleep(bekle)
                 son_hata = requests.HTTPError("429")
                 continue
@@ -222,7 +229,7 @@ def main() -> int:
     for sira, satir in enumerate(ilceler.itertuples(index=False), start=1):
         k = str(satir.ilce_key)
         ckpt = CKPT_DIR / f"{k}.parquet"
-        if ckpt.is_file() and not args.fresh:
+        if not args.fresh and checkpoint_covers(ckpt, args.start, son):
             print(f"[{sira:3d}/{len(ilceler)}] {k:16s} kontrol noktasindan")
             continue
         print(f"[{sira:3d}/{len(ilceler)}] {k:16s} ", end="", flush=True)

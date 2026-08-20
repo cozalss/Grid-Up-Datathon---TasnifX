@@ -14,6 +14,30 @@ kacirir -- literatur kaniti docs/10 bolum 3 ve docs/09 bolum 3:
   * Yon degisimi  -> cephe gecisinde ruzgar yonu doner; ani yon degisimi
                      agac ve iletken salinimini tetikler.
 
+YONUN KENDISI VE DAGILIM (2026-08-20'de eklendi)
+------------------------------------------------
+Bu betigin ilk surumu yonden yalnizca TURETILMIS iki olcu uretiyordu
+(``yon_std``, ``yon_degisim``); YONUN KENDISI hicbir kolonda yoktu. Ayni
+sekilde ruzgardan yalnizca esik-ustu SAAT SAYISI vardi -- "gun icinde nasil
+dagildi" sorusu hic sorulmuyordu. Iki bosluk da su kanitla kapatildi:
+
+  2024 Enerji Datathonu birincisi (Pikachow) saatlik degiskenleri
+  quantile'larla ozetledi ve modelin EN YUKSEK onem verdigi tek degisken
+  ``wind_dir_10m q01`` oldu -- yani yonun kendisinin gunluk dagilimi.
+
+Eklenenler: ``yon_sin``/``yon_cos`` (baskin yonun birim vektoru),
+``hamle_yon_sin``/``hamle_yon_cos`` (EN SIDDETLI hamle saatindeki yon),
+``ruzgar_q25..q90``, ``hamle_q90``, ``yon_q01``/``yon_q99``,
+``basinc_std`` ve ``basinc_dusus_3s`` (3 saatlik en sert basinc dususu).
+
+HAM KONTROL NOKTASI -- NEDEN DEGISTI
+------------------------------------
+Ilk surum yalnizca GUNLUK agregati kontrol noktasina yaziyordu. Sonucu su
+oldu: tabloya tek bir kolon eklemek 96 ilcenin tamamini BASTAN indirmeyi
+gerektirdi (saatler suren, kotayi yakan bir is). Artik HAM saatlik veri
+saklaniyor (~2 MB/ilce); yeni bir turev kolon ``--yeniden-topla`` ile AGA
+HIC DOKUNMADAN uretilebilir.
+
 BIRIM NOTU
 ----------
 Open-Meteo ruzgari VARSAYILAN olarak km/sa dondurur. Bu betik API'ye
@@ -32,6 +56,7 @@ Kullanim::
     python scripts/fetch_hourly_weather.py
     python scripts/fetch_hourly_weather.py --start 2020-01-01 --end 2026-08-15
     python scripts/fetch_hourly_weather.py --fresh   # kontrol noktalarini yok say
+    python scripts/fetch_hourly_weather.py --yeniden-topla  # AG YOK, ham veriden yeniden uret
 """
 
 from __future__ import annotations
@@ -48,7 +73,12 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from fetch_weather import ARCHIVE_URL, RATE_LIMIT_BACKOFF, cap_end_date  # noqa: E402
+from fetch_weather import (  # noqa: E402
+    ARCHIVE_URL,
+    cap_end_date,
+    checkpoint_covers,
+    rate_limit_beklemesi,
+)
 
 from gridup.features.weather import circular_mean  # noqa: E402
 from gridup.io_utils import atomic_write_dataframe  # noqa: E402
@@ -63,35 +93,95 @@ HOURLY_VARIABLES = [
     "wind_direction_10m",
 ]
 
-# Esikler (m/s). Literaturde surekli ruzgar hasari ~15 m/s uzerinde belirgin
-# artar; 20 m/s "firtina" siniridir (Beaufort 8-9). Hamle icin 20 m/s,
-# gunluk tablodaki firtina_gunu esigiyle (60 km/sa ~ 16.7 m/s) uyumlu ama
-# saatlik cozunurlukte daha secici.
-RUZGAR_ESIK_15_MS = 15.0
-RUZGAR_ESIK_20_MS = 20.0
-HAMLE_ESIK_20_MS = 20.0
+# Esikler (m/s) -- OLCULEREK kalibre edildi, literaturden alinmadi.
+#
+# Ilk surumde esikler genel firtina literaturunden gelmisti: surekli ruzgar
+# icin 15 ve 20 m/s, hamle icin 20 m/s. Bunlarin Ege'de ne siklikta gorundugu
+# HIC olculmemisti. 2026-08-20'de 40 ilcenin 2.326.080 saatinde olculdu:
+#
+#     SUREKLI RUZGAR (10 m)          HAMLE
+#       >= 8 m/s : %1.3052             >= 8 m/s : %30.14
+#       >=10 m/s : %0.3290             >=10 m/s : %17.57
+#       >=12 m/s : %0.0727             >=12 m/s : %9.05
+#       >=15 m/s : %0.0056             >=15 m/s : %2.74
+#       >=18 m/s : %0.0001             >=18 m/s : %0.69
+#       >=20 m/s : %0.0000  <-- HIC    >=20 m/s : %0.26
+#       max gorulen: 18.5 m/s          >=25 m/s : %0.02  (max 35.0)
+#
+# Yani ``ruzgar_20ms_saat`` YAPISAL OLARAK OLUYDU: 2,3 milyon saatte bir kez
+# bile tetiklenmedi ve her satirda 0 yazdi. ``ruzgar_15ms_saat`` de fiilen
+# olu (2,3 milyon saatte 130 saat ~ ilce basina 6,5 yilda ~3 saat).
+#
+# Sebep fiziksel: ERA5 ~25 km izgarada uzamsal ORTALAMADIR; nokta
+# olcumlerdeki ucları sonumler. Ayni sonumleme HAMLE parametrizasyonunda
+# yoktur, bu yuzden hamle esikleri yuksek kalabilir.
+#
+# Yeni esikler her biri gercekten AYIRT EDEN noktalardan secildi: seyrek
+# ama olu degil.
+RUZGAR_ESIKLERI_MS = (8.0, 10.0, 12.0)
+HAMLE_ESIKLERI_MS = (15.0, 20.0, 25.0)
+
+#: Gunluk dagilim quantile'lari. Esik-ustu saat sayisi "kac saat asti"yi
+#: soyler ama "gunun tipik ruzgari neydi"i soylemez: 4 saat 16 m/s esen bir
+#: gun ile 4 saat 16, geri kalani 1 m/s esen bir gun ayni sayimi verir.
+QUANTILE_SEVIYELERI = (0.01, 0.25, 0.50, 0.75, 0.90, 0.99)
 
 #: Nihai tablonun kolon sozlesmesi -- testler birebir bunu dogrular.
 FINAL_COLUMNS = [
     "ilce_key",
     "tarih",
+    # --- basinc: alcak basinc ve HIZLI DUSUS firtina oncusudur
     "basinc_min",
     "basinc_ort",
-    "ruzgar_15ms_saat",
-    "ruzgar_20ms_saat",
+    "basinc_std",
+    "basinc_dusus_3s",
+    # --- esik-ustu saat sayimlari: surekli yuklenme (malzeme yorulmasi)
+    "ruzgar_8ms_saat",
+    "ruzgar_10ms_saat",
+    "ruzgar_12ms_saat",
+    "hamle_15ms_saat",
     "hamle_20ms_saat",
+    "hamle_25ms_saat",
+    # --- gun ici dagilim: ayni maksimumun farkli "yayilma"lari
+    "ruzgar_q25",
+    "ruzgar_q50",
+    "ruzgar_q75",
+    "ruzgar_q90",
+    "hamle_q90",
+    # --- yon: turevler (std/degisim) + YONUN KENDISI (sin/cos, quantile)
     "yon_std",
     "yon_degisim",
+    "yon_sin",
+    "yon_cos",
+    "hamle_yon_sin",
+    "hamle_yon_cos",
+    "yon_q01",
+    "yon_q99",
 ]
+
+#: ``int8``a donusturulecek kolonlar (0..24 sigar). Geri kalan hepsi float32.
+SAYIM_KOLONLARI = tuple(
+    [f"ruzgar_{int(e)}ms_saat" for e in RUZGAR_ESIKLERI_MS]
+    + [f"hamle_{int(e)}ms_saat" for e in HAMLE_ESIKLERI_MS]
+)
 
 REFERENCE_PATH = Path("data/reference/ilceler_gdz_adm.parquet")
 OUTPUT_PATH = Path("data/external/hava_saatlik_turev.parquet")
 
-#: Kontrol noktasi dizini: her ilcenin GUNLUK agregati ayri dosyada durur.
-#: Ham saatlik veriyi saklamiyoruz (96 x ~58k saat x 4 kolon parquet'te bile
-#: yuzlerce MB olurdu); agregat ilce basina ~2400 satirdir. Yarim kalan bir
-#: kosu, inen ilceleri tekrar indirmeden devam eder.
-CHECKPOINT_DIR = Path("data/external/.hava_saatlik_ckpt")
+#: HAM saatlik kontrol noktasi -- her ilcenin ham saatlik serisi ayri dosyada.
+#:
+#: Onceki surum burada yalnizca GUNLUK agregati sakliyordu; gerekce "ham veri
+#: yuzlerce MB olur" idi. Bu gerekce OLCULDU ve yanlis cikti: float32'ye
+#: dusurulmus dort kolon, ilce basina ~1-2 MB parquet demek (toplam ~150 MB).
+#: Buna karsilik gunluk-agregat kontrol noktasinin BEDELI cok agirdi -- tabloya
+#: tek bir turev kolon eklemek 96 ilcenin tamamini bastan indirmeyi gerektirdi.
+#: Artik ham veri duruyor ve yeni bir kolon ``--yeniden-topla`` ile AGA HIC
+#: DOKUNMADAN uretiliyor. Dizin .gitignore kapsamindadir.
+RAW_CHECKPOINT_DIR = Path("data/external/.hava_saatlik_ham")
+
+#: Ham kontrol noktasinda saklanan kolonlar. ``zaman`` + dort olcum; float32
+#: yeterlidir (basinc ~1013.25 hPa'da float32 cozunurlugu ~0.0001 hPa).
+RAW_COLUMNS = ["zaman", *HOURLY_VARIABLES]
 
 #: Istekler arasi nazik bekleme (sn). Saatlik istek gunlukten agir sayilir
 #: (kota tarih araligina gore agirliklandirilir); 429 gelirse fetch icindeki
@@ -181,14 +271,10 @@ def fetch_hourly(
             # 429 = hiz siniri; kota dakika bazli, kisa bekleme ise yaramaz.
             # fetch_weather.py'de olculen ayni davranis -- ayni merdiven.
             if response.status_code == 429:
-                header = response.headers.get("Retry-After")
-                wait = (
-                    int(header)
-                    if header and header.isdigit()
-                    else RATE_LIMIT_BACKOFF[min(attempt - 1, len(RATE_LIMIT_BACKOFF) - 1)]
-                )
+                wait, gerekce = rate_limit_beklemesi(response, attempt)
                 print(
-                    f"  {name}: hiz siniri (429); {wait} sn bekleniyor [deneme {attempt}/{retries}]"
+                    f"  {name}: hiz siniri (429); {wait} sn bekleniyor "
+                    f"({gerekce}) [deneme {attempt}/{retries}]"
                 )
                 time.sleep(wait)
                 last_error = requests.HTTPError("429 Too Many Requests")
@@ -222,6 +308,25 @@ def fetch_hourly(
     return frame
 
 
+def _tepe_hamle_yonu(frame: pd.DataFrame) -> pd.Series:
+    """Gunun EN SIDDETLI hamle saatindeki ruzgar yonu (derece).
+
+    NEDEN gun ortalamasi degil: hasari yapan ruzgarin YONU, gunun baskin
+    yonuyle ayni olmak zorunda degil. Ege'de ogleden sonra esen imbat
+    (bati/kuzeybati, duzenli) ile cephe gecisinde donen guneybati ruzgari
+    ayni hizi verse bile ayni riski tasimaz -- agaclarin ve iletkenlerin
+    maruz kaldigi aci, dolayisiyla temas olasiligi degisir.
+
+    Hamlesi ya da yonu tamamen eksik bir gun icin NaN doner (0 yazmak
+    "kuzeyden esti" demek olurdu -- gercek bir yon degeri).
+    """
+    gecerli = frame.dropna(subset=["wind_gusts_10m", "wind_direction_10m"])
+    if gecerli.empty:
+        return pd.Series(dtype="float64", index=pd.Index([], name="tarih"))
+    tepe = gecerli.groupby("tarih")["wind_gusts_10m"].idxmax()
+    return gecerli.loc[tepe].set_index("tarih")["wind_direction_10m"]
+
+
 def aggregate_daily(hourly: pd.DataFrame, ilce_key: str) -> pd.DataFrame:
     """Bir ilcenin saatlik verisini gunluk turev tablosuna indirir.
 
@@ -229,56 +334,102 @@ def aggregate_daily(hourly: pd.DataFrame, ilce_key: str) -> pd.DataFrame:
     asilmadi" sayilir); basinc/yon istatistikleri NaN'lari atlar, gunun
     tamami NaN ise sonuc NaN kalir ve NaN orani dogrulamasinda gorunur.
     """
-    frame = hourly.copy()
+    frame = hourly.copy().sort_values("zaman")
     frame["tarih"] = frame["zaman"].dt.normalize()
 
     # Esik gostergeleri: bool karsilastirmada NaN -> False, yani sayilmaz.
-    frame["r15"] = (frame["wind_speed_10m"] >= RUZGAR_ESIK_15_MS).astype("int8")
-    frame["r20"] = (frame["wind_speed_10m"] >= RUZGAR_ESIK_20_MS).astype("int8")
-    frame["h20"] = (frame["wind_gusts_10m"] >= HAMLE_ESIK_20_MS).astype("int8")
+    sayim_adlari: dict[str, str] = {}
+    for kaynak_kolon, esikler, onek in (
+        ("wind_speed_10m", RUZGAR_ESIKLERI_MS, "ruzgar"),
+        ("wind_gusts_10m", HAMLE_ESIKLERI_MS, "hamle"),
+    ):
+        for esik in esikler:
+            ad = f"{onek}_{int(esik)}ms_saat"
+            gecici = f"_{ad}"
+            frame[gecici] = (frame[kaynak_kolon] >= esik).astype("int8")
+            sayim_adlari[ad] = gecici
+
+    # 3 saatlik basinc egilimi ("pressure tendency"): meteorolojinin klasik
+    # firtina oncusu. 3 saatte 3+ hPa dusus belirgin bir sistem demektir ve
+    # bunu ne gunluk minimum ne de ortalama gosterir -- ikisi de SEVIYE
+    # olcer, bu ise HIZ olcer.
+    #
+    # diff(3) satirlarin esit arali kli oldugunu varsayar; Open-Meteo saatlik
+    # seriyi bosluksuz dondurur. Bosluk olsaydi fark 3 saatten uzun bir
+    # araligi olcerdi -- o durum NaN oraninda gorunur, sessiz kalmaz.
+    frame["_dusus3"] = frame["surface_pressure"].diff(3)
 
     grouped = frame.groupby("tarih")
     daily = grouped.agg(
         basinc_min=("surface_pressure", "min"),
         basinc_ort=("surface_pressure", "mean"),
-        ruzgar_15ms_saat=("r15", "sum"),
-        ruzgar_20ms_saat=("r20", "sum"),
-        hamle_20ms_saat=("h20", "sum"),
+        basinc_std=("surface_pressure", "std"),
+        **{ad: (gecici, "sum") for ad, gecici in sayim_adlari.items()},
+    ).sort_index()
+
+    # En NEGATIF 3 saatlik degisim = en sert dusus; isareti cevirip pozitif
+    # "dusus buyuklugu" yaziyoruz. Gun boyu basinc yalnizca yukseldiyse deger
+    # negatif cikar ve 0'a kirpilir -- "dusus yok" demek budur.
+    daily["basinc_dusus_3s"] = (-grouped["_dusus3"].min()).clip(lower=0.0)
+
+    # Gun ici dagilim. Tek cagride uc degiskenin tum quantile'lari (grup
+    # basina lambda cagirmaktan belirgin hizli -- 96 ilce x ~2400 gun).
+    quantiles = (
+        grouped[["wind_speed_10m", "wind_gusts_10m", "wind_direction_10m"]]
+        .quantile(list(QUANTILE_SEVIYELERI))
+        .unstack()
     )
+    daily["ruzgar_q25"] = quantiles[("wind_speed_10m", 0.25)]
+    daily["ruzgar_q50"] = quantiles[("wind_speed_10m", 0.50)]
+    daily["ruzgar_q75"] = quantiles[("wind_speed_10m", 0.75)]
+    daily["ruzgar_q90"] = quantiles[("wind_speed_10m", 0.90)]
+    daily["hamle_q90"] = quantiles[("wind_gusts_10m", 0.90)]
+
+    # yon_q01/q99 DAIRESEL OLARAK TUTARLI DEGILDIR: 350 ve 10 derecelik iki
+    # yon sayisal olarak uzak gorunur, oysa aralarinda 20 derece vardir.
+    # Yine de tasiniyorlar cunku KANIT var: 2024 birincisinin en yuksek
+    # onemli degiskeni tam olarak buydu. Yorumlanislari "gun icinde gorulen
+    # en dusuk/en yuksek pusula degeri" degil, "yon rejiminin kaba imzasi"
+    # olmali -- yonun FIZIKSEL olarak dogru hali yon_sin/yon_cos'tur.
+    daily["yon_q01"] = quantiles[("wind_direction_10m", 0.01)]
+    daily["yon_q99"] = quantiles[("wind_direction_10m", 0.99)]
+
     daily["yon_std"] = grouped["wind_direction_10m"].apply(circular_std)
 
-    # Gunun baskin yonu (dairesel ortalama) -> dunle mutlak dairesel fark.
-    # 350 -> 10 derece donusu 20'dir, 340 DEGIL; fark [0, 180] araligindadir.
+    # Gunun baskin yonu (dairesel ortalama) -> hem dunle mutlak dairesel
+    # fark, hem de BIRIM VEKTOR bilesenleri. sin/cos ikilisi modele yonu
+    # SUREKLI ve sureksizliksiz verir: 359 ile 1 derece komsudur, ham
+    # dereceyle ise aralarinda 358 birim vardir.
+    yon_ort = grouped["wind_direction_10m"].apply(circular_mean).sort_index()
+    fark = (yon_ort - yon_ort.shift(1)).abs() % 360.0
     # Ilk gunun dunu yok -> NaN kalir (bilerek; 0 yazmak "yon degismedi"
     # demek olurdu).
-    yon_ort = grouped["wind_direction_10m"].apply(circular_mean)
-    daily = daily.sort_index()
-    yon_ort = yon_ort.sort_index()
-    fark = (yon_ort - yon_ort.shift(1)).abs() % 360.0
     daily["yon_degisim"] = np.minimum(fark, 360.0 - fark)
+    yon_rad = np.deg2rad(yon_ort)
+    daily["yon_sin"] = np.sin(yon_rad)
+    daily["yon_cos"] = np.cos(yon_rad)
+
+    tepe_rad = np.deg2rad(_tepe_hamle_yonu(frame).reindex(daily.index))
+    daily["hamle_yon_sin"] = np.sin(tepe_rad)
+    daily["hamle_yon_cos"] = np.cos(tepe_rad)
 
     daily = daily.reset_index()
     daily.insert(0, "ilce_key", ilce_key)
 
-    for column in ["basinc_min", "basinc_ort", "yon_std", "yon_degisim"]:
-        daily[column] = daily[column].astype("float32")
-    for column in ["ruzgar_15ms_saat", "ruzgar_20ms_saat", "hamle_20ms_saat"]:
-        daily[column] = daily[column].astype("int8")  # 0..24 sigar
+    for column in FINAL_COLUMNS:
+        if column in ("ilce_key", "tarih"):
+            continue
+        daily[column] = daily[column].astype("int8" if column in SAYIM_KOLONLARI else "float32")
 
     return daily[FINAL_COLUMNS]
 
 
-def checkpoint_covers(path: Path, start: str, end: str) -> bool:
-    """Kontrol noktasi istenen araligi kapsiyor mu? Bozuk dosya = kapsamiyor."""
-    if not path.exists():
-        return False
-    try:
-        span = pd.read_parquet(path, columns=["tarih"])["tarih"]
-    except (OSError, ValueError):
-        return False
-    if span.empty:
-        return False
-    return bool(span.min() <= pd.Timestamp(start) and span.max() >= pd.Timestamp(end))
+def ham_yaz(hourly: pd.DataFrame, path: Path) -> None:
+    """Ham saatlik seriyi float32'ye dusurup kontrol noktasina yazar."""
+    frame = hourly[RAW_COLUMNS].copy()
+    for column in HOURLY_VARIABLES:
+        frame[column] = pd.to_numeric(frame[column], errors="coerce").astype("float32")
+    atomic_write_dataframe(frame, path)
 
 
 #: Bir kolonun bu orandan fazlasi NaN ise veri KABUL EDILMEZ. %2 esigi bir
@@ -345,6 +496,11 @@ def main() -> int:
         action="store_true",
         help="Kontrol noktalarini yok say ve her ilceyi bastan indir",
     )
+    parser.add_argument(
+        "--yeniden-topla",
+        action="store_true",
+        help="AG KULLANMA: yalnizca mevcut ham kontrol noktalarindan gunluk tabloyu yeniden uret",
+    )
     args = parser.parse_args()
 
     kirpilmis, uyari = cap_end_date(args.end)
@@ -355,19 +511,30 @@ def main() -> int:
     districts = load_reference_districts()
     print(f"Referans tablosundan {len(districts)} ilce yuklendi.")
 
-    CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 
     pending = []
     for ilce_key, lat, lon in districts:
-        ckpt = CHECKPOINT_DIR / f"{ilce_key}.parquet"
-        if not args.fresh and checkpoint_covers(ckpt, args.start, args.end):
+        ham = RAW_CHECKPOINT_DIR / f"{ilce_key}.parquet"
+        if not args.fresh and checkpoint_covers(ham, args.start, args.end, column="zaman"):
             continue
         pending.append((ilce_key, lat, lon))
 
+    if args.yeniden_topla:
+        if pending:
+            print(
+                f"  UYARI: {len(pending)} ilcenin ham kontrol noktasi eksik/yetersiz. "
+                "--yeniden-topla ag kullanmaz; bu ilceler tabloda OLMAYACAK ve "
+                "kalite kapisi eksik ilce nedeniyle reddedecek."
+            )
+        pending = []
+        print("  --yeniden-topla: indirme atlandi, ham veriden uretiliyor.")
+
     done = len(districts) - len(pending)
-    if done:
-        print(f"Kontrol noktasinda {done} ilce tam kapsamli -- atlaniyor.")
-    print(f"{len(pending)} ilce indirilecek, {args.start} - {args.end}, saatlik")
+    if done and not args.yeniden_topla:
+        print(f"Ham kontrol noktasinda {done} ilce tam kapsamli -- atlaniyor.")
+    if pending:
+        print(f"{len(pending)} ilce indirilecek, {args.start} - {args.end}, saatlik")
 
     failures: list[str] = []
     for index, (ilce_key, lat, lon) in enumerate(pending, start=1):
@@ -379,16 +546,18 @@ def main() -> int:
             failures.append(ilce_key)
             continue
 
-        daily = aggregate_daily(hourly, ilce_key)
-        atomic_write_dataframe(daily, CHECKPOINT_DIR / f"{ilce_key}.parquet")
-        print(f"{len(hourly):,} saat -> {len(daily):,} gun")
+        ham_yaz(hourly, RAW_CHECKPOINT_DIR / f"{ilce_key}.parquet")
+        print(f"{len(hourly):,} saat")
         time.sleep(args.pause)  # API'ye nazik ol
 
+    # Gunluk tablo HER ZAMAN ham veriden yeniden uretilir -- kismen eski
+    # semali bir gunluk kontrol noktasinin sessizce tasinmasi imkansiz olsun.
     frames = []
     for ilce_key, _, _ in districts:
-        ckpt = CHECKPOINT_DIR / f"{ilce_key}.parquet"
-        if ckpt.exists():
-            frames.append(pd.read_parquet(ckpt))
+        ham = RAW_CHECKPOINT_DIR / f"{ilce_key}.parquet"
+        if not ham.exists():
+            continue
+        frames.append(aggregate_daily(pd.read_parquet(ham), ilce_key))
 
     if not frames:
         print("\nHicbir ilce icin veri yok. Internet baglantisini kontrol et.")
