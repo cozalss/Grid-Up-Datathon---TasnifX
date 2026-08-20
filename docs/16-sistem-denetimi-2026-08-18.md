@@ -40,6 +40,46 @@ bağlanması** belirleyecek. Top-20 makul; top-10 için P0+P1 şart.
 - **Anahtarlar temiz:** her ilçe-düzeyi kaynak 96 referansla %100 eşleşiyor,
   0 duplicate, hava/güneş 0 eksik.
 
+## Kapanış durumu (18 Ağustos, akşam)
+
+**P0 (10/10) ve P1 (12/15) kapatıldı.** Aşağıdaki tablolar denetimin ilk
+hâlidir; kapananlar ✅ ile işaretlidir. Kapanış commit'leri:
+`27cc24e` (P0), `524b0c3` (P1-3), `60c3f9d` (P1-1/2/4/5), `c1286da`
+(P1-7…P1-12).
+
+**Ölçülen kazanç:** ilçe kimliği + genişleyen ilçe istatistikleri her modeli
+iyileştirdi (catboost 304,30→302,73; iki_asama_medyan 314,50→**301,81**);
+sqrt artefaktı 393→320 düzeldi; harman iddiası yuvalanmış kontrolde çürüdü
+(359,00 vs tek başına 349,71) ve yerine ölçülmüş 5-tohum ortalaması geldi
+(302,22, +0,90 kazanç). 12 harici aile tek kapıdan bağlandı ve LOGO ile
+ölçüldü: **CAPE +4,12 · EPİAŞ +3,13 · İZSU +2,69 · saatlik hava +2,65**,
+buna karşılık **tatil −3,19 · güneş −1,16 · günlük hava −0,58**.
+
+**Kalan P1:** P1-13 (8 dış çapa ile kazanan kapısı), P1-14 (sayım hedefi
+JSON'u — EPİAŞ paneliyle kısmen karşılandı), P1-15 (40 dk Optuna).
+
+### EPİAŞ verisi — fırsat ve KURAL SORUSU
+
+P1-6 kapsamında 405.819 kayıt çekildi (2022-01…2026-08-17, **96 ilçenin
+tamamı, ADM dahil**) ve `scripts/epias_panel.py` ile 92 ilçelik günlük panele
+çevrildi. İki şey ölçüldü:
+
+1. **Arşiv delik deşik:** 1690 günün 406'sında hiç kayıt yok (2024Q3 tamamen
+   boş). Bu günler "kesinti olmadı" değil "yayımlanmadı"dır; sahte sıfır
+   olarak panele girerse sıfır oranı %54,5'ten %65,4'e şişer. Panel bu yüzden
+   `kapsanan_gun` bayrağıyla üretiliyor ve varsayılan olarak yalnızca
+   kapsanan günleri yazıyor.
+2. **İlçe adları:** "Aydın Merkez"/"Aydın" → **Efeler** (5.891 kayıt
+   kurtarıldı). Denizli ve Manisa merkez adları 2012'de ikiye bölündüğü için
+   **belirsiz** sayılıp dışarıda bırakıldı (3.033 kayıt) — nüfusa göre bölmek
+   uydurma olurdu.
+
+> **AÇILIŞ GÜNÜ SORUSU (kritik):** Bu veri yarışma **hedefinin geçmişidir** ve
+> **test dönemini (2026) kapsar**. Harici veri kullanımı serbest mi, EPİAŞ
+> özel olarak yasak mı? Cevap alınmadan modele girmez. Manifestte
+> `redistribution: restricted` ile işaretlendi; Kaggle paketine **konmuyor**
+> (paket listesi artık yalnızca `allowed` artefaktları alıyor, test ile kilitli).
+
 ## Bulgular — birleştirilmiş, önceliklendirilmiş
 
 Şiddet = "21 Ağustos'ta ne olur". Birden fazla denetçinin bağımsız bulduğu
@@ -49,33 +89,33 @@ maddeler ★ ile işaretli.
 
 | # | Bulgu | Kanıt | Düzeltme |
 |---|---|---|---|
-| P0-1 ★ | `data/raw/_prova/` gerçek `train.csv`'yi **gölgeliyor**: `find_files` `rglob` + ilk aday | `day_one.py:171,184`; makinede `_prova` mevcut, uyarı aynı dosya adını yazıyor | Klasörü sil/taşı; `glob` (özyinelemesiz); uyarıda `relative_to` yaz |
-| P0-2 | Düşük kardinaliteli sayım hedefi → profil "multiclass" → LightGBM çöker | `profiling.py:308-330`, `day_one.py:96`; 2024 şemasında EXIT=1 | Metrik regresyonsa (mae/rmse/…) `regression`'a çöz; docs/07+README komutuna `--task regression` |
-| P0-3 | day_one **metrikten bağımsız L2** eğitiyor — benchmark'ta L2 (400) sıfır tabanının (367) altında | `day_one.py:513` `starter_params` objective yok; `metrics.py:10` "MAE→L1" | metrik→objective haritası (mae→`mae`/CatBoost `MAE`) |
-| P0-4 | Bileşik `unique_id` (2024 emsali) test'te yok → CV bittikten sonra KeyError | `day_one.py:340,552`; docs/01:35 emsali kaydediyor | CV'den ÖNCE kontrol; sample deseninden id türet ya da net mesajla dur |
-| P0-5 | Test sırası ≠ sample sırası → hata; `align_to_sample=True` hiçbir çağrıda yok | `submission.py:308`; grep 0 | `day_one.py:551`'e `align_to_sample=True` |
-| P0-6 ★ | (grup, gün) tekilliği `temporal.py`/`pipeline.py`'de denetlenmiyor → olay-düzeyi veride ufuk duvarı **sessizce** yok olur (kanıt: 3 olay/gün, ufuk 7 → satırların %94'ü <7 gün) | `temporal.py:892,938,1014,1395,1482`; `pipeline.py:196-221`; guard yalnızca `spatial.py:310` | `_tek_satir_dogrula`'yı temporal/pipeline'a taşı; notebook 02 ham train yerine 01'in panelini kullansın + tekillik assert |
-| P0-7 ★ | Jüri notebook'u 02 üreticiden **sapmış** (`CVRecipe` ambargo alanı yok → provenance "0 gün ambargo" der); Kaggle'da `strict_provenance` git olmadığından **submission yazıldıktan sonra** çöküyor; `sample_submission` okunmuyor | `02_baseline.ipynb:418` vs `build_notebooks.py:718-726`; `:745` store; `:694` sample yok | `build_notebooks.py` çalıştır + commit; `strict_provenance=not IS_KAGGLE`; sample= geç; byte-karşılaştırma testi |
-| P0-8 ★ | Kaggle offline paketi **bayat**: wheel'de `national/point_events/tourism.py` yok, 6 modül farklı, `turizm_aylik_il`/`izsu`/`epias` yok, eski `yanginlar` | `kaggle_paket/` 17 Ağu 20:53; `VERI_DOSYALARI` manifestten kopuk | `VERI_DOSYALARI`'nı `sources.yml`'den türet; `--wheels --upload`; internetsiz Kaggle'da bir prova koşusu |
-| P0-9 ★ | docs/05 ve docs/07 hava-join örnekleri `il_key`↔`konum_key` → **%0 eşleşme**; büyük harf kolon adları `read_any` sonrası KeyError; docs/07:190 lag örneği eski `lags` (61/92/123 kaydırıyor) | docs/07:141-145,190; docs/05:150-155 | `left_on=["ilce_key","tarih"]`, küçük harf; `shifts=[31,62,93]` |
-| P0-10 | Hava arşivi **2026-08-09'da bitiyor**, tahmin köprüsü yok, NaN politikası yok → test bloğu Ağustos ortasını aşarsa 17 hava kolonu yalnızca testte NaN | `hava_gunluk` max; `fetch_weather.py:169-197` `today−6` tavanı | Open-Meteo forecast köprüsü (`past_days=92&forecast_days=16`) + `hava_kaynak` bayrağı; day_one ilk satırı "test max tarih vs hava max tarih"; kapsanmıyorsa ufuk-kaydırmalı hava |
+| ✅ P0-1 ★ | `data/raw/_prova/` gerçek `train.csv`'yi **gölgeliyor**: `find_files` `rglob` + ilk aday | `day_one.py:171,184`; makinede `_prova` mevcut, uyarı aynı dosya adını yazıyor | Klasörü sil/taşı; `glob` (özyinelemesiz); uyarıda `relative_to` yaz |
+| ✅ P0-2 | Düşük kardinaliteli sayım hedefi → profil "multiclass" → LightGBM çöker | `profiling.py:308-330`, `day_one.py:96`; 2024 şemasında EXIT=1 | Metrik regresyonsa (mae/rmse/…) `regression`'a çöz; docs/07+README komutuna `--task regression` |
+| ✅ P0-3 | day_one **metrikten bağımsız L2** eğitiyor — benchmark'ta L2 (400) sıfır tabanının (367) altında | `day_one.py:513` `starter_params` objective yok; `metrics.py:10` "MAE→L1" | metrik→objective haritası (mae→`mae`/CatBoost `MAE`) |
+| ✅ P0-4 | Bileşik `unique_id` (2024 emsali) test'te yok → CV bittikten sonra KeyError | `day_one.py:340,552`; docs/01:35 emsali kaydediyor | CV'den ÖNCE kontrol; sample deseninden id türet ya da net mesajla dur |
+| ✅ P0-5 | Test sırası ≠ sample sırası → hata; `align_to_sample=True` hiçbir çağrıda yok | `submission.py:308`; grep 0 | `day_one.py:551`'e `align_to_sample=True` |
+| ✅ P0-6 ★ | (grup, gün) tekilliği `temporal.py`/`pipeline.py`'de denetlenmiyor → olay-düzeyi veride ufuk duvarı **sessizce** yok olur (kanıt: 3 olay/gün, ufuk 7 → satırların %94'ü <7 gün) | `temporal.py:892,938,1014,1395,1482`; `pipeline.py:196-221`; guard yalnızca `spatial.py:310` | `_tek_satir_dogrula`'yı temporal/pipeline'a taşı; notebook 02 ham train yerine 01'in panelini kullansın + tekillik assert |
+| ✅ P0-7 ★ | Jüri notebook'u 02 üreticiden **sapmış** (`CVRecipe` ambargo alanı yok → provenance "0 gün ambargo" der); Kaggle'da `strict_provenance` git olmadığından **submission yazıldıktan sonra** çöküyor; `sample_submission` okunmuyor | `02_baseline.ipynb:418` vs `build_notebooks.py:718-726`; `:745` store; `:694` sample yok | `build_notebooks.py` çalıştır + commit; `strict_provenance=not IS_KAGGLE`; sample= geç; byte-karşılaştırma testi |
+| ✅ P0-8 ★ | Kaggle offline paketi **bayat**: wheel'de `national/point_events/tourism.py` yok, 6 modül farklı, `turizm_aylik_il`/`izsu`/`epias` yok, eski `yanginlar` | `kaggle_paket/` 17 Ağu 20:53; `VERI_DOSYALARI` manifestten kopuk | `VERI_DOSYALARI`'nı `sources.yml`'den türet; `--wheels --upload`; internetsiz Kaggle'da bir prova koşusu |
+| ✅ P0-9 ★ | docs/05 ve docs/07 hava-join örnekleri `il_key`↔`konum_key` → **%0 eşleşme**; büyük harf kolon adları `read_any` sonrası KeyError; docs/07:190 lag örneği eski `lags` (61/92/123 kaydırıyor) | docs/07:141-145,190; docs/05:150-155 | `left_on=["ilce_key","tarih"]`, küçük harf; `shifts=[31,62,93]` |
+| ✅ P0-10 | Hava arşivi **2026-08-09'da bitiyor**, tahmin köprüsü yok, NaN politikası yok → test bloğu Ağustos ortasını aşarsa 17 hava kolonu yalnızca testte NaN | `hava_gunluk` max; `fetch_weather.py:169-197` `today−6` tavanı | Open-Meteo forecast köprüsü (`past_days=92&forecast_days=16`) + `hava_kaynak` bayrağı; day_one ilk satırı "test max tarih vs hava max tarih"; kapsanmıyorsa ufuk-kaydırmalı hava |
 
 ### P1 — Skoru ve savunulabilirliği belirler (19-20 Ağustos)
 
 | # | Bulgu | Kanıt | Düzeltme |
 |---|---|---|---|
-| P1-1 ★ | "Harman 302,6/303,75" **örneklem-içi**; nested (3 fold ağırlık, 4. fold skor) 305,49 vs CatBoost tek 304,30; tohum gürültüsü ~4 MAE | `benchmark_gercek.py:690-780`; ölçüm | `harman_ve_stack`'e nested kontrol; kazanamıyorsa 5-tohum catboost_mae gönder |
-| P1-2 | Feature setinde **ilçe kimliği yok**; `ilce_key` kategorik + ufuk-güvenli expanding ilçe istatistikleri **−5,0 MAE** (304,3→299,3), en büyük tekil kazanç | ölçüm, aynı foldlar | `ozellik_kur`'a ekle; gerçek veride abone/nüfus statikleri + `init_score` |
-| P1-3 | HORIZON = test süresi; train→test **boşluğunu yok sayıyor** (10 gün boşlukta CV lag 20 gün, test 30 gün); embargo `max(h,30)` yanlış gerekçeli, CV'yi 31 gün bayatlatıyor | `day_one.py:428,437`, `full_pipeline.py:192,287`, `validation.py:552,587` | `HORIZON=(test.max−train.max).days`; `embargo=boşluk` (bitişikse 0); docstring düzelt |
-| P1-4 | sqrt dönüşüm verdiği (393) **artefakt**: guard erken durmayı kapatıp 2000 sabit ağaç koşturuyor; ES ile 326,5; docs/08 315,5 diyor | `models.py:111-127`; ölçüm | fit-uzayı ES metriği izni; benchmark yeniden; docs/08 güncelle |
-| P1-5 ★ | Harici verinin 8'i **kütüphane-only** (`hava_saatlik_turev` parquet'ini hiçbir kod okumuyor; KTB/İZSU/EPİAŞ/yangın/deprem/okul yalnızca testte); orkestratör yok | bağlantı tablosu (grep) | `attach_external(panel, key, time, horizon)` tek orkestratör; her kaynak `ablation_gercek.py`'de aile olarak ölçülsün |
-| P1-6 | EPİAŞ plansız kesinti geçmişi (96 ilçe, 2022→) hiç çekilmemiş: 78 satır/1 gün prova; betik+kimlik hazır | `epias/kesinti_plansiz.parquet`; `fetch_epias_outages.py` | Şimdi çek (~30 dk); 96 ilçede ablasyon; kural sorusu: bu veri serbest mi? |
-| P1-7 | Nihai gönderim yolu benchmark konfigürasyonlarını üretemiyor: `multi_seed_refit` ağırlık/dönüşüm/iki-aşama geçirmiyor; fold-ortalaması test tahmini son ayı az kullanıyor | `refit.py:297-308`; `models.py:1325` | `sample_weight`/`target_transform` passthrough veya son-fold ağırlıklı test |
-| P1-8 | Rastgele/iç içe test bölünmesi için kod yolu yok (455 gün ufuk → "hiç fold yok") | `day_one.py:371,451` | iç içe ise GroupKFold/KFold'a düş, nedenini yaz |
-| P1-9 | `build_panel` `value_columns=None` → tüm sayısal kolonları topluyor (nüfus/kVA olay sayısıyla çarpılır, testte ham) | `panel.py:232-254`; day_one | `value_columns=[target]` |
-| P1-10 ★ | UTF-8 dosyada 64 KB sınırı çok baytlı karakteri bölerse **sessizce cp1254** okunur → tüm ilçe adları bozuk, join %0 (11 MB gerçek dosyada ~%2,8 olasılık) | `io_utils.py:69,435-441`; yeniden üretildi | `UnicodeDecodeError.start >= len−3` ise kırp/incremental decoder; >64 KB test |
-| P1-11 | Harici join'ler eşleşme oranını hiç teşhis etmiyor (%0 eşleşme = sessiz NaN) | `national.py:227`, `tourism.py:117`; `diagnose_join` yalnızca 2 script'te | merge sonrası %0 → ValueError, <%50 → warn (3 fonksiyon) |
-| P1-12 | "il-ilçe" bileşik dizgeler (`izmir-karabağlar`) referansla eşleşmiyor; `strip_qualifier` sol tarafı alıyor | `turkish.py:190`; ölçüm | `split_il_ilce()` yardımcısı; `diagnose_join`'e ekle |
+| ✅ P1-1 ★ | "Harman 302,6/303,75" **örneklem-içi**; nested (3 fold ağırlık, 4. fold skor) 305,49 vs CatBoost tek 304,30; tohum gürültüsü ~4 MAE | `benchmark_gercek.py:690-780`; ölçüm | `harman_ve_stack`'e nested kontrol; kazanamıyorsa 5-tohum catboost_mae gönder |
+| ✅ P1-2 | Feature setinde **ilçe kimliği yok**; `ilce_key` kategorik + ufuk-güvenli expanding ilçe istatistikleri **−5,0 MAE** (304,3→299,3), en büyük tekil kazanç | ölçüm, aynı foldlar | `ozellik_kur`'a ekle; gerçek veride abone/nüfus statikleri + `init_score` |
+| ✅ P1-3 | HORIZON = test süresi; train→test **boşluğunu yok sayıyor** (10 gün boşlukta CV lag 20 gün, test 30 gün); embargo `max(h,30)` yanlış gerekçeli, CV'yi 31 gün bayatlatıyor | `day_one.py:428,437`, `full_pipeline.py:192,287`, `validation.py:552,587` | `HORIZON=(test.max−train.max).days`; `embargo=boşluk` (bitişikse 0); docstring düzelt |
+| ✅ P1-4 | sqrt dönüşüm verdiği (393) **artefakt**: guard erken durmayı kapatıp 2000 sabit ağaç koşturuyor; ES ile 326,5; docs/08 315,5 diyor | `models.py:111-127`; ölçüm | fit-uzayı ES metriği izni; benchmark yeniden; docs/08 güncelle |
+| ✅ P1-5 ★ | Harici verinin 8'i **kütüphane-only** (`hava_saatlik_turev` parquet'ini hiçbir kod okumuyor; KTB/İZSU/EPİAŞ/yangın/deprem/okul yalnızca testte); orkestratör yok | bağlantı tablosu (grep) | `attach_external(panel, key, time, horizon)` tek orkestratör; her kaynak `ablation_gercek.py`'de aile olarak ölçülsün |
+| ✅ P1-6 | EPİAŞ plansız kesinti geçmişi (96 ilçe, 2022→) hiç çekilmemiş: 78 satır/1 gün prova; betik+kimlik hazır | `epias/kesinti_plansiz.parquet`; `fetch_epias_outages.py` | Şimdi çek (~30 dk); 96 ilçede ablasyon; kural sorusu: bu veri serbest mi? |
+| ✅ P1-7 | Nihai gönderim yolu benchmark konfigürasyonlarını üretemiyor: `multi_seed_refit` ağırlık/dönüşüm/iki-aşama geçirmiyor; fold-ortalaması test tahmini son ayı az kullanıyor | `refit.py:297-308`; `models.py:1325` | `sample_weight`/`target_transform` passthrough veya son-fold ağırlıklı test |
+| ✅ P1-8 | Rastgele/iç içe test bölünmesi için kod yolu yok (455 gün ufuk → "hiç fold yok") | `day_one.py:371,451` | iç içe ise GroupKFold/KFold'a düş, nedenini yaz |
+| ✅ P1-9 | `build_panel` `value_columns=None` → tüm sayısal kolonları topluyor (nüfus/kVA olay sayısıyla çarpılır, testte ham) | `panel.py:232-254`; day_one | `value_columns=[target]` |
+| ✅ P1-10 ★ | UTF-8 dosyada 64 KB sınırı çok baytlı karakteri bölerse **sessizce cp1254** okunur → tüm ilçe adları bozuk, join %0 (11 MB gerçek dosyada ~%2,8 olasılık) | `io_utils.py:69,435-441`; yeniden üretildi | `UnicodeDecodeError.start >= len−3` ise kırp/incremental decoder; >64 KB test |
+| ✅ P1-11 | Harici join'ler eşleşme oranını hiç teşhis etmiyor (%0 eşleşme = sessiz NaN) | `national.py:227`, `tourism.py:117`; `diagnose_join` yalnızca 2 script'te | merge sonrası %0 → ValueError, <%50 → warn (3 fonksiyon) |
+| ✅ P1-12 | "il-ilçe" bileşik dizgeler (`izmir-karabağlar`) referansla eşleşmiyor; `strip_qualifier` sol tarafı alıyor | `turkish.py:190`; ölçüm | `split_il_ilce()` yardımcısı; `diagnose_join`'e ekle |
 | P1-13 | Bilimsel kazanan kapısı **hiç ateşlenemiyor** (6 dış çapa ister, hiçbir betik üretmiyor); fold skorları JSON'da yok; `fold_std≈90` mevsim seviyesi, gürültü değil | `benchmark_gercek.py:137,862`; `evaluation.py:128` | fold skorlarını sakla; eşleştirilmiş farklar; `n_splits=8` aylık çapa |
 | P1-14 | Benchmark hedefi dakika; 2024 hedefi **sayım**dı. Sayımda sıralama aynı (catboost_mae 2,363 en iyi) ama commit'li kanıt yok | `benchmark_gercek.py:113-118`; docs/14 | `--hedef adet` anahtarı, iki JSON commit |
 | P1-15 | Hiperparametre gerçek veride hiç ayarlanmadı; 100 deneme ≈ 40 dk | tüm üyeler `starter_params` | 40 dk Optuna; yalnızca eşleştirilmiş kazanç > tohum gürültüsüyse al |

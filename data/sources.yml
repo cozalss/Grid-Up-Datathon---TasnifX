@@ -371,6 +371,52 @@
       }
     },
     {
+      "path": "data/external/epias/kesinti_plansiz.parquet",
+      "sha256": "85836fcee03445f4918b429fc37290d384ff5284ac5b9eb714a8d4aa175eb191",
+      "license": "EPIAS-transparency-public",
+      "redistribution": "restricted",
+      "attribution": "EPIAS Seffaflik Platformu (seffaflik.epias.com.tr) -- elektrik hizmet kalitesi / plansiz kesinti kayitlari, GDZ ve ADM dagitim bolgeleri.",
+      "verification": {
+        "basis": "platform-terms",
+        "reviewed_at": "2026-08-18",
+        "evidence": "Veri EPIAS Seffaflik Platformu'ndan kayitli kullanici kimligiyle API uzerinden cekildi. Platform verisi kamuya aciktir ANCAK yeniden dagitim kosullari ayrica incelenmelidir; bu yuzden redistribution=restricted ve Kaggle paketine KONMAZ. Yerel analiz/prova icin kullanilir. DIKKAT: bu veri yarisma HEDEFININ gecmisidir ve test donemini (2026) kapsar -- yarisma kurallarinda harici veri izni dogrulanmadan MODELE GIRMEZ (acilis gunu soru listesi, docs/16)."
+      },
+      "source": {
+        "uri": "https://seffaflik.epias.com.tr/electricity-service/v1/consumption/data/unplanned-outage",
+        "snapshot_ref": "2022-01-01..2026-08-17, 5 il (GDZ+ADM), gunluk cekim; 1690 gunun 1284'unde kayit var",
+        "retrieved_at": "2026-08-18",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 380000,
+        "required_columns": ["province", "district", "date", "startTime", "endTime", "reason"]
+      }
+    },
+    {
+      "path": "data/external/epias/panel_ilce_gun.parquet",
+      "sha256": "dd938d00021103cfb17b675ff11deac90ea435978e342700b35e8a08c89d212d",
+      "license": "EPIAS-transparency-public",
+      "redistribution": "restricted",
+      "attribution": "EPIAS Seffaflik Platformu kesinti kayitlarindan turetilmis ilce x gun paneli (scripts/epias_panel.py).",
+      "verification": {
+        "basis": "own-derived-work",
+        "reviewed_at": "2026-08-18",
+        "evidence": "Kaynak veriden turetildi: 92/96 ilce eslesti (Aydin Merkez -> efeler kurtarildi; Denizli/Manisa merkez adlari 2012'de ikiye bolundugu icin BELIRSIZ sayilip disarida birakildi). Yalnizca EPIAS'in yayimladigi gunler (kapsanan_gun=1) yazilir; 406 bos gun sahte sifir olarak GIRMEZ."
+      },
+      "source": {
+        "uri": "derived://scripts/epias_panel.py",
+        "snapshot_ref": "2022-01-01..2026-08-17, 96 ilce izgarasi, 1284 kapsanan gun",
+        "retrieved_at": "2026-08-18",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 100000,
+        "required_columns": ["il_key", "ilce_key", "gun", "kesinti_adet", "kesinti_dk", "kapsanan_gun"]
+      }
+    },
+    {
       "path": "data/external/konvektif_gunluk.parquet",
       "sha256": "07f4718de9ae20b22a035bfc8e15a266d67412b9ba8bad7b2800695e62129e4f",
       "license": "CC-BY-4.0",

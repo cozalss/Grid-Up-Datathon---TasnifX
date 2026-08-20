@@ -357,6 +357,67 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
             ("koordinatlar Ege kutusunda", lambda d: d["lat"].between(36, 40).all()),
         ),
     ),
+    Kaynak(
+        ad="epias_kesinti_ham",
+        yol="data/external/epias/kesinti_plansiz.parquet",
+        tarih_kolonu="date",
+        asgari_satir=380_000,
+        # EPIAS ARSIVI DELIK DESIK: 1690 gunun 406'sinda hic kayit yok
+        # (2024Q3 tamamen bos). Bu bir veri hatasi DEGIL, platformun yayin
+        # gecmisi; kapsam kontrolu bu yuzden gun sayisina degil kayit
+        # sayisina bakar ve son-tarih kontrolu ayrica beyan edilir.
+        son_kontrolu_atla="EPIAS yayin takvimi duzensiz; bosluk gunleri panelde bayrakli",
+        kapsam_basi=pd.Timestamp("2022-01-01"),
+        kapsam_basi_gerekce=(
+            "EPIAS Seffaflik Platformu plansiz kesinti API'si 2022'den once "
+            "bu bolge icin kayit dondurmuyor (olculdu: --start 2022-01-01)."
+        ),
+        fizik=(
+            (
+                "Iki dagitim sirketi de var (GDZ + ADM)",
+                lambda d: {"GDZ_EDAS", "ADM_EDAS"} <= set(d["distributionCompanyName"].unique()),
+            ),
+            (
+                "Kesinti suresi medyani 30-300 dk (kurumsal kayit gercegi)",
+                lambda d: (
+                    30
+                    <= (
+                        pd.to_datetime(d["endTime"], format="mixed", utc=True)
+                        - pd.to_datetime(d["startTime"], format="mixed", utc=True)
+                    )
+                    .dt.total_seconds()
+                    .div(60)
+                    .median()
+                    <= 300
+                ),
+            ),
+        ),
+    ),
+    Kaynak(
+        ad="epias_panel_ilce_gun",
+        yol="data/external/epias/panel_ilce_gun.parquet",
+        tarih_kolonu="gun",
+        anahtar_kolonu="ilce_key",
+        beklenen_ilce=96,
+        asgari_satir=100_000,
+        son_kontrolu_atla="Panel kaynagi EPIAS; yayin takvimi duzensiz (bkz. epias_kesinti_ham)",
+        kapsam_basi=pd.Timestamp("2022-01-01"),
+        kapsam_basi_gerekce="Kaynak EPIAS 2022-01-01'de basliyor; panel ondan turer.",
+        fizik=(
+            (
+                "Yalnizca KAPSANAN gunler yazilmis (sahte sifir yok)",
+                lambda d: bool((d["kapsanan_gun"] == 1).all()),
+            ),
+            (
+                "Sifir orani %40-70 (kapsanan gunlerde; sahte sifirla sismemis)",
+                lambda d: 0.40 <= float((d["kesinti_adet"] == 0).mean()) <= 0.70,
+            ),
+            (
+                "Negatif sure yok",
+                lambda d: bool((d["kesinti_dk"] >= 0).all()),
+            ),
+        ),
+    ),
 )
 
 

@@ -1,0 +1,117 @@
+{
+  "hedef": "kesinti_adet",
+  "panel_satir": 123264,
+  "izgara_satir": 162240,
+  "ilce": 96,
+  "gun": 1284,
+  "sifir_orani": 0.5446034527518172,
+  "tam_mae": 2.905646819789383,
+  "fold_scores": [
+    2.839802632291456,
+    2.761147116435734,
+    3.2366297343265984,
+    2.785007796103745
+  ],
+  "sifir_baseline": 6.038978494623656,
+  "aileler": {
+    "lag": {
+      "mae_ailesiz": 3.8592,
+      "delta": 0.9535,
+      "kolon_sayisi": 10
+    },
+    "gunes": {
+      "mae_ailesiz": 3.0,
+      "delta": 0.0944,
+      "kolon_sayisi": 7
+    },
+    "hava": {
+      "mae_ailesiz": 2.984,
+      "delta": 0.0783,
+      "kolon_sayisi": 25
+    },
+    "turizm_aylik": {
+      "mae_ailesiz": 2.9702,
+      "delta": 0.0646,
+      "kolon_sayisi": 2
+    },
+    "takvim": {
+      "mae_ailesiz": 2.969,
+      "delta": 0.0634,
+      "kolon_sayisi": 9
+    },
+    "yangin": {
+      "mae_ailesiz": 2.9568,
+      "delta": 0.0511,
+      "kolon_sayisi": 42
+    },
+    "turizm_yillik": {
+      "mae_ailesiz": 2.9468,
+      "delta": 0.0412,
+      "kolon_sayisi": 4
+    },
+    "izsu": {
+      "mae_ailesiz": 2.941,
+      "delta": 0.0353,
+      "kolon_sayisi": 2
+    },
+    "hava_kalitesi": {
+      "mae_ailesiz": 2.9393,
+      "delta": 0.0337,
+      "kolon_sayisi": 8
+    },
+    "deprem": {
+      "mae_ailesiz": 2.936,
+      "delta": 0.0304,
+      "kolon_sayisi": 42
+    },
+    "ilce_gecmisi": {
+      "mae_ailesiz": 2.9265,
+      "delta": 0.0208,
+      "kolon_sayisi": 3
+    },
+    "nem_toprak": {
+      "mae_ailesiz": 2.9212,
+      "delta": 0.0156,
+      "kolon_sayisi": 15
+    },
+    "hava_saatlik": {
+      "mae_ailesiz": 2.9172,
+      "delta": 0.0116,
+      "kolon_sayisi": 7
+    },
+    "tatil": {
+      "mae_ailesiz": 2.9139,
+      "delta": 0.0082,
+      "kolon_sayisi": 10
+    },
+    "konvektif": {
+      "mae_ailesiz": 2.8859,
+      "delta": -0.0198,
+      "kolon_sayisi": 8
+    },
+    "epias": {
+      "mae_ailesiz": 2.7596,
+      "delta": -0.146,
+      "kolon_sayisi": 10
+    }
+  },
+  "siralama": [
+    "lag",
+    "gunes",
+    "hava",
+    "turizm_aylik",
+    "takvim",
+    "yangin",
+    "turizm_yillik",
+    "izsu",
+    "hava_kalitesi",
+    "deprem",
+    "ilce_gecmisi",
+    "nem_toprak",
+    "hava_saatlik",
+    "tatil",
+    "konvektif",
+    "epias"
+  ],
+  "atlanan": {}
+}

@@ -24,7 +24,7 @@ izlenecek adımları içerir.
 | EPDK bölge sınıfı | `gridup.features.demografi.epdk_bolge_sinifi` | Resmi kentsel/kentaltı/kırsal eşikleri |
 | Gerçek veri ölçümleri | `experiments/ablasyon_gercek.json` · `benchmark_gercek.json` | 68.257 gerçek GDZ kaydında |
 | Ekip kurulum doktoru | `scripts/ekip_kontrol.py` | Tek komutla 7 kontrol |
-| Test paketi | `tests/` | 1231 test |
+| Test paketi | `tests/` | 1236 test |
 
 ---
 
@@ -237,6 +237,38 @@ değiştirmeyin** — hangisinin işe yaradığını bilemezsiniz.
    > veride tutmadı — günlük hava tek başına nötr, değeri **saatlik türevleri**
    > (basınç düşüşü, eşik üstü rüzgâr saati) ve **CAPE** taşıyor. Tatil ve
    > güneş aileleri negatif ölçüldü; ölçmeden eklemeyin.
+
+   **İKİNCİ ÖLÇÜM — 96 ilçe, sayım hedefi, 2022-26 (EPİAŞ paneli):**
+   `scripts/ablation_epias.py` aynı aileleri **ADM dahil 96 ilçede** ve
+   **kesinti SAYISI** hedefinde ölçtü (123.264 satır, 1284 kapsanan gün,
+   tam MAE 2,906 · sıfır-baseline 6,039 · fold std 0,19):
+
+   | Aile | delta | Aile | delta |
+   |---|---:|---|---:|
+   | **lag** | **+0,954** | ilce_gecmisi | +0,021 |
+   | gunes | +0,094 | nem_toprak | +0,016 |
+   | hava | +0,078 | hava_saatlik | +0,012 |
+   | turizm_aylik | +0,065 | tatil | +0,008 |
+   | takvim | +0,063 | **konvektif** | **−0,020** |
+   | yangin | +0,051 | **epias** | **−0,146** |
+
+   > **İKİ ÖLÇÜM ÇELİŞİYOR — ve bu, bilmemiz gereken şey.** 47 ilçe/dakika
+   > panelinde CAPE (+4,12) ve EPİAŞ (+3,13) en değerli iki harici aileydi;
+   > 96 ilçe/sayım panelinde ikisi de **negatif**. Buna karşılık `lag` ailesi
+   > orada MAE'nin %5'ini, burada **%33'ünü** taşıyor. Yani harici verinin
+   > katkısı hedef tipine ve panele göre değişiyor; hiçbiri "kesin faydalı"
+   > değil. **Veri günü kuralı:** gerçek hedef geldiğinde `ablation_epias.py`
+   > kalıbıyla YENİDEN ölç, bu tabloları kopyalama. Tek istikrarlı sonuç:
+   > **önce lag ailesi**.
+
+   İki teknik ders (ikisi de ölçüldü):
+   - **Kapsama boşluğu sahte sıfır üretir.** EPİAŞ arşivinde 1690 günün
+     406'sı boş; bunları 0 saymak sıfır oranını %54,5 → %65,4 şişiriyor.
+     `epias_panel.py` `kapsanan_gun` bayrağı üretir, skorlama yalnızca
+     kapsanan satırlarda yapılır.
+   - **Boşluklu panelde satır-kaydırma yanlış lag verir.** Panel sürekli
+     ızgaraya tamamlanıp (boşluk günlerinin hedefi NaN) feature üretilince
+     ve sonra kapsanan satırlara inilince tam MAE 2,980 → **2,906** düzeldi.
 
 4. **Komşu ilçe** — `nearest_neighbours` + `add_neighbour_target_lag(horizon=H)`
    (delta +2,13; ucuz).

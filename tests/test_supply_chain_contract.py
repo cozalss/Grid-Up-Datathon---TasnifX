@@ -478,9 +478,17 @@ def test_paket_veri_listesi_kaynak_manifestinden_turetiliyor():
 
     2026-08-18 denetimi: izsu manifestte var pakette yok, turizm_aylik_il
     yalnizca listede vardi; Kaggle'a yuklenen paket bayat kaldi.
+
+    Turetme YENIDEN DAGITIM iznini de sormali: EPIAS kesinti kayitlari
+    kamuya acik ama dagitim kosullari dogrulanmadi (``restricted``) --
+    filtre olmasaydi manifestten turetme onu sessizce yayimlardi.
     """
     package = _load_script("build_kaggle_manifest_contract", "scripts/build_kaggle_package.py")
     manifest = json.loads((ROOT / "data" / "sources.yml").read_text(encoding="utf-8"))
-    beklenen = tuple(a["path"] for a in manifest["artifacts"])
-    assert beklenen == package.VERI_DOSYALARI
-    assert len(beklenen) >= 10
+    izinli = tuple(a["path"] for a in manifest["artifacts"] if a.get("redistribution") == "allowed")
+    assert izinli == package.VERI_DOSYALARI
+    assert len(izinli) >= 10
+
+    yasakli = [a["path"] for a in manifest["artifacts"] if a.get("redistribution") != "allowed"]
+    for yol in yasakli:
+        assert yol not in package.VERI_DOSYALARI, f"izinsiz artefakt paketleniyor: {yol}"

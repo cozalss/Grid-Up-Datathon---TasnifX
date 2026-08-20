@@ -64,11 +64,25 @@ SOURCE_MANIFEST = ROOT / "data" / "sources.yml"
 #: olmayan bir dosya pakete GIREMEZ: lisans/hash kaydi olmayan veri
 #: dagitilmaz (verify_sources kapisi da ayni kumeye bakar).
 def _manifest_veri_dosyalari(manifest_yolu: Path = SOURCE_MANIFEST) -> tuple[str, ...]:
-    """sources.yml artefakt yollarini (manifest sirasiyla) dondurur."""
+    """Manifestte YENIDEN DAGITIMA IZINLI artefaktlarin yollari.
+
+    ``redistribution != "allowed"`` olan artefakt pakete GIRMEZ. Ornek:
+    EPIAS Seffaflik Platformu kesinti kayitlari kamuya acik ama yeniden
+    dagitim kosullari dogrulanmamistir (``restricted``); yerel provada
+    kullanilir, Kaggle dataset'ine konmaz. Filtre olmasaydi manifestten
+    turetme, izinsiz veriyi sessizce yayimlardi (2026-08-18).
+    """
     manifest = json.loads(manifest_yolu.read_text(encoding="utf-8"))
-    yollar = tuple(str(kayit["path"]) for kayit in manifest.get("artifacts", []))
-    if not yollar:
+    artefaktlar = manifest.get("artifacts", [])
+    if not artefaktlar:
         raise RuntimeError(f"{manifest_yolu}: artefakt listesi bos; paket kurulamaz.")
+    yollar = tuple(
+        str(kayit["path"])
+        for kayit in artefaktlar
+        if str(kayit.get("redistribution", "")).lower() == "allowed"
+    )
+    if not yollar:
+        raise RuntimeError(f"{manifest_yolu}: yeniden dagitima izinli artefakt yok.")
     return yollar
 
 
