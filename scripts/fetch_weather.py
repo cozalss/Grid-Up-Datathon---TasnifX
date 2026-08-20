@@ -573,7 +573,14 @@ def main() -> int:
     # nedeniyle kismi kalan bir indirmeyi tamamlamak icin -- 20 konumun 13'u
     # inmisse yalnizca 7'sini istemek hem hizli hem kotaya nazik.
     frames: list[pd.DataFrame] = []
+    #: Mevcut dosyadan KORUNAN satirlar. Yeni cekimden AYRI tutulur cunku
+    #: birlestirmede YENI kazanmali: kismi tazelemede ayni gun hem eski
+    #: (belki koprüden gelen TAHMIN) hem yeni (ARSIV) satirla gelir ve
+    #: dogru olan yenidir.
+    mevcut_frames: list[pd.DataFrame] = []
     already: set[str] = set()
+    #: konum -> yalnizca bu tarihten itibaren cekilecek (kismi tazeleme)
+    kismi: dict[str, str] = {}
 
     time_column = "tarih" if not args.hourly else "zaman"
     if output_path.exists() and not args.fresh:
@@ -588,15 +595,38 @@ def main() -> int:
             print(f"Mevcut hava cache'i dogrulanamadi; kullanilmayacak: {error}")
             existing = None
         covered = set() if existing is None else set(existing["konum"].unique())
-        # Yalnizca istenen tarih araligini KAPSAYAN konumlari kabul et.
         wanted_start, wanted_end = pd.Timestamp(args.start), pd.Timestamp(args.end)
+
+        # KAPSAM ARSIV SATIRLARINDAN olculur, tum tablodan DEGIL.
+        #
+        # Tablo koprü ile gelecege uzatilmis olabilir (hava_tahmin=1,
+        # 2026-08-26'ya kadar). O satirlari sayarsak her konum "tam kapsamli"
+        # gorunur ve cekici HICBIR SEY yapmaz -- yani arsivdeki gercek bosluk
+        # (08-10..08-19 tahmin turevli) --fresh olmadan ASLA kapanmaz.
+        # Olculdu 2026-08-20.
+        arsiv = existing
+        if arsiv is not None and "hava_tahmin" in arsiv.columns:
+            arsiv = arsiv[arsiv["hava_tahmin"].astype("int8") == 0]
+
         for name in covered:
-            span = existing.loc[existing["konum"] == name, time_column]
-            if span.min() <= wanted_start and span.max() >= wanted_end:
+            span = arsiv.loc[arsiv["konum"] == name, time_column]
+            if span.empty or span.min() > wanted_start:
+                continue  # bas boslugu ya da hic arsiv satiri yok -> tam cekim
+            if span.max() >= wanted_end:
                 already.add(name)
+            else:
+                # YALNIZCA EKSIK KUYRUK. Tum araligi bastan istemek kotayi
+                # ~240 kat hizli tuketir (bkz. eksik_aralik gerekcesi).
+                bas = max(span.max() - pd.Timedelta(days=EK_CEKIM_ORTUSME_GUN), wanted_start)
+                kismi[name] = bas.date().isoformat()
         if already:
-            frames.append(existing[existing["konum"].isin(already)])
+            mevcut_frames.append(existing[existing["konum"].isin(already)])
             print(f"Mevcut dosyada {len(already)} konum tam kapsamli -- atlaniyor.")
+        if kismi:
+            # Kismi konumlarin MEVCUT satirlari korunur; kuyruk uzerine eklenir.
+            mevcut_frames.append(existing[existing["konum"].isin(kismi)])
+            ornek = min(kismi.values())
+            print(f"{len(kismi)} konumun yalnizca kuyrugu cekilecek (en erken {ornek}).")
 
     pending = {name: coords for name, coords in locations.items() if name not in already}
 
@@ -606,10 +636,12 @@ def main() -> int:
     failures = []
 
     for index, (name, (latitude, longitude)) in enumerate(pending.items(), start=1):
-        print(f"[{index}/{len(pending)}] {name} ...", end=" ", flush=True)
+        konum_bas = kismi.get(name, args.start)
+        etiket = f"{konum_bas}.." if konum_bas != args.start else ""
+        print(f"[{index}/{len(pending)}] {name} {etiket}...", end=" ", flush=True)
         try:
             frame = fetch_location(
-                name, latitude, longitude, args.start, args.end, hourly=args.hourly
+                name, latitude, longitude, konum_bas, args.end, hourly=args.hourly
             )
         except RuntimeError as error:
             print(f"BASARISIZ -- {error}")
@@ -620,16 +652,23 @@ def main() -> int:
         print(f"{len(frame)} satir")
         time.sleep(args.pause)  # API'ye nazik ol
 
-    if not frames:
+    if not frames and not mevcut_frames:
         print("\nHicbir konum icin veri alinamadi. Internet baglantisini kontrol et.")
         return 1
 
-    combined = pd.concat(frames, ignore_index=True)
+    # SIRA ONEMLI: yeni cekim ONDE. drop_duplicates ilk satiri tutar, yani
+    # ortusen gunde YENI (arsiv) deger kazanir. Ters sirada, koprünün
+    # biraktigi TAHMIN satiri yeni arsiv satirini ezerdi ve tazeleme hicbir
+    # ise yaramazdi (olculdu 2026-08-20).
+    combined = pd.concat(frames + mevcut_frames, ignore_index=True)
     if not args.hourly:
         combined = add_derived_features(combined)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     combined = combined.drop_duplicates(subset=["konum", "tarih" if not args.hourly else "zaman"])
+    # Yeni cekilen satirlarda bayrak yoktur; arsivden geldikleri icin 0.
+    if "hava_tahmin" in combined.columns:
+        combined["hava_tahmin"] = combined["hava_tahmin"].fillna(0).astype("int8")
     publish_dataframe(
         combined,
         output_path,
