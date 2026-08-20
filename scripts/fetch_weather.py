@@ -38,7 +38,7 @@ import json
 import sys
 import time
 from collections.abc import Sequence
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -108,12 +108,33 @@ def rate_limit_beklemesi(
     except Exception:  # noqa: BLE001 - govde okunamazsa merdivene dus
         govde = ""
 
-    if "hour" in govde or "dai" in govde:
+    # GUNLUK limit SAATLIK limitten AYRI ele alinmali.
+    #
+    # OLCULDU 2026-08-21 00:04: govde "Daily API request limit exceeded.
+    # Please try again tomorrow." diyordu. Saat basina kadar beklemek burada
+    # ISE YARAMAZ -- kota UTC gun donumunde sifirlanir, saat basinda degil.
+    # Uc denemeyi bir saat arayla harcamak yalnizca zaman kaybettirir ve
+    # kullaniciya "cekim basarisiz" der; oysa dogru cevap "kota yarina
+    # kadar dolu, su saatte tekrar dene"dir.
+    if "dai" in govde:
+        an = simdi or datetime.now(UTC).astimezone()
+        if an.tzinfo is None:
+            an = an.astimezone()
+        sonraki_utc_gun = (an.astimezone(UTC) + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        saniye = int((sonraki_utc_gun - an.astimezone(UTC)).total_seconds()) + 60
+        yerel = sonraki_utc_gun.astimezone()
+        return max(60, saniye), (
+            f"GUNLUK limit -- kota UTC gun donumunde sifirlanir (yerel saatle {yerel:%H:%M})"
+        )
+
+    if "hour" in govde:
         an = simdi or datetime.now()
         sonraki_saat = (an + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
         saniye = int((sonraki_saat - an).total_seconds()) + 30  # emniyet payi
         saniye = max(60, min(saniye, SAATLIK_LIMIT_TAVANI_SN))
-        return saniye, "SAATLIK/GUNLUK limit -- saat basina kadar"
+        return saniye, "SAATLIK limit -- saat basina kadar"
 
     # ``merdiven`` parametrik: EPIAS kendi kotasi icin ayri kalibre edilmis
     # bir merdiven tutar (30/90/240). Saatlik-pencere tespiti ise ORTAKTIR --

@@ -492,3 +492,42 @@ def test_hava_cekicisi_kapsami_arsiv_satirlarindan_olcuyor() -> None:
         "Kapsam, tum tablodan olculuyor. Arsiv satirlari (hava_tahmin=0) "
         "ayrilmali -- yoksa koprü satirlari kapsam sanilir."
     )
+
+
+def test_gunluk_limit_saatlik_limitten_ayri_ele_aliniyor() -> None:
+    """GUNLUK kota saat basinda DEGIL, UTC gun donumunde sifirlanir.
+
+    OLCULDU 2026-08-21 00:04 -- govde soyle diyordu::
+
+        "Daily API request limit exceeded. Please try again tomorrow."
+
+    Ilk surum "hour" ve "dai" kaliplarini AYNI dala sokuyor ve ikisinde de
+    saat basina kadar bekliyordu (en fazla 65 dk). Gunluk limitte bu ise
+    yaramaz: uc deneme uc saat harcanir, sonra "cekim basarisiz" denir.
+    Oysa dogru cevap "kota UTC gun donumune kadar dolu, su saatte tekrar
+    dene"dir.
+    """
+    import datetime as dt
+
+    modul = _modul_yukle("fetch_weather")
+    an = dt.datetime(2026, 8, 21, 0, 4, 0, tzinfo=dt.timezone(dt.timedelta(hours=3)))
+
+    gunluk = _SahteYanit(
+        '{"error":true,"reason":"Daily API request limit exceeded. Please try again tomorrow."}'
+    )
+    saatlik = _SahteYanit('{"error":true,"reason":"Hourly API request limit exceeded."}')
+
+    gun_sn, gun_gerekce = modul.rate_limit_beklemesi(gunluk, 1, simdi=an)
+    saat_sn, saat_gerekce = modul.rate_limit_beklemesi(saatlik, 1, simdi=an)
+
+    assert "GUNLUK" in gun_gerekce and "SAATLIK" in saat_gerekce, (
+        f"Iki limit ayirt edilmiyor: {gun_gerekce!r} / {saat_gerekce!r}"
+    )
+    # UTC gun donumu 03:00 TSS; 00:04'ten ~3 saat sonra.
+    assert 10_000 < gun_sn < 11_500, f"Gunluk bekleme {gun_sn} sn -- UTC gun donumu degil"
+    assert gun_sn > saat_sn, (
+        "Gunluk limit icin saatlik limitten KISA beklenmis; kota sifirlanmadan denemeler tukenir."
+    )
+    assert gun_sn > modul.SAATLIK_LIMIT_TAVANI_SN, (
+        "Gunluk bekleme saatlik tavana kirpilmis -- o tavan yalnizca saatlik limit icindir."
+    )
