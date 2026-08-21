@@ -51,6 +51,8 @@ __all__ = [
     "merge_infrastructure_params",
     "monotone_constraints_for",
     "starter_params",
+    "ESIK_BAGIMLI_METRIKLER",
+    "esik_bagimli_mi",
 ]
 
 ModelKind = Literal["lightgbm", "xgboost", "catboost"]
@@ -93,6 +95,59 @@ _EARLY_STOPPING_METRICS: dict[str, dict[str, str]] = {
         "accuracy": "Accuracy",
     },
 }
+
+
+#: ESIGE bagli metrikler: erken durdurma icin dogrudan kullanilamazlar.
+#:
+#: F1/precision/recall bir KARAR ESIGI secildikten sonra tanimlidir; model
+#: tur basina olasilik uretir, etiket degil. LightGBM ve XGBoost bu yuzden
+#: bunlari ``eval_metric`` olarak kabul etmez (CatBoost eder, kendi icinde
+#: 0,5 varsayar).
+ESIK_BAGIMLI_METRIKLER = frozenset({"f1", "precision", "recall"})
+
+#: Esik bagimli metrik icin erken durdurmada kullanilacak VEKIL.
+#:
+#: NEDEN LOGLOSS (2026-08-21, 'ikili' senaryolu prova): logloss esikten
+#: bagimsizdir ve OLASILIK KALITESINI olcer -- esik optimizasyonu tam da
+#: iyi kalibre olasiliklara dayandigi icin dogru vekil budur. AUC de esikten
+#: bagimsizdir ama yalnizca SIRALAMAYI olcer; iyi siralanmis ama kotu
+#: kalibre olasiliklar AUC'yi yuksek gosterip esik aramasini bozar.
+_ESIK_VEKILI: dict[str, str] = {"lightgbm": "logloss", "xgboost": "logloss"}
+
+
+def esik_bagimli_mi(metric: str | None) -> bool:
+    """Metrik bir karar esigi gerektiriyor mu?
+
+    Cagiran taraf bunu bilmek ZORUNDADIR: cevap evet ise gonderimden once
+    ``metrics.optimize_threshold`` FOLD-DISI tahminler uzerinde kosulmalidir.
+    0,5 esigi yalnizca siniflar dengeliyse ve model kalibreyse dogrudur.
+    """
+    return metric is not None and metric.lower() in ESIK_BAGIMLI_METRIKLER
+
+
+def _esik_vekiline_dus(key: str, *, kind: str, mapping: dict[str, str], metric: str | None) -> str:
+    """Esige bagli metrigi, backend destekliyorsa OLDUGU GIBI, degilse VEKILLE doner.
+
+    Onceki davranis ValueError'du ve gun-1'de HIC SUBMISSION URETMEDEN
+    cokuyordu (olculdu 2026-08-21; GDZ'22 Case-1 bu problemde tam olarak F1
+    kullanmisti). Dogru cevap durmak degil: olasilik temelli bir vekille
+    erken durdurup esigi SONRADAN, fold-disi tahminlerde optimize etmektir.
+
+    Vekile dusmek bir tavizdir ve SESSIZ kalmaz -- cagirana ne yapmasi
+    gerektigini soyleyen bir uyari cikar.
+    """
+    if key in mapping or key not in ESIK_BAGIMLI_METRIKLER or kind not in _ESIK_VEKILI:
+        return key
+    vekil = _ESIK_VEKILI[kind]
+    warnings.warn(
+        f"{metric!r} bir ESIGE baglidir ve {kind} icin dogrudan erken durdurma "
+        f"metrigi olamaz; {vekil!r} vekil olarak kullaniliyor. Gonderimden ONCE "
+        "metrics.optimize_threshold'u FOLD-DISI tahminlerde kos -- 0,5 esigi "
+        "dengesiz veride optimum degildir.",
+        UserWarning,
+        stacklevel=4,
+    )
+    return vekil
 
 
 def _resolve_early_stopping_metric(
@@ -164,6 +219,7 @@ def _resolve_early_stopping_metric(
     if target_transform == "log1p" and key == "rmsle":
         key = "rmse"
     mapping = _EARLY_STOPPING_METRICS[kind]
+    key = _esik_vekiline_dus(key, kind=kind, mapping=mapping, metric=metric)
     if key not in mapping:
         raise ValueError(
             f"early_stopping_metric={metric!r}, {kind} icin desteklenmiyor. "

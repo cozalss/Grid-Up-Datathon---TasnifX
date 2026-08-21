@@ -253,7 +253,21 @@ def optimize_threshold(
         [float(metric_fn(y_true, (y_proba >= threshold).astype(int))) for threshold in thresholds]
     )
 
-    best_index = int(np.argmax(scores) if greater_is_better else np.argmin(scores))
+    # BERABERLIKTE 0,5'E EN YAKIN ESIK KAZANIR (2026-08-21, olculdu).
+    #
+    # ``np.argmax`` ILK maksimumu dondurur ve izgara kucukten buyuge gider;
+    # yani beraberlikte hep EN DUSUK esik seciliyordu. Ikili senaryolu
+    # provada tam olarak bu oldu:
+    #
+    #     esik=0.010  f1=0.8996   (0,5'te de f1=0.8996)
+    #
+    # Ikisi ayni skoru veriyor ama secilen "her seye evet de" esigi. OOF'ta
+    # yalnizca BERABERE kalan uc bir esik, kuyruktaki birkac ornege uyuyor
+    # demektir; yeni veride once o bozulur. Kanit yokken varsayilana
+    # yaslanmak dogrudur -- bu yuzden beraberlikte 0,5'e en yakin nokta.
+    en_iyi_skor = float(np.max(scores) if greater_is_better else np.min(scores))
+    esitler = np.flatnonzero(np.isclose(scores, en_iyi_skor))
+    best_index = int(esitler[np.argmin(np.abs(thresholds[esitler] - 0.5))])
     best_score = float(scores[best_index])
 
     # SIZINTI SEZGISI

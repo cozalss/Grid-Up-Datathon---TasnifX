@@ -134,7 +134,7 @@ def _hasim_csv_yaz(
     metin.to_csv(path, sep=ayirici, index=False, encoding=kodlama, lineterminator="\n")
 
 
-def uret(zorluk: str) -> dict[str, Path]:
+def uret(zorluk: str, senaryo: str = "sayim") -> dict[str, Path]:
     """Hasim train/test/sample uclusunu yazar ve yollarini dondurur."""
     panel = pd.read_parquet(KAYNAK_PANEL)
     panel["gun"] = pd.to_datetime(panel["gun"])
@@ -143,6 +143,12 @@ def uret(zorluk: str) -> dict[str, Path]:
     eksik = int(panel["ilce_display"].isna().sum())
     if eksik:
         raise RuntimeError(f"{eksik} satirda goruntu adi bulunamadi -- kaynaklar uyusmuyor")
+
+    if senaryo == "ikili":
+        # GDZ'22 Case-1 -- AYNI PROBLEM -- metrik olarak F1 kullandi, yani
+        # hedef "kac kesinti" degil "kesinti oldu mu"ydu. 2026'da da boyle
+        # olabilir ve o durumda butun MAE/sayim yolu devre disi kalir.
+        panel["kesinti_adet"] = (panel["kesinti_adet"] > 0).astype(int)
 
     if zorluk == "tam":
         # Buyuk harf: 'Çiğli' -> 'ÇIĞLI' (Python varsayilan upper, I noktasiz).
@@ -156,6 +162,26 @@ def uret(zorluk: str) -> dict[str, Path]:
     test = panel[panel["gun"] >= bolme].copy()
     if egitim.empty or test.empty:
         raise RuntimeError(f"bolme gunu {BOLME_GUNU} paneli ikiye ayirmadi")
+
+    if senaryo == "soguk_ilce":
+        # SOGUK BASLANGIC: test'te olup train'de HIC OLMAYAN ilceler.
+        # Yarisma ilceye gore bolerse (ya da yeni bir ilce eklenirse) bu olur.
+        # Kategorik kodlama, hedef kodlama ve komsu feature'lari bu durumda
+        # gorulmemis bir seviyeyle karsilasir; sessizce NaN ya da 0 uretmek
+        # yerine ne yaptigini SOYLEMELI.
+        soguk = sorted(panel["ilce_key"].unique())[:10]
+        egitim = egitim[~egitim["ilce_key"].isin(soguk)].copy()
+        print(f"  SOGUK ILCE: {len(soguk)} ilce train'den cikarildi -> {soguk[:4]} ...")
+
+    if senaryo == "ic_ice":
+        # IC ICE BOLME: test gunleri train gunlerinin ARASINA serpistirilmis.
+        # forecast_geometry bunu 'interleaved' olarak isaretlemeli ve
+        # day_one purged_time_series yerine KFold'a dusmeli.
+        tum = panel.sort_values("gun")["gun"].unique()
+        test_gunleri = set(tum[::7])  # her 7 gunde bir gun test'e
+        egitim = panel[~panel["gun"].isin(test_gunleri)].copy()
+        test = panel[panel["gun"].isin(test_gunleri)].copy()
+        print(f"  IC ICE: {len(test_gunleri)} gun test'e serpistirildi")
 
     # Bilesik ID -- Kaggle'da cok yaygin ve day_one'in ``synthesize_id_column``
     # yolunu tetikler.
@@ -200,7 +226,7 @@ def uret(zorluk: str) -> dict[str, Path]:
     _hasim_csv_yaz(test_c, yollar["test"], zorluk=zorluk, ondalik_kolonlar=ondalikli)
     _hasim_csv_yaz(ornek, yollar["sample"], zorluk=zorluk)
 
-    print(f"  zorluk={zorluk}")
+    print(f"  zorluk={zorluk}  senaryo={senaryo}")
     print(f"  train : {len(egitim_c):>7,} satir  {yollar['train'].name}")
     print(f"  test  : {len(test_c):>7,} satir  {yollar['test'].name}")
     print(f"  sample: {len(ornek):>7,} satir  {yollar['sample'].name}")
@@ -238,14 +264,24 @@ def join_denetimi(zorluk: str) -> bool:
     return True
 
 
-def day_one_kos(yollar: dict[str, Path], ek: list[str]) -> int:
+#: Senaryo -> day_one'a verilecek resmi metrik.
+#:
+#: 'ikili' icin F1: GDZ'22 Case-1 -- bizimkiyle AYNI problem -- tam olarak
+#: bunu kullandi. Sayim yolunun butunu (Tweedie/Poisson objective, sifir
+#: tabani, tamsayiya yuvarlama) o senaryoda devre disi kalir.
+SENARYO_METRIGI = {"sayim": "MAE", "ikili": "f1", "soguk_ilce": "MAE", "ic_ice": "MAE"}
+
+SENARYOLAR = tuple(SENARYO_METRIGI)
+
+
+def day_one_kos(yollar: dict[str, Path], ek: list[str], senaryo: str = "sayim") -> int:
     komut = [
         sys.executable,
         str(KOK / "scripts" / "day_one.py"),
         "--data",
         str(CIKTI),
         "--metric",
-        "MAE",
+        SENARYO_METRIGI[senaryo],
         "--yes",
         *ek,
     ]
@@ -257,6 +293,17 @@ def day_one_kos(yollar: dict[str, Path], ek: list[str]) -> int:
 def main() -> int:
     ayristirici = argparse.ArgumentParser(description=__doc__)
     ayristirici.add_argument("--zorluk", choices=ZORLUKLAR, default="tam")
+    ayristirici.add_argument(
+        "--senaryo",
+        choices=SENARYOLAR,
+        default="sayim",
+        help=(
+            "Yarisma dosyasinin BICIMI degil SEKLI. 'sayim': gunluk kesinti "
+            "adedi + MAE. 'ikili': kesinti oldu mu + F1 (GDZ'22 Case-1 boyleydi). "
+            "'soguk_ilce': test'te train'de olmayan ilceler. 'ic_ice': test "
+            "gunleri train gunlerinin arasina serpistirilmis."
+        ),
+    )
     ayristirici.add_argument("--sadece-uret", action="store_true")
     ayristirici.add_argument("--temizle", action="store_true", help="Cikti dizinini sil ve cik")
     ayristirici.add_argument("day_one_ek", nargs="*", help="day_one.py'a aktarilacak ek bayraklar")
@@ -275,14 +322,14 @@ def main() -> int:
     print("=" * 70)
     print("DUSMANCA GUN-1 PROVASI")
     print("=" * 70)
-    yollar = uret(args.zorluk)
+    yollar = uret(args.zorluk, args.senaryo)
     saglam = join_denetimi(args.zorluk)
     if not saglam:
         print("\nUYARI: join denetimi kirmizi -- day_one yine de kosuluyor,")
         print("       ama dis aileler buyuk ihtimalle NaN gelecek.")
     if args.sadece_uret:
         return 0
-    return day_one_kos(yollar, args.day_one_ek)
+    return day_one_kos(yollar, args.day_one_ek, args.senaryo)
 
 
 if __name__ == "__main__":

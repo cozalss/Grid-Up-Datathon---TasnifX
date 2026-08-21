@@ -58,8 +58,8 @@ from gridup.features import (  # noqa: E402
     attach_external,
     shared_origin,
 )
-from gridup.metrics import get_metric  # noqa: E402
-from gridup.models import starter_params  # noqa: E402
+from gridup.metrics import get_metric, optimize_threshold  # noqa: E402
+from gridup.models import esik_bagimli_mi, starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
 from gridup.pipeline import FoldPlan, runtime_recipe_fingerprint  # noqa: E402
 from gridup.recipe import CVRecipe, FeatureRecipe, ModelRecipe, PipelineRecipe  # noqa: E402
@@ -1047,6 +1047,39 @@ def main() -> int:
             predictions = refit.predictions
         except (ValueError, RuntimeError) as hata:
             print(f"  UYARI: yeniden egitim basarisiz ({hata}); CV fold ortalamasi kullanildi.")
+
+    # ESIK BAGIMLI METRIK -> ESIGI OOF UZERINDE OPTIMIZE ET (2026-08-21).
+    #
+    # F1/precision/recall bir KARAR ESIGI secildikten sonra tanimlidir. Model
+    # olasilik uretir; 0,5 esigi yalnizca siniflar dengeliyse VE model
+    # kalibreyse dogrudur. Bu panelde gunlerin ~%65'i sifir -- yani 0,5 ile
+    # gondermek olculebilir bir kayiptir.
+    #
+    # ``optimize_threshold`` depoda ZATEN VARDI ama hicbir yerden
+    # cagrilmiyordu. GDZ'22 Case-1 (ayni problem) metrik olarak F1
+    # kullanmisti; o senaryo gelirse bu blok devreye girer.
+    #
+    # KRITIK: esik FOLD-DISI tahminlerde aranir, egitim tahminlerinde degil --
+    # aksi halde esik de asiri uyum yapar. ``covered_predictions()`` yalnizca
+    # gercekten bir fold'un valid tarafinda olan satirlari verir; kapsanmayan
+    # satirlarda oof SIFIRDIR ve onlari da katmak esigi asagi ceker.
+    esik = None
+    if esik_bagimli_mi(args.metric) and target_kind != "regression":
+        kapsam = result.oof_covered
+        if kapsam.any():
+            secim = optimize_threshold(
+                y[kapsam], result.oof_predictions[kapsam], metric=args.metric
+            )
+            esik = float(secim["best_threshold"])
+            print(
+                f"  Esik optimizasyonu (OOF, {int(kapsam.sum()):,} satir): "
+                f"esik={esik:.3f}  {args.metric}={secim['best_score']:.4f} "
+                f"(0,5'te {secim['score_at_half']:.4f})"
+            )
+            predictions = (predictions >= esik).astype(int)
+        else:
+            print("  UYARI: OOF kapsami bos -- esik optimize edilemedi, 0,5 kullanildi.")
+            predictions = (predictions >= 0.5).astype(int)
 
     predictions = postprocess_predictions(
         predictions,
