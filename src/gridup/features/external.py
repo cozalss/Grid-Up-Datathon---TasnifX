@@ -51,6 +51,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from ..uygunluk import yasakli_aileleri_dogrula
 from .national import (
     add_annual_district_attribute,
     add_national_series,
@@ -213,6 +214,28 @@ _NOKTA_OLAYLAR: tuple[tuple[str, str, str | None, tuple[float, ...]], ...] = (
     # gosterirdi. ``enerji`` = 10^(1.5*(M-4)), bkz. scripts/fetch_deprem.py.
     ("deprem", "data/external/depremler.parquet", "enerji", (50.0, 100.0)),
 )
+
+
+def _kayitli_aile_yollari() -> dict[str, str]:
+    """Bildirilmis butun aile -> artifact yolu eslemesi (uygunluk denetimi icin)."""
+    yollar = {aile: yol for aile, yol, *_ in _STATIK_ILCE_TABLOLARI}
+    yollar.update({aile: yol for aile, yol, *_ in _GUNLUK_ILCE_TABLOLARI})
+    yollar.update({aile: yol for aile, yol, *_ in _NOKTA_OLAYLAR})
+    return yollar
+
+
+# YARISMA UYGUNLUK KAPISI -- ITHAL ANINDA calisir.
+#
+# Yarisma hedefinin gecmisi (EPIAS plansiz kesinti kayitlari) modele GIRDI
+# olamaz; Coderspace'in ayni problemi kullanan GDZ'22 Case-1 yarismasi bunu
+# notebook degerlendirmesinde acikca denetliyor. Ayrinti ve kural alintisi:
+# gridup.uygunluk.
+#
+# Burada ithal aninda kosulmasinin sebebi: bir aile eklenmesi tek satirlik bir
+# degisikliktir ve gozden kacar. Bu kapi, ``import gridup`` eden HER yolu --
+# betik, notebook, test -- ayni anda korur. Statik tarama (uygunluk modulu)
+# bugunku kodu denetler; bu satir yarin eklenecek olani.
+yasakli_aileleri_dogrula(_kayitli_aile_yollari())
 
 
 def _eslesme_orani(frame: pd.DataFrame, oncesi: pd.DataFrame, kolon: str, aile: str) -> float:

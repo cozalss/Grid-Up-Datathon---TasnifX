@@ -12,12 +12,13 @@
         "scope": "8 artifacts, license + redistribution review",
         "outcome": "License and redistribution resolved for all 8. immutable stays false for the 5 live-API pulls; see immutable_semantics."
       }
-    ]
+    ],
+    "model_girdisi_semantigi": "model_girdisi=false: artifact YEREL ANALIZ ve PROVA icin kullanilabilir ama modele feature olarak BAGLANAMAZ. Kod duzeyinde gridup.uygunluk tarafindan zorlanir (tests/test_uygunluk_kapisi.py). Isaret yoksa varsayilan izinlidir."
   },
   "artifacts": [
     {
       "path": "data/external/hava_gunluk.parquet",
-      "sha256": "4b62117fb2ad58845bea4dcc393a4b2e4586a2e3ed9b42bbd4af542f08660b29",
+      "sha256": "430185ee2d3cf2c97ca0c16e072e457e7aff669fbcb89c16f09480fe89b89498",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
@@ -403,7 +404,9 @@
           "endTime",
           "reason"
         ]
-      }
+      },
+      "model_girdisi": false,
+      "model_girdisi_gerekce": "Yarisma HEDEFININ gecmisi. Coderspace GDZ'22 Case-1 (ayni problem: gunluk kesinti tahmini) kural sayfasi: 'Ariza sonuc verileri internette halka acik olarak erisilebilmektedir. Notebook degerlendirme surecinde, bu verilerin kullanilmadigi ve modelde girdi olarak yer almadigi konusu detayli olarak incelenecektir.' PROVA ZEMINI olarak kullanimi serbesttir (hatti gercek veriyle sinamak); MODEL GIRDISI olmasi elemeye goturur. 2026 kurallari acilis yayininda dogrulanacak (docs/16 soru listesi)."
     },
     {
       "path": "data/external/epias/panel_ilce_gun.parquet",
@@ -425,6 +428,40 @@
       "schema": {
         "format": "parquet",
         "min_rows": 120798,
+        "required_columns": [
+          "il_key",
+          "ilce_key",
+          "gun",
+          "kesinti_adet",
+          "kesinti_dk",
+          "kapsanan_gun"
+        ]
+      },
+      "model_girdisi": false,
+      "model_girdisi_gerekce": "Yarisma HEDEFININ gecmisi. Coderspace GDZ'22 Case-1 (ayni problem: gunluk kesinti tahmini) kural sayfasi: 'Ariza sonuc verileri internette halka acik olarak erisilebilmektedir. Notebook degerlendirme surecinde, bu verilerin kullanilmadigi ve modelde girdi olarak yer almadigi konusu detayli olarak incelenecektir.' PROVA ZEMINI olarak kullanimi serbesttir (hatti gercek veriyle sinamak); MODEL GIRDISI olmasi elemeye goturur. 2026 kurallari acilis yayininda dogrulanacak (docs/16 soru listesi)."
+    },
+    {
+      "path": "data/external/epias/panel_ilce_gun_tam.parquet",
+      "sha256": "56dad0d3341db094c8a8b2ad65ec9789dcf4890178c08a79fb5bd227bba46827",
+      "license": "EPIAS-transparency-public",
+      "redistribution": "restricted",
+      "attribution": "EPIAS Seffaflik Platformu kesinti kayitlarindan turetilmis ilce x gun paneli (scripts/epias_panel.py).",
+      "model_girdisi": false,
+      "model_girdisi_gerekce": "Yarisma HEDEFININ gecmisi. Coderspace GDZ'22 Case-1 (ayni problem: gunluk kesinti tahmini) kural sayfasi: 'Ariza sonuc verileri internette halka acik olarak erisilebilmektedir. Notebook degerlendirme surecinde, bu verilerin kullanilmadigi ve modelde girdi olarak yer almadigi konusu detayli olarak incelenecektir.' PROVA ZEMINI olarak kullanimi serbesttir (hatti gercek veriyle sinamak); MODEL GIRDISI olmasi elemeye goturur. 2026 kurallari acilis yayininda dogrulanacak (docs/16 soru listesi).",
+      "verification": {
+        "basis": "own-derived-work",
+        "reviewed_at": "2026-08-21",
+        "evidence": "panel_ilce_gun.parquet ile ayni kaynaktan turetildi; fark, TAM IZGARA olmasidir: 96 ilce x 1690 gun = 162.240 satir (kardesi yalnizca EPIAS'in yayimladigi 1284 gunu tutar, 123.264 satir). Kapsanmayan gunler kesinti_adet=0 ile DOLDURULUR; bu, 'o gun kesinti olmadi' varsayimidir ve kardes dosyanin bilerek kacindigi varsayimdir. Bu yuzden ikisi ayri artifact olarak tutulur. Yalnizca PROVA zemininde kullanilir (scripts/dusmanca_prova.py); modele girdi olamaz."
+      },
+      "source": {
+        "uri": "derived://scripts/epias_panel.py",
+        "snapshot_ref": "2022-01-01..2026-08-17, 96 ilce x 1690 gun tam izgara (162,240 satir)",
+        "retrieved_at": "2026-08-21",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 158995,
         "required_columns": [
           "il_key",
           "ilce_key",

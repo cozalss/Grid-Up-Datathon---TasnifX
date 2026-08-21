@@ -551,6 +551,39 @@ KAYNAKLAR: tuple[Kaynak, ...] = (
             ),
         ),
     ),
+    Kaynak(
+        ad="epias_panel_ilce_gun_tam",
+        yol="data/external/epias/panel_ilce_gun_tam.parquet",
+        tarih_kolonu="gun",
+        anahtar_kolonu="ilce_key",
+        beklenen_ilce=96,
+        asgari_satir=150_000,
+        son_kontrolu_atla="Panel kaynagi EPIAS; yayin takvimi duzensiz (bkz. epias_kesinti_ham)",
+        kapsam_basi=pd.Timestamp("2022-01-01"),
+        kapsam_basi_gerekce="Kaynak EPIAS 2022-01-01'de basliyor; panel ondan turer.",
+        # KARDESINDEN FARKI: bu TAM IZGARA. Kardesi yalnizca EPIAS'in yayimladigi
+        # 1284 gunu tutar; bu, 96 x 1690 = 162.240 satirin tamamini tutar ve
+        # kapsanmayan gunleri 0 ile doldurur. O doldurma bir VARSAYIMDIR
+        # ("yayimlanmadi" != "kesinti olmadi") ve kardes dosya bilerek ondan
+        # kacinir. Iki dosya bu yuzden ayri; kontroller de bu farki OLCER.
+        #
+        # Yalnizca PROVA zemini: manifestte model_girdisi=false ile isaretli,
+        # gridup.uygunluk kapisi modele baglanmasini engeller.
+        fizik=(
+            (
+                "Izgara TAM: her ilce ayni gun sayisina sahip",
+                lambda d: d.groupby("ilce_key")["gun"].nunique().nunique() == 1,
+            ),
+            (
+                "Sifir orani %55-80 (doldurma yuzunden kardesinden YUKSEK olmali)",
+                lambda d: 0.55 <= float((d["kesinti_adet"] == 0).mean()) <= 0.80,
+            ),
+            (
+                "Negatif sure yok",
+                lambda d: bool((d["kesinti_dk"] >= 0).all()),
+            ),
+        ),
+    ),
 )
 
 
