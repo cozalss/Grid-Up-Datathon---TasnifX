@@ -294,7 +294,20 @@ def join_denetimi(zorluk: str) -> bool:
 #: 'ikili' icin F1: GDZ'22 Case-1 -- bizimkiyle AYNI problem -- tam olarak
 #: bunu kullandi. Sayim yolunun butunu (Tweedie/Poisson objective, sifir
 #: tabani, tamsayiya yuvarlama) o senaryoda devre disi kalir.
-SENARYO_METRIGI = {"sayim": "MAE", "ikili": "f1", "soguk_ilce": "MAE", "ic_ice": "MAE"}
+SENARYO_METRIGI = {
+    "sayim": "MAE",
+    "ikili": "f1",
+    "soguk_ilce": "MAE",
+    "ic_ice": "MAE",
+    # GDZ 2023'un metrigi MAPE'ydi. MAPE sifir hedefte MATEMATIKSEL OLARAK
+    # TANIMSIZDIR (y=0'a bolme) ve bu panelde gunlerin %65'i sifir. Yani
+    # metrik MAPE cikarsa hedefin ucte ikisi metrigin disinda kalir --
+    # hattin bunu SESSIZCE yapmamasi, yuksek sesle soylemesi gerekir.
+    "mape": "mape",
+    # 2023 ayrica log-olcekli hatalari da gundeme getirir; RMSLE negatif
+    # tahminde tanimsizdir ve log1p donusumu ZORUNLU kilar.
+    "rmsle": "rmsle",
+}
 
 SENARYOLAR = tuple(SENARYO_METRIGI)
 
