@@ -1,0 +1,708 @@
+"""Grid Up Datathon -- trafo bazli gunluk tuketim tahmini.
+
+NEDEN AYRI BIR HAT
+------------------
+``day_one.py`` gorevden bagimsiz bir hattir ve isini yapti: 3,1 dakikada
+gecerli bir gonderim uretti (public LB 1,22670). Ama uc noktada bu problemin
+sekline uymuyor ve UCUNU DE KENDISI RAPOR ETTI:
+
+1. ``lokasyon``u ham kategorik olarak aldi; ilce anahtarini ``tanim``dan
+   (trafo numarasi) turetmeye calisti ve 7.368 adin 7.368'i tutmadi. Yani
+   232 dis kolonun HICBIRI baglanmadi.
+2. Seyrek paneli 0,0 ile doldurdu -- 1.205.283 uydurma satir. Kendi uyarisi:
+   "olcum hedefi (tuketim) -> np.nan KULLAN; 'kayit yok' ile 'deger sifir'
+   ayni sey degildir." Tahmin ortalamasi 1.990'a dustu (gercek 3.252).
+3. Trafo gecmisini hic kullanmadi -- oysa olculdu: trafo seviyesi tek basina
+   log-varyansin %90,1'ini acikliyor.
+
+Bu betik ucunu de duzeltir.
+
+EGITIM KURGUSU: yuvarlanan koken (rolling origin)
+-------------------------------------------------
+Trafo ozetleri hedefi okur. Bir satirin ozeti kendi degerini iceriyorsa model
+cevabi kopyalar. Gercek test'te ozetler GECMISTEN, etiketler GELECEKTEN gelir;
+egitim de ayni sekilde kurulmalidir. Bu yuzden egitim bloklara ayrilir --
+her blokta ozet penceresi etiket penceresinden ONCE biter:
+
+    blok      ozet penceresi              etiket penceresi           gun
+    ------    --------------------------  -------------------------  ---
+    yaz25     2025-01-01 .. 2025-03-31    2025-04-01 .. 2025-07-31   122
+    guz25     2025-01-01 .. 2025-07-31    2025-08-01 .. 2025-11-30   122
+    kis26     2025-01-01 .. 2025-11-30    2025-12-01 .. 2026-03-31   121
+    TEST      2025-01-01 .. 2026-03-31    2026-04-01 .. 2026-07-31   122
+
+``yaz25`` blogu test doneminin MEVSIMSEL IKIZIDIR -- ayni aylar, ayni ufuk
+uzunlugu. Dogrulama once orada yapilir; baska hicbir blok Nisan-Temmuz
+davranisini olcemez.
+
+Ozet penceresi uzunlugu bloklar arasinda degisiyor (90/212/334/455 gun). Bu
+bilerek boyle: test'in penceresi de hepsinden uzun. Modelin bu kaymayi
+gorebilmesi icin ``ozet_pencere_gun`` ve ``t_doluluk`` (gun sayisi / pencere)
+acikca oznitelik olarak veriliyor -- ham ``t_gun_sayisi`` pencereyle birlikte
+buyudugu icin tek basina yaniltir.
+
+Calistirma::
+
+    python scripts/tuketim_model.py                 # dogrula + gonderim uret
+    python scripts/tuketim_model.py --hizli         # az agac, hizli deneme
+    python scripts/tuketim_model.py --gonder "not"  # ureti + Kaggle'a yolla
+"""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+KOK = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(KOK / "src"))
+
+from gridup.features.temporal import (  # noqa: E402
+    add_calendar_features,
+    add_ramadan_features,
+    add_turkish_holiday_features,
+)
+from gridup.features.trafo import (  # noqa: E402
+    grup_seviyeleri_ekle,
+    guc_kovasi,
+    trafo_ozetleri_cikar,
+    trafo_ozetleri_uygula,
+)
+from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
+from gridup.turkish import join_key  # noqa: E402
+
+HAM = KOK / "data" / "raw"
+DIS = KOK / "data" / "external"
+GONDERIM = KOK / "submissions"
+
+HEDEF = "tuketim"
+ZAMAN = "tarih"
+GRUP = "tanim"
+
+
+@dataclass(frozen=True)
+class Blok:
+    """Bir etiket penceresi. Ozet penceresi ``OZET_PENCERE_GUN``den turer."""
+
+    ad: str
+    etiket_basi: str
+    etiket_sonu: str
+
+    @property
+    def ozet_basi(self) -> pd.Timestamp:
+        return pd.Timestamp(EGITIM_BASI)
+
+    @property
+    def ozet_bitis(self) -> pd.Timestamp:
+        return pd.Timestamp(self.etiket_basi) - pd.Timedelta(days=1)
+
+
+#: Ozet penceresi TUM GECMIS: egitimin basindan etiket blogunun basina kadar.
+#:
+#: SABIT UZUNLUK DENENDI VE OLCULDU (2026-08-21) -- daha kotu.
+#: Gerekce makuldu: pencere uzunlugu bloklar arasi 90/212/334, test'te 455
+#: oldugu icin model her blokta baska bir dagilim goruyor ve erken durdurma
+#: 22 ile 376 agac arasinda zipliyordu. Hepsini 90 gune sabitlemek bu
+#: tutarsizligi gercekten cozdu, ama beklemedigim bir bedeli vardi:
+#:
+#:     ozet penceresi        TEST'te soguk pay
+#:     455 gun (tum gecmis)  %22,2   (158.369 satir)
+#:      90 gun (sabit)       %27,3   (195.233 satir)
+#:
+#: Kisa pencere, yalnizca 2025'in basinda gorulup sonra susan trafolari da
+#: SOGUGA itiyor. Soguk rejimin RMSLE'si sicagin iki katindan fazla oldugu
+#: icin bu takas net zarar: yaz ikizi 1,0677 -> 1,0727, kis blogu
+#: 1,3125 -> 1,4065.
+#:
+#: Dagilim tutarsizligi ise ``ozet_pencere_gun`` ve ``t_doluluk``
+#: kolonlariyla modele ACIKCA bildiriliyor; guncellik pencereleri
+#: (``t_log_son7`` ... ``t_log_son90``) zaten pencere uzunlugundan
+#: bagimsiz oldugu icin taze seviye bilgisi her blokta ayni bicimde
+#: geliyor. Yani asil derdi cozen sey pencereyi kisaltmak degil,
+#: guncellik pencerelerini eklemekmis.
+
+#: Egitim bloklari. ``yaz25`` test doneminin mevsimsel ikizi -- ayni aylar,
+#: ayni ufuk uzunlugu. Dogrulama once orada okunur.
+BLOKLAR: tuple[Blok, ...] = (
+    Blok("yaz25", "2025-04-01", "2025-07-31"),
+    Blok("guz25", "2025-08-01", "2025-11-30"),
+    Blok("kis26", "2025-12-01", "2026-03-31"),
+)
+
+EGITIM_BASI = "2025-01-01"
+
+#: Gunluk hava tablolari: (dosya, kullanilacak kolonlar).
+#: Konvektif ve hava kalitesi BILEREK yok -- ikisi de kesinti fizigi icin
+#: cekilmisti; tuketimle fiziksel bir baglantilari yok ve 47 ilcede gunluk
+#: cozunurlukte gurultuden baska bir sey katmalari beklenmiyor. Olculmeden
+#: eklenmeleri "her sey feature'dir" hatasi olur.
+HAVA_TABLOLARI: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "hava_gunluk.parquet",
+        (
+            "sicaklik_ort",
+            "sicaklik_max",
+            "sicaklik_min",
+            "hissedilen_max",
+            "isitma_derece_gun",
+            "sogutma_derece_gun",
+            "yagis_toplam",
+            "yagis_saati",
+            "ruzgar_max",
+            "gunes_radyasyon",
+            "asiri_sicak",
+            "asiri_soguk",
+        ),
+    ),
+    (
+        "nem_toprak_gunluk.parquet",
+        ("nem_ort", "ciy_ort", "vpd_ort", "toprak_nem_ort", "bulut_dusuk_ort", "et0_toplam"),
+    ),
+)
+
+#: Isil atalet pencereleri. Bina kutlesi sicakligi ANINDA takip etmez; klima
+#: yuku birkac gunluk birikmis sicaga tepki verir. Bu yuzden HDD/CDD'nin
+#: hareketli ortalamalari ham gunluk degerden daha bilgilidir.
+ISIL_PENCERELER: tuple[int, ...] = (3, 7, 14)
+ISIL_KOLONLAR: tuple[str, ...] = ("isitma_derece_gun", "sogutma_derece_gun", "sicaklik_ort")
+
+#: Modelden CIKARILACAK kolonlar. ``tanim`` bilerek disarida: 7.036 seviyeli
+#: bir kimlik kategorik olarak verilirse model onu ezberler ve soguk
+#: trafolarda (test satirlarinin %22,16'si) hicbir sey ogrenmemis olur.
+#: Trafonun kimligi zaten ``t_*`` ozetleri uzerinden, GENELLENEBILIR
+#: bicimde tasiniyor.
+DISLANAN = {"id", HEDEF, ZAMAN, GRUP, "lokasyon", "_blok"}
+
+KATEGORIK = ("il_key", "bolge", "ilce_key")
+
+
+# ---------------------------------------------------------------- yukleme
+
+
+def yukle() -> tuple[pd.DataFrame, pd.DataFrame]:
+    tr = pd.read_csv(
+        HAM / "train.csv", dtype={GRUP: "string"}, parse_dates=[ZAMAN], encoding="utf-8"
+    )
+    te = pd.read_csv(
+        HAM / "test.csv", dtype={GRUP: "string"}, parse_dates=[ZAMAN], encoding="utf-8"
+    )
+    return tr, te
+
+
+def lokasyon_ayristir(frame: pd.DataFrame) -> pd.DataFrame:
+    """``lokasyon`` -> ``il_key`` / ``bolge`` / ``ilce_key``. YENI frame.
+
+    Olculdu (2026-08-21, train+test birlesimi): 47 benzersiz deger, sifir NaN,
+    iki bicim:
+
+        İZMİR>METROPOL>KARABAĞLAR    3 parca  (IL > BOLGE > ILCE)  30 ilce
+        MANİSA>SALİHLİ               2 parca  (IL > ILCE)          17 ilce
+
+    Kural: **son parca her zaman ilcedir.** Orta parca yalnizca Izmir'de var
+    ve isletme bolgesidir (METROPOL / GUNEY BOLGE / KUZEY BOLGE); Manisa'da
+    yoktur, orada ``YOK`` yazilir -- bos string degil, cunku ``YOK`` gercek
+    bir bilgi tasir ("bu il bolgelere ayrilmamis").
+
+    ``join_key`` Turkce i-tuzagini ele alir: ``İZMİR`` -> ``izmir``,
+    ``KIRKAĞAÇ`` -> ``kirkagac``. Ham ``.lower()`` burada U+0307 birlesik
+    noktasi uretir ve eslesme sessizce sifira duser.
+    """
+    p = frame["lokasyon"].str.split(">")
+    sonuc = frame.copy()
+    sonuc["il_key"] = p.str[0].str.strip().map(join_key)
+    sonuc["ilce_key"] = p.str[-1].str.strip().map(join_key)
+    sonuc["bolge"] = np.where(p.str.len() >= 3, p.str[1].str.strip(), "YOK")
+    return sonuc
+
+
+def hava_yukle() -> pd.DataFrame:
+    """Ilce x gun hava tablosu. Isil atalet pencereleri burada uretilir."""
+    tablolar: list[pd.DataFrame] = []
+    for dosya, kolonlar in HAVA_TABLOLARI:
+        yol = DIS / dosya
+        d = pd.read_parquet(yol, columns=["ilce_key", "tarih", *kolonlar])
+        d["tarih"] = pd.to_datetime(d["tarih"]).dt.normalize()
+        tablolar.append(d.set_index(["ilce_key", "tarih"]))
+    hava = pd.concat(tablolar, axis=1).reset_index()
+
+    gunes = pd.read_parquet(
+        DIS / "gunes_gunluk.parquet",
+        columns=["anahtar", "tarih", "gunes_ghi_gunluk", "gun_uzunlugu_saat"],
+    )
+    gunes["ilce_key"] = gunes["anahtar"].str.split("|").str[-1]
+    gunes["tarih"] = pd.to_datetime(gunes["tarih"]).dt.normalize()
+    hava = hava.merge(
+        gunes.drop(columns=["anahtar"]), on=["ilce_key", "tarih"], how="left", validate="one_to_one"
+    )
+
+    hava = hava.sort_values(["ilce_key", "tarih"])
+    g = hava.groupby("ilce_key", observed=True)
+    for kolon in ISIL_KOLONLAR:
+        for p in ISIL_PENCERELER:
+            hava[f"{kolon}_ort{p}"] = g[kolon].transform(
+                lambda s, _p=p: s.rolling(_p, min_periods=1).mean()
+            )
+    return hava
+
+
+def hava_ekle(frame: pd.DataFrame, hava: pd.DataFrame) -> pd.DataFrame:
+    oncesi = len(frame)
+    sonuc = frame.merge(hava, on=["ilce_key", "tarih"], how="left", validate="many_to_one")
+    if len(sonuc) != oncesi:
+        raise RuntimeError(f"hava birlesimi satir sayisini degistirdi: {oncesi} -> {len(sonuc)}")
+    return sonuc
+
+
+def ulusal_ekle(*cerceveler: pd.DataFrame) -> list[pd.DataFrame]:
+    """EPIAS ulusal SAATLIK tuketimden gunluk endeks. YENI frameler.
+
+    Bu, disaridan hazirladigimiz veriler icinde bu goreve en dogrudan
+    bagli olani. Turkiye toplam tuketimi, tek bir trafonun goremedigi ama
+    hepsini birden etkileyen seyleri tasir: ulke capinda sicak dalgasi,
+    bayram tatilinin gercek isgucu etkisi, ekonomik aktivite seviyesi.
+
+    Kapsam olculdu (2026-08-21): 2020-01-01 -> 2026-08-20 saatlik, yani
+    test penceresinin (2026-04-01 .. 07-31) 122 gununun TAMAMI elimizde --
+    tahmin degil, GERCEKLESMIS deger. Yarisma dis veriye acik oldugu icin
+    bu mesru; ve bir yil sonra ayni modeli kurmak isteyen biri icin de
+    gecerli, cunku EPIAS bu seriyi gecmise donuk yayimliyor.
+
+    Uretilen kolonlar:
+        ``ulusal_gunluk``     o gunun ulusal toplam tuketimi (MWh)
+        ``ulusal_tepe``       gunun en yuksek saatlik degeri
+        ``ulusal_tepe_orani`` tepe / ortalama -- gun ici yayilma olcusu
+        ``ulusal_yil_once``   364 gun onceki ayni haftagunu (yillik taban)
+        ``ulusal_yillik_buyume`` log oran -- mevsimden arinmis buyume
+    """
+    yol = DIS / "epias" / "tuketim_saatlik.parquet"
+    saatlik = pd.read_parquet(yol)
+    saatlik["_g"] = pd.to_datetime(saatlik["zaman"]).dt.normalize()
+    g = saatlik.groupby("_g")["consumption"]
+    u = pd.DataFrame({"ulusal_gunluk": g.sum(), "ulusal_tepe": g.max(), "_ort": g.mean()})
+    u["ulusal_tepe_orani"] = u["ulusal_tepe"] / u["_ort"].replace(0.0, np.nan)
+    # 364 gun = 52 tam hafta: haftagunu hizasi KORUNUR. 365 kullanmak
+    # pazartesiyi pazara denk getirir ve yillik orani haftagunu etkisiyle
+    # kirletir.
+    u["ulusal_yil_once"] = u["ulusal_gunluk"].reindex(u.index - pd.Timedelta(days=364)).to_numpy()
+    u["ulusal_yillik_buyume"] = np.log(
+        u["ulusal_gunluk"] / u["ulusal_yil_once"].replace(0.0, np.nan)
+    )
+    u = u.drop(columns=["_ort"]).reset_index().rename(columns={"_g": ZAMAN})
+
+    sonuclar = []
+    for c in cerceveler:
+        yeni = c.merge(u, on=ZAMAN, how="left", validate="many_to_one")
+        if len(yeni) != len(c):
+            raise RuntimeError("ulusal birlesim satir sayisini degistirdi")
+        sonuclar.append(yeni)
+    return sonuclar
+
+
+def grup_profilleri_ekle(uygula: pd.DataFrame, profil_kaynak: pd.DataFrame) -> pd.DataFrame:
+    """Ilce ve guc-kovasi duzeyinde MEVSIM/HAFTAGUNU profilleri. YENI frame.
+
+    Trafo bazli ``t_ay_sapma`` gucludur ama iki durumda yoktur: soguk
+    trafolarda (test satirlarinin %22,16'si) ve o ayda hic gozlenmemis
+    sicak trafolarda. Grup duzeyindeki profil bu bosluklarda devreye girer
+    -- Bornova'daki trafolar temmuzda ortalama ne kadar yukseliyor sorusu,
+    trafo bilinmese bile cevaplanabilir.
+
+    Profil kaynagi, trafo profilleriyle AYNI cerceve: hedef blogun disi.
+    """
+    p = profil_kaynak[[GRUP, ZAMAN, HEDEF, "guc", "ilce_key"]].copy()
+    p["_y"] = np.log1p(p[HEDEF].clip(lower=0.0))
+    p["_sapma"] = p["_y"] - p.groupby(GRUP, observed=True)["_y"].transform("mean")
+    p["_ay"] = p[ZAMAN].dt.month
+    p["_hg"] = p[ZAMAN].dt.dayofweek
+    p["_kova"] = guc_kovasi(p["guc"])
+
+    sonuc = uygula.copy()
+    sonuc["_ay"] = sonuc[ZAMAN].dt.month
+    sonuc["_hg"] = sonuc[ZAMAN].dt.dayofweek
+    sonuc["_kova"] = guc_kovasi(sonuc["guc"])
+    for ad, anahtar in (
+        ("gp_ilce_ay", ["ilce_key", "_ay"]),
+        ("gp_ilce_hg", ["ilce_key", "_hg"]),
+        ("gp_kova_ay", ["_kova", "_ay"]),
+    ):
+        tablo = p.groupby(anahtar, observed=True)["_sapma"].mean().rename(ad).reset_index()
+        sonuc = sonuc.merge(tablo, on=anahtar, how="left", validate="many_to_one")
+    return sonuc.drop(columns=["_ay", "_hg", "_kova"])
+
+
+def yas_ekle(*cerceveler: pd.DataFrame) -> list[pd.DataFrame]:
+    """Trafonun veri setinde ILK gorulmesinden bu yana gecen gun. YENI frameler.
+
+    Hedefi DEGIL, satir YAPISINI kullanir: hangi (trafo, gun) ciftlerinin
+    soruldugu test.csv'de zaten aciktir. Dolayisiyla test satirlarinin ilk
+    gorulme tarihi mesru bicimde bilinebilir.
+
+    Neden onemli: olculdu (2026-08-21, train'e 2025-02-01'den sonra katilan
+    3.147 trafo, 347.606 satir) -- trafonun ILK gununde log-tuketim, kendi
+    ortalamasindan **-0,562** sapiyor. Sonraki gunlerde sapma +-0,05'e
+    duşuyor. Yani etki tek gune yogunlasmis ve keskin; enerjilendirme gunu
+    kismi bir gundur.
+
+    Test'te soguk trafolarin 1.666'si 2026 Mayis'inda birden beliriyor --
+    yani fiziksel bir devreye alma dalgasi degil, veri sistemine toplu
+    katilim. Bu yuzden "yeni tesis rampasi" beklenmiyor; yalnizca ilk gun
+    etkisi bekleniyor ve ``yas`` onu yakalamaya yeter.
+    """
+    ilk = (
+        pd.concat([c[[GRUP, ZAMAN]] for c in cerceveler]).groupby(GRUP, observed=True)[ZAMAN].min()
+    )
+    sonuclar = []
+    for c in cerceveler:
+        yeni = c.copy()
+        yeni["yas"] = (yeni[ZAMAN] - yeni[GRUP].map(ilk)).dt.days.astype("float64")
+        yeni["ilk_gun_mu"] = (yeni["yas"] == 0).astype("int8")
+        sonuclar.append(yeni)
+    return sonuclar
+
+
+def takvim_ekle(frame: pd.DataFrame) -> pd.DataFrame:
+    sonuc = add_calendar_features(frame, ZAMAN, prefix="tk")
+    sonuc = add_turkish_holiday_features(sonuc, ZAMAN, prefix="tatil")
+    return add_ramadan_features(sonuc, ZAMAN, prefix="ramazan")
+
+
+# ---------------------------------------------------------------- bloklar
+
+
+def blok_kur(tam_egitim: pd.DataFrame, blok: Blok) -> pd.DataFrame:
+    """Bir blogun etiket satirlarini, ozet penceresinden turetilmis
+    ozniteliklerle birlikte dondurur.
+
+    Ozet penceresi ile etiket penceresi KESISMEZ -- kesisirse hedef sizar.
+    Bu, fonksiyonun tek kritik guvencesi ve altta acikca denetleniyor.
+    """
+    ozet = tam_egitim[
+        (tam_egitim[ZAMAN] >= blok.ozet_basi) & (tam_egitim[ZAMAN] <= blok.ozet_bitis)
+    ]
+    etiket_maske = (tam_egitim[ZAMAN] >= blok.etiket_basi) & (tam_egitim[ZAMAN] <= blok.etiket_sonu)
+    etiket = tam_egitim[etiket_maske]
+    if ozet.empty or etiket.empty:
+        raise RuntimeError(f"blok {blok.ad}: ozet {len(ozet)} / etiket {len(etiket)} satir")
+    if ozet[ZAMAN].max() >= etiket[ZAMAN].min():
+        raise RuntimeError(
+            f"blok {blok.ad}: ozet penceresi ({ozet[ZAMAN].max().date()}) etiket "
+            f"penceresine ({etiket[ZAMAN].min().date()}) TASIYOR -- hedef sizardi"
+        )
+    # Profil kaynagi: egitimin tamami EKSI bu blogun etiket penceresi.
+    # Satirin kendi etiketi yine hic okunmaz, ama ay kapsami test'inkiyle
+    # ayni mertebeye cikar (bkz. trafo.trafo_ozetleri_cikar aciklamasi).
+    return _ozet_tasi(ozet, etiket, blok.ad, profil_kaynak=tam_egitim[~etiket_maske])
+
+
+def _ozet_tasi(
+    ozet: pd.DataFrame, etiket: pd.DataFrame, ad: str, *, profil_kaynak: pd.DataFrame
+) -> pd.DataFrame:
+    ozetler = trafo_ozetleri_cikar(ozet, profil_kaynak=profil_kaynak)
+    sonuc = trafo_ozetleri_uygula(etiket, ozetler)
+    sonuc = grup_seviyeleri_ekle(sonuc, ozet)
+    sonuc = grup_profilleri_ekle(sonuc, profil_kaynak)
+    pencere = int((ozet[ZAMAN].max() - ozet[ZAMAN].min()).days) + 1
+    sonuc["ozet_pencere_gun"] = float(pencere)
+    sonuc["t_doluluk"] = sonuc["t_gun_sayisi"] / float(pencere)
+    # UFUK: ozet penceresinin son gununden bu satira kac gun var.
+    #
+    # Modelin en temel hizalama degiskeni ve simdiye kadar YOKTU. Bir blok
+    # icinde takvim tarihiyle esdogrusal oldugu icin gorunmez kaliyordu; ama
+    # bloklar arasinda anlami tam olarak "bu tahmin ne kadar uzaga bakiyor".
+    # Trafo ozetlerinin degeri ufukla birlikte azalir: 1 gun sonrasi icin
+    # ``t_log_son14`` neredeyse kesindir, 122 gun sonrasi icin bir tahmindir.
+    # Model bu azalmayi ancak ufku GORURSE ogrenebilir.
+    sonuc["ufuk_gun"] = (sonuc[ZAMAN] - ozet[ZAMAN].max()).dt.days.astype("float64")
+    sonuc["_blok"] = ad
+    return sonuc
+
+
+def egitim_kur(tam_egitim: pd.DataFrame) -> pd.DataFrame:
+    parcalar = [blok_kur(tam_egitim, b) for b in BLOKLAR]
+    for b, p in zip(BLOKLAR, parcalar, strict=True):
+        soguk = int(p["soguk_mu"].sum())
+        print(
+            f"  blok {b.ad:6} etiket {len(p):>7,} satir  "
+            f"ozet penceresi {p['ozet_pencere_gun'].iloc[0]:>4.0f} gun  "
+            f"soguk {soguk:>6,} (%{100 * soguk / len(p):.1f})"
+        )
+    return pd.concat(parcalar, ignore_index=True)
+
+
+def test_kur(tam_egitim: pd.DataFrame, test: pd.DataFrame) -> pd.DataFrame:
+    """Test satirlari. Ozet penceresi egitimin TAMAMI.
+
+    Profil kaynagi da egitimin tamami: test'ten once bittigi icin "fold-disi"
+    ile "gecmis" burada ayni sey.
+    """
+    sonuc = _ozet_tasi(tam_egitim, test, "TEST", profil_kaynak=tam_egitim)
+    soguk = int(sonuc["soguk_mu"].sum())
+    print(
+        f"  TEST         {len(sonuc):>7,} satir  "
+        f"ozet penceresi {sonuc['ozet_pencere_gun'].iloc[0]:>4.0f} gun  "
+        f"soguk {soguk:>6,} (%{100 * soguk / len(sonuc):.1f})"
+    )
+    return sonuc
+
+
+# ---------------------------------------------------------------- model
+
+
+def oznitelikler(frame: pd.DataFrame) -> list[str]:
+    adaylar = [k for k in frame.columns if k not in DISLANAN]
+    return [k for k in adaylar if frame[k].dtype.kind in "ifbu" or k in KATEGORIK]
+
+
+def kategorik_kodla(egitim: pd.DataFrame, *digerleri: pd.DataFrame) -> None:
+    """Kategorikleri YERINDE ortak bir sozlukle kodlar.
+
+    Ayri ayri kodlamak sessiz bir hata kaynagidir: egitimde 3 numara olan
+    bolge, test'te 1 numaraya dusebilir ve model yanlis seviyeyi okur.
+    """
+    for kolon in KATEGORIK:
+        seviyeler = pd.Index(sorted(egitim[kolon].dropna().unique()))
+        for f in (egitim, *digerleri):
+            f[kolon] = pd.Categorical(f[kolon], categories=seviyeler)
+
+
+def rmsle(gercek: np.ndarray, tahmin: np.ndarray) -> float:
+    t = np.clip(np.asarray(tahmin, dtype="float64"), 0.0, None)
+    return float(np.sqrt(np.mean((np.log1p(t) - np.log1p(np.asarray(gercek))) ** 2)))
+
+
+def model_kur(*, hizli: bool, tohum: int):  # noqa: ANN201 - lgb tipi kosullu import
+    import lightgbm as lgb
+
+    return lgb.LGBMRegressor(
+        objective="regression",  # log1p uzayinda RMSE == ham uzayda RMSLE
+        n_estimators=400 if hizli else 3000,
+        learning_rate=0.08 if hizli else 0.03,
+        num_leaves=255,
+        min_child_samples=40,
+        subsample=0.85,
+        subsample_freq=1,
+        colsample_bytree=0.75,
+        reg_lambda=2.0,
+        random_state=tohum,
+        n_jobs=-1,
+        verbose=-1,
+    )
+
+
+#: Test kumesindeki SOGUK satir payi -- olculdu: 158.369 / 714.688.
+#: Iki yerde kullaniliyor ve ikisi de zorunlu:
+#:   1) egitim agirliklari: bloklarda soguk pay %7,5-13,9, yani model soguk
+#:      rejimi test'tekinden AZ onemsiyor.
+#:   2) dogrulama raporu: bir blogun ham RMSLE'si kendi soguk payini tasir,
+#:      dolayisiyla test'i temsil etmez. Test payina yeniden agirliklandirilmis
+#:      birlesim, karsilastirilabilir tek sayidir.
+TEST_SOGUK_PAYI = 0.2216
+
+
+def soguk_agirliklari(soguk_mu: pd.Series, *, hedef_pay: float = TEST_SOGUK_PAYI) -> np.ndarray:
+    """Soguk satirlarin toplam agirliktaki payini ``hedef_pay``a cikarir.
+
+    Sicak satirlarin agirligi 1,0'da sabit; yalnizca soguklar olceklenir.
+    Boylece toplam agirlik olcegi kayarsa ogrenme hizi da kaymaz.
+    """
+    soguk = soguk_mu.to_numpy() == 1
+    n_soguk, n_sicak = int(soguk.sum()), int((~soguk).sum())
+    if n_soguk == 0 or n_sicak == 0:
+        return np.ones(len(soguk_mu), dtype="float64")
+    carpan = (hedef_pay / (1.0 - hedef_pay)) * (n_sicak / n_soguk)
+    return np.where(soguk, carpan, 1.0).astype("float64")
+
+
+@dataclass(frozen=True)
+class Dogrulama:
+    """Bir blogun dogrulama sonucu -- toplam ve REJIM BAZINDA."""
+
+    genel: float
+    sicak: float
+    soguk: float
+    agac: int
+    model: object
+
+    @property
+    def test_agirlikli(self) -> float:
+        """Test'in soguk/sicak karisimina yeniden agirliklandirilmis RMSLE.
+
+        RMSLE karesel bir ortalamanin karekoku oldugu icin rejimler kare
+        uzayinda birlesir. Ham ``genel`` skoru blogun KENDI karisimini
+        tasir (yaz25'te soguk yalnizca %7,5) ve bu yuzden test'i temsil
+        etmez -- iki blogu birbiriyle kiyaslamak icin bile kullanilamaz.
+        """
+        return float(
+            np.sqrt((1 - TEST_SOGUK_PAYI) * self.sicak**2 + TEST_SOGUK_PAYI * self.soguk**2)
+        )
+
+    def satir(self, ad: str, n: int) -> str:
+        return (
+            f"  {ad:6} RMSLE {self.genel:.5f}  |  sicak {self.sicak:.5f}  "
+            f"soguk {self.soguk:.5f}  |  TEST-AGIRLIKLI {self.test_agirlikli:.5f}  "
+            f"|  {n:>7,} satir, {self.agac} agac"
+        )
+
+
+def egit_ve_olc(
+    egitim: pd.DataFrame, dogrulama: pd.DataFrame, kolonlar: list[str], *, hizli: bool
+) -> Dogrulama:
+    """Egitir, dogrular ve skoru IKI REJIME AYIRIR.
+
+    Toplam skor tek basina yaniltici: test satirlarinin %22,16'si soguk
+    baslangic ve o rejimde model bambaska bir bilgi kumesiyle calisiyor.
+    Genel skor iyilesirken soguk rejim kotulesiyorsa bunu gormek sart --
+    tek sayiya bakan biri bu takasi HIC fark etmez.
+    """
+    import lightgbm as lgb
+
+    model = model_kur(hizli=hizli, tohum=42)
+    model.fit(
+        egitim[kolonlar],
+        np.log1p(egitim[HEDEF].clip(lower=0.0)),
+        sample_weight=soguk_agirliklari(egitim["soguk_mu"]),
+        eval_set=[(dogrulama[kolonlar], np.log1p(dogrulama[HEDEF].clip(lower=0.0)))],
+        eval_sample_weight=[soguk_agirliklari(dogrulama["soguk_mu"])],
+        eval_metric="rmse",
+        callbacks=[lgb.early_stopping(150, verbose=False), lgb.log_evaluation(0)],
+    )
+    tahmin = np.expm1(model.predict(dogrulama[kolonlar]))
+    gercek = dogrulama[HEDEF].to_numpy()
+    soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
+    return Dogrulama(
+        genel=rmsle(gercek, tahmin),
+        sicak=rmsle(gercek[~soguk], tahmin[~soguk]) if (~soguk).any() else float("nan"),
+        soguk=rmsle(gercek[soguk], tahmin[soguk]) if soguk.any() else float("nan"),
+        agac=int(getattr(model, "best_iteration_", 0) or model.n_estimators),
+        model=model,
+    )
+
+
+# ---------------------------------------------------------------- ana akis
+
+
+def main() -> int:
+    satir_tamponlu_cikti()
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--hizli", action="store_true", help="az agac, hizli deneme")
+    ap.add_argument("--gonder", metavar="NOT", help="uret ve Kaggle'a gonder")
+    ap.add_argument("--tohum", type=int, default=3, help="son egitimde ortalanacak tohum sayisi")
+    ap.add_argument("--cikti", default="tuketim_v1.csv")
+    args = ap.parse_args()
+
+    t0 = time.time()
+    print("=" * 74)
+    print("GRID UP -- TRAFO BAZLI GUNLUK TUKETIM")
+    print("=" * 74)
+
+    print("\n1/5  YUKLEME + LOKASYON")
+    tr, te = yukle()
+    tr, te = lokasyon_ayristir(tr), lokasyon_ayristir(te)
+    print(f"  train {len(tr):,} satir | test {len(te):,} satir")
+    print(f"  ilce  {tr['ilce_key'].nunique()} (train) / {te['ilce_key'].nunique()} (test)")
+
+    print("\n2/5  HAVA + TAKVIM")
+    hava = hava_yukle()
+    print(f"  hava tablosu {hava.shape[0]:,} satir x {hava.shape[1]} kolon")
+    tr, te = hava_ekle(tr, hava), hava_ekle(te, hava)
+    bos = tr[ISIL_KOLONLAR[0]].isna().mean()
+    if bos > 0.001:
+        raise RuntimeError(f"hava eslesmedi: train'de %{100 * bos:.1f} NaN")
+    print(f"  hava eslesmesi: train %{100 * (1 - bos):.2f}")
+    tr, te = takvim_ekle(tr), takvim_ekle(te)
+    tr, te = yas_ekle(tr, te)
+    tr, te = ulusal_ekle(tr, te)
+    print(
+        f"  ulusal endeks: train NaN %{100 * tr['ulusal_gunluk'].isna().mean():.2f}"
+        f" | test NaN %{100 * te['ulusal_gunluk'].isna().mean():.2f}"
+    )
+
+    print("\n3/5  BLOKLAR (yuvarlanan koken)")
+    egitim = egitim_kur(tr)
+    test = test_kur(tr, te)
+
+    kolonlar = oznitelikler(egitim)
+    kolonlar = [k for k in kolonlar if k in test.columns]
+    kategorik_kodla(egitim, test)
+    print(f"\n  {len(kolonlar)} oznitelik")
+
+    print("\n4/5  DOGRULAMA")
+    sonuclar: dict[str, Dogrulama] = {}
+    for b in BLOKLAR:
+        dogrulama = egitim[egitim["_blok"] == b.ad]
+        kalan = egitim[egitim["_blok"] != b.ad]
+        sonuclar[b.ad] = egit_ve_olc(kalan, dogrulama, kolonlar, hizli=args.hizli)
+        print(sonuclar[b.ad].satir(b.ad, len(dogrulama)))
+    print(f"  ORTALAMA (ham)            {np.mean([s.genel for s in sonuclar.values()]):.5f}")
+    print(
+        f"  ORTALAMA (test-agirlikli) {np.mean([s.test_agirlikli for s in sonuclar.values()]):.5f}"
+    )
+    print(
+        f"  YAZ IKIZI (yaz25)         {sonuclar['yaz25'].test_agirlikli:.5f}"
+        f"  <-- test donemine en yakin, test karisimina agirliklandirilmis"
+    )
+
+    print("\n5/5  SON EGITIM + GONDERIM")
+    import lightgbm as lgb
+
+    # Agac sayisi YAZ ikizinden aliniyor: son model butun bloklarla egitilecek
+    # ve ayrilmis bir dogrulama kumesi kalmayacak. Erken durdurmayi mevsimsel
+    # olarak en yakin blokta kalibre etmek, kis blogunda kalibre etmekten
+    # savunulabilir bicimde daha iyidir.
+    agac = sonuclar["yaz25"].agac
+    print(f"  erken durdurma (yaz25) {agac} agacta durdu -> son modelde bu kullanilacak")
+
+    y = np.log1p(egitim[HEDEF].clip(lower=0.0))
+    agirlik = soguk_agirliklari(egitim["soguk_mu"])
+    birikim = np.zeros(len(test), dtype="float64")
+    for i in range(args.tohum):
+        m = model_kur(hizli=args.hizli, tohum=100 + i)
+        m.set_params(n_estimators=agac)
+        m.fit(
+            egitim[kolonlar],
+            y,
+            sample_weight=agirlik,
+            callbacks=[lgb.log_evaluation(0)],
+        )
+        birikim += m.predict(test[kolonlar])
+    tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
+
+    GONDERIM.mkdir(parents=True, exist_ok=True)
+    yol = GONDERIM / args.cikti
+    pd.DataFrame({"id": test["id"].to_numpy(), HEDEF: tahmin}).to_csv(yol, index=False)
+    print(f"  yazildi: {yol}  ({len(tahmin):,} satir)")
+    print(
+        f"  tahmin: min={tahmin.min():.1f} medyan={np.median(tahmin):.1f} "
+        f"ort={tahmin.mean():.1f} max={tahmin.max():.3e}"
+    )
+
+    if args.gonder:
+        print("\n  Kaggle'a gonderiliyor...")
+        subprocess.run(
+            [
+                "kaggle",
+                "competitions",
+                "submit",
+                "-c",
+                "grid-up-datathon",
+                "-f",
+                str(yol),
+                "-m",
+                args.gonder,
+            ],
+            check=False,
+            cwd=KOK,
+        )
+
+    print(f"\nTAMAM  {(time.time() - t0) / 60:.1f} dakika")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
