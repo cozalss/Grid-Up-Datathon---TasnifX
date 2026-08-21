@@ -1,120 +1,136 @@
 # Sabah gönderim planı — 22 Ağustos 2026
 
-Gönderim hakkı **03:00'te** (00:00 UTC) yenilendi. Üç dosya hazır ve
+Gönderim hakkı **03:00'te** (00:00 UTC) yenilendi. Dört dosya hazır ve
 doğrulandı (satır sayısı, id sırası, NaN/negatif, dağılım).
+
+```
+dun sabah LB'de duran            1,16143
+gece yonlendirmeyle (v13)   CV   1,08143
+gece yiginla (v15)          CV   1,05194   <- YENI EN IYI
+yaz25 (mevsimsel ikiz, v15)      0,99715   <- ilk kez 1'in altinda
+lider (dun)                      1,04644
+```
 
 ---
 
-## ÖNEMLİ — üçünü aynı anda gönderme
+## Üçünü aynı anda gönderme
 
-Planın ilk halinde "aynı gün gönderilmeli" yazıyordu; **o gerekçe
-yanlıştı**. Bir dosyanın LB skoru sabittir (test kümesi değişmiyor), yani
-v13'ü bugün v14'ü yarın göndersek de aradaki fark aynı çıkar.
-Karşılaştırma için aynı güne sıkıştırmak gerekmiyor.
+Bir dosyanın LB skoru **sabittir** — test kümesi değişmiyor, yani v15'i
+bugün v14'ü yarın göndersek de aradaki fark aynı çıkar. Karşılaştırma için
+aynı güne sıkıştırmak gerekmiyor.
 
-Geçerli olan tek gerekçe: kullanılmayan hak **birikmez, yanar**. Yani
-bugün üçünü de kullanmak mantıklı — ama **peş peşe değil, sırayla**, her
-sonucu görüp devam.
+Geçerli olan tek gerekçe: kullanılmayan hak **birikmez, yanar**. Yani bugün
+üçünü de kullanmak mantıklı — ama **peş peşe değil, sırayla**, her sonucu
+görüp devam.
 
-**DURMA NOKTASI:** `v13` beklenen 1,06–1,09 bandının dışında gelirse
-(özellikle 1,20 üstü), kalan iki hakkı **harcama**. Bir yerde bozukluk
-var, önce onu bul. Hak yarın yenilenir; yanlış teşhisle harcanan hak geri
-gelmez.
+**DURMA NOKTASI:** `v15` beklenen 1,03–1,08 bandının dışında gelirse
+(özellikle 1,15 üstü), kalan hakları **harcama**. Bir yerde bozukluk var,
+önce onu bul. Hak yarın yenilenir; yanlış teşhisle harcanan hak gelmez.
 
-## Önem sırası
+---
 
-Yalnızca ikisi yapılabilseydi: **v13 + v14**. Kohort sorusu yönlendirme
-kontrolünden **on kat** değerli (±0,15 karşı ±0,017). Yönlendirmenin işe
-yaradığını üç doğrulama bloğundan zaten biliyoruz; test'te doğrulamak
-güzel ama yeni bilgi değil.
-
-## Komutlar — BİRER BİRER, her sonucu görüp devam
+## Komutlar — BİRER BİRER
 
 ```bash
 cd c:/Users/cemmo/Documents/Datahon
 
-# 1) ANA MODEL -- yonlendirmeli, CV 1,08143
+# 1) EN IYI MODEL -- yigin, CV 1,05194
+kaggle competitions submit -c grid-up-datathon \
+  -f submissions/tuketim_v15.csv \
+  -m "v15: yonlendirme + soguk d7 + sicak rs4 + yalin 105 kolon (CV 1,05194)"
+
+# --- skoru bekle, oku, sonra devam ---
+kaggle competitions submissions -c grid-up-datathon
+
+# 2) KOHORT PROBU -- v15'ten TEK FARKI 2026-05-03 kohortu
+#    ONCE uret (v14 v13'ten turetilmisti; v15'ten yenisini uretmek lazim):
+python scripts/kohort_probu.py --kaynak tuketim_v15.csv \
+    --carpan 0.75 --cikti tuketim_v16.csv
+kaggle competitions submit -c grid-up-datathon \
+  -f submissions/tuketim_v16.csv \
+  -m "v16: v15 + 2026-05-03 kohortunun 9.107 soguk satiri log1p x0,75"
+
+# 3) YIGIN KONTROLU -- v15'ten TEK FARKI yigin (yonlendirme ikisinde de var)
 kaggle competitions submit -c grid-up-datathon \
   -f submissions/tuketim_v13.csv \
-  -m "v13: rejim yonlendirmesi (sicak maske %15 / soguk maske %100), 3/1/1 harman, 3 tohum (CV 1,08143)"
-
-# 2) KOHORT PROBU -- v13 ile ARADAKI TEK FARK 2026-05-03 kohortu
-kaggle competitions submit -c grid-up-datathon \
-  -f submissions/tuketim_v14.csv \
-  -m "v14: v13 + 2026-05-03 kohortunun 9.107 soguk satiri log1p x0,75"
-
-# 3) UCUNCU SLOT -- O AN KARAR VER. Iki aday var:
-#
-#    (a) yigin deneyi ESIGI GECTIYSE -- once modeli uret:
-#        (yigin yapilandirmasi tuketim_model.py'ye tasinir, sonra)
-#        python scripts/tuketim_model.py --tohum 3 --cikti tuketim_v15.csv
-#
-#    (b) yigin GECMEDIYSE veya v13 beklenenden kotuyse -- yonlendirme kontrolu:
-kaggle competitions submit -c grid-up-datathon \
-  -f submissions/tuketim_v12.csv \
-  -m "v12: yonlendirmesiz kontrol (maske %22,16 tek model)"
-
-# skorlari oku
-kaggle competitions submissions -c grid-up-datathon
+  -m "v13: yalnizca yonlendirme, yiginsiz (CV 1,08143)"
 ```
+
+`tuketim_v12.csv` (yönlendirmesiz) ve `tuketim_v14.csv` (v13 tabanlı kohort
+probu) yedekte duruyor; bugün gerekmez.
+
+---
+
+## Önem sırası
+
+Yalnızca ikisi yapılabilseydi: **v15 + v16**. Kohort sorusu diğer her
+şeyden değerli (±0,15 karşı ±0,03).
 
 ---
 
 ## Sonuçlar nasıl okunacak
 
-### Soru 1 — kohort ölü mü? (`v14` eksi `v13`)
-
-Bu, gecenin en büyük bahsi. 9.107 satır, test'in %1,27'si.
-
-| v14 − v13 | anlamı | ne yapılacak |
-|---|---|---|
-| **≈ −0,15** | kohort **ÖLÜ** | çarpanı 0,75'ten **0,3–0,4**'e indir, ayrıca 2026-07-01 (19 soğuk) ve 2026-05-13 (36 soğuk) kohortlarını da düzelt |
-| ≈ −0,05 | kısmen ölü | çarpanı 0,6 civarına ayarla |
-| ≈ 0 | ayırt edilemiyor | çarpanı 0,9'a çek, bir gün daha ölç |
-| **≈ +0,02** | kohort **CANLI** | düzeltmeyi tamamen bırak, bir daha dokunma |
-
-Beklenen: eğer ölüyse skor **1,08 → 0,93**; tam düzeltmeyle **0,71**'e kadar.
-
-### Soru 2 — yönlendirme test'te tutuyor mu? (`v13` eksi `v12`)
-
-| v13 − v12 | anlamı |
-|---|---|
-| ≈ −0,017 veya daha iyi | doğrulama bloklarındaki kazanç test'e **transfer oldu** |
-| ≈ 0 | tutmadı ama zarar da yok — bırak |
-| pozitif | **geri al**, `REJIM_MASKELERI = None` |
-
-### Soru 3 — CV↔LB kalibrasyonu (`v13`in mutlak skoru)
+### Soru 1 — `v15`in mutlak skoru: CV↔LB kalibrasyonu
 
 Tek çapamız: `yaz25` test-ağırlıklı CV 1,1404 → LB 1,16922, fark **+0,029**.
-Yeni modelin `yaz25` CV'si **1,04789**, yani öngörü **~1,077**.
+`v15`in `yaz25` CV'si **0,99715**, yani öngörü **~1,026**.
 
-- Gelen skor 1,06–1,09 bandındaysa → çapa geçerli, on gün boyunca CV'ye
-  güvenerek karar verebiliriz.
-- Bandın dışındaysa → CV↔LB ilişkisi kırık, her kararı LB ile doğrulamak
-  gerekir ve günde 3 hak çok değerli hale gelir.
+| gelen skor | anlamı |
+|---|---|
+| 1,02–1,06 | çapa geçerli — on gün boyunca CV'ye güvenerek karar verilebilir |
+| 1,06–1,10 | çapa kabaca tutuyor ama gevşek; kararları LB ile teyit et |
+| >1,12 | **CV↔LB ilişkisi kırık.** Günde 3 hak çok değerli hale gelir |
+
+### Soru 2 — kohort ölü mü? (`v16` eksi `v15`)
+
+Gecenin en büyük bahsi. 9.107 satır, test'in %1,27'si, ama gerçekte
+sıfırsalar toplam hata bütçesinin **%56'sı** orada.
+
+| v16 − v15 | anlamı | ne yapılacak |
+|---|---|---|
+| **≈ −0,15** | kohort **ÖLÜ** | çarpanı **0,3–0,4**'e indir; 2026-07-01 (19 soğuk) ve 2026-05-13 (36 soğuk) kohortlarını da düzelt |
+| ≈ −0,05 | kısmen ölü | çarpanı 0,6'ya ayarla |
+| ≈ 0 | ayırt edilemiyor | 0,9'a çek, bir gün daha ölç |
+| **≈ +0,02** | kohort **CANLI** | düzeltmeyi bırak, bir daha dokunma |
+
+### Soru 3 — yığın test'te tutuyor mu? (`v15` eksi `v13`)
+
+| v15 − v13 | anlamı |
+|---|---|
+| ≈ −0,03 veya daha iyi | CV'deki kazanç transfer oldu |
+| ≈ 0 | tutmadı ama zarar yok — bırak |
+| pozitif | **geri al**: `YALIN_CIKARILAN = ()` ve `REJIM_AYARLARI`daki `cat` sözlüklerini boşalt |
 
 ---
 
 ## Sonra ne yapılacak
 
-1. **Yığın deneyinin sonucunu oku** (`experiments/ileri_sonuclar.jsonl`,
-   ad `YIGIN`). Eşiği geçtiyse yarının modeli o; geçmediyse `v13` kalır.
-2. Kohort cevabı geldiyse **doğru çarpanla yeni dosya üret**:
-   `python scripts/kohort_probu.py --carpan <deger> --cikti tuketim_v15.csv`
-3. Takım arkadaşının GDZ kesinti CBS işini sor — trafo koordinatı
-   çıkarsa, bu gece ölçülen 1,33'lük soğuk-trafo açığına dokunabilecek
-   **tek** şey odur.
+1. **Önbelleği yenile** — bu gece kritik bir uyumsuzluk yakalandı: tezgâh
+   144 kolonluk bayat bir önbellek üzerinde ölçüyordu, üretim ise 151
+   kolon kuruyor. Fark: nüfus ailesi (5) ve `t_mevsim_*` (2).
+
+   ```bash
+   python scripts/deney.py --yenile
+   python -m pytest tests/test_aile_kapsami.py -q   # artik ATLANMAMALI
+   ```
+
+2. **`t_mevsim_*`'ı ölç.** Bu gece kodlandı ve testlendi ama hiç
+   ölçülmedi; şu an `YALIN_CIKARILAN`da, yani modelde YOK. Mevsimsel
+   genlik (yaz/kış oranı) trafodan trafoya **8 kat** değişiyor ve elimizde
+   olmayan `trafo_tipi` kolonunun en iyi vekili. Kapsam sınırı:
+   `yaz25`'in özet penceresinde yaz yok, yani orada boş kalır.
+
+3. **Kaçan 8 kolonu ölç** (`python scripts/deney_kacan.py`). Gece
+   başlatıldı ama v15 üretimi için kesildi. Bu sekizi hiç ablate
+   edilmemişti; `t_mevsim_*` onların üstüne inşa edilecek.
+
+4. **Takım arkadaşının GDZ kesinti CBS işini sor.** Trafo koordinatı
+   çıkarsa, ölçülen 1,33'lük soğuk-trafo açığına dokunabilecek tek şey.
 
 ---
 
-## Gecenin durumu — tek bakışta
+## Kayıtlar
 
-```
-LB'de duran (dun sabahki model)     1,16143
-gece kanitlanan, gonderilmemis      1,08143   <- v13
-kohort probu, dogruysa              ~0,93     <- v14
-lider (dun)                         1,04644
-```
-
-Ölçülen 16 yapılandırma, eşiği geçen 1 (rejim yönlendirmesi).
-Ayrıntılı kayıt: [23-olcumler](23-olcumler-2026-08-21-gece.md).
+* [23-olcumler](23-olcumler-2026-08-21-gece.md) — gecenin bütün ölçümleri
+* [22-durum](22-durum-2026-08-21-aksam.md) — önceki günün durumu
+* `experiments/ileri_sonuclar.jsonl` — ham kayıtlar
