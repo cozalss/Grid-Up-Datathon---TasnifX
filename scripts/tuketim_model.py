@@ -137,6 +137,28 @@ BLOKLAR: tuple[Blok, ...] = (
 
 EGITIM_BASI = "2025-01-01"
 
+#: EK KOKENLER -- yuvarlanan kokenin daha sik ornekleri.
+#:
+#: Ana bloklar (yaz25/guz25/kis26) egitimin yalnizca %84,7'sini etiket
+#: olarak kullaniyor; 2025-01-01..03-31 arasindaki 187.500 satir hicbir
+#: zaman etiket olmuyor, sadece ozet penceresi oluyor. Ustelik uc blok,
+#: modele "gecmisten gelecege esleme"nin yalnizca UC ornegini gosteriyor.
+#:
+#: Recruit yarismasinin birincisi ayni yapiyi 63 farkli baslangic
+#: noktasiyla yigmisti. Buradaki ek kokenler ana bloklarla ORTUSUR --
+#: bu bilerek: ayni etiket satiri farkli ozet pencereleriyle birden
+#: fazla kez gorulur ve model "ozet ne kadar eskiyse tahmin o kadar
+#: belirsiz" iliskisini ogrenir. Dogrulamada ortusme YASAKTIR; ilgili
+#: fonksiyon hedef blokla kesisen her kokeni atar.
+EK_KOKENLER: tuple[tuple[str, str, str], ...] = (
+    ("sub25", "2025-02-01", "2025-03-31"),
+    ("bah25", "2025-05-01", "2025-08-31"),
+    ("yaz25b", "2025-07-01", "2025-10-31"),
+    ("guz25b", "2025-09-01", "2025-12-31"),
+    ("kis26b", "2025-11-01", "2026-02-28"),
+    ("bah26", "2026-01-01", "2026-03-31"),
+)
+
 #: Gunluk hava tablolari: (dosya, kullanilacak kolonlar).
 #: Konvektif ve hava kalitesi BILEREK yok -- ikisi de kesinti fizigi icin
 #: cekilmisti; tuketimle fiziksel bir baglantilari yok ve 47 ilcede gunluk
@@ -365,6 +387,24 @@ def ilce_yapisi_ekle(*cerceveler: pd.DataFrame) -> list[pd.DataFrame]:
     ``guc_yuzdelik`` bu farki tek kolonda tasir ve ilceler arasi
     karsilastirilabilir kilar.
     """
+    # Ilce nufusu ve alani -- ``data/reference/ilceler_gdz_adm.parquet``.
+    #
+    # Bu tablo depoda BASTAN BERI vardi ve gozden kacmisti; TUIK'ten ayrica
+    # indirmeye gerek yok. Onemi su: elimizde ilcedeki TRAFO SAYISI da var
+    # (train+test birlesimi 7.368 trafonun tamamini acikliyor), dolayisiyla
+    #
+    #     nufus / trafo_sayisi  ~  trafo basina ortalama abone
+    #
+    # hesaplanabiliyor. Literaturdeki tek olculmus calisma (Energies 18(7):
+    # 1832, 2025, 16.696 trafo) trafo yukunu tahmin eden asil degiskenin
+    # anma gucu DEGIL, tarife tipine gore ABONE SAYISI oldugunu buluyor
+    # (SVR ile R2 = 0,90). Abone sayisini alamayiz; nufus/trafo onun kamuya
+    # acik en yakin vekili.
+    ref = pd.read_parquet(
+        KOK / "data" / "reference" / "ilceler_gdz_adm.parquet",
+        columns=["ilce_key", "nufus", "alan_km2"],
+    ).drop_duplicates("ilce_key")
+
     hepsi = pd.concat([c[[GRUP, "guc", "ilce_key"]] for c in cerceveler]).drop_duplicates(GRUP)
     g = hepsi.groupby("ilce_key", observed=True)["guc"]
     ilce = pd.DataFrame(
@@ -380,6 +420,10 @@ def ilce_yapisi_ekle(*cerceveler: pd.DataFrame) -> list[pd.DataFrame]:
     sonuclar = []
     for c in cerceveler:
         yeni = c.merge(ilce, on="ilce_key", how="left", validate="many_to_one")
+        yeni = yeni.merge(ref, on="ilce_key", how="left", validate="many_to_one")
+        yeni["ilce_nufus_yogunlugu"] = yeni["nufus"] / yeni["alan_km2"]
+        yeni["trafo_basina_nufus"] = yeni["nufus"] / yeni["ilce_trafo_sayisi"]
+        yeni["kva_basina_nufus"] = yeni["nufus"] / yeni["ilce_toplam_guc"]
         yeni["guc_yuzdelik"] = yeni[GRUP].map(yuzdelik).astype("float64")
         yeni["guc_payi"] = yeni["guc"] / yeni["ilce_toplam_guc"]
         yeni["guc_medyan_orani"] = yeni["guc"] / yeni["ilce_guc_medyan"]
@@ -627,6 +671,48 @@ def _ozet_tasi(
     sonuc["ufuk_gun"] = (sonuc[ZAMAN] - ozet[ZAMAN].max()).dt.days.astype("float64")
     sonuc["_blok"] = ad
     return sonuc
+
+
+def ek_kokenleri_kur(tam_egitim: pd.DataFrame) -> pd.DataFrame:
+    """``EK_KOKENLER``den ek etiket bloklari uretir. YENI frame.
+
+    Her koken kendi ozet penceresini (basindan etiketin bir gun oncesine)
+    ve kendi profil kaynagini (egitim eksi kendi etiket penceresi) kullanir
+    -- yani ana bloklarla ayni fold-guvenlik kurali.
+    """
+    parcalar = []
+    for ad, bas, son in EK_KOKENLER:
+        blok = Blok(ad, bas, son)
+        if pd.Timestamp(bas) <= pd.Timestamp(EGITIM_BASI):
+            raise RuntimeError(f"koken {ad}: etiket egitim basindan once basliyor")
+        parcalar.append(blok_kur(tam_egitim, blok))
+        p = parcalar[-1]
+        soguk = int(p["soguk_mu"].sum())
+        print(
+            f"  koken {ad:7} etiket {len(p):>7,} satir  "
+            f"ozet {p['ozet_pencere_gun'].iloc[0]:>4.0f} gun  "
+            f"soguk {soguk:>6,} (%{100 * soguk / len(p):.1f})"
+        )
+    return pd.concat(parcalar, ignore_index=True)
+
+
+def kokenleri_ayikla(egitim: pd.DataFrame, hedef_blok: str) -> pd.DataFrame:
+    """Hedef blogun etiket penceresiyle KESISEN her kokeni atar.
+
+    Ek kokenler bilerek ortusuyor; dogrulamada ortusme sizintidir. Bir
+    koken hedef blokla tek gun bile kesisiyorsa, o blogun etiketlerini
+    egitimde gormus olur.
+    """
+    hedef = next(b for b in BLOKLAR if b.ad == hedef_blok)
+    h_bas, h_son = pd.Timestamp(hedef.etiket_basi), pd.Timestamp(hedef.etiket_sonu)
+    pencereler = {b.ad: (b.etiket_basi, b.etiket_sonu) for b in BLOKLAR}
+    pencereler.update({ad: (bas, son) for ad, bas, son in EK_KOKENLER})
+    tutulacak = {
+        ad
+        for ad, (bas, son) in pencereler.items()
+        if pd.Timestamp(son) < h_bas or pd.Timestamp(bas) > h_son
+    }
+    return egitim[egitim["_blok"].isin(tutulacak)]
 
 
 def egitim_kur(tam_egitim: pd.DataFrame) -> pd.DataFrame:
