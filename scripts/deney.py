@@ -294,6 +294,11 @@ AILELER: dict[str, tuple[str, ...]] = {
     "trafo_sekil": ("t_yayilma", "t_kayma", "t_hg_genligi"),
     "mevsim_genlik": ("t_mevsim_",),
     "pencere_yapisi": ("ozet_pencere_gun", "t_doluluk"),
+    # Nufus ailesi -- kapsam testi yakaladi (2026-08-22, ucuncu kez ayni
+    # sinifdan). Onbellek yenilenince ortaya cikti; daha once onbellek
+    # bayat oldugu icin test atlaniyordu. Bu kolonlar da hic ablate
+    # edilmemisti; olculmus tek sey artikla korelasyonlari (0,038).
+    "nufus_ailesi": ("nufus", "alan_km2", "trafo_basina_nufus", "kva_basina_nufus"),
     "trafo_olum": ("t_kuyruk_sifir", "t_olu_mu", "t_son_kayit_yasi"),
     "trafo_isil": ("t_egim_", "t_trend"),
     "grup_seviye": ("g_",),
