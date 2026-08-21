@@ -71,6 +71,28 @@ KOPRU_TAZELEME_NOTU = (
     "TEKRAR kosulmali; 09-01 icin en gec 08-25 civari."
 )
 
+#: Dusmanca provanin kosacagi SENARYOLAR: (ad, neden onemli).
+#:
+#: Tek bir sekli denemek yetmez. Yarisma verisinin BICIMI (kodlama, ayirici,
+#: basliklar) kadar SEKLI de (hedef tipi, bolme duzeni, ilce kapsami)
+#: degisebilir ve her sekil ayri bir kor nokta saklar. Olculdu 2026-08-21:
+#: 'ikili' senaryosu ilk kosuda hatti komple cokerttti -- 'sayim' senaryosu
+#: aylardir yesildi.
+PROVA_SENARYOLARI: tuple[tuple[str, str], ...] = (
+    ("sayim", "gunluk kesinti adedi + MAE (2024 GDZ emsali)"),
+    ("ikili", "kesinti oldu mu + F1 (GDZ'22 Case-1 emsali)"),
+    ("soguk_ilce", "test'te train'de olmayan ilceler"),
+    ("ic_ice", "test gunleri train'in arasinda -- sizinti kapisi SINANIYOR"),
+)
+
+#: Senaryoya ozel ek bayraklar.
+#:
+#: 'ic_ice' bilerek sizinti kapisini tetikler; kapinin DURDURMASI dogru
+#: davranistir. Burada kacis bayragi verilir ki kapi denendikten SONRA
+#: hattin geri kalani da sinansin -- yoksa senaryo hep kirmizi gorunur ve
+#: bir sure sonra "zaten hep kirmizi" diye gormezden gelinir.
+EK_BAYRAK: dict[str, list[str]] = {"ic_ice": ["--", "--sizintiyi-kabul-ediyorum"]}
+
 #: Takvim kapisinin baktigi zaman serili tablolar: (yol, tarih kolonu).
 ZAMANLI_TABLOLAR: tuple[tuple[str, str], ...] = (
     ("data/external/hava_gunluk.parquet", "tarih"),
@@ -260,9 +282,21 @@ def main() -> int:
     print(kapilar[-1])
 
     if not args.hizli:
-        print("  [ ...  ] dusmanca prova kosuyor (birkac dakika)")
-        kapilar.append(_betik_kos("dusmanca prova", [sys.executable, "scripts/dusmanca_prova.py"]))
-        print(kapilar[-1])
+        for senaryo, aciklama in PROVA_SENARYOLARI:
+            print(f"  [ ...  ] dusmanca prova: {senaryo} -- {aciklama}")
+            kapilar.append(
+                _betik_kos(
+                    f"prova:{senaryo}",
+                    [
+                        sys.executable,
+                        "scripts/dusmanca_prova.py",
+                        "--senaryo",
+                        senaryo,
+                        *EK_BAYRAK.get(senaryo, []),
+                    ],
+                )
+            )
+            print(kapilar[-1])
     else:
         print("  [ATLA ] dusmanca prova (--hizli)")
 

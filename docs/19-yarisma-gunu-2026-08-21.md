@@ -142,6 +142,56 @@ Bonus: üreteç ilk denemede test dosyasına aynı günün sonuç kolonlarını
 koymuştu ve **sızıntı kapısı koşuyu haklı olarak durdurdu**
 (Spearman 0,9935 / 0,9775). Kapının çalıştığının kanıtı.
 
+### Dört senaryo — biçim kadar ŞEKİL de değişebilir
+
+Yukarıdaki üç arıza tek bir *şekilde* bulundu: günlük sayım + MAE. Ama
+yarışma verisinin şekli de değişebilir ve her şekil ayrı bir kör nokta
+saklıyor. Dördünü de koşturduk:
+
+| Senaryo | Neden olası | Sonuç |
+|---|---|---|
+| `sayim` | 2024 GDZ emsali (MAE) | ✅ geçerli submission |
+| `ikili` | **GDZ'22 Case-1 emsali (F1)** | ❌ **hat komple çöküyordu** → düzeltildi |
+| `soguk_ilce` | Test'te train'de olmayan ilçeler | ✅ geçerli submission |
+| `ic_ice` | Test günleri train'in arasında | ✅ sızıntı kapısı durdurdu (doğru) |
+
+**`ikili` senaryosu ilk koşuda hattı komple çökertti:**
+
+```
+ValueError: early_stopping_metric='f1', lightgbm icin desteklenmiyor
+```
+
+Hata mesajı doğruydu — F1 bir *eşiğe* bağlıdır, tur başına değerlendirilemez.
+Ama doğru cevap durmak değil: olasılık temelli bir vekille (logloss) erken
+durdurup **eşiği sonradan, fold-dışı tahminlerde optimize etmek**.
+
+> AUC değil logloss seçildi. İkisi de eşikten bağımsız ama AUC yalnızca
+> *sıralamayı* ölçer; iyi sıralanmış ama kötü kalibre olasılıklar AUC'yi
+> yüksek gösterip tam da eşik aramasını bozar.
+
+İkinci yarısı daha sinsiydi: `optimize_threshold` depoda **zaten vardı**,
+iyi belgelenmişti — ve hiçbir yerden çağrılmıyordu. Yani F1 senaryosunda
+0,5 eşiğiyle gönderim yapılacaktı. Bu panelde günlerin %65'i sıfır;
+dengesiz veride 0,5 neredeyse hiçbir zaman optimum değildir.
+
+Üçüncüsü ilk çalışan koşuda çıktı:
+
+```
+Esik optimizasyonu: esik=0.010  f1=0.8996   (0,5'te de 0.8996)
+```
+
+Berabere ama "her şeye evet de" eşiği seçilmiş — `np.argmax` ilk maksimumu
+döndürüyor, ızgara küçükten büyüğe gidiyor. OOF'ta yalnızca *berabere* kalan
+uç bir eşik, kuyruktaki birkaç örneğe uyuyor demektir. Artık beraberlikte
+**0,5'e en yakın** eşik kazanıyor: kanıt yokken varsayılana yaslanmak doğrudur.
+
+`ic_ice`'nin durdurulması kusur değil kanıttır — serpiştirilmiş bölme gerçek
+bir sızıntı tehlikesidir ve varsayılan olarak geçilmemelidir. Açık bayrakla
+devam edilince `forecast_geometry` iç içeliği tespit ediyor, zaman-ileri
+şemayı **uygulamıyor** ve GroupKFold'a düşüyor.
+
+`gun_sifir.py` artık dördünü de kapı olarak koşuyor.
+
 ---
 
 ## 4. KOŞU SIRASI
