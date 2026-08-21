@@ -82,7 +82,7 @@ omit = ["*/gridup/neural.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 addopts = "-q --strict-markers"
 markers = [
     "slow: model egiten testler (varsayilan calisir, -m 'not slow' ile atlanir)",

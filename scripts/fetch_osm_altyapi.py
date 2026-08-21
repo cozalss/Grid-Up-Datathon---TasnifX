@@ -59,16 +59,30 @@ from gridup.io_utils import publish_dataframe  # noqa: E402
 REFERANS = KOK / "data" / "reference" / "ilceler_gdz_adm.parquet"
 CIKTI = KOK / "data" / "external" / "osm_altyapi_ilce.parquet"
 
-#: Overpass ORNEKLERI, sirayla denenir. Tek sunucuya 96 ardisik agir sorgu
-#: atmak kotayi tuketiyor (olculdu: 40. ilcede kalici HTTP 504). Ornekler
-#: ayni veriyi servis eder; rotasyon yuku dagitir ve biri bakimdayken kosu
-#: durmaz.
-OVERPASS_ORNEKLERI = (
-    "https://overpass-api.de/api/interpreter",
+#: Overpass ORNEKLERI. AYNALAR ESIT DEGIL -- olculdu (2026-08-21, ayni sorgu):
+#:   overpass-api.de          HTTP 200   2,4 sn   252 oge
+#:   overpass.kumi.systems    HTTP 502   6,8 sn
+#:   overpass.private.coffee  HTTP 500  34,9 sn
+#: Bu yuzden duz rotasyon YANLISTI: alti denemenin dordu bozuk sunucuya
+#: gidiyor, sonra "Overpass yanit vermedi" deniyordu. Asil sunucu saglikli
+#: ve hizli; aynalar yalnizca SON CARE.
+OVERPASS_BIRINCIL = "https://overpass-api.de/api/interpreter"
+OVERPASS_AYNALAR = (
     "https://overpass.kumi.systems/api/interpreter",
     "https://overpass.private.coffee/api/interpreter",
 )
-OVERPASS = OVERPASS_ORNEKLERI[0]
+#: Deneme sirasi: once birincilde israr (gecici 504 bekleyerek gecer), sonra
+#: aynalar. Aynalarin arasina yine birincil serpistirilir.
+DENEME_SIRASI = (
+    OVERPASS_BIRINCIL,
+    OVERPASS_BIRINCIL,
+    OVERPASS_BIRINCIL,
+    OVERPASS_AYNALAR[0],
+    OVERPASS_BIRINCIL,
+    OVERPASS_AYNALAR[1],
+    OVERPASS_BIRINCIL,
+)
+OVERPASS = OVERPASS_BIRINCIL
 #: Overpass sunuculari User-Agent'siz istegi 406 ile reddediyor (olculdu).
 BASLIKLAR = {"User-Agent": "GridUpDatathon/1.0 (+veri hazirligi; iletisim: repo sahibi)"}
 
@@ -122,7 +136,7 @@ def ilce_altyapisi(
     lat: float,
     lon: float,
     yaricap_km: float,
-    deneme: int = 6,
+    deneme: int = len(DENEME_SIRASI),
 ) -> dict[str, float]:
     """Bir ilce dairesindeki OSM guc altyapisi: nokta sayilari + hat uzunluklari.
 
@@ -131,10 +145,9 @@ def ilce_altyapisi(
     daireye DEGEN yolun tamamini dondurur; tamamini saymak, sinirdaki uzun bir
     iletim hattini tumuyle bu ilceye yazardi.
 
-    DAYANIKLILIK: her denemede SIRADAKI Overpass ornegine gecilir ve bekleme
-    ustel buyur. Tek sunucuda israr etmek olculdu ve calismadi -- 40. ilcede
-    kalici 504 geldi, cunku 504 "bu istek agir" degil "bu SUNUCU su an dolu"
-    demektir; ayni sunucuya beklemek yerine baskasina gitmek dogru cevaptir.
+    DAYANIKLILIK: deneme sirasi ``DENEME_SIRASI`` -- once saglikli birincilde
+    israr, aynalar son care. Duz rotasyon OLCULDU ve zararliydi: aynalar 502
+    ve 500 donduyordu, yani alti denemenin dordu bosa gidiyordu.
     """
     sorgu = SORGU.format(
         yaricap_m=int(yaricap_km * 1000),
@@ -145,7 +158,7 @@ def ilce_altyapisi(
     )
     son_hata: Exception | None = None
     for tur in range(deneme):
-        adres = OVERPASS_ORNEKLERI[tur % len(OVERPASS_ORNEKLERI)]
+        adres = DENEME_SIRASI[tur % len(DENEME_SIRASI)]
         try:
             yanit = oturum.post(adres, data={"data": sorgu}, timeout=240)
             if yanit.status_code in (429, 502, 503, 504):
