@@ -259,6 +259,179 @@ def hava_ekle(frame: pd.DataFrame, hava: pd.DataFrame) -> pd.DataFrame:
     return sonuc
 
 
+#: Statik ilce tablolari: (dosya, kullanilacak kolonlar).
+#: Ilceyi CIPLAK BIR ETIKET olmaktan cikarip VEKTOR yapmak icin. Soguk
+#: trafolarda elimizdeki tek zengin bilgi kaynagi konum; 47 seviyeli bir
+#: kategorik ise konumun tasidigi seyin ancak kucuk bir kismini modele
+#: gecirir. Arazi ortusu ve sebeke altyapisi, ilceler arasi farki
+#: SUREKLI degiskenler olarak tasir -- ve model bunlari daha once hic
+#: gormedigi bir ilceye bile genelleyebilir.
+STATIK_ILCE_TABLOLARI: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "arazi_ortusu_ilce.parquet",
+        (
+            "agac_orani",
+            "calilik_orani",
+            "otlak_orani",
+            "tarim_orani",
+            "yerlesim_orani",
+            "ciplak_orani",
+            "su_orani",
+            "bitki_ortusu_orani",
+        ),
+    ),
+    (
+        "osm_altyapi_ilce.parquet",
+        (
+            "osm_trafo",
+            "osm_direk",
+            "osm_dagitim_hat_km",
+            "osm_iletim_hat_km",
+            "osm_kablo_km",
+            "osm_direk_yogunlugu",
+            "osm_hat_yogunlugu",
+        ),
+    ),
+)
+
+
+def statik_ilce_ekle(*cerceveler: pd.DataFrame) -> list[pd.DataFrame]:
+    """Arazi ortusu ve OSM sebeke altyapisi. YENI frameler.
+
+    ``yerlesim_orani`` bu veri kumesinde daha once olculmustu (kesinti
+    calismasinda, 162.240 satir): ilceler arasi en guclu tek ayrim
+    degiskeniydi. Tuketim icin fiziksel gerekcesi daha da dogrudan --
+    kentsel yogunluk, trafo basina dusen abone sayisinin vekilidir.
+
+    ``osm_dagitim_hat_km`` / ``osm_direk`` ise sebekenin ilcedeki
+    yayginligini olcer: ayni kVA'lik bir trafo, seyrek kirsal bir agda
+    ile yogun kentsel bir agda farkli yuk tasir.
+
+    Kaynaklar ``data/sources.yml``de kayitli ve ``model_girdisi`` bayragi
+    serbest -- yarisma dis veri kullanimina acik.
+    """
+    tablolar = []
+    for dosya, kolonlar in STATIK_ILCE_TABLOLARI:
+        d = pd.read_parquet(DIS / dosya, columns=["ilce_key", *kolonlar])
+        tablolar.append(d.set_index("ilce_key"))
+    statik = pd.concat(tablolar, axis=1).reset_index()
+
+    sonuclar = []
+    for c in cerceveler:
+        yeni = c.merge(statik, on="ilce_key", how="left", validate="many_to_one")
+        if len(yeni) != len(c):
+            raise RuntimeError("statik ilce birlesimi satir sayisini degistirdi")
+        sonuclar.append(yeni)
+    return sonuclar
+
+
+def ilce_yapisi_ekle(*cerceveler: pd.DataFrame) -> list[pd.DataFrame]:
+    """Trafonun KENDI ILCESI icindeki kapasite konumu. YENI frameler.
+
+    Hedefi degil, VARLIK LISTESINI kullanir: train ve test birlikte
+    7.368 trafonun tamamini ve her birinin ``guc``unu aciklar. Yani bir
+    ilcede kac trafo oldugu, toplam kurulu gucun ne oldugu ve bu trafonun
+    o dagilimda nerede durdugu -- hepsi SOGUK trafolar icin de bilinir.
+
+    Neden onemli: ham ``guc`` mutlak bir buyukluktur. 630 kVA, Kiraz'da
+    ilcenin en buyuk trafolarindan biri, Konak'ta ortalamanin altidir.
+    ``guc_yuzdelik`` bu farki tek kolonda tasir ve ilceler arasi
+    karsilastirilabilir kilar.
+    """
+    hepsi = pd.concat([c[[GRUP, "guc", "ilce_key"]] for c in cerceveler]).drop_duplicates(GRUP)
+    g = hepsi.groupby("ilce_key", observed=True)["guc"]
+    ilce = pd.DataFrame(
+        {
+            "ilce_trafo_sayisi": g.size().astype("float64"),
+            "ilce_toplam_guc": g.sum(),
+            "ilce_guc_medyan": g.median(),
+        }
+    ).reset_index()
+    hepsi["guc_yuzdelik"] = g.rank(pct=True)
+    yuzdelik = hepsi.set_index(GRUP)["guc_yuzdelik"]
+
+    sonuclar = []
+    for c in cerceveler:
+        yeni = c.merge(ilce, on="ilce_key", how="left", validate="many_to_one")
+        yeni["guc_yuzdelik"] = yeni[GRUP].map(yuzdelik).astype("float64")
+        yeni["guc_payi"] = yeni["guc"] / yeni["ilce_toplam_guc"]
+        yeni["guc_medyan_orani"] = yeni["guc"] / yeni["ilce_guc_medyan"]
+        # Sebeke yogunlugu: ilcedeki trafo basina dusen dagitim hatti.
+        if "osm_dagitim_hat_km" in yeni.columns:
+            yeni["trafo_basina_hat"] = yeni["osm_dagitim_hat_km"] / yeni["ilce_trafo_sayisi"]
+        sonuclar.append(yeni)
+    return sonuclar
+
+
+def kimlik_ekle(*cerceveler: pd.DataFrame) -> list[pd.DataFrame]:
+    """``tanim`` numarasindan turetilen STATIK kolonlar. YENI frameler.
+
+    ``tanim`` modele kategorik olarak VERILMEZ (7.036 seviye, %28,8'i test'e
+    ozgu -- ezberlenir). Ama sayisal degerinin kendisi bilgi tasiyor: trafo
+    numaralari isletme ve fider bazinda bloklar halinde verilmis, yani yakin
+    numaralar cogu zaman yakin sebeke parcalari.
+
+    Olculdu (2026-08-21, 5.344 trafo, 5-katmanli CV, hedef = trafonun
+    ortalama ``log1p(tuketim)``i):
+
+        yalniz log_guc                     RMSE(log) 1,9707
+        log_guc + ilce                               1,9739
+        log_guc + ilce + panel yapisi                1,7343
+        + ID kolonlari (bu fonksiyon)                1,7055
+
+    Onemli ayrinti: kaba denemeler BASARISIZ olmustu -- onek ortalamasi
+    (2,21-2,30) ve ID komsulugu (2,20) duz ``guc`` kovasindan (2,04) kotuydu.
+    Ham sayiyi agac modeline vermek ise calisiyor, cunku model onek
+    sinirlarini kendisi buluyor; elle secilen 2-3-4 haneli kesme noktalari
+    dogru yerlerde degildi.
+
+    12 trafonun numarasi sayisal degil (``202917T``, ``Iskele DM``,
+    ``M-3115`` ...). Onlarda ``tanim_num`` NaN kalir -- 0 yazmak onlari
+    numara uzayinin en basina koyardi ve bu uydurma bir komsuluk olurdu.
+    """
+    sonuclar = []
+    for c in cerceveler:
+        yeni = c.copy()
+        ad = yeni[GRUP].astype("string")
+        yeni["tanim_num"] = pd.to_numeric(ad.where(ad.str.fullmatch(r"\d+")), errors="coerce")
+        yeni["tanim_uzunluk"] = ad.str.len().astype("float64")
+        for n in (2, 3, 4, 5):
+            yeni[f"tanim_on{n}"] = pd.to_numeric(ad.str[:n], errors="coerce")
+        sonuclar.append(yeni)
+    return sonuclar
+
+
+def panel_yapisi_ekle(etiket: pd.DataFrame) -> pd.DataFrame:
+    """Trafonun ETIKET penceresindeki satir yapisi. YENI frame.
+
+    Hedefi degil, SORULAN satirlarin desenini kullanir: test.csv hangi
+    (trafo, gun) ciftinin istendigini zaten acikca soyluyor. Bir trafonun
+    122 gunun kacinda soruldugu, ilk ve son gununun nerede oldugu, araligin
+    ne kadar dolu oldugu -- hepsi mesru bicimde bilinebilir.
+
+    Neden guclu: olculdu, bu bes kolon trafo seviyesi tahmininde RMSE(log)'u
+    1,9707'den 1,7343'e indiriyor -- ID ve ilce dahil butun diger statik
+    bilgilerden daha buyuk bir katki. Sezgisi acik: surekli olculen bir
+    trafo ile ayda birkac gun gorunen bir trafo ayni sey degildir; seyrek
+    gorunme, dusuk ve duzensiz yuke isaret eder.
+
+    Soguk trafolar icin bu kolonlar TAM DOLUDUR -- gecmisi olmayan 2.024
+    trafo hakkinda sahip oldugumuz neredeyse tek gozlemsel bilgi budur.
+    """
+    sonuc = etiket.copy()
+    pencere_basi = sonuc[ZAMAN].min()
+    pencere_gun = float((sonuc[ZAMAN].max() - pencere_basi).days) + 1.0
+    g = sonuc.groupby(GRUP, observed=True)[ZAMAN]
+    ilk, son, adet = g.transform("min"), g.transform("max"), g.transform("size")
+    sonuc["p_gun_sayisi"] = adet.astype("float64")
+    sonuc["p_ilk_ofset"] = (ilk - pencere_basi).dt.days.astype("float64")
+    sonuc["p_son_ofset"] = (son - pencere_basi).dt.days.astype("float64")
+    sonuc["p_yayilma"] = (son - ilk).dt.days.astype("float64") + 1.0
+    sonuc["p_doluluk"] = sonuc["p_gun_sayisi"] / sonuc["p_yayilma"]
+    sonuc["p_pencere_payi"] = sonuc["p_gun_sayisi"] / pencere_gun
+    return sonuc
+
+
 def ulusal_ekle(*cerceveler: pd.DataFrame) -> list[pd.DataFrame]:
     """EPIAS ulusal SAATLIK tuketimden gunluk endeks. YENI frameler.
 
@@ -407,6 +580,7 @@ def _ozet_tasi(
     sonuc = trafo_ozetleri_uygula(etiket, ozetler)
     sonuc = grup_seviyeleri_ekle(sonuc, ozet)
     sonuc = grup_profilleri_ekle(sonuc, profil_kaynak)
+    sonuc = panel_yapisi_ekle(sonuc)
     pencere = int((ozet[ZAMAN].max() - ozet[ZAMAN].min()).days) + 1
     sonuc["ozet_pencere_gun"] = float(pencere)
     sonuc["t_doluluk"] = sonuc["t_gun_sayisi"] / float(pencere)
@@ -617,6 +791,9 @@ def main() -> int:
     print(f"  hava eslesmesi: train %{100 * (1 - bos):.2f}")
     tr, te = takvim_ekle(tr), takvim_ekle(te)
     tr, te = yas_ekle(tr, te)
+    tr, te = kimlik_ekle(tr, te)
+    tr, te = statik_ilce_ekle(tr, te)
+    tr, te = ilce_yapisi_ekle(tr, te)
     tr, te = ulusal_ekle(tr, te)
     print(
         f"  ulusal endeks: train NaN %{100 * tr['ulusal_gunluk'].isna().mean():.2f}"
