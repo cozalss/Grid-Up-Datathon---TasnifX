@@ -319,3 +319,80 @@ eğimi taşı, merkez olarak bloğun **kendi tahmin ortalamasını** kullan
 Teori (araştırmadan, kapalı form): `kazanç = (μ_ŷ − μ_y)² + σ_ŷ²(1−λ*)²`
 ve model sabit tahminciyi **ancak λ* > 0,5 ise** geçer. Bizim λ* = 0,65–0,76,
 yani model sabitten iyi ama büzülmesi gerekiyor.
+
+## 12. YÖNLENDİRME HARMANDA DA TUTUYOR — karar verildi
+
+54 fit (3 blok × 2 maske × 3 aile × 3 tohum), tohum torbalanmış.
+
+Rejim bazında en iyi karışım gerçekten farklı:
+
+| ağırlık | sıcak satırlar | soğuk satırlar |
+|---|---|---|
+| cat tek | 0,8128 | 1,7595 |
+| 1/1/1 | 0,8003 | 1,7495 |
+| 2/1/1 | **0,7976** | 1,7417 |
+| 3/1/1 | 0,7979 | **1,7404** |
+| 4/1/1 | 0,7989 | 1,7409 |
+| 6/1/1 | 0,8010 | 1,7430 |
+
+Ama 2/1/1 ile 4/1/1 arası fark 0,001 — gürültü. Bu yüzden 64 hücrelik
+ızgaradan en iyi hücreyi seçmek **aşırı uydurma** olur:
+
+```
+en iyi ızgara hücresi  sicak[2/1/1] soguk[3/1/1]   1,08133
+SECILEN                sicak[3/1/1] soguk[3/1/1]   1,08143
+```
+
+Fark 0,0001. 3/1/1 ikisinde de optimumun gürültü mesafesinde ve zaten
+kullandığımız ağırlık — ek serbestlik derecesi getirmiyor.
+
+### Blok kırılımı — kazanç tekdüze DEĞİL
+
+| blok | soğuk (maske %15) | soğuk (uzman, %100) | fark |
+|---|---|---|---|
+| **yaz25** | 1,7254 | **1,6228** | **−0,1026** |
+| guz25 | 1,7737 | **1,7151** | −0,0586 |
+| kis26 | 1,8747 | 1,8833 | +0,0086 |
+
+İki blokta çok kazandırıyor, birinde ihmal edilebilir kaybettiriyor. En çok
+kazandırdığı blok **yaz25** — test döneminin mevsimsel ikizi (aynı aylar,
+aynı ufuk uzunluğu). Bu, kararı güçlendiriyor.
+
+Olası açıklama: bloğun özet penceresi uzunluğu (yaz25 90 gün, guz25 212,
+kis26 334, TEST 455). Kısa pencerede sıcak trafoların geçmişi de ince, o
+yüzden maske %15 modeli soğuğa kötü genelliyor. TEST'in penceresi en uzun,
+yani bu eksende kis26'ya benziyor — kayıt altına alınmalı, ama +0,0086
+soğuk = genel skorda +0,003, ve diğer iki blokta kazanç 10-30 katı.
+
+### Sıcak tarafta beklenmedik kırılım
+
+```
+sicak skoru:  yaz25 0,8130   guz25 0,8263   kis26 0,7544
+```
+
+kis26 (kısa ufuklu blok) naif tabanın **altında**. Sorun uzun ufukta, ve
+bu, ufka göre ağırlıklandırılmış naif taban hipotezini destekliyor.
+
+## 13. Büzülme — düzeltildi, çalışıyor, ama eşiğin çok altında
+
+```
+beta=1,00 (buzulme yok)   1,08143
+beta=0,95                 1,08082
+beta=0,90                 1,08043
+beta=0,85                 1,08026   <- en iyi
+beta=0,80                 1,08031
+beta=0,70                 1,08107
+```
+
+Eğri düzgün ve minimumu var — yani mekanizma gerçek. Ama kazanç **0,0012**,
+gürültü tabanının (0,00998) sekizde biri. Üstelik β'yı doğrulama eğrisinden
+seçmek serbestlik derecesi ekler. **Reddedildi**, kayıt altında.
+
+## 14. Üretime bağlanan yapılandırma
+
+```python
+REJIM_MASKELERI = {"sicak": 0.15, "soguk": 1.00}
+AILE_AGIRLIKLARI = {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0}   # degismedi
+```
+
+`REJIM_MASKELERI = None` eski tek-model davranışına döndürür.
