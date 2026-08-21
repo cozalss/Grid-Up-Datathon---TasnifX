@@ -92,6 +92,65 @@ _TAKMA_ADLAR = {ham: yeni for (_, ham), yeni in MERKEZ_KURTARMA.items()}
 
 ZORLUKLAR = ("hafif", "orta", "tam")
 
+#: SAATLIK senaryonun baslik ustyazimlari. Acilis sunumundan (2026-08-21)
+#: birebir: veri "Profil Tarihi (tarih ve saat)" tasiyor, hedef ise "Aktif
+#: Tuketim Gunluk". Ikisinin ayni cozunurlukte oldugu HICBIR YERDE
+#: soylenmedi -- prova tam olarak o ihtimali sinar.
+SAATLIK_BASLIKLARI = {
+    "gun": "Profil Tarihi",
+    "kesinti_adet": "Aktif Tüketim",
+}
+
+#: Gercekci gun-ici yuk profili (24 saat). Mutlak sekil onemli degil --
+#: onemli olan bir (varlik, gun) ciftinin egitim dosyasinda 24 KEZ
+#: gorunmesi. Kod icinde 1'e normalize edilir, yani saatlik degerlerin
+#: toplami gunluk degere ESIT kalir; boylece "hat dogru topladi mi"
+#: sorusu tahmin degil OLCUM olur.
+SAATLIK_PROFIL = (
+    0.030,
+    0.028,
+    0.027,
+    0.026,
+    0.026,
+    0.028,
+    0.033,
+    0.039,
+    0.044,
+    0.047,
+    0.048,
+    0.048,
+    0.047,
+    0.046,
+    0.046,
+    0.047,
+    0.050,
+    0.055,
+    0.058,
+    0.057,
+    0.053,
+    0.047,
+    0.040,
+    0.034,
+)
+
+
+def _saatlige_ac(gunluk: pd.DataFrame, hedef: str) -> pd.DataFrame:
+    """Her gunluk satiri 24 saatlik satira acar; hedefi profile boler.
+
+    Gunluk toplam KORUNUR (profil 1'e normalize edilir). Dolayisiyla dogru
+    davranis -- gune indirip toplamak -- gercek hedefi birebir geri verir.
+    Yanlis davranis (24 kat sismis cerceve uzerinde lag/rolling, ya da
+    tekrarlanan ID'yi sessizce ilk satira dusurmek) olculebilir bicimde
+    farkli sonuc uretir.
+    """
+    pay = pd.Series(SAATLIK_PROFIL, dtype="float64")
+    pay = (pay / pay.sum()).to_numpy()
+    acik = gunluk.loc[gunluk.index.repeat(24)].reset_index(drop=True)
+    saat = pd.Series(list(range(24)) * len(gunluk))
+    acik["gun"] = acik["gun"] + pd.to_timedelta(saat, unit="h")
+    acik[hedef] = acik[hedef].to_numpy(dtype="float64") * pay[saat.to_numpy()]
+    return acik
+
 
 def _ilce_goruntu_adlari() -> pd.DataFrame:
     """``ilce_key -> gercek EPIAS goruntu adi`` eslemesi.
@@ -204,6 +263,21 @@ def uret(zorluk: str, senaryo: str = "sayim") -> dict[str, Path]:
     for parca in (egitim, test):
         parca["ID"] = parca["ilce_key"] + "_" + parca["gun"].dt.strftime("%Y-%m-%d")
 
+    if senaryo == "saatlik":
+        # SAATLIK EGITIM / GUNLUK GONDERIM.
+        #
+        # Acilis sunumu "Profil Tarihi (tarih ve saat)" diyor ama hedefi
+        # "Aktif Tuketim GUNLUK" diye adlandiriyor. Egitim dosyasi saatlik
+        # gelirse bir (trafo, gun) cifti 24 KEZ tekrarlanir; gonderim ise
+        # gunluktur. Bu sessiz bicimde olumcul:
+        #   * ID 24 kez tekrar eder -- birebir gonderim anahtari degil artik
+        #   * lag/rolling 24 kat sismis bir cerceve uzerinde hesaplanir,
+        #     yani "1 gun onceki" aslinda "1 SAAT onceki" olur
+        #   * CV grup kolonu ve ufuk hesabi gun degil saat sayar
+        # Test ve sample GUNLUK birakiliyor -- gercek gonderim gunluk.
+        egitim = _saatlige_ac(egitim, "kesinti_adet")
+        print(f"  SAATLIK: egitim {len(egitim):,} satira acildi (gunluk x24)")
+
     disari = ["ID", "il_display", "ilce_display", "gun", "kesinti_adet"]
     if zorluk == "tam":
         # Statik altyapi ozniteligi: hedeften TURETILMEMIS, zamandan bagimsiz.
@@ -215,21 +289,28 @@ def uret(zorluk: str, senaryo: str = "sayim") -> dict[str, Path]:
         test = test.merge(osm, on="ilce_key", how="left", validate="many_to_one")
         disari += ["osm_iletim_hat_km", "osm_kule"]
 
-    egitim_c = egitim[disari].rename(columns=BASLIKLAR)
-    egitim_c["Tarih"] = egitim["gun"].dt.strftime("%Y-%m-%d")
+    basliklar = dict(BASLIKLAR)
+    if senaryo == "saatlik":
+        basliklar.update(SAATLIK_BASLIKLARI)
+    gun_bicimi = "%Y-%m-%d %H:%M:%S" if senaryo == "saatlik" else "%Y-%m-%d"
+
+    egitim_c = egitim[disari].rename(columns=basliklar)
+    egitim_c[basliklar["gun"]] = egitim["gun"].dt.strftime(gun_bicimi)
     if zorluk == "tam":
         # Sabit kolon + bos kolon: gercek veri setleri bunlarla dolu ve
         # profil ikisini de "bilgi tasimaz" diye isaretlemeli.
         egitim_c["Dağıtım Bölgesi"] = "EGE"
         egitim_c["Açıklama"] = ""
 
-    test_c = test[[c for c in disari if c != "kesinti_adet"]].rename(columns=BASLIKLAR)
-    test_c["Tarih"] = test["gun"].dt.strftime("%Y-%m-%d")
+    # Test GUNLUK kalir: saatlik senaryoda train ile test'in cozunurlugu
+    # BILEREK ayrisiyor -- yakalanmak istenen arıza tam olarak bu.
+    test_c = test[[c for c in disari if c != "kesinti_adet"]].rename(columns=basliklar)
+    test_c[basliklar["gun"]] = test["gun"].dt.strftime("%Y-%m-%d")
     if zorluk == "tam":
         test_c["Dağıtım Bölgesi"] = "EGE"
         test_c["Açıklama"] = ""
 
-    ornek = pd.DataFrame({"ID": test["ID"].to_numpy(), BASLIKLAR["kesinti_adet"]: 0})
+    ornek = pd.DataFrame({"ID": test["ID"].to_numpy(), basliklar["kesinti_adet"]: 0})
 
     CIKTI.mkdir(parents=True, exist_ok=True)
     yollar = {
@@ -246,8 +327,8 @@ def uret(zorluk: str, senaryo: str = "sayim") -> dict[str, Path]:
     print(f"  train : {len(egitim_c):>7,} satir  {yollar['train'].name}")
     print(f"  test  : {len(test_c):>7,} satir  {yollar['test'].name}")
     print(f"  sample: {len(ornek):>7,} satir  {yollar['sample'].name}")
-    print(f"  hedef : {BASLIKLAR['kesinti_adet']!r}  (test dosyasinda YOK)")
-    print(f"  ilce  : {egitim_c[BASLIKLAR['ilce_display']].iloc[0]!r} ornek")
+    print(f"  hedef : {basliklar['kesinti_adet']!r}  (test dosyasinda YOK)")
+    print(f"  ilce  : {egitim_c[basliklar['ilce_display']].iloc[0]!r} ornek")
     return yollar
 
 
@@ -258,13 +339,27 @@ def join_denetimi(zorluk: str) -> bool:
     219 dis kolon NaN olur.
     """
     print("\n[JOIN DENETIMI] ilce adi -> ilce_key")
+    # DOSYANIN TAMAMI taranir, bas kismi degil.
+    #
+    # Onceki surum ``nrows=200_000`` ile okuyordu. Gunluk dosyada (162.240
+    # satir) bu tesadufen dosyanin tamamiydi. SAATLIK senaryoda dosya
+    # 3.783.168 satir ve ilce_key'e gore SIRALI -- olculdu (2026-08-21):
+    #
+    #     tam tarama : 3.783.168 satir, 96 benzersiz ilce, 1,5 sn
+    #     nrows=200k :   200.000 satir,  6 benzersiz ilce, 0,2 sn
+    #
+    # Yani kapi 96 ilcenin 6'sina bakip 'TAMAM: hepsi eslesti' yaziyordu.
+    # Bir denetim kapisinin verebilecegi en kotu cikti budur: YANLIS YESIL.
+    # Yalnizca gereken kolon okunarak tam tarama 1,5 sn'ye iniyor, yani
+    # kisaltmanin bir maliyet gerekcesi de yok.
     train = pd.read_csv(
         CIKTI / "train.csv",
         sep=";" if zorluk != "hafif" else ",",
         encoding="cp1254" if zorluk == "tam" else "utf-8",
-        nrows=200_000,
+        usecols=[BASLIKLAR["ilce_display"]],
     )
     adlar = train[BASLIKLAR["ilce_display"]].dropna().unique()
+    print(f"  taranan satir          : {len(train):,}")
     arazi = pd.read_parquet(KOK / "data" / "external" / "arazi_ortusu_ilce.parquet")
     hedef = set(arazi["ilce_key"])
 
@@ -323,6 +418,13 @@ SENARYO_METRIGI = {
     # ciddi bir pay -- ufuk kadar kaydirilan bir lag, egitimin ilk 122
     # gununu bos birakir. Kirilip kirilmadigi TAHMIN EDILMEZ, olculur.
     "gercek_geometri": "mape",
+    # SAATLIK EGITIM / GUNLUK GONDERIM. Acilis sunumu "Profil Tarihi
+    # (tarih ve saat)" diyor; hedef ise "Aktif Tuketim GUNLUK". Egitim
+    # dosyasi saatlik gelirse bir (trafo, gun) cifti 24 kez tekrarlanir.
+    # Olculdu (2026-08-21): day_one.py ve validation.py icinde HICBIR
+    # cozunurluk indirgeme adimi yok -- ne resample, ne groupby-sum. Yani
+    # bu sekil karsisinda ne yapacagi BILINMIYOR; prova onu olcer.
+    "saatlik": "MAE",
 }
 
 SENARYOLAR = tuple(SENARYO_METRIGI)
@@ -356,7 +458,8 @@ def main() -> int:
             "Yarisma dosyasinin BICIMI degil SEKLI. 'sayim': gunluk kesinti "
             "adedi + MAE. 'ikili': kesinti oldu mu + F1 (GDZ'22 Case-1 boyleydi). "
             "'soguk_ilce': test'te train'de olmayan ilceler. 'ic_ice': test "
-            "gunleri train gunlerinin arasina serpistirilmis."
+            "gunleri train gunlerinin arasina serpistirilmis. 'saatlik': "
+            "egitim SAATLIK (gunluk x24), gonderim gunluk."
         ),
     )
     ayristirici.add_argument("--sadece-uret", action="store_true")
