@@ -50,21 +50,38 @@ kaggle competitions submit -c grid-up-datathon \
   -f submissions/tuketim_v16.csv \
   -m "v16: v15 + 2026-05-03 kohortunun 9.107 soguk satiri log1p x0,75"
 
-# 3) YIGIN KONTROLU -- v15'ten TEK FARKI yigin (yonlendirme ikisinde de var)
-kaggle competitions submit -c grid-up-datathon \
-  -f submissions/tuketim_v13.csv \
-  -m "v13: yalnizca yonlendirme, yiginsiz (CV 1,08143)"
+# 3) BOS BIRAK -- ilk iki sonucu gordukten SONRA karar ver
 ```
 
-`tuketim_v12.csv` (yönlendirmesiz) ve `tuketim_v14.csv` (v13 tabanlı kohort
-probu) yedekte duruyor; bugün gerekmez.
+**Üçüncü hak bilerek boş.** Önceden bağlamak, bilgi gelmeden karar vermek
+demek. İlk iki sonuca göre şu seçenekler açılır:
+
+| durum | üçüncü hakkın en iyi kullanımı |
+|---|---|
+| `v16 − v15 ≈ −0,15` (kohort **ÖLÜ**) | **çarpanı 0,3–0,4'e indirip hemen gönder** — ek ~0,1 |
+| `v16 − v15 ≈ 0` | çarpanı 0,9'a çekip bir kez daha ölç |
+| `v16 − v15 ≈ +0,02` (kohort **CANLI**) | `v13` gönder → yığın transfer oldu mu |
+| `v15` beklenmedik biçimde kötü | teşhis: `v13` (yığınsız) ya da `v12` (yönlendirmesiz) |
+
+Yedekte hazır duran dosyalar: `tuketim_v13.csv` (yalnızca yönlendirme,
+CV 1,08143), `tuketim_v12.csv` (ikisi de yok), `tuketim_v14.csv` (v13
+tabanlı kohort probu — **eskidi, kullanma**).
+
+Daha güçlü kohort düzeltmesi gerekirse:
+
+```bash
+python scripts/kohort_probu.py --kaynak tuketim_v15.csv \
+    --carpan 0.35 --cikti tuketim_v17.csv
+```
 
 ---
 
 ## Önem sırası
 
-Yalnızca ikisi yapılabilseydi: **v15 + v16**. Kohort sorusu diğer her
-şeyden değerli (±0,15 karşı ±0,03).
+**v15 + v16, sonra dur.** Kohort sorusu diğer her şeyden değerli
+(±0,15 karşı ±0,03), ve üçüncü hakkın en iyi kullanımı ancak ilk ikisinin
+sonucu görüldükten sonra bilinir. Kullanılmayan hak yanar — ama yanlış
+soruya harcanan hak da yanar, üstelik bilgi de getirmez.
 
 ---
 
@@ -93,7 +110,11 @@ sıfırsalar toplam hata bütçesinin **%56'sı** orada.
 | ≈ 0 | ayırt edilemiyor | 0,9'a çek, bir gün daha ölç |
 | **≈ +0,02** | kohort **CANLI** | düzeltmeyi bırak, bir daha dokunma |
 
-### Soru 3 — yığın test'te tutuyor mu? (`v15` eksi `v13`)
+### Soru 3 — yığın test'te tutuyor mu? · YALNIZCA GEREKİRSE
+
+Bu soru ±0,03; kohort sorusu ±0,15. Üçüncü hak bu yüzden önceden buna
+bağlanmadı. Ancak `v15` beklenmedik biçimde kötü gelirse, ya da kohort
+sorusu net cevaplandıysa, teşhis için `v13` gönderilir:
 
 | v15 − v13 | anlamı |
 |---|---|
