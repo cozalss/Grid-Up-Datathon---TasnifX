@@ -60,15 +60,19 @@ import tuketim_model as tm  # noqa: E402
 
 from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 
+# 1. tur olculdu (2026-08-21 gece): l2_leaf_reg, bootstrap_type ve
+# random_strength ucu de +-0,004 icinde -- arastirmanin "muhtemelen 0,02'yi
+# gecer" beklentisi CURUTULDU. Tek gercek sinyal DERINLIK ve TEKDUZE:
+#   d5 1,75955   d6 1,75360 (+0,006)   d7 1,74443 (+0,015)
+# Blok kirilimi yonlendirmeyle AYNI deseni veriyor: yaz25 -0,046 (test
+# doneminin mevsimsel ikizi), guz25 -0,009, kis26 +0,010.
+# 2. tur trendin nerede dondugunu ariyor.
 SOGUK_ADAYLAR: tuple[tuple[str, dict[str, object]], ...] = (
-    ("TABAN d5", {}),
-    ("d6", {"depth": 6}),
-    ("d7", {"depth": 7}),
-    ("l2=1", {"l2_leaf_reg": 1.0}),
-    ("l2=10", {"l2_leaf_reg": 10.0}),
-    ("bootstrap=Bayesian", {"bootstrap_type": "Bayesian", "bagging_temperature": 1.0}),
-    ("bootstrap=Bernoulli0.7", {"bootstrap_type": "Bernoulli", "subsample": 0.7}),
-    ("random_strength=4", {"random_strength": 4.0}),
+    ("TABAN d7", {"depth": 7}),
+    ("d8", {"depth": 8}),
+    ("d9", {"depth": 9}),
+    ("d7 + iter400", {"depth": 7, "iterations": 400}),
+    ("d8 + iter400", {"depth": 8, "iterations": 400}),
 )
 
 SICAK_ADAYLAR: tuple[tuple[str, dict[str, object]], ...] = (
