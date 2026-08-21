@@ -56,6 +56,7 @@ Calistirma::
     python scripts/deney_ileri.py --deney yalin        # yalin oznitelik setleri
     python scripts/deney_ileri.py --deney agirlik      # soguk ornek agirligi
     python scripts/deney_ileri.py --deney ayar         # CatBoost duzenlilestirme
+    python scripts/deney_ileri.py --deney naif         # ufka gore naif taban
     python scripts/deney_ileri.py --sure               # tek fit suresini olc
 """
 
@@ -787,6 +788,128 @@ def agirlik_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
         print(f"      ({time.time() - t0:.0f} sn)")
 
 
+# ----------------------------------------------------------- deney: naif
+
+
+#: Ufuk kovalari. Olculdu (2026-08-21 gece): en iyi son30/uzun-ortalama
+#: karisim agirligi ufuk boyunca 0,956'dan 0,503'e DUZGUN biçimde kayiyor.
+UFUK_KOVALARI = (0, 15, 30, 45, 60, 75, 90, 105, 123)
+
+
+def _naif_agirliklar(kaynak: pd.DataFrame) -> np.ndarray:
+    """Her ufuk kovasi icin en iyi ``w``yi kapali formla cozer.
+
+    ``min_w ||y - (w*a + (1-w)*b)||^2`` -> ``w = (a-b).(y-b) / (a-b).(a-b)``
+    Tek parametre, kova basina 100 binden fazla satir; asiri uydurma yok.
+    """
+    y = np.log1p(kaynak[tm.HEDEF].clip(lower=0.0).to_numpy())
+    a = kaynak["t_log_son30"].to_numpy()
+    b = kaynak["t_log_ort"].to_numpy()
+    u = kaynak["ufuk_gun"].to_numpy()
+    gecerli = ~(np.isnan(a) | np.isnan(b))
+    w = np.zeros(len(UFUK_KOVALARI) - 1)
+    for i in range(len(w)):
+        m = gecerli & (u >= UFUK_KOVALARI[i]) & (u < UFUK_KOVALARI[i + 1])
+        if m.sum() < 500:
+            w[i] = 0.5
+            continue
+        dd = a[m] - b[m]
+        payda = float(dd @ dd)
+        w[i] = float(dd @ (y[m] - b[m]) / payda) if payda > 0 else 0.5
+    return np.clip(w, 0.0, 1.0)
+
+
+def _naif_uygula(cerceve: pd.DataFrame, w: np.ndarray) -> np.ndarray:
+    a = cerceve["t_log_son30"].to_numpy()
+    b = cerceve["t_log_ort"].to_numpy()
+    u = cerceve["ufuk_gun"].to_numpy()
+    kova = np.clip(np.searchsorted(np.array(UFUK_KOVALARI[1:-1]), u, side="right"), 0, len(w) - 1)
+    ww = w[kova]
+    return ww * a + (1.0 - ww) * b
+
+
+def naif_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
+    """Ufka gore agirliklandirilmis naif tahmini modele VERMEYI olcer.
+
+    NEDEN: olculdu (bu gece) -- naif karisim sicak satirlarda 0,7792,
+    modelin sicak skoru 0,80-0,84. Yani iki oznitelik ve sekiz parametre,
+    144 oznitelikli uc aileli toplulugu geciyor. Model ``t_log_son30``,
+    ``t_log_ort`` ve ``ufuk_gun``un ucune de sahip ama bu etkilesimi
+    ogrenmiyor: agaclar surekli-x-surekli carpimlari merdivenle
+    yaklastirir ve burada merdiven yetmiyor.
+
+    Iki bicim olculuyor:
+      A) OZNITELIK  -- ``t_naif`` kolonu eklenir. Guvenli: model kullanmak
+         zorunda degil. ``t_`` onekiyle basladigi icin soguk maskeleme
+         onu da NaN yapar; bu DOGRU, cunku gecmisten turuyor.
+      B) TABAN      -- hedef ``log1p(y) - t_naif`` olur, tahmine geri
+         eklenir. Guclu ama riskli: model artik yalnizca ARTIGI modelliyor.
+         Soguk satirlarda ``t_naif`` NaN oldugu icin taban
+         ``log1p(guc) + kuresel_ofset``e duser -- yani mevcut kurgu.
+
+    SIZINTI YOK: ``w`` her blok icin DIGER bloklardan kestirilir.
+    """
+    print("\n" + "=" * 92)
+    print("NAIF TABAN: ufka gore agirliklandirilmis karisim (CatBoost, 3 tohum torbalanmis)")
+    print("=" * 92)
+
+    for ad in ("TABAN (mevcut)", "A: t_naif OZNITELIK", "B: t_naif TABAN"):
+        t0 = time.time()
+        blok_skorlari = {}
+        for b in tm.BLOKLAR:
+            kalan, dogrulama, gercek, soguk = blok_parcalari(egitim, b.ad)
+            w = _naif_agirliklar(kalan)
+            if b.ad == tm.BLOKLAR[0].ad and ad.startswith("A"):
+                print("    w(ufuk) = " + " ".join(f"{x:.3f}" for x in w))
+            alt = list(kolonlar)
+            kalan_x, dog_x = kalan, dogrulama
+            if ad.startswith(("A", "B")):
+                kalan_x = kalan.assign(t_naif=_naif_uygula(kalan, w))
+                dog_x = dogrulama.assign(t_naif=_naif_uygula(dogrulama, w))
+                if ad.startswith("A"):
+                    alt = [*kolonlar, "t_naif"]
+            tahminler = []
+            for tohum in TOHUMLAR:
+                maskeli = d.soguk_maskele(
+                    kalan_x,
+                    alt if ad.startswith("A") else [*alt, "t_naif"],
+                    tm.SOGUK_MASKE_ORANI,
+                    tohum,
+                )
+                if ad.startswith("B"):
+                    kuresel = float(
+                        (
+                            np.log1p(maskeli[tm.HEDEF].clip(lower=0.0)) - np.log1p(maskeli["guc"])
+                        ).mean()
+                    )
+                    e_taban = np.where(
+                        np.isnan(maskeli["t_naif"].to_numpy()),
+                        np.log1p(maskeli["guc"].to_numpy()) + kuresel,
+                        maskeli["t_naif"].to_numpy(),
+                    )
+                    h_taban = np.where(
+                        np.isnan(dog_x["t_naif"].to_numpy()),
+                        np.log1p(dog_x["guc"].to_numpy()) + kuresel,
+                        dog_x["t_naif"].to_numpy(),
+                    )
+                    y = np.log1p(maskeli[tm.HEDEF].clip(lower=0.0).to_numpy()) - e_taban
+                    model = aile_modeli("cat", tohum)
+                    x_e, x_h = maskeli[alt].copy(), dog_x[alt].copy()
+                    kat = [k for k in tm.KATEGORIK if k in x_e.columns]
+                    for k in kat:
+                        x_e[k] = x_e[k].astype(str)
+                        x_h[k] = x_h[k].astype(str)
+                    model.fit(x_e, y, cat_features=kat)
+                    tahminler.append(model.predict(x_h) + h_taban)
+                else:
+                    tahminler.append(egit_tahmin("cat", maskeli, dog_x, alt, tohum))
+                del maskeli
+            blok_skorlari[b.ad] = [skorla(gercek, soguk, np.mean(tahminler, axis=0))]
+        yazdir(f"{ad} [{len(alt)}]", blok_skorlari)
+        kaydet(ad, blok_skorlari, {"deney": "naif"})
+        print(f"      ({time.time() - t0:.0f} sn)")
+
+
 # ----------------------------------------------------------- deney: ayar
 
 
@@ -891,7 +1014,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--deney",
-        choices=("soguk_oran", "torba", "yalin", "agirlik", "ayar"),
+        choices=("soguk_oran", "torba", "yalin", "agirlik", "ayar", "naif"),
         help="calistirilacak deney",
     )
     ap.add_argument("--sure", action="store_true", help="tek fit suresini olc")
@@ -919,6 +1042,8 @@ def main() -> int:
         agirlik_deneyi(egitim, kolonlar)
     if args.deney == "ayar":
         ayar_deneyi(egitim, kolonlar)
+    if args.deney == "naif":
+        naif_deneyi(egitim, kolonlar)
 
     print(f"\nTAMAM  {(time.time() - t0) / 60:.1f} dakika   -> {SONUC_DOSYASI}")
     return 0
