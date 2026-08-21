@@ -776,15 +776,43 @@ SABIT_AGAC = 400
 _GECMIS_ONEKI = ("t_",)
 
 
-def soguk_maskele(cerceve: pd.DataFrame, kolonlar: list[str], tohum: int) -> pd.DataFrame:
-    """Trafolarin ``SOGUK_MASKE_ORANI`` kadarini yapay olarak sogutur.
+#: REJIM UZMANLARI. ``None`` ise yonlendirme kapali (tek model, eski hal).
+#:
+#: Olculdu (2026-08-21 gece, 63 CatBoost fit): maske orani sicak ve soguk
+#: satirlarda TERS yonde calisiyor ve iki egri de TEKDUZE --
+#:
+#:     maske   0,00    0,15    0,22    0,35    0,50    0,70    1,00
+#:     sicak  0,8136  0,8128  0,8219  0,8239  0,8181  0,8830  1,6299
+#:     soguk  1,8215  1,7851  1,7792  1,7852  1,7733  1,7688  1,7595
+#:
+#: Tek bir oran ikisini birden en iyi yapamaz; %22,16 bir uzlasmaydi.
+#: Satiri rejimine gore yonlendirmek mesru, cunku test aninda bir trafonun
+#: gecmisi olup olmadigini BILIYORUZ (``soguk_mu``). CatBoost'ta olculdu:
+#: 1,10805 -> 1,09608, ucu blokta da ayni yonde.
+#:
+#: Bagimsiz dayanak: DropoutNet'in kendi oran taramasi (NeurIPS 2017,
+#: Sekil 2) soguk baslangic icin TEKDUZE artiyor (0,378 -> 0,659, oran
+#: 0 -> 0,9) ve ic optimum yok. NeurIPS hakemi tam bu soruyu sormus
+#: ("neden maskeli tek model yerine ayri bir soguk model?"); yazarlar
+#: cevap vermemis.
+REJIM_MASKELERI: dict[str, float] | None = {"sicak": 0.15, "soguk": 1.00}
+
+
+def soguk_maskele(
+    cerceve: pd.DataFrame, kolonlar: list[str], tohum: int, oran: float | None = None
+) -> pd.DataFrame:
+    """Trafolarin ``oran`` kadarini yapay olarak sogutur.
 
     Trafo BAZINDA maskelenir: bir trafonun bazi gunlerinde gecmisi olup
     bazilarinda olmamasi diye bir sey yoktur.
+
+    ``oran=None`` ise ``SOGUK_MASKE_ORANI`` kullanilir (yonlendirmesiz hal).
     """
+    if oran is None:
+        oran = SOGUK_MASKE_ORANI
     rng = np.random.default_rng(tohum)
     trafolar = cerceve[GRUP].unique()
-    secilen = set(rng.choice(trafolar, size=int(len(trafolar) * SOGUK_MASKE_ORANI), replace=False))
+    secilen = set(rng.choice(trafolar, size=int(len(trafolar) * oran), replace=False))
     maske = cerceve[GRUP].isin(secilen).to_numpy()
     sonuc = cerceve.copy()
     sonuc.loc[maske, [k for k in kolonlar if k.startswith(_GECMIS_ONEKI)]] = np.nan
@@ -888,6 +916,7 @@ def aile_tahmini(
     tohum: int,
     *,
     hizli: bool,
+    maske_orani: float | None = None,
 ) -> np.ndarray:
     """Bir aileyi egitip LOG UZAYINDA tahmin dondurur.
 
@@ -897,7 +926,7 @@ def aile_tahmini(
     ama yalnizca birlestirici aritmetik ortalamaysa (Wood ve ark., JMLR
     2023). Ham uzayda ortalama almanin boyle bir garantisi YOK.
     """
-    egitim = soguk_maskele(egitim, kolonlar, tohum)
+    egitim = soguk_maskele(egitim, kolonlar, tohum, maske_orani)
     y = ofsetli_hedef(egitim)
     model = aile_modeli(aile, tohum, hizli=hizli)
     x_egitim, x_hedef = egitim[kolonlar], hedef_cerceve[kolonlar]
@@ -912,6 +941,54 @@ def aile_tahmini(
     else:
         model.fit(x_egitim, y)
     return ofseti_geri_ekle(model.predict(x_hedef), hedef_cerceve)
+
+
+def rejim_tahmini(
+    egitim: pd.DataFrame,
+    hedef: pd.DataFrame,
+    kolonlar: list[str],
+    tohum: int,
+    *,
+    hizli: bool,
+) -> np.ndarray:
+    """Rejim uzmanlarini egitip satiri rejimine gore YONLENDIRIR.
+
+    Neden mesru: test aninda bir trafonun gecmisi olup olmadigini biliyoruz
+    (``soguk_mu``), yani yonlendirme etiket kullanmiyor. Neden gerekli:
+    maskeleme orani sicak ve soguk satirlarda ters yonde calisiyor, bkz.
+    ``REJIM_MASKELERI``.
+
+    Uzman basina AILE HARMANI ayni kalir (``AILE_AGIRLIKLARI``); degisen
+    tek sey her uzmanin gordugu maske orani. Tahmin yalnizca ilgili
+    satirlar icin uretilir -- geri kalanini hesaplamanin anlami yok.
+
+    ``REJIM_MASKELERI is None`` ise eski tek-model davranisina duser.
+    """
+    toplam = sum(AILE_AGIRLIKLARI.values())
+    if REJIM_MASKELERI is None:
+        return (
+            sum(
+                w * aile_tahmini(a, egitim, hedef, kolonlar, tohum, hizli=hizli)
+                for a, w in AILE_AGIRLIKLARI.items()
+            )
+            / toplam
+        )
+
+    soguk = (hedef["soguk_mu"] == 1).to_numpy()
+    cikti = np.zeros(len(hedef), dtype="float64")
+    for rejim, oran in REJIM_MASKELERI.items():
+        maske = soguk if rejim == "soguk" else ~soguk
+        if not maske.any():
+            continue
+        alt = hedef.loc[maske]
+        cikti[maske] = (
+            sum(
+                w * aile_tahmini(a, egitim, alt, kolonlar, tohum, hizli=hizli, maske_orani=oran)
+                for a, w in AILE_AGIRLIKLARI.items()
+            )
+            / toplam
+        )
+    return cikti
 
 
 def model_kur(*, hizli: bool, tohum: int):  # noqa: ANN201 - lgb tipi kosullu import
@@ -1006,15 +1083,7 @@ def egit_ve_olc(
     # Erken durdurma YOK. Olculdu: skor 200-1000 agac arasi duz, ama erken
     # durdurma her kosuda baska yerde durup GURULTU uretiyordu (22-382 agac).
     # Sabit agac, tezgahtaki olcumlerle ayni kosullari verir.
-    toplam = sum(AILE_AGIRLIKLARI.values())
-    log_karisim = (
-        sum(
-            w * aile_tahmini(a, egitim, dogrulama, kolonlar, 42, hizli=hizli)
-            for a, w in AILE_AGIRLIKLARI.items()
-        )
-        / toplam
-    )
-    tahmin = np.expm1(log_karisim)
+    tahmin = np.expm1(rejim_tahmini(egitim, dogrulama, kolonlar, 42, hizli=hizli))
     gercek = dogrulama[HEDEF].to_numpy()
     soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
     return Dogrulama(
@@ -1098,6 +1167,11 @@ def main() -> int:
     # (22-382 agac) olculebilirligi bozuyordu. Her ailenin agac/iterasyon
     # sayisi taranarak sabitlendi (bkz. ``aile_modeli``).
     print(f"  harman: {AILE_AGIRLIKLARI}  x {args.tohum} tohum (log uzayinda)")
+    print(
+        f"  rejim uzmanlari: {REJIM_MASKELERI}"
+        if REJIM_MASKELERI
+        else f"  yonlendirme KAPALI, tek maske {SOGUK_MASKE_ORANI}"
+    )
 
     # Tohumlar LOG UZAYINDA ortalanir: expm1(mean(log1p(...))). Krogh &
     # Vedelsby ayrismasi (NeurIPS 1994) bir ozdesliktir ve RMSLE log uzayinda
@@ -1107,14 +1181,12 @@ def main() -> int:
     #
     # Her tohum KENDI soguk maskesini alir: maske de bir cesitlilik kaynagi,
     # ve hepsine ayni maskeyi vermek o cesitliligi bosa harcardi.
-    toplam_agirlik = sum(AILE_AGIRLIKLARI.values()) * args.tohum
     birikim = np.zeros(len(test), dtype="float64")
     for i in range(args.tohum):
-        for a, w in AILE_AGIRLIKLARI.items():
-            t0 = time.time()
-            birikim += w * aile_tahmini(a, egitim, test, kolonlar, 100 + i, hizli=args.hizli)
-            print(f"    tohum {i + 1}/{args.tohum}  {a:5} bitti ({time.time() - t0:.0f} sn)")
-    tahmin = np.clip(np.expm1(birikim / toplam_agirlik), 0.0, None)
+        t0 = time.time()
+        birikim += rejim_tahmini(egitim, test, kolonlar, 100 + i, hizli=args.hizli)
+        print(f"    tohum {i + 1}/{args.tohum} bitti ({time.time() - t0:.0f} sn)")
+    tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
 
     GONDERIM.mkdir(parents=True, exist_ok=True)
     yol = GONDERIM / args.cikti

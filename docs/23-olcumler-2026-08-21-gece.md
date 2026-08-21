@@ -203,3 +203,119 @@ oluyor ve `soguk_mu` bayrağı aynı bilgiyi zaten açıkça taşıyor.
 maskeleme 0,2 sn. Yani 40–60 fitlik bir deney bütçesi rahat.
 
 Sonuçlar `experiments/ileri_sonuclar.jsonl`.
+
+---
+
+## 8. SIFIR YIĞILMASI — hatanın haritasındaki en yoğun nokta
+
+Soğuk satırların dağılımı incelendiğinde:
+
+```
+tam sifir      satir %5,16   ->  SOGUK karesel hatanin %52,3'u
+<1 kWh         satir %5,29   ->  %53,5
+<100 kWh       satir %12,33  ->  %67,2
+>p99 (buyuk)   satir %1,00   ->  %2,1
+```
+
+Soğuk rejim toplam hatanın %59'u olduğuna göre, **tüm satırların ~%1,15'i
+toplam karesel hatanın ~%31'ini** taşıyor.
+
+Ve yapı satır bazında dağınık değil, **trafo bazında ikili**:
+
+```
+1.636 soguk trafo (%91,9)   hic sifir yok
+   84 soguk trafo (% 4,7)   %80+ sifir      <- olu trafolar
+   61 trafo (% 3,4)         arada
+```
+
+Mükemmel sınıflandırma soğuk RMSLE'yi 1,84 → ~1,27, genel skoru **~0,94**
+yapardı. Yarısı bile 1,04.
+
+### Ama tahmin edilemiyor — ölçüldü
+
+Tek öznitelikli ayırıcılık (AUC), 1.781 soğuk trafo, 84 ölü:
+
+```
+guc 0,513   satir sayisi 0,545   tanim_num 0,542   yas 0,559
+pencere 0,559   uzunluk 0,550    p_* kolonlari 0,512-0,559
+```
+
+Hepsi rastgeleden ayırt edilemez. Kırıntılar: 8 hanelilerde %5,2 ölü,
+9 hanelilerde %1,6 (ama n=4); Urla %16,7, Bayındır %13,5 (küçük örneklem).
+
+**ID komşuluğundan ölülük** de çalışmıyor — üç bloğun ikisinde etki sıfır
+ya da ters:
+
+| blok | komşu ölüyse P(ölü) | komşu canlıysa | AUC |
+|---|---|---|---|
+| yaz25 | 0,000 | 0,032 | 0,446 |
+| guz25 | 0,000 | 0,033 | 0,483 |
+| kis26 | 0,273 | 0,048 | 0,604 |
+
+## 9. Yeniden numaralandırma — yok
+
+İki ID bloğu var (8 haneli 810.516 satır, 700-önekli 9 haneli 412.893).
+Trafolar yeniden numaralandırılmış olsaydı "soğuk" trafoların bir kısmının
+eski numarayla geçmişi olurdu. **On bir dönüşümde sıfır eşleşme:**
+
+```
+ham, bas 1/2/3 hane at, son 1/2 hane at, '700' oneki at,
+'7'/'70'/'700' ekle, sifir doldur 9   ->  hepsi 0 eslesme
+```
+
+Not: soğuk trafoların %34,1'inin eğitim setinde ID mesafesi ≤1 olan bir
+komşusu var, %49,9'unun ≤2. Komşuluk **fiziksel olarak** var; taşıdığı
+bilgi yok.
+
+## 10. Rejim yönlendirmesi — KANITLANDI (CatBoost)
+
+63 CatBoost fit, 3 tohum, 3 blok:
+
+| maske | sıcak | soğuk |
+|---|---|---|
+| 0,00 | 0,8136 | 1,8215 |
+| **0,15** | **0,8128** | 1,7851 |
+| 0,2216 *(mevcut)* | 0,8219 | 1,7792 |
+| 0,35 | 0,8239 | 1,7852 |
+| 0,50 | 0,8181 | 1,7733 |
+| 0,70 | 0,8830 | 1,7688 |
+| **1,00** | 1,6299 | **1,7595** |
+
+İki eğri ters yönde ve **tekdüze**. Tek oran ikisini birden en iyi yapamaz.
+
+```
+mevcut uretim (maske %22, tek tohum)   1,11618
+ayni + tohum torbalama                 1,10805
+YONLENDIRME (sicak %15 / soguk %100)   1,09608
+```
+
+Üç blokta da aynı yönde. Kazanç 0,012; ham eşik 0,020 ama o eşik
+tek-tohum gürültüsü için, burada tahminler torbalanmış.
+
+**Bağımsız dayanak:** DropoutNet'in kendi oran taraması (NeurIPS 2017,
+Şekil 2) soğuk başlangıç için tekdüze artıyor — 0,378 (oran 0) → 0,659
+(oran 0,9), iç optimum yok. NeurIPS hakemi tam bu soruyu sormuş
+("neden maskeli tek model yerine ayrı bir soğuk model?") ve yazarlar
+cevap vermemiş. Ayrıca Saar-Tsechansky & Provost (JMLR 2007, 15 veri
+kümesi): kolonu **silmek** NaN bırakmaktan belirgin iyi (%3,76 vs %8,73
+doğruluk kaybı) — soğuk uzmanı için `t_*` kolonları atılmalı.
+
+## 11. Büzülme — ilk deneme başarısız, nedeni bulundu
+
+Çapraz-blok eğim kestirimi −0,033 verdi. Eğimler:
+
+```
+yaz25  soguk +0,6469  kesim +0,2772     sicak +1,0365  kesim -0,0771
+guz25  soguk +0,7203  kesim +0,3764     sicak +1,0628  kesim +0,0885
+kis26  soguk +0,7584  kesim +0,1015     sicak +0,9671  kesim -0,1778
+```
+
+Soğuk eğimler tutarlı biçimde **1'in altında** (0,65–0,76), yani fazla
+varyans gerçek ve büzülme doğru yön. Hata kesim terimini de taşımaktı;
+kesim bloktan bloğa +0,10 ile +0,38 arasında değişiyor. Düzeltme: yalnızca
+eğimi taşı, merkez olarak bloğun **kendi tahmin ortalamasını** kullan
+(etiket kullanmaz, sızıntı yok).
+
+Teori (araştırmadan, kapalı form): `kazanç = (μ_ŷ − μ_y)² + σ_ŷ²(1−λ*)²`
+ve model sabit tahminciyi **ancak λ* > 0,5 ise** geçer. Bizim λ* = 0,65–0,76,
+yani model sabitten iyi ama büzülmesi gerekiyor.
