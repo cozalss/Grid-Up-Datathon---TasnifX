@@ -481,3 +481,92 @@ kısım yalnızca gerçekleşmiş ile iklim ortalaması arasındaki fark.
 2020–2024'ten, yani eğitim verimizin tamamen öncesinden). Kural sorusu
 kapandığı için **önceliği düşük**; jüri sunumunda "gerçekleşmiş veriye
 bağımlılığımızı ölçtük" slaydı için duruyor.
+
+## 17. Hedef tabanını değiştirmek — kapsamlı red, ve NEDENİ
+
+Yönlendirmenin açtığı kapı şuydu: sıcak uzmanı artık yalnızca geçmişi olan
+trafolara hizmet ettiğine göre, tabanı da onların geçmişi olabilir.
+Kapasite ofseti artık standart sapmasını 2,098 → 1,822 indirip **−0,035**
+kazandırmıştı; `t_log_ort` 0,914'e indiriyor, `(ort+son30)/2` 0,792'ye.
+
+45 CatBoost fit, yalnızca **sıcak** satırlarda:
+
+| aday | sıcak | W0 farkı |
+|---|---|---|
+| **W0 maske0,15, tüm satırlar, taban=guc [MEVCUT]** | **0,81284** | — |
+| W1 maske0, yalnız sıcak, taban=guc | 0,82318 | +0,0103 |
+| W2 maske0, yalnız sıcak, taban=`t_log_ort` | 0,84620 | +0,0334 |
+| W3 maske0, yalnız sıcak, taban=`(ort+son30)/2` | 0,85945 | +0,0466 |
+| W4 maske0, yalnız sıcak, taban=`t_log_son30` | 0,90225 | +0,0894 |
+
+On harmanın hiçbiri W0'ı geçmiyor (en iyisi W0+W1 = 0,81272, fark 0,0001).
+
+### Neden başarısız — ölçüldü, tahmin edilmedi
+
+**Bir ofset iki şey yapar:** koşullandırmayı iyileştirir (kazanç) ve
+katsayıyı 1'e çiviler (bedel). Regresyon `log1p(y) = a + b·taban`:
+
+| taban | yaz25 | guz25 | kis26 | dayatmanın MSE bedeli |
+|---|---|---|---|---|
+| `log1p(guc)` | 0,974 | 1,023 | 1,196 | 0,0113 |
+| `t_log_ort` | **0,901** | **0,858** | 0,980 | **0,0434** |
+| `t_log_son30` | 0,927 | 0,908 | 1,022 | 0,0199 |
+
+Bedel 0,0434 MSE → sıcak MSE 0,661'den 0,704'e, RMSLE 0,813 → 0,839,
+yani **+0,026 öngörü**. Ölçülen fark 0,033, eksi eğitim kümesi handikabı
+0,010 = **0,023 tabandan**. Öngörü ile ölçüm örtüşüyor.
+
+Kapasitede kazanç bedeli aşıyordu: ağaç `guc`'ten ölçeği merdivenlerle
+öğrenmek zorundaydı. `t_log_ort`'ta denklem tersine dönüyor: ağaç o kolonu
+zaten yoğun kullanıyor (ablasyonda eşiği geçen **tek** aile `trafo_seviye`),
+yani koşullandırmadan kazanılacak az şey var; bedel ise dört katı.
+
+**Genel ders:** hedefin varyansını küçültmek modeli iyileştirmez. Modelin
+öğrenmesi *gereken* şeyi kolaylaştırırsa iyileştirir. `t_log_ort` zaten
+öğrenilmişti. Bir ofsetin bedava olup olmadığının testi tek satır:
+`b ≈ 1` mi? Kapasitede dün ölçülmüştü (1,063 / 1,073); `t_log_ort` için
+**bu test yapılmadan 26 dakika harcandı**.
+
+W1 bilerek deneydeydi ve işini gördü: soğuk/maskelenmiş satırlar sıcak
+model için düzenlileştirici işlevi görüyor, atılmaları tek başına +0,010.
+Onsuz W2-W4'ün kaybı yanlış nedene yazılırdı.
+
+## 18. Yalın öznitelik seti — U eğrisi, dip 105 kolonda
+
+| set | GENEL |
+|---|---|
+| tam (144) | 1,10805 |
+| −takvim (119) | 1,10099 |
+| **−takvim −panel −grup (105)** | **1,09852** |
+| + −osm −arazi (89) | 1,10028 |
+| çekirdek (36) | 1,11263 |
+| mini (17) | 1,13484 |
+
+Set harmanlarının hiçbiri en iyi tek seti geçmiyor (1,09845, fark 0,0001).
+
+ASHRAE'nin "10–35 öznitelik" tezi **transfer olmuyor**: 36 kolonda skor
+tam setten kötü. Ilımlı budama (39 kolon) 0,0095 kazandırıyor — eşiğin
+altında, ama üç blokta da aynı yön ve dünkü LightGBM ablasyonuyla
+bağımsız olarak uyumlu.
+
+**Birincil gönderime alınmadı:** 105'lik set altı aday arasından *bu üç
+blokta* en iyi çıktı; seçim yanlılığı var. Üçüncü slot için varyant adayı.
+
+## 19. Bu gecenin karnesi
+
+| ne | sonuç |
+|---|---|
+| **Rejim yönlendirmesi** | **1,09913 → 1,08143 · ALINDI** |
+| Yalın set (105 kolon) | −0,0095 · eşik altı |
+| Soğuk uzmanı derinlik 6 | −0,0024 · eşik altı |
+| Büzülme (düzeltilmiş β=0,85) | −0,0012 · eşik altı |
+| Naif taban (öznitelik / hedef) | +0,0002 / **+0,035** · red |
+| Hedef tabanı `t_log_ort` ailesi | +0,023 … +0,089 · red |
+| Ölü kolon silme · ofsetsiz üye · maske 0,85 | red |
+| Çeşitlilik harmanları (üç ayrı eksen) | üçü de red |
+| ID komşuluğu · segment · ölülük · yeniden numaralandırma | red |
+
+**Bir kabul, on beş red.** Ve iki kendi hatam, ikisi de ölçümle yakalandı:
+ufuk ağırlıklarını örneklem içinde uydurmak, havuzlanmış std'yi blok
+ortalamalı RMSLE ile karşılaştırmak. İkisi de "basit bir şey modelimizi
+yeniyor" sonucuna götürüyordu; ikisi de yanlıştı.
