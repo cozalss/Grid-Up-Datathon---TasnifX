@@ -305,8 +305,13 @@ AILELER: dict[str, tuple[str, ...]] = {
     "hava": (
         "sicaklik",
         "hissedilen",
-        "isitma_derece",
-        "sogutma_derece",
+        # HATA DUZELTILDI (2026-08-21 gece): burada "isitma_derece" ve
+        # "sogutma_derece" yaziyordu ama o isimde HIC KOLON YOK. Gercek
+        # isimler cdd18/cdd22/cdd24 ve hareketli ortalamalari. Sonuc:
+        # "-hava" ablasyonu 10 CDD kolonunu HIC CIKARMADI ve havanin
+        # degerini (+0,016) eksik olctu -- ustelik yaz elektrik tuketiminin
+        # fizik olarak en onemli degiskeni olan sogutma derece-gunu.
+        "cdd",
         "yagis",
         "ruzgar",
         "gunes",

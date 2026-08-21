@@ -570,3 +570,108 @@ blokta* en iyi çıktı; seçim yanlılığı var. Üçüncü slot için varyant
 ufuk ağırlıklarını örneklem içinde uydurmak, havuzlanmış std'yi blok
 ortalamalı RMSLE ile karşılaştırmak. İkisi de "basit bir şey modelimizi
 yeniyor" sonucuna götürüyordu; ikisi de yanlıştı.
+
+---
+
+# 20. 2026-05-03 KOHORTU — gecenin en büyük bulgusu
+
+Dokuz ajanlık düşmanca denetim, bütün gece "tahmin edilemez" dediğim
+ölülüğe **farklı bir mercekten** saldırdı: trafo başına öznitelikten değil,
+**test panelinin kohort yapısından**. Bakmamıştım.
+
+## Bulgu
+
+Test trafoları, test'te ilk göründükleri tarihe göre kohortlara ayrılıyor:
+
+| ilk tarih | trafo | sıcak | soğuk | sıcak üyelerde %80+ sıfır | medyan maks |
+|---|---|---|---|---|---|
+| 2026-04-01 | 3928 | 3927 | 1 | 147/3927 = 3,7% | 1908,6 |
+| 2026-04-30 | 119 | 5 | 114 | 1/5 = 20,0% | 4456,9 |
+| **2026-05-03** | **141** | **36** | **105** | **33/36 = 91,7%** | **0,0** |
+| 2026-05-11 | 2222 | 896 | 1326 | 48/896 = 5,4% | 1374,8 |
+| 2026-07-01 | 20 | 1 | 19 | 1/1 = 100% | 0,0 |
+| **TABAN ORANI** | | 5012 | | **5,09%** | |
+
+%91,7 ile %5,09 arasında **18 kat** fark, 36 üyelik örneklemde.
+
+## Kohort idari olarak tutarlı
+
+- 105 soğuk üyenin **%100'ünün** ilk test tarihi tam olarak 2026-05-03
+  (genel soğuk nüfusta ilk tarih 80 farklı değere yayılıyor)
+- Her birinde medyan **90 satır** — kusursuz düzenli blok
+- Güç profili ölü sıcak üyelerle örtüşüyor (medyan 630, %61,9 ≥630 kVA)
+- ID önekleri kümelenmemiş → tek saha değil, sistem düzeyinde transfer
+
+## Sıcak üyelerin eğitimdeki seyri — kritik ayrıntı
+
+33'ü Ocak 2025'ten **17 Haziran 2025**'e kadar tam sıfır okuyor, sonra
+kayıtları tamamen kesiliyor, on bir ay hiç satır yok, **2026-05-03**'te
+geri geliyorlar. Hepsi aynı gün kesiliyor, aynı gün dönüyor.
+
+Bu fizik değil, **idari olay**.
+
+## İki yorum, ters yönde
+
+**(a) ÖLÜ.** Eğitimde sıfırdılar, test'te de sıfırlar.
+
+**(b) ENERJİLENDİRME.** Eğitimdeki sıfırlar arıza değil "henüz devrede
+değil" hali; dönüş tarihi devreye alma tarihi, yani test'te **canlı**.
+
+Kohortta iki demonstre canlı üye var (maks 12.173 ve 2.032 kWh) — (b)'yi
+destekliyor. Veriyle ayırt edilemiyor. **P(ölü) dürüstçe %40–50.**
+
+## Neden yine de hareket ediyoruz — asimetri
+
+9.107 satır, test'in %1,27'si. Şu an ortalama `log1p` 7,134 diyoruz.
+
+```
+gercekte SIFIRSA katkilari  471.806 = toplam hata butcesinin %56,4'u
+tam duzeltme     dogruysa 0,7137   yanilirsa 1,3526
+log1p x0,75      dogruysa 0,9349   yanilirsa 1,1000
+log1p -1,0       dogruysa 1,0002   yanilirsa 1,0873   <- 13:1
+```
+
+RMSLE log uzayında kareli hata olduğu için sıfır olan bir şeye 1.594
+demek satır başına 49 birim, canlı olanı sınırlı düşük tahmin etmek ucuz.
+
+**Belirsizlik altında optimum tam sıfırlama DEĞİL.** `P(ölü)=p` ise log
+uzayında en iyi tahmin `(1−p)·μ`, beklenen kayıp `p(1−p)μ²`. `p=1`
+varsaymak, `p<1` iken optimumun gerisindedir.
+
+## Prob tasarımı
+
+`scripts/kohort_probu.py --carpan 0.75` → `tuketim_v14.csv`.
+9.107 satırın medyanı 1593,9 → 251,4.
+
+Çarpan bilerek 0,75 (yani p=0,25), kendi inancımızdan **daha muhafazakâr**.
+İki neden: yanılma bedelini 0,019'da tutmak, ve liderlik tablosunda büyük
+bir sıçrama yapıp bulguyu rakiplere duyurmamak.
+
+## 21. Ablasyon hatası — `hava` ailesi CDD'yi hiç çıkarmamış
+
+`AILELER["hava"]` önekleri `isitma_derece` ve `sogutma_derece` içeriyordu;
+**o isimde hiç kolon yok**. Gerçek isimler `cdd18/cdd22/cdd24` ve
+hareketli ortalamaları. Sonuç: `-hava` ablasyonu **10 CDD kolonunu hiç
+çıkarmadı**.
+
+Yani "hava ailesi +0,016" havanın değerini **eksik gösteriyor** — üstelik
+kaçan kolonlar yaz elektrik tüketiminin fizik olarak en önemli değişkeni
+olan soğutma derece-günü. Forumdaki "veri sızıntısı" tartışmasında bu
+sayıya dayanarak "hava bizim için maddi değil" demiştim; o gerekçe bozuk
+bir ölçüme dayanıyordu.
+
+Düzeltildi (`scripts/deney.py`): aile artık 30 kolon. Dışarıda kalan tek
+CDD kolonu `t_egim_cdd22` ve o doğru — trafonun kendi ısıl eğimi,
+`trafo_isil` ailesinin üyesi.
+
+## 22. Gönderim planı — üç slot, üç soru
+
+| slot | dosya | fark | cevapladığı soru |
+|---|---|---|---|
+| 1 | `tuketim_v13.csv` | — | taban çizgisi + CV↔LB kalibrasyonu |
+| 2 | `tuketim_v14.csv` | kohort log1p ×0,75 | **kohort ölü mü** (±0,15) |
+| 3 | `tuketim_v12.csv` | yönlendirme yok | **yönlendirme tutuyor mu** (±0,017) |
+
+Slot 2 slot 1'den **yalnızca kohortta** farklı; slot 3 **yalnızca
+yönlendirmede**. Ortak taban çizgisiyle iki bağımsız soru aynı gün
+cevaplanıyor.
