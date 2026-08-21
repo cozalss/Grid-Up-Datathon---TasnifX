@@ -89,6 +89,7 @@ from gridup.io_utils import atomic_write_bytes  # noqa: E402
 from gridup.metrics import get_metric  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
+from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 from gridup.turkish import join_key, strip_qualifier  # noqa: E402
 from gridup.two_stage import (  # noqa: E402
     calibrate_positive_probability,
@@ -1121,6 +1122,7 @@ def outer_kanit_yukle(yol: Path) -> OuterEvidence:
 
 
 def main() -> int:
+    satir_tamponlu_cikti()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--outer",

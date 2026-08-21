@@ -29,6 +29,7 @@ akademisyen degil. Bu, iki seyi degistirir:
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Sequence
 from typing import Any
 
@@ -49,6 +50,7 @@ __all__ = [
     "plot_error_by_segment",
     "plot_prediction_timeline",
     "plot_selection_curve",
+    "satir_tamponlu_cikti",
 ]
 
 # --- Grafik paleti -----------------------------------------------------------
@@ -484,3 +486,31 @@ def plot_selection_curve(selection_result: Any, *, ax: Any = None):
     ax.legend(frameon=False, fontsize=9, labelcolor=_MUTED)
     _style(ax)
     return ax
+
+
+def satir_tamponlu_cikti() -> None:
+    """Uzun kosan betiklerin ilerlemesini GORUNUR yapar.
+
+    NEDEN GEREKLI (2026-08-21, olculdu)
+    ------------------------------------
+    ``scripts/ablation_gercek.py`` 96 ilcelik gercek panelde **102 dakika**
+    kosup tek bir satir bile yazmadi. Sebep bir hata degil, varsayilan
+    davranistir: Python ``stdout``u bir BORUYA (dosya, ``subprocess``, arka
+    plan gorevi) yazarken 8 KB tamponlar. O betigin toplam ciktisi ~1,5 KB --
+    yani surec bitene kadar hicbir sey gorunmez.
+
+    Sonuc: "takildi mi, %10'da mi, %90'da mi" sorusunun cevabi YOKTU.
+    Terminalde interaktif kosarken sorun cikmaz (tty satir tamponludur), bu
+    yuzden ariza yalnizca arka planda ya da log'a yazarken ortaya cikar --
+    yani tam olarak uzun kosularda.
+
+    Yarisma gunu iki saatlik bir olcumu kor kosmak kabul edilemez: ne zaman
+    biteceğini bilmeden ne bekleyebilir ne de vazgecip daha kucuk bir kosuya
+    donebilirsin.
+
+    Kullanim: uzun kosan her betigin ``main``inde ILK satir olarak cagir.
+    """
+    for akis in (sys.stdout, sys.stderr):
+        reconfigure = getattr(akis, "reconfigure", None)
+        if reconfigure is not None:  # pragma: no branch -- CPython'da hep var
+            reconfigure(line_buffering=True)

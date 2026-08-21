@@ -69,6 +69,7 @@ from gridup.refit import (  # noqa: E402
     fold_train_fraction,
     multi_seed_refit,
 )
+from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 from gridup.stores import SQLiteExperimentStore  # noqa: E402
 from gridup.turkish import (  # noqa: E402
     grup_adayini_sec,
@@ -537,6 +538,7 @@ def baseline_karsilastir(
 
 
 def main() -> int:
+    satir_tamponlu_cikti()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", default="data/raw", help="Ham veri dizini")
     parser.add_argument("--target", help="Hedef kolon adi (bilinmiyorsa profil sonrasi sorulur)")

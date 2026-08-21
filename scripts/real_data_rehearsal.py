@@ -52,6 +52,7 @@ from gridup.features.external import attach_external  # noqa: E402
 from gridup.features.outage_reason import reason_family_report  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
+from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 from gridup.turkish import diagnose_join, join_key, strip_qualifier  # noqa: E402
 from gridup.validation import purged_time_series_split  # noqa: E402
 
@@ -70,6 +71,7 @@ def basamak(no: str, baslik: str) -> None:
 
 
 def main() -> int:
+    satir_tamponlu_cikti()
     if not VERI.exists():
         print(f"HATA: {VERI} yok.")
         print(

@@ -84,6 +84,7 @@ from gridup.features.external import attach_external  # noqa: E402
 from gridup.features.temporal import add_ramadan_features  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
 from gridup.panel import PANEL_FLAG_COLUMN  # noqa: E402
+from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 from gridup.turkish import join_key, strip_qualifier  # noqa: E402
 from gridup.validation import purged_time_series_split  # noqa: E402
 
@@ -314,6 +315,7 @@ TOHUMLAR: tuple[int, ...] = (42, 0, 1, 2, 3, 4, 5, 6, 7, 8)
 
 
 def main() -> int:
+    satir_tamponlu_cikti()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--tohum",
@@ -352,7 +354,7 @@ def main() -> int:
     set_global_seed(42)
     baslangic = time.perf_counter()
 
-    print(f"1/4  PANEL  (kaynak: {args.kaynak})")
+    print(f"1/4  PANEL  (kaynak: {args.kaynak})", flush=True)
     panel = panel_kur_epias() if args.kaynak == "epias" else panel_kur()
     n_ilce = panel[GRUP].nunique()
     n_gun = panel[ZAMAN].nunique()
@@ -418,7 +420,28 @@ def main() -> int:
     ailesiz_son: dict[str, float] = {}
     taban_skorlar: list[float] = []
 
-    for tohum in TOHUMLAR[: args.tohum]:
+    # ILERLEME GORUNUR OLMALI (2026-08-21, olculdu).
+    #
+    # Bu betik 96 ilcelik panelde 102 DAKIKA kosup tek bir satir bile
+    # yazmadi: Python stdout'u bir boruya yazarken 8 KB tamponlar ve betigin
+    # toplam ciktisi ~1,5 KB. Yani tasarim geregi gorunmezdi -- "takildi mi,
+    # %10'da mi, %90'da mi" sorusunun cevabi YOKTU. Yarisma gunu iki saatlik
+    # bir olcumu kor kosmak kabul edilemez.
+    #
+    # Cozum: her tohumdan ONCE ve SONRA flush'lu satir. Tek tohumun suresi
+    # olculunce kalan sure de tahmin edilebilir olur.
+    tohum_sayisi = len(TOHUMLAR[: args.tohum])
+    tohum_sureleri: list[float] = []
+    for sira, tohum in enumerate(TOHUMLAR[: args.tohum], start=1):
+        tohum_basi = time.perf_counter()
+        kalan_notu = ""
+        if tohum_sureleri:
+            ortalama = sum(tohum_sureleri) / len(tohum_sureleri)
+            kalan_notu = f"  (tahmini kalan {ortalama * (tohum_sayisi - sira + 1) / 60:.0f} dk)"
+        print(
+            f"  tohum {tohum} ({sira}/{tohum_sayisi}) basladi{kalan_notu}",
+            flush=True,
+        )
         tohum_params = dict(params)
         tohum_params["random_state"] = int(tohum)
         tablo = leave_one_group_out(
@@ -437,7 +460,11 @@ def main() -> int:
             tohum_deltalari[satir.grup].append(float(satir.skor_grupsuz) - taban)
             kolon_sayilari[satir.grup] = int(satir.feature_sayisi)
             ailesiz_son[satir.grup] = float(satir.skor_grupsuz)
-        print(f"  tohum {tohum}: taban MAE {taban:.2f}")
+        tohum_sureleri.append(time.perf_counter() - tohum_basi)
+        print(
+            f"  tohum {tohum}: taban MAE {taban:.2f}  ({tohum_sureleri[-1] / 60:.1f} dk)",
+            flush=True,
+        )
 
     # OLCULEN gurultu tabani: tohumlar arasi TAM MODEL yayilimi. Sabit bir
     # varsayim degil, bu kosunun kendi olcumu -- veri degisince esik de degisir.

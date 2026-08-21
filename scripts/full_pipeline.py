@@ -74,6 +74,7 @@ from gridup.reporting import (  # noqa: E402
     feature_importance_table,
     model_footprint,
     prediction_vs_actual_table,
+    satir_tamponlu_cikti,  # noqa: E402
 )
 from gridup.selection import null_importance_filter, shap_backward_selection  # noqa: E402
 from gridup.stores import SQLiteExperimentStore  # noqa: E402
@@ -96,6 +97,7 @@ def banner(step: str, text: str) -> None:
 
 
 def main() -> int:
+    satir_tamponlu_cikti()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--hizli", action="store_true", help="Kucuk veri, az iterasyon")
     args = parser.parse_args()

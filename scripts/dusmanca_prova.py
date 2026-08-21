@@ -47,7 +47,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # kardes betikler
 
 from epias_panel import MERKEZ_KURTARMA  # noqa: E402
 
-from gridup.turkish import join_key, strip_qualifier  # noqa: E402
+from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
+from gridup.turkish import (  # noqa: E402
+    hizala_ilce_anahtarlari,
+    join_key,
+    strip_qualifier,
+)
 
 KOK = Path(__file__).resolve().parents[1]
 KAYNAK_PANEL = KOK / "data" / "external" / "epias" / "panel_ilce_gun_tam.parquet"
@@ -81,6 +86,9 @@ ONDALIKLI_KOLON = BASLIKLAR["osm_iletim_hat_km"]
 #: bu kolonlar bulunmaz. Yerine sebeke altyapisi konuldu: zamandan bagimsiz,
 #: hedeften turetilmemis, ve gercek yarisma dosyalarinda bulunmasi makul.
 OSM_TABLOSU = KOK / "data" / "external" / "osm_altyapi_ilce.parquet"
+
+#: Join denetiminde kullanilan takma adlar -- panelin kendi haritasi.
+_TAKMA_ADLAR = {ham: yeni for (_, ham), yeni in MERKEZ_KURTARMA.items()}
 
 ZORLUKLAR = ("hafif", "orta", "tam")
 
@@ -251,14 +259,31 @@ def join_denetimi(zorluk: str) -> bool:
     adlar = train[BASLIKLAR["ilce_display"]].dropna().unique()
     arazi = pd.read_parquet(KOK / "data" / "external" / "arazi_ortusu_ilce.parquet")
     hedef = set(arazi["ilce_key"])
-    donusen = {ad: join_key(str(ad)) for ad in adlar}
-    tutmayan = {ad: k for ad, k in donusen.items() if k not in hedef}
-    print(f"  benzersiz ilce adi : {len(adlar)}")
-    print(f"  dis tabloda bulunan: {len(adlar) - len(tutmayan)}")
-    if tutmayan:
-        print(f"  BULUNAMAYAN ({len(tutmayan)}):")
-        for ad, k in list(tutmayan.items())[:15]:
-            print(f"    {ad!r} -> {k!r}")
+
+    # IKI KATMAN AYRI AYRI OLCULUR ve fark ONEMLIDIR.
+    #
+    # Onceki surum yalnizca ``join_key``e bakiyordu ve nitelikli adlar
+    # yuzunden HER KOSUDA kirmizi yaziyordu -- oysa day_one o adlari
+    # ``hizala_ilce_anahtarlari`` ile zaten kurtariyor. Hep kirmizi yanan bir
+    # uyari, bir sure sonra "zaten hep kirmizi" diye gormezden gelinir; yani
+    # yanlis alarm, alarmin KENDISINI ise yaramaz hale getirir.
+    #
+    # Simdi ham katman BILGI olarak, hizalanmis katman KARAR olarak raporlanir.
+    ham_tutmayan = {ad: join_key(str(ad)) for ad in adlar if join_key(str(ad)) not in hedef}
+    kurtarmalar = hizala_ilce_anahtarlari(adlar, referans=hedef, takma_adlar=_TAKMA_ADLAR)
+    bulunamayan = {a: k for a, k in kurtarmalar.items() if k.yontem == "BULUNAMADI"}
+
+    print(f"  benzersiz ilce adi     : {len(adlar)}")
+    print(f"  ham join_key ile tutan : {len(adlar) - len(ham_tutmayan)}")
+    print(f"  hizalama SONRASI tutan : {len(adlar) - len(bulunamayan)}")
+    if ham_tutmayan and not bulunamayan:
+        ornek = list(ham_tutmayan)[:3]
+        print(f"  NOT: {len(ham_tutmayan)} ad ham anahtarla tutmuyordu, hizalama kurtardi.")
+        print(f"       ornek: {ornek}")
+    if bulunamayan:
+        print(f"  BULUNAMAYAN ({len(bulunamayan)}) -- hizalama da kurtaramadi:")
+        for ad, kayit in list(bulunamayan.items())[:15]:
+            print(f"    {ad!r} -> {kayit.anahtar!r}")
         return False
     print("  TAMAM: hepsi eslesti.")
     return True
@@ -291,6 +316,7 @@ def day_one_kos(yollar: dict[str, Path], ek: list[str], senaryo: str = "sayim") 
 
 
 def main() -> int:
+    satir_tamponlu_cikti()
     ayristirici = argparse.ArgumentParser(description=__doc__)
     ayristirici.add_argument("--zorluk", choices=ZORLUKLAR, default="tam")
     ayristirici.add_argument(

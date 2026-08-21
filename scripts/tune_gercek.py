@@ -48,6 +48,7 @@ import benchmark_gercek as bench  # noqa: E402
 from gridup import cross_validate, set_global_seed  # noqa: E402
 from gridup.io_utils import atomic_write_bytes  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
+from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 from gridup.tuning import tune_with_optuna  # noqa: E402
 from gridup.validation import purged_time_series_split  # noqa: E402
 
@@ -86,6 +87,7 @@ def _fold_skorlari(
 
 
 def main() -> int:
+    satir_tamponlu_cikti()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=("catboost", "lightgbm"), default="catboost")
     parser.add_argument("--dakika", type=int, default=40, help="Arama sure butcesi")

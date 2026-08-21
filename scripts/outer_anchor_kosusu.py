@@ -60,6 +60,7 @@ from gridup.ensemble import hill_climb_weights  # noqa: E402
 from gridup.io_utils import atomic_write_bytes  # noqa: E402
 from gridup.metrics import get_metric  # noqa: E402
 from gridup.models import starter_params  # noqa: E402
+from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 from gridup.validation import purged_time_series_split  # noqa: E402
 
 CIKTI = KOK / "experiments" / "outer_anchors.json"
@@ -181,6 +182,7 @@ def capa_kos(
 
 
 def main() -> int:
+    satir_tamponlu_cikti()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--capa", type=int, default=8, help="Capa sayisi (en az 6)")
     parser.add_argument("--out", default=str(CIKTI))
