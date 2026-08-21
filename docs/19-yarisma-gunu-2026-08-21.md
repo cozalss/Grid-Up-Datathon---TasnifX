@@ -1,8 +1,104 @@
 # Yarışma Günü — 21 Ağustos 2026
 
-Veri 15:00'te geliyor. Bu belge, veriyi görmeden bilinen her şeyi ve
-görüldüğünde yapılacakları tutar. Üç bölüm: **kural riski**, **ölçülmüş bölge
-bulgusu**, **koşu sırası**.
+> **UYARI — 14:00 açılış yayınından SONRA yazıldı.** Bu belgenin 2. ve 3.
+> bölümleri (bölge bulgusu, düşmanca prova) yarışmanın **kesinti tahmini**
+> olduğu varsayımıyla yazılmıştı. Görev **tüketim tahmini** çıktı. Ölçümler
+> doğru, ama bir kısmının konusu artık ilgisiz. Geçerli olan ve olmayan
+> aşağıda ayrıldı.
+
+---
+
+## 0. GÖREV — açılış yayınında açıklandı (14:00)
+
+**Kesinti değil TÜKETİM tahmini. İlçe değil TRAFO bazında.**
+
+```
+Eğitim   Ocak 2025 – Mart 2026      15 ay
+Test     Nisan 2026 – Temmuz 2026    4 ay  (=122 gün ufuk)
+Seviye   Trafo bazında · profil tarihi kırılımında
+Hedef    Aktif tüketim (kWh, günlük)
+```
+
+Test dönemi **geçmişte** (bugün 21 Ağustos 2026) → hava tahmini gerekmiyor,
+hepsi arşiv. Hava verimiz 2020-01-01 → 2026-09-05, test dönemini tamamen
+kapsıyor.
+
+### Veri alanları (slayttan, birebir)
+
+| Alan | Açıklama |
+|---|---|
+| **Tanım Numarası** | Her trafoya ait tekil tanımlayıcı numara |
+| **Güç** | İlgili trafonun **kurulu gücü** |
+| **Profil Tarihi** | Tüketimin ölçüldüğü **tarih ve saat** |
+| **Aktif Tüketim Günlük (kWh)** | Belirtilen profil tarihindeki aktif enerji tüketimi |
+| **Lokasyon** | Trafonun bağlı olduğu **işletme/bölge** bilgisi |
+
+> ⚠️ **EN KRİTİK BELİRSİZLİK: `Lokasyon` ilçe DEĞİL.** GDZ'nin iç işletme
+> birimi. Bizim 232 dış kolonun tamamı `ilce_key` anahtarlı — doğrudan join
+> **yok**. Veri açılınca ilk bakılacak şey budur.
+>
+> | Lokasyon ne çıkarsa | Ne yapılır |
+> |---|---|
+> | İl adı (`İZMİR`) | İlçe verisini `il_key` ile toplulaştır — 10 satır |
+> | İşletme adı (`İZMİR KUZEY`) | Elle işletme→ilçe grubu haritası — 1-2 saat |
+> | Opak kod | Yalnızca zaman bazlı aileler bağlanır; mekân bazlılar düşer |
+>
+> `data/reference/ilceler_gdz_adm.parquet` — 96 ilçe, **lat/lon**, nüfus,
+> alan, şirket (GDZ/ADM). Koordinat verilirse eşleme kolay.
+
+> ⚠️ İkinci belirsizlik: "Profil Tarihi = tarih **ve saat**" ama hedef
+> "Aktif Tüketim **Günlük**". Trafo başına günde 1 satır mı 24 satır mı?
+> Panel tanımını değiştirir.
+
+### Dış veri AÇIKÇA serbest
+
+> "Güvenilir ve doğrulanabilir dış veri kaynakları kullanılabilir"
+
+Slaytta sayılanlar: sıcaklık, nem, yağış, rüzgâr, güneşlenme · resmî
+tatiller, hafta sonları, özel günler · gün/hafta/ay, mevsimsellik, lokasyon,
+trafo gücü. **Hepsi elimizde.** Liste kapalı değil ("kullanılabilecek");
+turizm / arazi örtüsü / OSM listede yok ama yasak da değil.
+
+### Jüri rubriği (slayt: "Veriyi Nasıl Okumalıyız?")
+
+Notebook bu beşini **ölçerek** cevaplamalı — 2. elemenin anahtarı:
+
+1. Her trafonun tüketim davranışı aynı mı?
+2. Tüketim mevsimsel değişiyor mu?
+3. Hafta içi / hafta sonu farkı var mı?
+4. Trafo gücü ve lokasyon davranışı etkiliyor mu?
+5. Hava koşulları ne kadar etkili?
+
+### Aile envanteri — yeni göreve göre
+
+| Durum | Aileler |
+|---|---|
+| **Doğrudan değerli** | `hava`, `hava_saatlik`, `nem_toprak`, `gunes` (organizatör saydı) |
+| **Ayrıştırıcı** | `turizm_*` (Nis–Tem = Ege sezonu, listede YOK), `epias` (ulusal tüketim) |
+| **Muhtemel** | `arazi_ortusu` (kentleşme→yoğunluk), `izsu` (İzmir, sezonluk nüfus) |
+| **ÖLDÜ** | `konvektif`, `yangin`, `deprem`, `hava_kalitesi`, `osm_altyapi` — hepsi kesinti fiziğiydi. `maruziyet` rüzgâr×ağaç kolu da öyle. |
+
+`maruziyet`in **kentsel kolu yaşıyor**: `sogutma × yerlesim`,
+`sicak_sureklilik` — klima yükü mekanizması tüketim için birebir doğru.
+
+**`Güç` doğal normalizasyondur:** `tüketim / güç` = kullanım oranı. Büyük
+trafonun çok tüketmesi bilgi değil; kapasitesine göre ne tükettiği bilgidir.
+
+### Bilinen kısıtlar
+
+- **CV ince olacak.** 15 ay eğitim + 4 aylık doğrulama bloğu = en fazla 3
+  fold, ilkinin eğitim tarafı boşalıyor (ölçüldü). Kararlar LB'ye yaslanacak.
+- **Temmuz 2026 turizm verisi yok.** TÜİK ~2 ay gecikmeli; 4 ayın 3'ü kapsanıyor.
+- **EPİAŞ uygunluk kapısı artık gereksiz** — kesinti verisi hedefin geçmişi
+  değil. Kaldırmak manifestte tek bayrak (`model_girdisi`).
+- `gun_sifir` takvim + veri sağlığı kapıları **anlamsızlaştı** (test dönemi
+  geçmişte, hava tahmini gerekmiyor).
+
+### İlk komut
+
+```bash
+python scripts/day_one.py --data data/raw --metric <RESMİ_METRİK>
+```
 
 ---
 
