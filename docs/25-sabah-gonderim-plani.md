@@ -5,7 +5,30 @@ doğrulandı (satır sayısı, id sırası, NaN/negatif, dağılım).
 
 ---
 
-## Komutlar — sırayla çalıştır
+## ÖNEMLİ — üçünü aynı anda gönderme
+
+Planın ilk halinde "aynı gün gönderilmeli" yazıyordu; **o gerekçe
+yanlıştı**. Bir dosyanın LB skoru sabittir (test kümesi değişmiyor), yani
+v13'ü bugün v14'ü yarın göndersek de aradaki fark aynı çıkar.
+Karşılaştırma için aynı güne sıkıştırmak gerekmiyor.
+
+Geçerli olan tek gerekçe: kullanılmayan hak **birikmez, yanar**. Yani
+bugün üçünü de kullanmak mantıklı — ama **peş peşe değil, sırayla**, her
+sonucu görüp devam.
+
+**DURMA NOKTASI:** `v13` beklenen 1,06–1,09 bandının dışında gelirse
+(özellikle 1,20 üstü), kalan iki hakkı **harcama**. Bir yerde bozukluk
+var, önce onu bul. Hak yarın yenilenir; yanlış teşhisle harcanan hak geri
+gelmez.
+
+## Önem sırası
+
+Yalnızca ikisi yapılabilseydi: **v13 + v14**. Kohort sorusu yönlendirme
+kontrolünden **on kat** değerli (±0,15 karşı ±0,017). Yönlendirmenin işe
+yaradığını üç doğrulama bloğundan zaten biliyoruz; test'te doğrulamak
+güzel ama yeni bilgi değil.
+
+## Komutlar — BİRER BİRER, her sonucu görüp devam
 
 ```bash
 cd c:/Users/cemmo/Documents/Datahon
@@ -20,7 +43,13 @@ kaggle competitions submit -c grid-up-datathon \
   -f submissions/tuketim_v14.csv \
   -m "v14: v13 + 2026-05-03 kohortunun 9.107 soguk satiri log1p x0,75"
 
-# 3) YONLENDIRME KONTROLU -- v13 ile ARADAKI TEK FARK yonlendirme
+# 3) UCUNCU SLOT -- O AN KARAR VER. Iki aday var:
+#
+#    (a) yigin deneyi ESIGI GECTIYSE -- once modeli uret:
+#        (yigin yapilandirmasi tuketim_model.py'ye tasinir, sonra)
+#        python scripts/tuketim_model.py --tohum 3 --cikti tuketim_v15.csv
+#
+#    (b) yigin GECMEDIYSE veya v13 beklenenden kotuyse -- yonlendirme kontrolu:
 kaggle competitions submit -c grid-up-datathon \
   -f submissions/tuketim_v12.csv \
   -m "v12: yonlendirmesiz kontrol (maske %22,16 tek model)"
