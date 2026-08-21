@@ -41,14 +41,57 @@ def code(source: str) -> dict:
     }
 
 
+#: Her notebook'un SONUNA otomatik eklenen atif hucresi.
+#:
+#: NEDEN OTOMATIK (2026-08-21 denetimi): uretilen iki notebook'ta da atif
+#: hucresi YOKTU. Bu yalnizca bir nezaket eksigi degil, LISANS IHLALIDIR:
+#: ESA WorldCover (CC-BY-4.0) ve OpenStreetMap (ODbL-1.0) atfi ZORUNLU
+#: kilar; Open-Meteo da CC-BY-4.0'dir. Atif gerektiren veriyi atifsiz
+#: yayimlamak, jurinin "kullanilan dis veriler" kriterinde de dogrudan
+#: kayiptir (GDZ 2023 rubrigi bunu acikca sayiyor).
+#:
+#: Hucre ``write_notebook`` icinde eklenir, cagiranin listesinde degil --
+#: boylece yeni bir notebook eklendiginde unutulmasi IMKANSIZDIR. Yapisal
+#: cozum, hatirlamaya dayali cozumden ustundur.
+ATIF_HUCRESI = markdown(
+    """
+## Kaynaklar ve Atıf
+
+Bu çalışmada kullanılan dış veri kaynakları ve lisansları:
+
+| Kaynak | Lisans | Atıf |
+|---|---|---|
+| Open-Meteo (hava durumu, arşiv + tahmin) | CC BY 4.0 | Weather data by Open-Meteo.com |
+| ESA WorldCover 10m v200 (arazi örtüsü) | CC BY 4.0 | © ESA WorldCover project 2021 |
+| OpenStreetMap (`power=*` altyapı) | ODbL 1.0 | © OpenStreetMap contributors |
+| TÜİK (turizm istatistikleri) | Kamuya açık | Türkiye İstatistik Kurumu |
+| AFAD (deprem kataloğu) | Kamuya açık | AFAD Deprem Dairesi Başkanlığı |
+| NASA FIRMS (yangın tespitleri) | Kamuya açık | NASA FIRMS / MODIS-VIIRS |
+
+Veri kökeni, SHA-256 özetleri ve yeniden dağıtım kararları `data/sources.yml`
+manifestinde tutulur; `scripts/veri_sagligi.py` her kaynağın kapsam, bütünlük
+ve fizik kontrollerini koşar.
+
+**Yarışma hedefinin geçmişi (EPİAŞ plansız kesinti kayıtları) modele girdi
+olarak KULLANILMAMIŞTIR.** Bu veri yalnızca boru hattının gerçek veri
+üzerinde prova edilmesinde kullanılmış, model girdisi olmasını engelleyen
+kapı `src/gridup/uygunluk.py` içinde kod düzeyinde zorlanmaktadır
+(`tests/test_uygunluk_kapisi.py`).
+"""
+)
+
+
 def write_notebook(cells: list[dict], path: Path) -> None:
-    """Notebook'u yazar.
+    """Notebook'u yazar; SONUNA atif hucresi eklenir.
 
     Hucre ``id``leri DETERMINISTIK atanir (uuid degil): boylece notebook'u
     yeniden uretmek sahte bir diff uretmez ve git gecmisi okunabilir kalir.
     nbformat 4.5+ ``id`` alanini zorunlu kilma yolunda.
     """
-    stamped = [{**cell, "id": f"{path.stem}-{index:02d}"} for index, cell in enumerate(cells)]
+    tum_hucreler = [*cells, ATIF_HUCRESI]
+    stamped = [
+        {**cell, "id": f"{path.stem}-{index:02d}"} for index, cell in enumerate(tum_hucreler)
+    ]
     notebook = {"cells": stamped, "metadata": _KERNEL, "nbformat": 4, "nbformat_minor": 5}
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(notebook, ensure_ascii=False, indent=1), encoding="utf-8")

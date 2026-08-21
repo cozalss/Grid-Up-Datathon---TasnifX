@@ -191,8 +191,20 @@ def suggest_params(
 
         # Tweedie'nin varyans ussu de aranmali: 1.0 Poisson'a, 2.0 Gamma'ya
         # yakinsar. Sayim + sifir kutlesi icin arasi.
+        #
+        # ARALIK 1.9 -> 1.5'e DARALTILDI (2026-08-21, literatur taramasi).
+        # Sayim hedeflerinde kanit dusuk ucu isaret ediyor: M5 birincisi 1.1
+        # kullandi, ust-%7 bir cozum magaza basina 1.1/1.2 secti, XGBoost
+        # perakende calismasi (arXiv:2208.12264) "1.1-1.3 vakalarin cogunda
+        # en iyi" diyor ve us buyudukce yanliligin MONOTON negatiflestigini
+        # olcuyor. 1.5-1.9 araligina harcanan her deneme, kanitin
+        # gostermedigi bir bolgede harcanmis demektir.
+        #
+        # Bu bir ON KABULDUR, olcum degil -- daraltmak aramayi hizlandirir
+        # ama yanlissa optimumu disarida birakir. Gercek veride 1.5 sinirina
+        # YAPISAN bir optimum gorulurse ust sinir geri acilmalidir.
         if choice == "tweedie":
-            power = trial.suggest_float("tweedie_variance_power", 1.1, 1.9)
+            power = trial.suggest_float("tweedie_variance_power", 1.1, 1.5)
             if kind == "catboost":
                 params["loss_function"] = f"Tweedie:variance_power={power:.2f}"
             else:

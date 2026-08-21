@@ -43,6 +43,11 @@ def _provenance_errors(record: ExperimentRecord) -> list[str]:
         errors.append("provenance.data_artifacts")
     if provenance.git_sha is None or provenance.git_dirty is None:
         errors.append("provenance.git_state")
+    # Sentinel ("HESAPLANAMADI:...") KABUL EDILIR, None EDILMEZ. Ikisi ayni
+    # sey degil: sentinel "denendi, olmadi, sebebi su" der ve kayitta gorunur;
+    # None ise hic denenmedigini ya da sessizce kayboldugunu gosterir.
+    # Olculdu (2026-08-21): 10 sn'lik git zaman asimi yuzunden tamamlanmis bir
+    # day_one kosusu, submission yazildiktan SONRA atiliyordu.
     if provenance.git_dirty and provenance.git_diff_fingerprint is None:
         errors.append("provenance.git_diff_fingerprint")
     return errors

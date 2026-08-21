@@ -94,24 +94,54 @@ def _git_dirty() -> bool | None:
     return bool(result.stdout.strip())
 
 
+#: Parmak izi ALINAMADIGINDA kullanilan sentinel oneki.
+#:
+#: Ucuncu bir durumu isaretler ve bilerek hex'e BENZEMEZ: kapi bunu
+#: "kaydedildi" saymamali, okuyan insan da gercek bir ozetle karistirmamali.
+HESAPLANAMADI_ONEKI = "HESAPLANAMADI:"
+
+#: ``git`` alt sureclerinin zaman asimi (saniye).
+#:
+#: 10'DAN 60'A CIKARILDI (2026-08-21, olculdu). Bu depoda agir olcum kosulari
+#: (ablasyon: 96 ilce x 1690 gun x 16 aile x 5 tohum) butun cekirdekleri
+#: doyurur ve es zamanli calismak ISTISNA DEGIL KURALDIR. O yuk altinda git
+#: surecine 10 saniyede sira gelmedi; sonuc, tamamlanmis bir day_one kosusunun
+#: submission YAZILDIKTAN SONRA atilmasiydi.
+_GIT_ZAMAN_ASIMI_SN = 60
+
+
 def _git_diff_fingerprint() -> str | None:
+    """Kirli agacin diff ozeti. UC durum doner, iki degil.
+
+    Returns:
+        * ``None``            -- agac temiz, kaydedilecek bir sey yok
+        * sha256 hex          -- diff yakalandi
+        * ``HESAPLANAMADI:*`` -- agac kirli olabilir ama diff ALINAMADI
+
+    Ucuncu durum eskiden ``None`` ile ayni kefeye konuyordu ve kapi ikisini
+    ayirt edemiyordu. Ayirmak, yeniden uretilebilirlik guvencesini
+    ZAYIFLATMAZ: kayit "denendi, olmadi, sebebi su" der. Sessizce yok
+    saymaktan da, saatlerce suren bir kosuyu son adimda atmaktan da iyidir.
+    """
     try:
         diff = subprocess.run(
             ["git", "diff", "HEAD", "--binary", "--no-ext-diff"],
             capture_output=True,
-            timeout=10,
+            timeout=_GIT_ZAMAN_ASIMI_SN,
             check=False,
         )
         untracked = subprocess.run(
             ["git", "ls-files", "--others", "--exclude-standard", "-z"],
             capture_output=True,
-            timeout=10,
+            timeout=_GIT_ZAMAN_ASIMI_SN,
             check=False,
         )
-    except (OSError, subprocess.SubprocessError):
-        return None
+    except subprocess.TimeoutExpired:
+        return f"{HESAPLANAMADI_ONEKI}git_zaman_asimi_{_GIT_ZAMAN_ASIMI_SN}sn"
+    except (OSError, subprocess.SubprocessError) as hata:
+        return f"{HESAPLANAMADI_ONEKI}git_calistirilamadi_{type(hata).__name__}"
     if diff.returncode != 0 or untracked.returncode != 0:
-        return None
+        return f"{HESAPLANAMADI_ONEKI}git_hata_kodu_{diff.returncode}_{untracked.returncode}"
     digest = hashlib.sha256()
     changed = bool(diff.stdout or untracked.stdout)
     if not changed:
@@ -129,8 +159,8 @@ def _git_diff_fingerprint() -> str | None:
             with relative.open("rb") as handle:
                 for chunk in iter(lambda: handle.read(1024 * 1024), b""):
                     digest.update(chunk)
-        except OSError:
-            return None
+        except OSError as hata:
+            return f"{HESAPLANAMADI_ONEKI}dosya_okunamadi_{type(hata).__name__}"
     return digest.hexdigest()
 
 
