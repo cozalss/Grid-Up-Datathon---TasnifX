@@ -539,6 +539,141 @@ def harman_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
         print(f"  {a:8} GENEL {genel:.5f}   {detay}")
 
 
+def harman_agirlik_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
+    """Uc aileyi COK TOHUMLA egitir, sonra butun harman bicimlerini olcer.
+
+    Tek egitim, cok degerlendirme: tahminler bir kez uretilip bellekte
+    tutuluyor, harman kombinasyonlari uzerinde bedavaya geziliyor. Boylece
+    agirlik secimi hesaplama degil, yalnizca aritmetik.
+
+    NEDEN AGIRLIK ARIYORUZ -- ilk olcum (tek tohum) sunu verdi:
+
+        cat     1,12817     <-- tek basina EN IYI
+        HARMAN  1,13170     <-- esit agirlikli uclu
+        xgb     1,16228
+        lgbm    1,18353
+
+    Yani esit agirlik zarar veriyor: zayif uyeyi de esit tasiyor.
+    Krogh & Vedelsby garantisi "harman ORTALAMA uyeden kotu olamaz" der --
+    EN IYI uyeden degil. Uyeler arasi fark buyukse esit agirlik yanlis
+    birlestiricidir.
+    """
+    print("\n" + "=" * 78)
+    print("HARMAN AGIRLIKLARI (cok tohumlu)")
+    print("=" * 78)
+    aileler = ("lgbm", "xgb", "cat")
+    tohumlar = (1000, 1001, 1002)
+
+    # blok -> aile -> tohum -> log tahmin
+    tahmin: dict[str, dict[str, list[np.ndarray]]] = {}
+    gercekler: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for b in tm.BLOKLAR:
+        dogrulama = egitim[egitim["_blok"] == b.ad]
+        kalan = egitim[egitim["_blok"] != b.ad]
+        gercekler[b.ad] = (
+            dogrulama[tm.HEDEF].to_numpy(),
+            (dogrulama["soguk_mu"] == 1).to_numpy(),
+        )
+        tahmin[b.ad] = {}
+        for a in aileler:
+            t0 = time.time()
+            tahmin[b.ad][a] = [_log_tahmin(a, kalan, dogrulama, kolonlar, t) for t in tohumlar]
+            print(f"  {b.ad:6} {a:5} {len(tohumlar)} tohum egitildi ({time.time() - t0:.0f} sn)")
+
+    def skor(blok: str, log_t: np.ndarray) -> float:
+        g, s = gercekler[blok]
+        t = np.clip(np.expm1(log_t), 0.0, None)
+        soguk = tm.rmsle(g[s], t[s]) if s.any() else 0.0
+        sicak = tm.rmsle(g[~s], t[~s]) if (~s).any() else 0.0
+        return float(np.sqrt((1 - tm.TEST_SOGUK_PAYI) * sicak**2 + tm.TEST_SOGUK_PAYI * soguk**2))
+
+    def olc_karisim(ad: str, agirlik: dict[str, float]) -> None:
+        toplam = sum(agirlik.values())
+        blok_skor, blok_std = {}, {}
+        for b in tm.BLOKLAR:
+            tohum_skorlari = []
+            for i in range(len(tohumlar)):
+                karisim = sum(w * tahmin[b.ad][a][i] for a, w in agirlik.items()) / toplam
+                tohum_skorlari.append(skor(b.ad, karisim))
+            blok_skor[b.ad] = float(np.mean(tohum_skorlari))
+            blok_std[b.ad] = float(np.std(tohum_skorlari, ddof=1))
+        genel = float(np.mean(list(blok_skor.values())))
+        detay = "  ".join(f"{k} {v:.4f}+-{blok_std[k]:.4f}" for k, v in blok_skor.items())
+        print(f"  {ad:34} GENEL {genel:.5f}   {detay}")
+
+    print("\n  --- TEK AILE (3 tohum ortalamasi) ---")
+    for a in aileler:
+        olc_karisim(a, {a: 1.0})
+    print("\n  --- HARMANLAR ---")
+    olc_karisim("esit ucu (1/1/1)", {"lgbm": 1, "xgb": 1, "cat": 1})
+    olc_karisim("cat + xgb (1/1)", {"xgb": 1, "cat": 1})
+    olc_karisim("cat + lgbm (1/1)", {"lgbm": 1, "cat": 1})
+    olc_karisim("cat agirlikli (2/1/1)", {"cat": 2, "xgb": 1, "lgbm": 1})
+    olc_karisim("cat agirlikli (3/1/1)", {"cat": 3, "xgb": 1, "lgbm": 1})
+    olc_karisim("cat agirlikli (4/1/1)", {"cat": 4, "xgb": 1, "lgbm": 1})
+    olc_karisim("cat + xgb (3/1)", {"cat": 3, "xgb": 1})
+
+
+def catboost_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
+    """CatBoost'un ITERASYON EGRISI ve derinligi -- tek egitim, cok olcum.
+
+    CatBoost olculdu ve uc ailenin en iyisi cikti (1,13103, uc tohum), ama
+    su ana kadar KUTUDAN CIKTIGI GIBI kosuldu: 400 iterasyon, derinlik 8.
+    LightGBM icin egrinin 200-1000 arasi duz oldugunu olcmustuk; CatBoost
+    icin hic olcmedik ve varsayilan kullanimi genelde 1000-5000 iterasyondur.
+
+    Verimlilik notu: model bir kez 2000 iterasyonla egitilip ``ntree_end``
+    ile ara noktalarda degerlendiriliyor. Yani egri, tek egitimin fiyatina
+    cikiyor -- alti ayri egitim gerekmiyor.
+    """
+    import catboost as cb
+
+    print("\n" + "=" * 78)
+    print("CATBOOST ITERASYON EGRISI + DERINLIK")
+    print("=" * 78)
+    duraklar = (200, 400, 700, 1000, 1400, 2000)
+    kategorik = [k for k in tm.KATEGORIK if k in kolonlar]
+
+    for derinlik in (6, 8, 10):
+        blok_egrisi: dict[int, list[float]] = {n: [] for n in duraklar}
+        for b in tm.BLOKLAR:
+            dogrulama = egitim[egitim["_blok"] == b.ad]
+            kalan = soguk_maskele(
+                egitim[egitim["_blok"] != b.ad], kolonlar, tm.SOGUK_MASKE_ORANI, 1000
+            )
+            x_e, x_d = kalan[kolonlar].copy(), dogrulama[kolonlar].copy()
+            for k in kategorik:
+                x_e[k], x_d[k] = x_e[k].astype(str), x_d[k].astype(str)
+            y = np.log1p(kalan[tm.HEDEF].clip(lower=0.0)) - np.log1p(kalan["guc"])
+
+            t0 = time.time()
+            model = cb.CatBoostRegressor(
+                loss_function="RMSE",
+                iterations=max(duraklar),
+                learning_rate=0.05,
+                depth=derinlik,
+                l2_leaf_reg=3.0,
+                rsm=0.75,
+                random_seed=1000,
+                verbose=0,
+                allow_writing_files=False,
+            )
+            model.fit(x_e, y, cat_features=kategorik)
+            gercek = dogrulama[tm.HEDEF].to_numpy()
+            soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
+            ofset = np.log1p(dogrulama["guc"]).to_numpy()
+            for n in duraklar:
+                t = np.clip(np.expm1(model.predict(x_d, ntree_end=n) + ofset), 0.0, None)
+                s = tm.rmsle(gercek[soguk], t[soguk]) if soguk.any() else 0.0
+                w = tm.rmsle(gercek[~soguk], t[~soguk]) if (~soguk).any() else 0.0
+                blok_egrisi[n].append(
+                    float(np.sqrt((1 - tm.TEST_SOGUK_PAYI) * w**2 + tm.TEST_SOGUK_PAYI * s**2))
+                )
+            print(f"  derinlik {derinlik}  {b.ad:6} egitildi ({time.time() - t0:.0f} sn)")
+        satir = "  ".join(f"{n} {np.mean(v):.5f}" for n, v in blok_egrisi.items())
+        print(f"  >> DERINLIK {derinlik}: {satir}")
+
+
 def model_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
     """Model bicimi denemeleri -- literaturden gelen ucuz adaylar.
 
@@ -622,7 +757,7 @@ def main() -> int:
     ap.add_argument("--taban", action="store_true", help="yalnizca gurultu tabanini olc")
     ap.add_argument(
         "--deney",
-        choices=("oznitelik", "model", "kalibrasyon", "soguk", "harman"),
+        choices=("oznitelik", "model", "kalibrasyon", "soguk", "harman", "agirlik", "catboost"),
         help="calistirilacak deney",
     )
     args = ap.parse_args()
@@ -646,6 +781,10 @@ def main() -> int:
         soguk_deneyi(egitim, kolonlar)
     if args.deney == "harman":
         harman_deneyi(egitim, kolonlar)
+    if args.deney == "agirlik":
+        harman_agirlik_deneyi(egitim, kolonlar)
+    if args.deney == "catboost":
+        catboost_deneyi(egitim, kolonlar)
     if args.deney == "kalibrasyon":
         kalibrasyon_olc(egitim, kolonlar)
 
