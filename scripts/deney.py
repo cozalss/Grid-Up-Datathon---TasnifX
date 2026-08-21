@@ -284,6 +284,16 @@ def _kaydet(sonuc: Sonuc, kolon_sayisi: int, ustyazim: dict[str, object]) -> Non
 AILELER: dict[str, tuple[str, ...]] = {
     "trafo_seviye": ("t_log_", "t_gun_sayisi", "t_sifir_orani", "t_yuk_faktoru", "t_son"),
     "trafo_profil": ("t_hg_sapma", "t_ay_sapma"),
+    # KAPSAMA ACIGI KAPATILDI (2026-08-22). Denetlendiginde 144 kolonun
+    # 8'inin HICBIR aileye girmedigi goruldu, yani "136 kolonun 19'u is
+    # yapiyor" ablasyonu onlari hic sinamamisti. Ayni gecede bulunan ikinci
+    # kapsama hatasi: hava ailesinin onekleri var olmayan isimleri ariyordu
+    # ve 10 CDD kolonu kacmisti. Kapsam artik ``test_aile_kapsami`` ile
+    # sinaniyor -- yapisal kolonlar disinda her kolon bir aileye ait olmali.
+    "gecen_yaz": ("t_gy_",),
+    "trafo_sekil": ("t_yayilma", "t_kayma", "t_hg_genligi"),
+    "mevsim_genlik": ("t_mevsim_",),
+    "pencere_yapisi": ("ozet_pencere_gun", "t_doluluk"),
     "trafo_olum": ("t_kuyruk_sifir", "t_olu_mu", "t_son_kayit_yasi"),
     "trafo_isil": ("t_egim_", "t_trend"),
     "grup_seviye": ("g_",),

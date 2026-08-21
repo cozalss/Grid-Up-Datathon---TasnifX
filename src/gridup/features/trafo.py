@@ -57,6 +57,18 @@ __all__ = [
 #: min 40, medyan 400, %75 1.000, max 35.900).
 GUC_KOVA_SINIRLARI: tuple[float, ...] = (0, 100, 160, 250, 400, 630, 1000, 1600, np.inf)
 
+#: Mevsimsel genlik icin yaz ve kis aylari. Yaz BILEREK dar (6,7):
+#: ``guz25`` blogunun ozet penceresi 31 Temmuz'da bitiyor, Agustos'u dahil
+#: etmek o blogu kapsam disi birakirdi ve olculebilen blok sayisi ikiden
+#: bire duserdi.
+MEVSIM_YAZ_AYLARI: tuple[int, ...] = (6, 7)
+MEVSIM_KIS_AYLARI: tuple[int, ...] = (1, 2, 3)
+
+#: Genligin hesaplanmasi icin her iki mevsimde de gereken asgari gun.
+#: Altinda ortalama gurultudur ve kolon NaN birakilir; model bunu
+#: ``t_mevsim_gun`` ile birlikte gorup indirime tabi tutabilir.
+MEVSIM_ASGARI_GUN = 15
+
 #: Trafo ozetlerinin uretecegi kolon onekleri. Tek yerde tutuluyor ki
 #: ``trafo_ozetleri_uygula`` ile ``TrafoOzetleri`` birbirinden kaymasin.
 _SEVIYE_KOLONLARI = (
@@ -316,6 +328,44 @@ def _gecen_yil_ozetleri(
     ).reindex(bos.index)
 
 
+def _mevsim_genligi(
+    d: pd.DataFrame,
+    *,
+    grup_kolonu: str,
+    zaman_kolonu: str,
+    dizin: pd.Index,
+) -> pd.DataFrame:
+    """Trafo basina yaz/kis LOG FARKI ve guvenilirlik sayaci.
+
+    ``t_mevsim_genlik`` = ort(log1p) yaz - ort(log1p) kis. Log uzayindaki
+    fark, ham uzayda ORANDIR ve oran seviye kaymasina dayaniklidir: trafo
+    gecen yildan bu yana %20 buyuduyse mutlak seviye yanilitir, yaz/kis
+    orani sabit kalir.
+
+    ``t_mevsim_gun`` = iki mevsimdeki gun sayisinin kucugu. Genligin ne
+    kadar guvenilir oldugunu tasir; model az gunle hesaplanmis bir genligi
+    indirime tabi tutabilsin diye ayri kolon.
+    """
+    bos = {"t_mevsim_genlik": pd.Series(np.nan, index=dizin), "t_mevsim_gun": 0.0}
+    ay = d[zaman_kolonu].dt.month
+    yaz, kis = d[ay.isin(MEVSIM_YAZ_AYLARI)], d[ay.isin(MEVSIM_KIS_AYLARI)]
+    if yaz.empty or kis.empty:
+        return pd.DataFrame(bos, index=dizin)
+
+    gy = yaz.groupby(grup_kolonu, observed=True)["_y"]
+    gk = kis.groupby(grup_kolonu, observed=True)["_y"]
+    y_n = gy.size().astype("float64").reindex(dizin).fillna(0.0)
+    k_n = gk.size().astype("float64").reindex(dizin).fillna(0.0)
+    # Az gunle hesaplanan ortalama gurultudur; kolon NaN birakilir. Sifir
+    # yazmak "genlik yok" demek olurdu, oysa kastedilen "bilinmiyor".
+    yeterli = (y_n >= MEVSIM_ASGARI_GUN) & (k_n >= MEVSIM_ASGARI_GUN)
+    fark = gy.mean().reindex(dizin) - gk.mean().reindex(dizin)
+    return pd.DataFrame(
+        {"t_mevsim_genlik": fark.where(yeterli), "t_mevsim_gun": np.minimum(y_n, k_n)},
+        index=dizin,
+    )
+
+
 def trafo_ozetleri_cikar(
     uydur: pd.DataFrame,
     *,
@@ -451,6 +501,46 @@ def trafo_ozetleri_cikar(
     # yukseliyor mu aliyor mu -- ``t_trend``in aksine tek bir egime
     # yaslanmadan, iki dogrudan olcumun farki olarak.
     seviye["t_kayma"] = seviye["t_log_son14"] - seviye["t_log_ort"]
+
+    # MEVSIMSEL GENLIK: trafonun KENDI yaz/kis orani.
+    #
+    # NEDEN GEREKLI
+    # Butun seviye olcumlerimiz KISI olcuyor -- guncellik pencereleri ozet
+    # penceresinin sonundan geriye bakar, o da Mart 2026. Ama tahmin edilen
+    # donem Nisan-Temmuz. Kistan yaza gecerken herkese AYNI carpani
+    # uygulamak yanlis, cunku carpan herkes icin ayni degil. Olculdu
+    # (2026-08-22, 2.270 trafo, yaz ve kista >=30 gun): yaz/kis orani
+    # p5 0,62 / p50 1,18 / p95 4,92 -- yani p95/p05 SEKIZ KAT. Sulama
+    # trafosu yazin katlaniyor, sokak aydinlatmasi DUSUYOR (gun uzuyor),
+    # klimali ticari trafo ikiye katliyor. Mevsimsel genlik, elimizde
+    # olmayan ``trafo_tipi`` kolonunun veriden okunabilen en iyi vekili.
+    #
+    # NEDEN ``t_gy_*`` YETMIYOR
+    # O aile "hedef penceresi eksi 365 gun" diye tanimli ve doluluk orani
+    # (sicak satirlar) yaz25 %0,0 / guz25 %0,0 / kis26 %58,0 / TEST %52,6.
+    # Yani model onu tek blokta gorebiliyor. Buradaki tanim OZET
+    # PENCERESININ KENDI icinden okuyor, dolayisiyla guz25'te de doluyor.
+    #
+    # NEDEN FARK, ORAN DEGIL DE LOG-FARK
+    # Log uzayinda fark = ham uzayda oran. Ve oran seviye kaymasina
+    # dayaniklidir: trafo gecen yildan bu yana %20 buyuduyse mutlak
+    # ``t_gy_log_ort`` yanilitir, yaz/kis farki sabit kalir.
+    #
+    # KAPSAM -- durustce
+    #     blok    ozet penceresi          yaz ayi (6,7) var mi
+    #     yaz25   2025-01-01..03-31       YOK   <- olculemez
+    #     guz25   2025-01-01..07-31       VAR
+    #     kis26   2025-01-01..11-30       VAR
+    #     TEST    2025-01-01..2026-03-31  VAR
+    # yaz25 bizim en iyi test vekilimiz ve orada BOS kaliyor. Ustelik
+    # olculebilen iki blokta iliski TEST'inkinden farkli: guz25'te "yaz
+    # oraniyla sonbahari tahmin et", kis26'da "yaz oraniyla kisi tahmin
+    # et"; test'in ihtiyaci ise "yaz oraniyla YAZI tahmin et". Sonuc
+    # okunurken ikisi de unutulmamali.
+    for kolon, deger in _mevsim_genligi(
+        d, grup_kolonu=grup_kolonu, zaman_kolonu=zaman_kolonu, dizin=seviye.index
+    ).items():
+        seviye[kolon] = deger
 
     # Haftagunu ve ay SAPMALARI -- mutlak ortalama degil.
     #

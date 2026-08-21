@@ -286,3 +286,60 @@ def test_sicak_satirlarda_profil_tasinir() -> None:
     sonuc = trafo_ozetleri_uygula(uygula, trafo_ozetleri_cikar(uydur))
     assert (sonuc["soguk_mu"] == 0).all()
     assert sonuc["t_hg_sapma"].notna().any()
+
+
+def test_mevsim_genligi_gercek_orani_veriyor() -> None:
+    """``t_mevsim_genlik`` log uzayinda yaz/kis FARKINI tasimali.
+
+    Kurgu: iki trafo, ayni kis seviyesi, farkli yaz davranisi. Biri yazin
+    iki katina cikiyor, digeri sabit kaliyor. Genlik ikisini AYIRMALI --
+    cunku kolonun butun varlik nedeni, kistan yaza gecerken herkese ayni
+    carpani uygulamamak.
+    """
+    tarihler = pd.date_range("2025-01-01", "2025-07-31", freq="D")
+    kayitlar = []
+    for tanim, yaz_carpani in (("katlanan", 2.0), ("sabit", 1.0)):
+        for t in tarihler:
+            carpan = yaz_carpani if t.month in (6, 7) else 1.0
+            kayitlar.append({"tanim": tanim, "tarih": t, "tuketim": 1000.0 * carpan, "guc": 400.0})
+    cerceve = pd.DataFrame(kayitlar)
+
+    ozet = trafo_ozetleri_cikar(cerceve)
+    genlik = ozet.seviye["t_mevsim_genlik"]
+
+    # log1p(2001) - log1p(1001) ~ log(2); sabit trafoda tam 0.
+    assert genlik["sabit"] == pytest.approx(0.0, abs=1e-9)
+    assert genlik["katlanan"] == pytest.approx(np.log(2.0), abs=0.01)
+    assert ozet.seviye["t_mevsim_gun"]["katlanan"] == pytest.approx(61.0)
+
+
+def test_mevsim_genligi_yaz_yoksa_nan() -> None:
+    """Ozet penceresinde yaz ayi yoksa genlik BILINMIYOR, sifir degil.
+
+    ``yaz25`` blogunun ozet penceresi Oca-Mar 2025; icinde yaz yok. Oraya
+    0 yazmak "bu trafonun mevsimsel genligi yok" demek olurdu ve model
+    onu sabit-tuketimli bir trafo sanirdi. Dogrusu NaN.
+    """
+    tarihler = pd.date_range("2025-01-01", "2025-03-31", freq="D")
+    cerceve = pd.DataFrame({"tanim": "a", "tarih": tarihler, "tuketim": 1000.0, "guc": 400.0})
+    ozet = trafo_ozetleri_cikar(cerceve)
+    assert ozet.seviye["t_mevsim_genlik"].isna().all()
+
+
+def test_mevsim_genligi_az_gunde_nan() -> None:
+    """Asgari gun saglanmazsa genlik NaN -- az gunle hesaplanan oran gurultudur."""
+    from gridup.features.trafo import MEVSIM_ASGARI_GUN
+
+    kis = pd.date_range("2025-01-01", periods=40, freq="D")
+    yaz = pd.date_range("2025-06-01", periods=MEVSIM_ASGARI_GUN - 1, freq="D")
+    cerceve = pd.DataFrame(
+        {
+            "tanim": "a",
+            "tarih": list(kis) + list(yaz),
+            "tuketim": [1000.0] * len(kis) + [2000.0] * len(yaz),
+            "guc": 400.0,
+        }
+    )
+    ozet = trafo_ozetleri_cikar(cerceve)
+    assert ozet.seviye["t_mevsim_genlik"].isna().all()
+    assert ozet.seviye["t_mevsim_gun"]["a"] == pytest.approx(float(MEVSIM_ASGARI_GUN - 1))
