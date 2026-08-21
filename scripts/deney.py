@@ -442,11 +442,21 @@ def _aile_modeli(aile: str, tohum: int):  # noqa: ANN202 - kosullu import
     if aile == "cat":
         import catboost as cb
 
+        # AYARLANDI (2026-08-21). Iterasyon x derinlik yuzeyi tarandi;
+        # model bir kez egitilip ``ntree_end`` ile ara noktalarda olculdu:
+        #   d4: 50 1,15971  100 1,12261  150 1,11613  200 1,11400  300 1,11019  400 1,11026
+        #   d5: 50 1,14817  100 1,11904  150 1,11416  200 1,11075  300 1,10947  400 1,11314
+        #   d6: 50 1,13845  100 1,11417  150 1,11170  200 1,11283  300 1,11252  400 1,12004
+        #   d8: 50 1,14497  100 1,12544  150 1,12389  200 1,12260  300 1,12583  400 1,12817
+        # Derinlik 4-6 / iterasyon 150-300 bolgesi DUZ (1,109-1,114) ve
+        # aradaki farklar tek-tohum gurultusunun (std 0,010) icinde. Esigi
+        # gecen tek sey derinlik 8'in kotulugu: 1,1226 ile 1,1095 arasi
+        # 0,013. Onceki ayar (d8/400) yuzeyin EN KOTU kosesiydi.
         return cb.CatBoostRegressor(
             loss_function="RMSE",
-            iterations=AGAC,
+            iterations=250,
             learning_rate=0.05,
-            depth=8,
+            depth=5,
             l2_leaf_reg=3.0,
             rsm=0.75,
             random_seed=tohum,
@@ -614,6 +624,144 @@ def harman_agirlik_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
     olc_karisim("cat + xgb (3/1)", {"cat": 3, "xgb": 1})
 
 
+def _ek_kokenler_kur(yenile: bool = False) -> pd.DataFrame:
+    """``EK_KOKENLER`` bloklarini kurar ve onbellekler."""
+    yol = ONBELLEK / "ek_kokenler.parquet"
+    if not yenile and yol.exists():
+        return pd.read_parquet(yol)
+    tr, te = tm.yukle()
+    tr, te = tm.lokasyon_ayristir(tr), tm.lokasyon_ayristir(te)
+    hava = tm.hava_yukle()
+    tr, te = tm.hava_ekle(tr, hava), tm.hava_ekle(te, hava)
+    tr, te = tm.takvim_ekle(tr), tm.takvim_ekle(te)
+    tr, te = tm.yas_ekle(tr, te)
+    tr, te = tm.kimlik_ekle(tr, te)
+    tr, te = tm.statik_ilce_ekle(tr, te)
+    tr, te = tm.ilce_yapisi_ekle(tr, te)
+    tr, te = tm.ulusal_ekle(tr, te)
+    ek = tm.ek_kokenleri_kur(tr)
+    ek.to_parquet(yol, index=False)
+    return ek
+
+
+def koken_deneyi(egitim: pd.DataFrame, kolonlar: list[str], yenile: bool) -> None:
+    """EK KOKENLER egitim setini buyutuyor mu, gercekten yardim ediyor mu.
+
+    Ana bloklar egitimin %84,7'sini etiket olarak kullaniyor ve modele
+    "gecmisten gelecege esleme"nin yalnizca UC ornegini gosteriyor. Ek
+    kokenler ortusuyor -- ayni etiket satiri farkli ozet pencereleriyle
+    birden fazla kez goruluyor. Bu bir veri artirma bicimi; satir sayisi
+    kadar bilgi ARTMAZ (ortusen bloklar birbiriyle korele), ama modele
+    ozet-tazeligi ile hata arasindaki iliskiyi ogretir.
+
+    Dogrulamada ortusme YASAK: ``kokenleri_ayikla`` hedef blokla kesisen
+    her kokeni atar.
+    """
+    print("\n" + "=" * 78)
+    print("EK KOKENLER (yuvarlanan koken sikligi)")
+    print("=" * 78)
+    ek = _ek_kokenler_kur(yenile)
+    ortak = [k for k in egitim.columns if k in ek.columns]
+    genis = pd.concat([egitim[ortak], ek[ortak]], ignore_index=True)
+    for k in tm.KATEGORIK:
+        genis[k] = pd.Categorical(genis[k], categories=egitim[k].cat.categories)
+    print(f"  ana bloklar {len(egitim):>9,} satir -> ek kokenlerle {len(genis):>9,} satir")
+
+    for ad, kaynak, ayikla in (("ANA (3 blok)", egitim, False), ("EK KOKENLI", genis, True)):
+        blok_skor = {}
+        for b in tm.BLOKLAR:
+            dogrulama = kaynak[kaynak["_blok"] == b.ad]
+            kalan = tm.kokenleri_ayikla(kaynak, b.ad) if ayikla else kaynak[kaynak["_blok"] != b.ad]
+            t0 = time.time()
+            log_t = _log_tahmin("cat", kalan, dogrulama, kolonlar, 1000)
+            gercek = dogrulama[tm.HEDEF].to_numpy()
+            soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
+            t = np.clip(np.expm1(log_t), 0.0, None)
+            s = tm.rmsle(gercek[soguk], t[soguk]) if soguk.any() else 0.0
+            w = tm.rmsle(gercek[~soguk], t[~soguk]) if (~soguk).any() else 0.0
+            blok_skor[b.ad] = float(
+                np.sqrt((1 - tm.TEST_SOGUK_PAYI) * w**2 + tm.TEST_SOGUK_PAYI * s**2)
+            )
+            print(
+                f"  {ad:14} {b.ad:6} {blok_skor[b.ad]:.5f}  "
+                f"({len(kalan):,} egitim satiri, {time.time() - t0:.0f} sn)"
+            )
+        print(f"  >> {ad:14} GENEL {np.mean(list(blok_skor.values())):.5f}\n")
+
+
+#: Ufuk kovalari. Tahmin ufku 1..122 gun ve hata ufukla birlikte
+#: KATLANIYOR -- olculdu (yaz25 blogu, sicak trafolar, son-14-gun
+#: seviyesiyle tahmin):
+#:
+#:     ufuk      satir    RMSE(log)
+#:     1-7      14.827      0,4067
+#:     8-14     14.840      0,4738
+#:     15-30    33.840      0,5655
+#:     31-60    63.078      0,6621
+#:     61-90    61.333      0,8903
+#:     91-122   62.971      1,1522     <-- 2,8 KAT
+#:
+#: Tek model bu ikisine ayni sekilde bakiyor: 5. gunde trafonun son
+#: seviyesi neredeyse kesindir, 120. gunde zayif bir onseldir ve mevsim
+#: bilgisi one cikmalidir. Ayni modelin ikisinde birden optimal olmasi
+#: beklenemez.
+#:
+#: Favorita birincisi ayni fikri 16 GUNLUK ufukta olcmustu: 16 ayri
+#: gunluk model 0,506, tek model 0,512. Bizim ufkumuz sekiz kat uzun.
+UFUK_KOVALARI: tuple[tuple[str, int, int], ...] = (
+    ("yakin", 1, 30),
+    ("orta", 31, 75),
+    ("uzak", 76, 122),
+)
+
+
+def ufuk_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
+    """UFKA GORE ayri modeller tek modeli geciyor mu.
+
+    Her kova icin ayri bir CatBoost egitiliyor -- ama egitim verisi de o
+    kovaya kisitlaniyor, yani her model kendi ufuk rejimini ogreniyor.
+    Kiyaslama adil: tek model de ayni satirlar uzerinde degerlendiriliyor.
+    """
+    print("\n" + "=" * 78)
+    print("UFKA GORE AYRI MODELLER")
+    print("=" * 78)
+    if "ufuk_gun" not in egitim.columns:
+        print("  'ufuk_gun' kolonu yok -- onbellek eski, --yenile gerekiyor")
+        return
+
+    for b in tm.BLOKLAR:
+        dogrulama = egitim[egitim["_blok"] == b.ad]
+        kalan = egitim[egitim["_blok"] != b.ad]
+        gercek = dogrulama[tm.HEDEF].to_numpy()
+        soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
+
+        def agirlikli(t: np.ndarray, m: np.ndarray, _g=gercek, _s=soguk) -> float:
+            s = tm.rmsle(_g[m & _s], t[m & _s]) if (m & _s).any() else 0.0
+            w = tm.rmsle(_g[m & ~_s], t[m & ~_s]) if (m & ~_s).any() else 0.0
+            return float(np.sqrt((1 - tm.TEST_SOGUK_PAYI) * w**2 + tm.TEST_SOGUK_PAYI * s**2))
+
+        tek = np.clip(np.expm1(_log_tahmin("cat", kalan, dogrulama, kolonlar, 1000)), 0.0, None)
+        ayri = np.full(len(dogrulama), np.nan)
+        for ad, alt, ust in UFUK_KOVALARI:
+            k_maske = kalan["ufuk_gun"].between(alt, ust).to_numpy()
+            d_maske = dogrulama["ufuk_gun"].between(alt, ust).to_numpy()
+            if not d_maske.any() or k_maske.sum() < 1000:
+                continue
+            log_t = _log_tahmin("cat", kalan[k_maske], dogrulama[d_maske], kolonlar, 1000)
+            ayri[d_maske] = np.clip(np.expm1(log_t), 0.0, None)
+            print(
+                f"  {b.ad:6} {ad:6} ({alt:>3}-{ust:>3} gun)  "
+                f"tek {agirlikli(tek, d_maske):.5f}   ayri {agirlikli(ayri, d_maske):.5f}   "
+                f"({int(k_maske.sum()):,} egitim satiri)"
+            )
+        hepsi = np.ones(len(dogrulama), dtype=bool)
+        gecerli = np.isfinite(ayri)
+        print(
+            f"  {b.ad:6} {'TOPLAM':6}                 "
+            f"tek {agirlikli(tek, hepsi):.5f}   ayri {agirlikli(ayri, gecerli):.5f}\n"
+        )
+
+
 def catboost_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
     """CatBoost'un ITERASYON EGRISI ve derinligi -- tek egitim, cok olcum.
 
@@ -631,10 +779,15 @@ def catboost_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
     print("\n" + "=" * 78)
     print("CATBOOST ITERASYON EGRISI + DERINLIK")
     print("=" * 78)
-    duraklar = (200, 400, 700, 1000, 1400, 2000)
+    # Duraklar ALT UCA cekildi. Ilk tarama (200..2000) sunu gosterdi:
+    #   DERINLIK 6: 200 1,11283  400 1,12004  700 1,14093
+    #               1000 1,15277  1400 1,16437  2000 1,18758
+    # Yani egri TEKDUZE kotulesiyor -- CatBoost 200 iterasyondan sonra
+    # asiri ogreniyor ve egri sol kenarda hala inisteydi. Alt uc taraniyor.
+    duraklar = (50, 100, 150, 200, 300, 400)
     kategorik = [k for k in tm.KATEGORIK if k in kolonlar]
 
-    for derinlik in (6, 8, 10):
+    for derinlik in (4, 5, 6, 8):
         blok_egrisi: dict[int, list[float]] = {n: [] for n in duraklar}
         for b in tm.BLOKLAR:
             dogrulama = egitim[egitim["_blok"] == b.ad]
@@ -757,7 +910,17 @@ def main() -> int:
     ap.add_argument("--taban", action="store_true", help="yalnizca gurultu tabanini olc")
     ap.add_argument(
         "--deney",
-        choices=("oznitelik", "model", "kalibrasyon", "soguk", "harman", "agirlik", "catboost"),
+        choices=(
+            "oznitelik",
+            "model",
+            "kalibrasyon",
+            "soguk",
+            "harman",
+            "agirlik",
+            "catboost",
+            "koken",
+            "ufuk",
+        ),
         help="calistirilacak deney",
     )
     args = ap.parse_args()
@@ -785,6 +948,10 @@ def main() -> int:
         harman_agirlik_deneyi(egitim, kolonlar)
     if args.deney == "catboost":
         catboost_deneyi(egitim, kolonlar)
+    if args.deney == "koken":
+        koken_deneyi(egitim, kolonlar, args.yenile)
+    if args.deney == "ufuk":
+        ufuk_deneyi(egitim, kolonlar)
     if args.deney == "kalibrasyon":
         kalibrasyon_olc(egitim, kolonlar)
 

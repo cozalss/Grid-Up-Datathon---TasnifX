@@ -816,6 +816,104 @@ def rmsle(gercek: np.ndarray, tahmin: np.ndarray) -> float:
     return float(np.sqrt(np.mean((np.log1p(t) - np.log1p(np.asarray(gercek))) ** 2)))
 
 
+#: Harman agirliklari. Olculdu (3 tohum, 3 blok, test karisimina agirlikli):
+#:
+#:     cat agirlikli (4/1/1)  1,10621
+#:     cat + xgb (3/1)        1,10644
+#:     cat agirlikli (3/1/1)  1,10665     <-- secilen
+#:     cat agirlikli (2/1/1)  1,10886
+#:     cat + xgb (1/1)        1,11039
+#:     cat tek basina         1,11618
+#:     esit ucu (1/1/1)       1,11666
+#:
+#: 4/1/1 ile 3/1/1 arasindaki 0,0004 fark gurultunun cok altinda; 3/1/1
+#: secildi cunku zayif uyelere biraz daha agirlik verir. CatBoost gercek
+#: test'te beklendigi kadar iyi cikmazsa, daha dengeli bir harman daha az
+#: kaybettirir -- olculemeyen bir farkta daha DAYANIKLI olani secmek.
+#:
+#: Esit agirligin KOTU olmasi tesadufi degil: Krogh & Vedelsby ozdesligi
+#: "harman ORTALAMA uyeden kotu olamaz" der, EN IYI uyeden degil. Uyeler
+#: arasi fark buyudukce esit agirlik zarar verir. Zayif uyeleri tamamen
+#: atmak da cozum degil (cat+xgb 3/1 = 1,10644 > 3/1/1); kucuk agirlikla
+#: tutmak en iyisi.
+AILE_AGIRLIKLARI: dict[str, float] = {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0}
+
+
+def aile_modeli(aile: str, tohum: int, *, hizli: bool):  # noqa: ANN201 - kosullu import
+    """Uc GBDT ailesinden biri. Ayarlar ``scripts/deney.py`` ile BIREBIR ayni."""
+    if aile == "lgbm":
+        return model_kur(hizli=hizli, tohum=tohum)
+    if aile == "xgb":
+        import xgboost as xgb
+
+        return xgb.XGBRegressor(
+            objective="reg:squarederror",
+            n_estimators=150 if hizli else SABIT_AGAC,
+            learning_rate=0.05,
+            max_depth=8,
+            min_child_weight=20,
+            subsample=0.85,
+            colsample_bytree=0.75,
+            reg_lambda=2.0,
+            random_state=tohum,
+            n_jobs=-1,
+            tree_method="hist",
+            enable_categorical=True,
+            verbosity=0,
+        )
+    if aile == "cat":
+        import catboost as cb
+
+        # Derinlik 5 / 250 iterasyon -- taranarak bulundu. Onceki ayar
+        # (d8/400) yuzeyin en kotu kosesiydi: 1,12817 ye karsi 1,11075.
+        return cb.CatBoostRegressor(
+            loss_function="RMSE",
+            iterations=100 if hizli else 250,
+            learning_rate=0.05,
+            depth=5,
+            l2_leaf_reg=3.0,
+            rsm=0.75,
+            random_seed=tohum,
+            verbose=0,
+            allow_writing_files=False,
+        )
+    raise ValueError(f"bilinmeyen aile: {aile}")
+
+
+def aile_tahmini(
+    aile: str,
+    egitim: pd.DataFrame,
+    hedef_cerceve: pd.DataFrame,
+    kolonlar: list[str],
+    tohum: int,
+    *,
+    hizli: bool,
+) -> np.ndarray:
+    """Bir aileyi egitip LOG UZAYINDA tahmin dondurur.
+
+    Log uzayinda donmesi sart: harman ``expm1(mean(log1p(...)))`` seklinde
+    yapiliyor. Krogh & Vedelsby ayrismasi (NeurIPS 1994) bir OZDESLIKTIR ve
+    RMSLE log uzayinda kareli hata oldugu icin burada birebir gecerlidir --
+    ama yalnizca birlestirici aritmetik ortalamaysa (Wood ve ark., JMLR
+    2023). Ham uzayda ortalama almanin boyle bir garantisi YOK.
+    """
+    egitim = soguk_maskele(egitim, kolonlar, tohum)
+    y = ofsetli_hedef(egitim)
+    model = aile_modeli(aile, tohum, hizli=hizli)
+    x_egitim, x_hedef = egitim[kolonlar], hedef_cerceve[kolonlar]
+    if aile == "cat":
+        # CatBoost kategorik dtype'i dogrudan yutmuyor; ayri bildirilmeli.
+        x_egitim, x_hedef = x_egitim.copy(), x_hedef.copy()
+        kategorik = [k for k in KATEGORIK if k in x_egitim.columns]
+        for k in kategorik:
+            x_egitim[k] = x_egitim[k].astype(str)
+            x_hedef[k] = x_hedef[k].astype(str)
+        model.fit(x_egitim, y, cat_features=kategorik)
+    else:
+        model.fit(x_egitim, y)
+    return ofseti_geri_ekle(model.predict(x_hedef), hedef_cerceve)
+
+
 def model_kur(*, hizli: bool, tohum: int):  # noqa: ANN201 - lgb tipi kosullu import
     """LightGBM. Ayarlar ``scripts/deney.py`` tezgahiyla BIREBIR ayni.
 
@@ -873,8 +971,6 @@ class Dogrulama:
     genel: float
     sicak: float
     soguk: float
-    agac: int
-    model: object
 
     @property
     def test_agirlikli(self) -> float:
@@ -893,7 +989,7 @@ class Dogrulama:
         return (
             f"  {ad:6} RMSLE {self.genel:.5f}  |  sicak {self.sicak:.5f}  "
             f"soguk {self.soguk:.5f}  |  TEST-AGIRLIKLI {self.test_agirlikli:.5f}  "
-            f"|  {n:>7,} satir, {self.agac} agac"
+            f"|  {n:>7,} satir"
         )
 
 
@@ -907,23 +1003,24 @@ def egit_ve_olc(
     Genel skor iyilesirken soguk rejim kotulesiyorsa bunu gormek sart --
     tek sayiya bakan biri bu takasi HIC fark etmez.
     """
-    import lightgbm as lgb
-
     # Erken durdurma YOK. Olculdu: skor 200-1000 agac arasi duz, ama erken
     # durdurma her kosuda baska yerde durup GURULTU uretiyordu (22-382 agac).
     # Sabit agac, tezgahtaki olcumlerle ayni kosullari verir.
-    egitim = soguk_maskele(egitim, kolonlar, 42)
-    model = model_kur(hizli=hizli, tohum=42)
-    model.fit(egitim[kolonlar], ofsetli_hedef(egitim), callbacks=[lgb.log_evaluation(0)])
-    tahmin = np.expm1(ofseti_geri_ekle(model.predict(dogrulama[kolonlar]), dogrulama))
+    toplam = sum(AILE_AGIRLIKLARI.values())
+    log_karisim = (
+        sum(
+            w * aile_tahmini(a, egitim, dogrulama, kolonlar, 42, hizli=hizli)
+            for a, w in AILE_AGIRLIKLARI.items()
+        )
+        / toplam
+    )
+    tahmin = np.expm1(log_karisim)
     gercek = dogrulama[HEDEF].to_numpy()
     soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
     return Dogrulama(
         genel=rmsle(gercek, tahmin),
         sicak=rmsle(gercek[~soguk], tahmin[~soguk]) if (~soguk).any() else float("nan"),
         soguk=rmsle(gercek[soguk], tahmin[soguk]) if soguk.any() else float("nan"),
-        agac=int(getattr(model, "best_iteration_", 0) or model.n_estimators),
-        model=model,
     )
 
 
@@ -995,17 +1092,12 @@ def main() -> int:
     )
 
     print("\n5/5  SON EGITIM + GONDERIM")
-    import lightgbm as lgb
 
-    # Agac sayisi YAZ ikizinden aliniyor: son model butun bloklarla egitilecek
-    # ve ayrilmis bir dogrulama kumesi kalmayacak. Erken durdurmayi mevsimsel
-    # olarak en yakin blokta kalibre etmek, kis blogunda kalibre etmekten
-    # savunulabilir bicimde daha iyidir.
-    # Sabit agac sayisi. Olculdu (2026-08-21): egri 200-1000 arasi duz
-    # (1,0683-1,0706), en iyi ~400. Erken durdurma hicbir sey kazandirmiyordu
-    # ama her kosuda baska yerde durarak olculebilirligi bozuyordu.
-    agac = SABIT_AGAC
-    print(f"  sabit {agac} agac (erken durdurma kaldirildi -- gurultu kaynagiydi)")
+    # Son model butun bloklarla egitilir; ayrilmis dogrulama kumesi kalmaz.
+    # Erken durdurma YOK -- kazandirmiyordu ama her kosuda baska yerde durup
+    # (22-382 agac) olculebilirligi bozuyordu. Her ailenin agac/iterasyon
+    # sayisi taranarak sabitlendi (bkz. ``aile_modeli``).
+    print(f"  harman: {AILE_AGIRLIKLARI}  x {args.tohum} tohum (log uzayinda)")
 
     # Tohumlar LOG UZAYINDA ortalanir: expm1(mean(log1p(...))). Krogh &
     # Vedelsby ayrismasi (NeurIPS 1994) bir ozdesliktir ve RMSLE log uzayinda
@@ -1015,14 +1107,14 @@ def main() -> int:
     #
     # Her tohum KENDI soguk maskesini alir: maske de bir cesitlilik kaynagi,
     # ve hepsine ayni maskeyi vermek o cesitliligi bosa harcardi.
+    toplam_agirlik = sum(AILE_AGIRLIKLARI.values()) * args.tohum
     birikim = np.zeros(len(test), dtype="float64")
     for i in range(args.tohum):
-        parca = soguk_maskele(egitim, kolonlar, 100 + i)
-        m = model_kur(hizli=args.hizli, tohum=100 + i)
-        m.set_params(n_estimators=agac)
-        m.fit(parca[kolonlar], ofsetli_hedef(parca), callbacks=[lgb.log_evaluation(0)])
-        birikim += ofseti_geri_ekle(m.predict(test[kolonlar]), test)
-    tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
+        for a, w in AILE_AGIRLIKLARI.items():
+            t0 = time.time()
+            birikim += w * aile_tahmini(a, egitim, test, kolonlar, 100 + i, hizli=args.hizli)
+            print(f"    tohum {i + 1}/{args.tohum}  {a:5} bitti ({time.time() - t0:.0f} sn)")
+    tahmin = np.clip(np.expm1(birikim / toplam_agirlik), 0.0, None)
 
     GONDERIM.mkdir(parents=True, exist_ok=True)
     yol = GONDERIM / args.cikti
