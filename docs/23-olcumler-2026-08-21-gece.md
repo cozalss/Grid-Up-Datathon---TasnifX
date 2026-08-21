@@ -409,3 +409,75 @@ AILE_AGIRLIKLARI = {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0}   # degismedi
 ```
 
 `REJIM_MASKELERI = None` eski tek-model davranışına döndürür.
+
+## 15. Soğuk uzmanı — yönlendirme doğrulandı, iyileştirme çıkmadı
+
+45 CatBoost fit, **yalnızca soğuk satırlarda** ölçüldü (genel skor bilerek
+raporlanmadı: aranan şey soğuk rejimdeki en iyi tahminci, yönlendirme onu
+zaten sıcak uzmanıyla birleştiriyor).
+
+| aday | soğuk RMSLE | taban farkı |
+|---|---|---|
+| 1 · maske 1,0, tam kolon (144) | 1,75955 | — |
+| 2 · `t_*` atıldı (125) | 1,76073 | +0,001 |
+| **3 · `t_*` atıldı, derinlik 6** | **1,75301** | **−0,0065** |
+| 4 · `t_*` atıldı, **ofsetsiz** hedef | 1,76673 | +0,007 |
+| 5 · maske 0,85 | 1,77549 | +0,016 |
+
+50/50 harmanların hiçbiri aday 3'ü geçmiyor (en iyisi 1+3 = 1,75529).
+
+### Üç sonuç
+
+**a) Yönlendirme kararı bağımsız olarak doğrulandı.** Aday 5 (maske %85)
+belirgin biçimde kötü — maske %100 gerçekten uç nokta, uzlaşma değil. Bu,
+gönderilen yapılandırmanın en kritik varsayımıydı.
+
+**b) Ölü kolonları silmek işe yaramıyor.** Saar-Tsechansky & Provost
+(JMLR 2007) kolon silmenin NaN bırakmaktan iyi olduğunu 15 veri kümesinde
+ölçmüştü (%3,76 vs %8,73 kayıp). Bizde fark 0,001. Sebep: o çalışma
+sabit-NaN kolonun modeli *yanılttığı* durumu ölçüyor; CatBoost'ta varyansı
+olmayan kolon zaten hiçbir bölmede seçilmiyor ve geriye 90+ canlı kolon
+kalıyor, yani bölme arayışı darlaşmıyor.
+
+**c) Çeşitlilik hamlesi tutmadı.** Ofsetsiz hedef ne tek başına ne
+harmanda kazandırıyor. ASHRAE 1.'sinin +0,002'si bizde negatif.
+Mekanizma argümanı (ölü satırlarda ham hedef sabit 0, ofsetli hedef
+güce göre kayıyor) doğruydu ama ölçüde karşılığı yok.
+
+### Alınmayan tek pozitif
+
+Derinlik 6, soğuk satırlarda −0,0065, genel skorda ~−0,002. Üstelik
+CatBoost tek başınayken ölçüldü; harmanda küçülür. **Alınmadı** —
+0,002, gürültü tabanının (0,00998) beşte biri, ve alt-eşik kazançları
+biriktirmek bu disiplinin engellemek için var olduğu şeyin ta kendisi.
+
+Not: soğuk uzmanı 144 yerine ~125 canlı öznitelikle çalışıyor, yani kendi
+kapasite optimumu sıcak rejiminkinden farklı olabilir. 5 tohumlu eşli bir
+testle bakılmalı. Kuyruktaki `ayar` taraması maske %22'de koşuyor — yani
+ne sıcak ne soğuk uzmanının rejiminde; o boşluk açık kalıyor.
+
+## 16. Forum: "veri sızıntısı" itirazı — kapandı
+
+Bir yarışmacı, tahmin dönemine (Nisan–Temmuz 2026) ait gerçekleşmiş dış
+veriye erişimin sızıntı olduğunu öne sürdü. **Organizatör cevapladı: bütün
+dış veriler serbest.**
+
+Bizim durumumuz ölçüldü:
+
+```
+hava tablosu           2020-01-01 -> 2026-09-05
+test donemi kapsami    122 / 122 gun, %100 dolu
+ulusal tuketim         test doneminde de dolu
+```
+
+Yani evet, gerçekleşmiş veriyi kullanıyoruz — ve serbest.
+
+Ama asıl mesele değeri: ablasyonda **hava ailesi +0,016, ulusal +0,012**,
+ikisi de karar eşiğinin (0,020) altında. Dahası havanın değerinin büyük
+kısmı sızıntı bile değil: "temmuz sıcaktır" iklimsel bilgidir. Sızıntı olan
+kısım yalnızca gerçekleşmiş ile iklim ortalaması arasındaki fark.
+
+`scripts/deney_iklim.py` o farkı ölçmek için yazıldı (iklim tablosu
+2020–2024'ten, yani eğitim verimizin tamamen öncesinden). Kural sorusu
+kapandığı için **önceliği düşük**; jüri sunumunda "gerçekleşmiş veriye
+bağımlılığımızı ölçtük" slaydı için duruyor.
