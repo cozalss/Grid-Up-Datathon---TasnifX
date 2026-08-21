@@ -28,6 +28,7 @@ from .categorical import (
 )
 from .demografi import epdk_bolge_sinifi
 from .external import EXTERNAL_FAMILIES, ExternalAttachment, attach_external
+from .maruziyet import MaruziyetSonucu, add_maruziyet_etkilesimleri
 from .national import (
     add_annual_district_attribute,
     add_national_series,
@@ -69,6 +70,8 @@ from .weather import (
 )
 
 __all__ = [
+    "MaruziyetSonucu",
+    "add_maruziyet_etkilesimleri",
     "add_point_event_features",
     "attach_external",
     "ExternalAttachment",

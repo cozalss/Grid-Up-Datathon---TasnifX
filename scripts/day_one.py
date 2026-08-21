@@ -53,6 +53,7 @@ from gridup.experiment import (  # noqa: E402
 )
 from gridup.features import (  # noqa: E402
     add_calendar_features,
+    add_maruziyet_etkilesimleri,
     add_turkish_holiday_features,
     attach_external,
     shared_origin,
@@ -933,6 +934,26 @@ def main() -> int:
                     root=ROOT,
                 )
                 test_features = ek_test.frame
+
+            # MARUZIYET ETKILESIMLERI -- dis veri BAGLANDIKTAN sonra, cunku
+            # girdileri iki ayri aileden gelir (hava + arazi ortusu).
+            #
+            # Fizik: ruzgar hattin kendisini nadiren koparir, AGACI devirir.
+            # Agac ortusu bu yuzden bir CARPANDIR. Yaprakli agac daha cok
+            # ruzgar tutar, islak toprak koku gevsetir (NHESS 2023: ayni
+            # ruzgarda 3-4x / 2-3x / birlikte 4-5x). GBDT bunu ogrenebilir
+            # ama tam da onem tasiyan gunlerde -- siddetli firtinalarda --
+            # ornek seyrektir. Fizik biliniyorsa acikca vermek ucuzdur.
+            mar_train = add_maruziyet_etkilesimleri(
+                train_features, time_column=time_column, key_column=harici_anahtar
+            )
+            for satir in mar_train.ozet().splitlines():
+                print(f"  {satir}")
+            train_features = mar_train.frame
+            if test_features is not None:
+                test_features = add_maruziyet_etkilesimleri(
+                    test_features, time_column=time_column, key_column=harici_anahtar
+                ).frame
         except (ValueError, KeyError, RuntimeError) as hata:
             print(f"  UYARI: harici veri baglanamadi ({hata}); harici kolonsuz devam ediliyor.")
     # Global frekans sayimi CV'den once yapilirsa erken temporal fold'lar
