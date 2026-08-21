@@ -132,6 +132,40 @@ RISKLER = {
 }
 
 
+#: EPIAS tam izgara paneli -- AYNANIN yerine gecen prova zemini.
+EPIAS_PANEL = KOK / "data" / "external" / "epias" / "panel_ilce_gun_tam.parquet"
+
+KAYNAKLAR = ("epias", "ayna")
+
+
+def panel_kur_epias() -> pd.DataFrame:
+    """EPIAS ilce x gun panelini okur -- 96 ilce, 2022-2026.
+
+    NEDEN AYNANIN YERINE (2026-08-21)
+    ----------------------------------
+    Ayna dosyasi (``MANISA_IZMIR_PLANSIZ_KESINTILER.csv``) 47 ilce ve
+    2021-2022 kapsar; yalnizca iki il. EPIAS paneli AYNI OLCUMUN genisidir:
+
+        ayna   47 ilce · 2 il · 2021-2022 · 68.257 olay
+        epias  96 ilce · 5 il · 2022-2026 · 405.819 olay  (GDZ + ADM)
+
+    Yani ayni fenomen, iki kat ilce ve iki kat sure. Olcum aletini
+    kalibre ederken genis olani kullanmamak icin sebep yok.
+
+    KURAL NOTU: bu PROVA kullanimidir, model girdisi degildir. Kesinti
+    verisi ``gridup.uygunluk`` tarafindan modele kapatilmistir; oradaki
+    statik tarama yalnizca ``src/gridup/`` altina bakar cunku prova ve
+    olcum betiklerinin bu veriyi okumasi gereklidir (bkz. TARANAN_DIZINLER).
+    """
+    panel = pd.read_parquet(EPIAS_PANEL)
+    panel[ZAMAN] = pd.to_datetime(panel[ZAMAN])
+    # Ayna receteyle ayni sozlesme: GRUP + ZAMAN + HEDEF, artigi atilir.
+    # 'etkilenen_abone' AYNI GUN bilgisidir ve tahmin aninda bilinmez --
+    # aynadaki 'effectedsubscribers' ile ayni sebeple feature olamaz.
+    tutulan = [GRUP, ZAMAN, HEDEF]
+    return panel[tutulan].sort_values([GRUP, ZAMAN]).reset_index(drop=True)
+
+
 def panel_kur() -> pd.DataFrame:
     """Olay kaydini gunluk ilce paneline cevirir -- provayla ayni recete."""
     ham = read_table(VERI, verbose=False)
@@ -290,11 +324,24 @@ def main() -> int:
             "yayilim bilinmeden 'faydali' demek eski hatanin ta kendisi"
         ),
     )
+    parser.add_argument(
+        "--kaynak",
+        choices=KAYNAKLAR,
+        default="epias",
+        help=(
+            "Prova zemini. 'epias': 96 ilce x 2022-2026 (varsayilan). "
+            "'ayna': eski 47 ilce x 2021-2022 Kaggle dosyasi -- eski "
+            "olcumlerle karsilastirmak icin korunuyor."
+        ),
+    )
     args = parser.parse_args()
     if not 1 <= args.tohum <= len(TOHUMLAR):
         parser.error(f"--tohum 1..{len(TOHUMLAR)} arasinda olmali")
 
-    if not VERI.exists():
+    if args.kaynak == "epias" and not EPIAS_PANEL.exists():
+        print(f"HATA: {EPIAS_PANEL} yok. Once: python scripts/epias_panel.py")
+        return 1
+    if args.kaynak == "ayna" and not VERI.exists():
         print(f"HATA: {VERI} yok.")
         print(
             "Indir: kaggle datasets download -d "
@@ -305,8 +352,8 @@ def main() -> int:
     set_global_seed(42)
     baslangic = time.perf_counter()
 
-    print("1/4  PANEL")
-    panel = panel_kur()
+    print(f"1/4  PANEL  (kaynak: {args.kaynak})")
+    panel = panel_kur_epias() if args.kaynak == "epias" else panel_kur()
     n_ilce = panel[GRUP].nunique()
     n_gun = panel[ZAMAN].nunique()
     print(f"  {len(panel):,} satir = {n_ilce} ilce x {n_gun} gun")
