@@ -17,7 +17,7 @@
   "artifacts": [
     {
       "path": "data/external/hava_gunluk.parquet",
-      "sha256": "c6965918ca7f8d070faac24dd19027831954a879c7144f27edd44cc79af05d8e",
+      "sha256": "4b62117fb2ad58845bea4dcc393a4b2e4586a2e3ed9b42bbd4af542f08660b29",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
@@ -137,7 +137,7 @@
     },
     {
       "path": "data/external/hava_saatlik_turev.parquet",
-      "sha256": "636ec37c03110434c72d358600c951c9915c9161da7a8cacfc47e378c9c3a9d5",
+      "sha256": "115f5fda40f35b3f0760831d507a1002871a9bcb7ddf8c43a22a1618dfbacf69",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0; hourly series aggregated locally to daily derivatives.",
@@ -317,7 +317,7 @@
     },
     {
       "path": "data/external/nem_toprak_gunluk.parquet",
-      "sha256": "4625ddb32fba948d813f29d29a1637da4c91c686e1f2ede70130dfedf7e5fefc",
+      "sha256": "ad7db227e32f8e40214b1a16b3c97161ce2a053a01e1f24e5f17b127c01a1253",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",
@@ -334,7 +334,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 228614,
+        "min_rows": 228708,
         "required_columns": [
           "ilce_key",
           "tarih",
@@ -347,7 +347,7 @@
     },
     {
       "path": "data/external/hava_kalitesi_gunluk.parquet",
-      "sha256": "fed74deb4f71d2cbadc5fe06f88bfb07fdcd7931e3df51aedb9c528d24793686",
+      "sha256": "40df7a5497392f2790cfeff8c70c6a01434a591f9b46af060d95a57c9f424626",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Air quality data by Open-Meteo.com under CC BY 4.0 (CAMS tabanli).",
@@ -364,7 +364,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 228614,
+        "min_rows": 228708,
         "required_columns": [
           "ilce_key",
           "tarih",
@@ -437,7 +437,7 @@
     },
     {
       "path": "data/external/konvektif_gunluk.parquet",
-      "sha256": "314057c283b981fde390b7df17d6ca6479e15d23fad7bb967547c5d1de6c2dff",
+      "sha256": "35a7ed2efade81ec838895df526a5cfcb2bf8b48ce40b92ddfd401753f539479",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0 (Historical Forecast API).",
@@ -454,7 +454,7 @@
       },
       "schema": {
         "format": "parquet",
-        "min_rows": 182891,
+        "min_rows": 182985,
         "required_columns": [
           "ilce_key",
           "tarih",

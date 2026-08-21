@@ -76,7 +76,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fetch_weather import (  # noqa: E402
     ARCHIVE_URL,
     cap_end_date,
-    checkpoint_covers,
+    ckpt_birlestir,
+    eksik_aralik,
     rate_limit_beklemesi,
 )
 
@@ -513,12 +514,22 @@ def main() -> int:
 
     RAW_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 
-    pending = []
+    # YALNIZCA EKSIK KUYRUK. Ham kontrol noktasi 2026-08-19'a kadar doluysa
+    # ve 08-20 isteniyorsa, TEK GUN icin 58.176 saati bastan indirmek kotayi
+    # bosa yakar (olculdu 2026-08-21: diger cekicilerde ayni hata 240x fazla
+    # veri demekti). Ham saatler kontrol noktasina EKLENIR, gunluk tablo ise
+    # her zaman TUM ham seriden yeniden toplanir -- bu yuzden gunler arasi
+    # bagimlilik tasiyan kolonlar (yon_degisim, basinc_dusus_3s) yine tamdir.
+    pending: list[tuple[str, float, float, str]] = []
     for ilce_key, lat, lon in districts:
         ham = RAW_CHECKPOINT_DIR / f"{ilce_key}.parquet"
-        if not args.fresh and checkpoint_covers(ham, args.start, args.end, column="zaman"):
+        if args.fresh:
+            pending.append((ilce_key, lat, lon, args.start))
             continue
-        pending.append((ilce_key, lat, lon))
+        aralik = eksik_aralik(ham, args.start, args.end, column="zaman")
+        if aralik is None:
+            continue
+        pending.append((ilce_key, lat, lon, aralik[0]))
 
     if args.yeniden_topla:
         if pending:
@@ -537,16 +548,20 @@ def main() -> int:
         print(f"{len(pending)} ilce indirilecek, {args.start} - {args.end}, saatlik")
 
     failures: list[str] = []
-    for index, (ilce_key, lat, lon) in enumerate(pending, start=1):
-        print(f"[{index}/{len(pending)}] {ilce_key} ...", end=" ", flush=True)
+    for index, (ilce_key, lat, lon, cek_bas) in enumerate(pending, start=1):
+        etiket = f"{cek_bas}.." if cek_bas != args.start else ""
+        print(f"[{index}/{len(pending)}] {ilce_key} {etiket}...", end=" ", flush=True)
         try:
-            hourly = fetch_hourly(ilce_key, lat, lon, args.start, args.end)
+            hourly = fetch_hourly(ilce_key, lat, lon, cek_bas, args.end)
         except RuntimeError as error:
             print(f"BASARISIZ -- {error}")
             failures.append(ilce_key)
             continue
 
-        ham_yaz(hourly, RAW_CHECKPOINT_DIR / f"{ilce_key}.parquet")
+        yol = RAW_CHECKPOINT_DIR / f"{ilce_key}.parquet"
+        if not args.fresh:
+            hourly = ckpt_birlestir(yol, hourly[RAW_COLUMNS], anahtarlar=("zaman",))
+        ham_yaz(hourly, yol)
         print(f"{len(hourly):,} saat")
         time.sleep(args.pause)  # API'ye nazik ol
 
