@@ -409,6 +409,136 @@ def soguk_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
     print(f"\n  taban {taban.genel:.5f}   esik {esik:.5f}")
 
 
+def _aile_modeli(aile: str, tohum: int):  # noqa: ANN202 - kosullu import
+    """Uc GBDT ailesinden birini, karsilastirilabilir ayarlarla kurar.
+
+    Ayarlar bilerek BENZER tutuldu (ayni agac sayisi, ayni ogrenme hizi,
+    ayni ornekleme oranlari): amac hangi ailenin daha iyi ayarlanabildigini
+    degil, aralarindaki CESITLILIGI olcmek. TabRepo (arXiv:2311.02971,
+    1.310 model x 200 veri kumesi) olcumu: aile-ICI harman RMSE'yi %5,7,
+    aile-OTESI harman %16 dusuruyor -- yani kazanc ayarlamadan degil,
+    hatalarin birbirinden farkli olmasindan geliyor.
+    """
+    if aile == "lgbm":
+        return _lgbm(tohum)
+    if aile == "xgb":
+        import xgboost as xgb
+
+        return xgb.XGBRegressor(
+            objective="reg:squarederror",
+            n_estimators=AGAC,
+            learning_rate=0.05,
+            max_depth=8,
+            min_child_weight=20,
+            subsample=0.85,
+            colsample_bytree=0.75,
+            reg_lambda=2.0,
+            random_state=tohum,
+            n_jobs=-1,
+            tree_method="hist",
+            enable_categorical=True,
+            verbosity=0,
+        )
+    if aile == "cat":
+        import catboost as cb
+
+        return cb.CatBoostRegressor(
+            loss_function="RMSE",
+            iterations=AGAC,
+            learning_rate=0.05,
+            depth=8,
+            l2_leaf_reg=3.0,
+            rsm=0.75,
+            random_seed=tohum,
+            verbose=0,
+            allow_writing_files=False,
+        )
+    raise ValueError(f"bilinmeyen aile: {aile}")
+
+
+def _log_tahmin(
+    aile: str, egitim: pd.DataFrame, hedef_cerceve: pd.DataFrame, kolonlar: list[str], tohum: int
+) -> np.ndarray:
+    """Bir aileyi egitip LOG UZAYINDA tahmin dondurur.
+
+    Log uzayinda donmesi sart: harman ``expm1(mean(log1p(...)))`` seklinde
+    yapilacak. Krogh & Vedelsby ayrismasi (NeurIPS 1994) bir OZDESLIKTIR --
+    "ortalama uye hatasi eksi ortalama ayrisma" -- ve RMSLE log uzayinda
+    kareli hata oldugu icin burada birebir gecerlidir. Ama Wood ve ark.
+    (JMLR 2023) uyariyor: "farkli bir birlestirici kullanirsak sonuc artik
+    gecerli degildir." Yani ham uzayda ortalama almanin boyle bir garantisi
+    YOK; log uzayinda almanin var.
+
+    Kapasite ofseti her uye icin uygulanir (olculdu: -0,0352, esigin 1,8 kati).
+    """
+    # Kanitlanmis iki ayar birlikte uygulanir (olculdu: ofset -0,0352,
+    # ofset+maske -0,0416, esik 0,0183).
+    egitim = soguk_maskele(egitim, kolonlar, tm.SOGUK_MASKE_ORANI, tohum)
+    y = np.log1p(egitim[tm.HEDEF].clip(lower=0.0)) - np.log1p(egitim["guc"])
+    model = _aile_modeli(aile, tohum)
+    x_egitim, x_hedef = egitim[kolonlar], hedef_cerceve[kolonlar]
+    if aile == "cat":
+        # CatBoost kategorik kolonlari ayri bildirmek ister; kategorik
+        # dtype'i dogrudan yutmuyor.
+        x_egitim, x_hedef = x_egitim.copy(), x_hedef.copy()
+        for k in tm.KATEGORIK:
+            if k in x_egitim.columns:
+                x_egitim[k] = x_egitim[k].astype(str)
+                x_hedef[k] = x_hedef[k].astype(str)
+        model.fit(x_egitim, y, cat_features=[k for k in tm.KATEGORIK if k in x_egitim.columns])
+    else:
+        model.fit(x_egitim, y)
+    return model.predict(x_hedef) + np.log1p(hedef_cerceve["guc"]).to_numpy()
+
+
+def _rmsle_log(gercek: np.ndarray, log_tahmin: np.ndarray) -> float:
+    return float(tm.rmsle(gercek, np.clip(np.expm1(log_tahmin), 0.0, None)))
+
+
+def harman_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
+    """Aile-otesi harman: LightGBM + XGBoost + CatBoost, LOG uzayinda.
+
+    Agirlik ARANMIYOR, esit agirlik kullaniliyor. Uc blokla agirlik
+    aramak, agirliklari dogrulama blogunun kendisine uydurmak demektir --
+    ve Favorita 1.'nin raporu bu yonde: "stacking bu sefer iyi
+    calismiyor", basit dogrusal harman kazanmis. Esit agirlik ayrica
+    Krogh & Vedelsby garantisinin gecerli oldugu tek birlestirici.
+    """
+    print("\n" + "=" * 78)
+    print("AILE-OTESI HARMAN (log uzayinda, kapasite ofsetli)")
+    print("=" * 78)
+
+    aileler = ("lgbm", "xgb", "cat")
+    blok_skorlari: dict[str, dict[str, float]] = {a: {} for a in (*aileler, "HARMAN")}
+    for b in tm.BLOKLAR:
+        dogrulama = egitim[egitim["_blok"] == b.ad]
+        kalan = egitim[egitim["_blok"] != b.ad]
+        gercek = dogrulama[tm.HEDEF].to_numpy()
+        soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
+
+        def agirlikli(log_t: np.ndarray, _g=gercek, _s=soguk) -> float:
+            t = np.clip(np.expm1(log_t), 0.0, None)
+            s = tm.rmsle(_g[_s], t[_s]) if _s.any() else 0.0
+            w = tm.rmsle(_g[~_s], t[~_s]) if (~_s).any() else 0.0
+            return float(np.sqrt((1 - tm.TEST_SOGUK_PAYI) * w**2 + tm.TEST_SOGUK_PAYI * s**2))
+
+        tahminler = {}
+        for a in aileler:
+            t0 = time.time()
+            tahminler[a] = _log_tahmin(a, kalan, dogrulama, kolonlar, 1000)
+            blok_skorlari[a][b.ad] = agirlikli(tahminler[a])
+            print(f"  {b.ad:6} {a:5} {blok_skorlari[a][b.ad]:.5f}  ({time.time() - t0:.0f} sn)")
+        harman = np.mean([tahminler[a] for a in aileler], axis=0)
+        blok_skorlari["HARMAN"][b.ad] = agirlikli(harman)
+        print(f"  {b.ad:6} {'HARMAN':5} {blok_skorlari['HARMAN'][b.ad]:.5f}")
+
+    print("\n  --- OZET ---")
+    for a in (*aileler, "HARMAN"):
+        genel = float(np.mean(list(blok_skorlari[a].values())))
+        detay = "  ".join(f"{k} {v:.4f}" for k, v in blok_skorlari[a].items())
+        print(f"  {a:8} GENEL {genel:.5f}   {detay}")
+
+
 def model_deneyi(egitim: pd.DataFrame, kolonlar: list[str]) -> None:
     """Model bicimi denemeleri -- literaturden gelen ucuz adaylar.
 
@@ -492,7 +622,7 @@ def main() -> int:
     ap.add_argument("--taban", action="store_true", help="yalnizca gurultu tabanini olc")
     ap.add_argument(
         "--deney",
-        choices=("oznitelik", "model", "kalibrasyon", "soguk"),
+        choices=("oznitelik", "model", "kalibrasyon", "soguk", "harman"),
         help="calistirilacak deney",
     )
     args = ap.parse_args()
@@ -514,6 +644,8 @@ def main() -> int:
         model_deneyi(egitim, kolonlar)
     if args.deney == "soguk":
         soguk_deneyi(egitim, kolonlar)
+    if args.deney == "harman":
+        harman_deneyi(egitim, kolonlar)
     if args.deney == "kalibrasyon":
         kalibrasyon_olc(egitim, kolonlar)
 

@@ -72,6 +72,12 @@ _SEVIYE_KOLONLARI = (
     "t_kuyruk_sifir",
     "t_olu_mu",
     "t_son_kayit_yasi",
+    "t_gy_log_ort",
+    "t_gy_sifir_orani",
+    "t_gy_gun",
+    "t_yayilma",
+    "t_kayma",
+    "t_hg_genligi",
 )
 
 #: Guncellik pencereleri (gun). Trafo seviyesi zamanla kayiyor ve OLCULDU
@@ -251,10 +257,70 @@ def _profil_cercevesi(
     return p
 
 
+def _gecen_yil_ozetleri(
+    d: pd.DataFrame,
+    hedef_penceresi: tuple[pd.Timestamp, pd.Timestamp] | None,
+    *,
+    grup_kolonu: str,
+    zaman_kolonu: str,
+    hedef_kolonu: str,
+) -> pd.DataFrame:
+    """Hedef penceresinin GECEN YILKI AYNI takvim araligindan ozetler.
+
+    NEDEN BU, DIGER HER SEYDEN FARKLI
+    ---------------------------------
+    Ufuk 122 gun ve hedef donem Nisan-Temmuz. Butun guncellik pencereleri
+    (``t_log_son7`` ... ``t_log_son90``) Mart 2026'nin sonunu olcuyor --
+    yani KISI. Trafonun yazin nasil davrandigi hakkinda hicbiri bir sey
+    soylemiyor. Oysa elimizde tam olarak o bilgi var: Nisan-Temmuz 2025.
+
+    Mevsimsel oynama kucuk degil. Olculdu (2026-08-21, trafo basina aylik
+    endeks, ilce medyani): Gordes Aralik 0,47 -> Temmuz 1,86, yani **3,4
+    kat**; Sarigol Nisan 0,54 -> Temmuz 1,95. Fiziksel nedeni yayimlanmis:
+    Gediz havzasinda sulama pompalari, 0,4068 kWh/m3 ve mevsim basina
+    1.000-3.600 kWh/ha, Haziran-Eylul'de yogunlasiyor.
+
+    KAPSAM SINIRI -- durustce
+    -------------------------
+    Egitim Ocak 2025'te basliyor, yani gecen yil yalnizca hedef penceresi
+    2026'ya tasan bloklar icin var:
+
+        blok    hedef penceresi        gecen yil        kapsam
+        yaz25   Nis-Tem 2025           Nis-Tem 2024     YOK
+        guz25   Agu-Kas 2025           Agu-Kas 2024     YOK
+        kis26   Ara 2025 - Mar 2026    Ara 2024-Mar 25  kismi (~%75)
+        TEST    Nis-Tem 2026           Nis-Tem 2025     TAM
+
+    Yani bu ailenin degeri yalnizca ``kis26`` blogunda olculebilir ve
+    orada bile eksik. Test'te tam dolu olacak. Bu asimetri bilerek
+    kaydedildi: olculemeyen bir oznitelik, olculmus gibi sunulmamali.
+    """
+    bos = pd.DataFrame(
+        index=pd.Index(d[grup_kolonu].unique(), name=grup_kolonu),
+        columns=["t_gy_log_ort", "t_gy_sifir_orani", "t_gy_gun"],
+        dtype="float64",
+    )
+    if hedef_penceresi is None:
+        return bos
+    bas, son = (t - pd.Timedelta(days=365) for t in hedef_penceresi)
+    pencere = d[(d[zaman_kolonu] >= bas) & (d[zaman_kolonu] <= son)]
+    if pencere.empty:
+        return bos
+    g = pencere.groupby(grup_kolonu, observed=True)
+    return pd.DataFrame(
+        {
+            "t_gy_log_ort": g["_y"].mean(),
+            "t_gy_sifir_orani": g[hedef_kolonu].apply(lambda s: float((s <= 0).mean())),
+            "t_gy_gun": g["_y"].size().astype("float64"),
+        }
+    ).reindex(bos.index)
+
+
 def trafo_ozetleri_cikar(
     uydur: pd.DataFrame,
     *,
     profil_kaynak: pd.DataFrame | None = None,
+    hedef_penceresi: tuple[pd.Timestamp, pd.Timestamp] | None = None,
     grup_kolonu: str = "tanim",
     zaman_kolonu: str = "tarih",
     hedef_kolonu: str = "tuketim",
@@ -350,6 +416,22 @@ def trafo_ozetleri_cikar(
     )
     for kolon in olum.columns:
         seviye[kolon] = olum[kolon]
+
+    gecen_yil = _gecen_yil_ozetleri(
+        d,
+        hedef_penceresi,
+        grup_kolonu=grup_kolonu,
+        zaman_kolonu=zaman_kolonu,
+        hedef_kolonu=hedef_kolonu,
+    )
+    for kolon in gecen_yil.columns:
+        seviye[kolon] = gecen_yil[kolon]
+
+    # Yayilma: p90 - p10. Seviyeden BAGIMSIZ bir oynaklik olcusu. Duzenli bir
+    # sokak aydinlatmasi ile mevsimlik bir sulama pompasi ayni ortalamaya
+    # sahip olabilir ama yayilmalari bambaskadir; model ikisine ayni guveni
+    # duymamali.
+    seviye["t_yayilma"] = seviye["t_log_p90"] - seviye["t_log_p10"]
     seviye = seviye.reindex(columns=list(_SEVIYE_KOLONLARI))
 
     # Guncellik pencereleri: uydurma penceresinin SONUNDAN geriye dogru.
@@ -364,6 +446,11 @@ def trafo_ozetleri_cikar(
         seviye[f"t_son{p}_gun"] = (
             gsl.size().astype("float64").reindex(seviye.index).fillna(0.0) if not son.empty else 0.0
         )
+
+    # Kayma: son 14 gun ile TUM pencere arasindaki fark. Trafonun seviyesi
+    # yukseliyor mu aliyor mu -- ``t_trend``in aksine tek bir egime
+    # yaslanmadan, iki dogrudan olcumun farki olarak.
+    seviye["t_kayma"] = seviye["t_log_son14"] - seviye["t_log_ort"]
 
     # Haftagunu ve ay SAPMALARI -- mutlak ortalama degil.
     #
@@ -393,6 +480,15 @@ def trafo_ozetleri_cikar(
         .mean()
         .rename("t_ay_sapma")
         .reset_index()
+    )
+
+    # Haftagunu GENLIGI: trafonun hafta ici/sonu farki ne kadar keskin.
+    # Sanayi beslemesi pazarlari coker, sokak aydinlatmasi hic degismez --
+    # tek bir sayida tasinan gercek bir tur ayrimi.
+    seviye["t_hg_genligi"] = (
+        haftagunu.groupby(grup_kolonu, observed=True)["t_hg_sapma"]
+        .std(ddof=0)
+        .reindex(seviye.index)
     )
 
     egimler: dict[str, pd.Series] = {}

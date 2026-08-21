@@ -150,8 +150,6 @@ HAVA_TABLOLARI: tuple[tuple[str, tuple[str, ...]], ...] = (
             "sicaklik_max",
             "sicaklik_min",
             "hissedilen_max",
-            "isitma_derece_gun",
-            "sogutma_derece_gun",
             "yagis_toplam",
             "yagis_saati",
             "ruzgar_max",
@@ -166,11 +164,16 @@ HAVA_TABLOLARI: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
 )
 
+#: CDD taban sicakliklari. 22 = MGM/Eurostat resmi Turkiye tanimi; 24
+#: olculdugunde ayni bantta cikti (r 0,1966 vs 0,1968). Uc taban da
+#: veriliyor, secim modele birakiliyor.
+CDD_TABANLARI: tuple[int, ...] = (18, 22, 24)
+
 #: Isil atalet pencereleri. Bina kutlesi sicakligi ANINDA takip etmez; klima
-#: yuku birkac gunluk birikmis sicaga tepki verir. Bu yuzden HDD/CDD'nin
+#: yuku birkac gunluk birikmis sicaga tepki verir. Bu yuzden CDD'nin
 #: hareketli ortalamalari ham gunluk degerden daha bilgilidir.
 ISIL_PENCERELER: tuple[int, ...] = (3, 7, 14)
-ISIL_KOLONLAR: tuple[str, ...] = ("isitma_derece_gun", "sogutma_derece_gun", "sicaklik_ort")
+ISIL_KOLONLAR: tuple[str, ...] = ("cdd22", "cdd24", "sicaklik_ort")
 
 #: Modelden CIKARILACAK kolonlar. ``tanim`` bilerek disarida: 7.036 seviyeli
 #: bir kimlik kategorik olarak verilirse model onu ezberler ve soguk
@@ -240,6 +243,30 @@ def hava_yukle() -> pd.DataFrame:
     hava = hava.merge(
         gunes.drop(columns=["anahtar"]), on=["ilce_key", "tarih"], how="left", validate="one_to_one"
     )
+
+    # CDD'yi TURKIYE tanimiyla yeniden hesapla.
+    #
+    # Open-Meteo'nun ``sogutma_derece_gun``u taban 18 C kullaniyor (ABD
+    # varsayilani) -- geri cikarildi: CDD>0 olan en dusuk sicaklik 18,10 C.
+    # MGM'in (Eurostat uyumlu) resmi Turkiye tanimi ise taban 22 C.
+    #
+    # Olculdu (2026-08-21, 1,23M satir, trafo seviyesi arindirilmis tuketim
+    # sapmasiyla korelasyon):
+    #     CDD taban 18 (mevcut)  r = +0,1804
+    #     CDD taban 22           r = +0,1966
+    #     CDD taban 24           r = +0,1968
+    #     sicaklik ortalamasi    r = +0,1001
+    #
+    # Ikisi de birakiliyor; model hangisini kullanacagina kendi karar verir.
+    #
+    # HDD ise ATILIYOR. Olculdu: taban 18 formunda r = -0,0038, MGM formunda
+    # r = +0,0030 -- yani SIFIR. Bu bolgede isitma elektrikle degil dogalgazla
+    # yapiliyor, dolayisiyla isitma-derece-gunu bu problemde bilgi tasimiyor.
+    # Tasimayan bir kolonu birakmak, agaca gurultulu bir bolme adayi
+    # vermekten baska bir sey degil.
+    for taban in CDD_TABANLARI:
+        hava[f"cdd{taban}"] = (hava["sicaklik_ort"] - taban).clip(lower=0.0)
+    hava = hava.drop(columns=["isitma_derece_gun", "sogutma_derece_gun"], errors="ignore")
 
     hava = hava.sort_values(["ilce_key", "tarih"])
     g = hava.groupby("ilce_key", observed=True)
@@ -576,7 +603,12 @@ def blok_kur(tam_egitim: pd.DataFrame, blok: Blok) -> pd.DataFrame:
 def _ozet_tasi(
     ozet: pd.DataFrame, etiket: pd.DataFrame, ad: str, *, profil_kaynak: pd.DataFrame
 ) -> pd.DataFrame:
-    ozetler = trafo_ozetleri_cikar(ozet, profil_kaynak=profil_kaynak)
+    ozetler = trafo_ozetleri_cikar(
+        ozet,
+        profil_kaynak=profil_kaynak,
+        hedef_penceresi=(etiket[ZAMAN].min(), etiket[ZAMAN].max()),
+        isil_kolonlar=("cdd22", "sicaklik_ort"),
+    )
     sonuc = trafo_ozetleri_uygula(etiket, ozetler)
     sonuc = grup_seviyeleri_ekle(sonuc, ozet)
     sonuc = grup_profilleri_ekle(sonuc, profil_kaynak)
@@ -645,18 +677,73 @@ def kategorik_kodla(egitim: pd.DataFrame, *digerleri: pd.DataFrame) -> None:
             f[kolon] = pd.Categorical(f[kolon], categories=seviyeler)
 
 
+#: Egitimde YAPAY olarak sogutulacak trafo orani. Test'in gercek soguk
+#: payina (%22,16) esitlendi ve tezgahta olculdu -- %10 ve %35 daha kotu,
+#: yani tepe tam test oraninda. DropoutNet'in (NeurIPS 2017) mekanizmasi:
+#: model servis anindaki girdi dagilimini EGITIMDE gorur.
+SOGUK_MASKE_ORANI = 0.2216  # = TEST_SOGUK_PAYI (asagida ayni deger)
+
+#: Sabit agac sayisi -- erken durdurma yerine. Olculdu: 200-1000 arasi duz.
+SABIT_AGAC = 400
+
+#: ``t_*`` = trafo gecmisinden turemis kolonlar; maskeleme bunlari siler.
+_GECMIS_ONEKI = ("t_",)
+
+
+def soguk_maskele(cerceve: pd.DataFrame, kolonlar: list[str], tohum: int) -> pd.DataFrame:
+    """Trafolarin ``SOGUK_MASKE_ORANI`` kadarini yapay olarak sogutur.
+
+    Trafo BAZINDA maskelenir: bir trafonun bazi gunlerinde gecmisi olup
+    bazilarinda olmamasi diye bir sey yoktur.
+    """
+    rng = np.random.default_rng(tohum)
+    trafolar = cerceve[GRUP].unique()
+    secilen = set(rng.choice(trafolar, size=int(len(trafolar) * SOGUK_MASKE_ORANI), replace=False))
+    maske = cerceve[GRUP].isin(secilen).to_numpy()
+    sonuc = cerceve.copy()
+    sonuc.loc[maske, [k for k in kolonlar if k.startswith(_GECMIS_ONEKI)]] = np.nan
+    sonuc.loc[maske, "soguk_mu"] = 1
+    return sonuc
+
+
+def ofsetli_hedef(cerceve: pd.DataFrame) -> np.ndarray:
+    """``log1p(tuketim) - log1p(guc)`` -- kapasite ofsetli hedef.
+
+    Log uzayinda satir-basi SABIT bir kaydirma oldugu icin L2 optimumu
+    degismez; metrik acisindan birebir ayni problem. Ama agaclarin artik
+    olcegi merdivenlerle yaklastirmasi gerekmez -- kapasiteyi bedava ve TAM
+    alirlar. Esneklik olculdu: satir duzeyinde 1,0630, trafo duzeyinde
+    1,0727, yani ofset formu (esneklik = 1 varsayimi) hakli.
+
+    Tezgahta olculdu (3 tohum, 3 blok, test karisimina agirliklandirilmis):
+    taban 1,19673 -> ofset 1,16155, delta -0,0352, esik 0,0183.
+    """
+    return (np.log1p(cerceve[HEDEF].clip(lower=0.0)) - np.log1p(cerceve["guc"])).to_numpy()
+
+
+def ofseti_geri_ekle(log_tahmin: np.ndarray, cerceve: pd.DataFrame) -> np.ndarray:
+    return log_tahmin + np.log1p(cerceve["guc"]).to_numpy()
+
+
 def rmsle(gercek: np.ndarray, tahmin: np.ndarray) -> float:
     t = np.clip(np.asarray(tahmin, dtype="float64"), 0.0, None)
     return float(np.sqrt(np.mean((np.log1p(t) - np.log1p(np.asarray(gercek))) ** 2)))
 
 
 def model_kur(*, hizli: bool, tohum: int):  # noqa: ANN201 - lgb tipi kosullu import
+    """LightGBM. Ayarlar ``scripts/deney.py`` tezgahiyla BIREBIR ayni.
+
+    Bu es olmazsa tezgahta olculen her sey buraya tasinamaz: bir kez
+    hizalanmadigi icin (tezgah lr=0,05, betik lr=0,08) ayni yapilandirma
+    1,15516 yerine 1,17813 verdi ve fark ozelliklerden saniliyordu.
+    ``--hizli`` artik yalnizca AGAC SAYISINI dusurur, ogrenme hizini degil.
+    """
     import lightgbm as lgb
 
     return lgb.LGBMRegressor(
         objective="regression",  # log1p uzayinda RMSE == ham uzayda RMSLE
-        n_estimators=400 if hizli else 3000,
-        learning_rate=0.08 if hizli else 0.03,
+        n_estimators=150 if hizli else SABIT_AGAC,
+        learning_rate=0.05,
         num_leaves=255,
         min_child_samples=40,
         subsample=0.85,
@@ -736,17 +823,13 @@ def egit_ve_olc(
     """
     import lightgbm as lgb
 
+    # Erken durdurma YOK. Olculdu: skor 200-1000 agac arasi duz, ama erken
+    # durdurma her kosuda baska yerde durup GURULTU uretiyordu (22-382 agac).
+    # Sabit agac, tezgahtaki olcumlerle ayni kosullari verir.
+    egitim = soguk_maskele(egitim, kolonlar, 42)
     model = model_kur(hizli=hizli, tohum=42)
-    model.fit(
-        egitim[kolonlar],
-        np.log1p(egitim[HEDEF].clip(lower=0.0)),
-        sample_weight=soguk_agirliklari(egitim["soguk_mu"]),
-        eval_set=[(dogrulama[kolonlar], np.log1p(dogrulama[HEDEF].clip(lower=0.0)))],
-        eval_sample_weight=[soguk_agirliklari(dogrulama["soguk_mu"])],
-        eval_metric="rmse",
-        callbacks=[lgb.early_stopping(150, verbose=False), lgb.log_evaluation(0)],
-    )
-    tahmin = np.expm1(model.predict(dogrulama[kolonlar]))
+    model.fit(egitim[kolonlar], ofsetli_hedef(egitim), callbacks=[lgb.log_evaluation(0)])
+    tahmin = np.expm1(ofseti_geri_ekle(model.predict(dogrulama[kolonlar]), dogrulama))
     gercek = dogrulama[HEDEF].to_numpy()
     soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
     return Dogrulama(
@@ -832,22 +915,27 @@ def main() -> int:
     # ve ayrilmis bir dogrulama kumesi kalmayacak. Erken durdurmayi mevsimsel
     # olarak en yakin blokta kalibre etmek, kis blogunda kalibre etmekten
     # savunulabilir bicimde daha iyidir.
-    agac = sonuclar["yaz25"].agac
-    print(f"  erken durdurma (yaz25) {agac} agacta durdu -> son modelde bu kullanilacak")
+    # Sabit agac sayisi. Olculdu (2026-08-21): egri 200-1000 arasi duz
+    # (1,0683-1,0706), en iyi ~400. Erken durdurma hicbir sey kazandirmiyordu
+    # ama her kosuda baska yerde durarak olculebilirligi bozuyordu.
+    agac = SABIT_AGAC
+    print(f"  sabit {agac} agac (erken durdurma kaldirildi -- gurultu kaynagiydi)")
 
-    y = np.log1p(egitim[HEDEF].clip(lower=0.0))
-    agirlik = soguk_agirliklari(egitim["soguk_mu"])
+    # Tohumlar LOG UZAYINDA ortalanir: expm1(mean(log1p(...))). Krogh &
+    # Vedelsby ayrismasi (NeurIPS 1994) bir ozdesliktir ve RMSLE log uzayinda
+    # kareli hata oldugu icin burada birebir gecerlidir -- ama Wood ve ark.
+    # (JMLR 2023) uyariyor: birlestirici degisirse garanti kalkar. Ham uzayda
+    # ortalama almanin boyle bir garantisi YOK.
+    #
+    # Her tohum KENDI soguk maskesini alir: maske de bir cesitlilik kaynagi,
+    # ve hepsine ayni maskeyi vermek o cesitliligi bosa harcardi.
     birikim = np.zeros(len(test), dtype="float64")
     for i in range(args.tohum):
+        parca = soguk_maskele(egitim, kolonlar, 100 + i)
         m = model_kur(hizli=args.hizli, tohum=100 + i)
         m.set_params(n_estimators=agac)
-        m.fit(
-            egitim[kolonlar],
-            y,
-            sample_weight=agirlik,
-            callbacks=[lgb.log_evaluation(0)],
-        )
-        birikim += m.predict(test[kolonlar])
+        m.fit(parca[kolonlar], ofsetli_hedef(parca), callbacks=[lgb.log_evaluation(0)])
+        birikim += ofseti_geri_ekle(m.predict(test[kolonlar]), test)
     tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
 
     GONDERIM.mkdir(parents=True, exist_ok=True)
