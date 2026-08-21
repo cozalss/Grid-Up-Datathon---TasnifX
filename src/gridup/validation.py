@@ -58,6 +58,8 @@ __all__ = [
     "leakage_report",
     "check_train_test_overlap",
     "assert_folds_align",
+    "HedefSayisallastirma",
+    "hedefi_sayisallastir",
 ]
 
 TaskType = Literal["regression", "binary", "multiclass"]
@@ -1121,3 +1123,118 @@ def check_train_test_overlap(
             else "Ortusme yok -> gruplar dogal olarak ayrik."
         ),
     }
+
+
+#: Metin hedefin kabul edilmesi icin cozulmesi gereken en dusuk oran.
+#: 0.5 secildi cunku yarisindan azi cozulen bir kolon BICIM sorunu degil,
+#: yanlis kolon secimidir -- kurtarmak yerine durdurmak dogrudur.
+MIN_HEDEF_COZUM_ORANI = 0.5
+
+#: Ondalik yorumlari: ``etiket -> (kabul deseni, binlik, ondalik)``.
+#:
+#: Desen KATIDIR ve bu bilerekdir. Binlik ayracini kosulsuz silmek sessiz bir
+#: veri bozulmasi uretir: ``"5,5"`` metninden virgulu atmak ``55`` verir --
+#: degeri ON KAT buyutur ve hicbir hata cikmaz (olculdu, bu modulun ilk
+#: taslaginda). Bu yuzden binlik ancak GECERLI GRUPLAMA deseninde (her
+#: ayractan sonra tam uc rakam) silinir.
+_ONDALIK_YORUMLARI: tuple[tuple[str, re.Pattern[str], str, str], ...] = (
+    ("nokta", re.compile(r"^[+-]?\d{1,3}(?:,\d{3})*(?:\.\d+)?$|^[+-]?\d+(?:\.\d+)?$"), ",", "."),
+    ("virgul", re.compile(r"^[+-]?\d{1,3}(?:\.\d{3})*(?:,\d+)?$|^[+-]?\d+(?:,\d+)?$"), ".", ","),
+)
+
+
+@dataclass(frozen=True)
+class HedefSayisallastirma:
+    """Hedef kolonunun sayisallastirilmasinin kaydi.
+
+    Attributes:
+        deger: Sayisallastirilmis seri. Eksik degerler NaN kalir -- 0 ile
+            DOLDURULMAZ, cunku sayim hedefinde 0 gercek bir gozlemdir ve
+            "olcum yok" ile karistirilamaz.
+        donusum: ``gerek yok`` | ``nokta`` | ``virgul``.
+        kurtarilan: Sayiya cevrilen bos olmayan deger sayisi.
+        toplam: Bos olmayan giris degeri sayisi.
+        ad: Rapor satirinda gorunecek kolon adi.
+    """
+
+    deger: pd.Series
+    donusum: str
+    kurtarilan: int
+    toplam: int
+    ad: str = "hedef"
+
+    def __str__(self) -> str:
+        if self.donusum == "gerek yok":
+            return f"hedef {self.ad!r}: zaten sayisal"
+        return (
+            f"hedef {self.ad!r}: METIN geldi, {self.donusum} ondalik yorumuyla "
+            f"{self.kurtarilan}/{self.toplam} deger sayiya cevrildi"
+        )
+
+
+def hedefi_sayisallastir(seri: pd.Series, *, ad: str = "hedef") -> HedefSayisallastirma:
+    """Hedef kolonu sayisal degilse ERKEN kurtarir ya da ERKEN patlar.
+
+    NEDEN GEREKLI (2026-08-21, ``dusmanca_prova.py`` olctu)
+    -------------------------------------------------------
+    Turkce Excel dosyalari ondalik VIRGUL kullanir; ``sniff_dialect_shared``
+    bunu dogru tespit eder. Ama ayni dosyada NOKTA ondalikli bir kolon varsa
+    o kolon sessizce ``str`` kalir. Hedef kolon buysa hicbir sey durmaz:
+    profil, CV, feature, baseline ve 5 tohumlu yeniden egitim sonuna kadar
+    kosar ve is ancak SUBMISSION adiminda, tum egitim maliyeti odendikten
+    sonra ``np.mod`` bir metin serisine uygulanirken coker. Yarisma gunu
+    bunun bedeli, gonderim uretmeden gecen bir saattir.
+
+    Iki ondalik yorumu da denenir ve DAHA COK degeri cozen kazanir; berabere
+    kalirsa ``nokta`` oncelikli olur. Secim sessiz degildir -- donen kayit
+    hangi yorumun kullanildigini ve kac degerin kurtarildigini tasir.
+
+    Args:
+        seri: Hedef kolon, ham haliyle.
+        ad: Rapor satirinda gorunecek kolon adi.
+
+    Returns:
+        Sayisallastirma kaydi. ``deger`` alani modele verilecek seridir.
+
+    Raises:
+        ValueError: Hicbir yorum degerlerin ``MIN_HEDEF_COZUM_ORANI``
+            kadarini cozemediyse. Bu durumda sorun bicim degil, kolon
+            secimidir; kurtarmaya calismak yanlis hedefle egitmek olur.
+    """
+    if pd.api.types.is_numeric_dtype(seri) and not pd.api.types.is_bool_dtype(seri):
+        dolu = int(seri.notna().sum())
+        return HedefSayisallastirma(
+            deger=seri, donusum="gerek yok", kurtarilan=dolu, toplam=dolu, ad=ad
+        )
+
+    metin = seri.astype("string").str.strip()
+    dolu = (metin.notna() & (metin != "")).fillna(False)
+    toplam = int(dolu.sum())
+    if toplam == 0:
+        raise ValueError(f"hedef {ad!r} sayisallastirilamadi: kolon tamamen bos")
+
+    en_iyi: tuple[int, str, pd.Series] | None = None
+    for etiket, desen, binlik, ondalik in _ONDALIK_YORUMLARI:
+        gecerli = dolu & metin.str.fullmatch(desen).fillna(False)
+        temiz = metin.where(gecerli).str.replace(binlik, "", regex=False)
+        if ondalik != ".":
+            temiz = temiz.str.replace(ondalik, ".", regex=False)
+        aday = pd.to_numeric(temiz, errors="coerce")
+        cozulen = int(aday.notna().sum())
+        if en_iyi is None or cozulen > en_iyi[0]:
+            en_iyi = (cozulen, etiket, aday)
+
+    if en_iyi is None:  # pragma: no cover -- _ONDALIK_YORUMLARI bos degil
+        raise ValueError(f"hedef {ad!r} sayisallastirilamadi: yorum denenemedi")
+    cozulen, etiket, aday = en_iyi
+    if cozulen < MIN_HEDEF_COZUM_ORANI * toplam:
+        ornekler = metin[dolu & aday.isna()].head(3).tolist()
+        raise ValueError(
+            f"hedef {ad!r} sayisallastirilamadi: {toplam} degerin yalnizca "
+            f"{cozulen} tanesi sayiya donuyor. Yanlis kolon secilmis olabilir. "
+            f"Cozulemeyen ornekler: {ornekler}"
+        )
+    aday.index = seri.index
+    return HedefSayisallastirma(
+        deger=aday, donusum=etiket, kurtarilan=cozulen, toplam=toplam, ad=ad
+    )

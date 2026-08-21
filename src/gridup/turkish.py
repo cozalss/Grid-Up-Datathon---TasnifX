@@ -28,7 +28,12 @@ Bir merge beklenenden az satir donduruyorsa, once U+0307 ara::
 from __future__ import annotations
 
 import unicodedata as _ud
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover
+    import pandas as pd
 
 __all__ = [
     "tr_lower",
@@ -42,6 +47,10 @@ __all__ = [
     "diagnose_join",
     "strip_qualifier",
     "split_il_ilce",
+    "AnahtarKurtarma",
+    "hizala_ilce_anahtarlari",
+    "GrupSecimi",
+    "grup_adayini_sec",
 ]
 
 # ``.lower()`` cagrilmadan ONCE i-ciftini eslememiz gerekir; birlesik noktayi
@@ -309,3 +318,181 @@ def diagnose_join(
         # "izmir-karabaglar" -> "karabaglar" gibi, bilesik anahtar ayrilinca eslesenler.
         "composite_recoverable": dict(list(bilesik.items())[:max_examples]),
     }
+
+
+#: ``hizala_ilce_anahtarlari`` kurtarma sirasi. Ilk EŞLEŞEN kazanir.
+#: Sira tesadufi degil: en az varsayim yapan once denenir.
+_KURTARMA_SIRASI = ("dogrudan", "niteleyici", "bilesik", "takma_ad")
+
+
+@dataclass(frozen=True)
+class AnahtarKurtarma:
+    """Tek bir panel anahtarinin referansa nasil baglandiginin kaydi.
+
+    Attributes:
+        ham: Panelde gorunen ad, hic dokunulmamis hali.
+        anahtar: Referansa baglanan nihai anahtar. Kurtarilamadiysa
+            ``join_key(ham)`` -- yani en iyi tahmin, ama UYDURULMAMIS.
+        yontem: ``dogrudan`` | ``niteleyici`` | ``bilesik`` | ``takma_ad`` |
+            ``BULUNAMADI``. Rapor satirinda okunur olmasi icin buyuk harfli
+            olan yalnizca basarisizlik durumudur -- goz once ona gitsin.
+    """
+
+    ham: str
+    anahtar: str
+    yontem: str
+
+    def __str__(self) -> str:  # pragma: no cover -- yalnizca log/rapor icin
+        if self.yontem == "dogrudan":
+            return f"{self.ham!r} -> {self.anahtar!r}"
+        return f"{self.ham!r} -> {self.anahtar!r}  [{self.yontem}]"
+
+
+def hizala_ilce_anahtarlari(
+    ham_anahtarlar: Iterable[str],
+    *,
+    referans: Iterable[str],
+    takma_adlar: Mapping[str, str] | None = None,
+) -> dict[str, AnahtarKurtarma]:
+    """Panel ilce adlarini REFERANS anahtar kumesine hizalar.
+
+    NEDEN AYRI BIR KAPI (2026-08-21, dusmanca prova olctu)
+    ------------------------------------------------------
+    ``join_key`` yalnizca buyuk/kucuk harf ve aksan katlar. Gercek veride uc
+    tur sapma daha var ve her biri farkli bir yolla cozulur:
+
+        'BOZKURT / DENIZLI'  -> niteleyici eki  -> ``strip_qualifier``
+        'izmir-cigli'        -> bilesik anahtar -> ``split_il_ilce``
+        'AYDIN MERKEZ'       -> tarihsel ad     -> ``takma_adlar``
+
+    Bunlar tek bir fonksiyonda cozulemez cunku niteleyici SOLDAKI parcayi,
+    bilesik anahtar SAGDAKI parcayi tutar. Bu yuzden sirayla denenir.
+
+    KRITIK GUVENCE: her kurtarma adayi ancak ``referans`` kumesine
+    DUSUYORSA kabul edilir. Kosulsuz kesme, adinda tire veya parantez
+    bulunan mesru bir ilceyi sessizce baska bir ilceye baglardi. Referans
+    dogrulamasi bunu imkansiz kilar; kurtarilamayan ad DEGISTIRILMEZ,
+    ``BULUNAMADI`` olarak isaretlenir ve cagiran taraf onu raporlar.
+
+    NICIN SESSIZ KISMI ESLESME TEHLIKELI: ``attach_external`` %0 eslesmede
+    hata verir, %50 altinda uyarir. 96 ilcenin 91'i eslestiginde (%94,8)
+    ikisi de tetiklenmez -- ama eslesmeyen 5 ilcenin BUTUN dis kolonlari
+    NaN olur ve model bunu "bilgi yok" degil "bu ilcede orman yok" diye
+    okur. Arada kalan bu kor bandi kapatmak bu fonksiyonun tek isidir.
+
+    Args:
+        ham_anahtarlar: Panelde gorunen ilce adlari. Tekrarlar sadelestirilir.
+        referans: Hedef anahtar kumesi -- tipik olarak dis tablolarin
+            ``ilce_key`` kolonu.
+        takma_adlar: ``normalize edilmis ad -> referans anahtari`` esleme.
+            2012 buyuksehir yasasi yeniden adlandirmalari icin
+            (``{"aydin merkez": "efeler"}``).
+
+    Returns:
+        ``ham ad -> AnahtarKurtarma``. Anahtarlar HAM adlardir, boylece
+        cagiran taraf dogrudan ``Series.map`` ile uygulayabilir.
+
+    Raises:
+        ValueError: ``referans`` bos ise. Bos referansla her ad
+            "BULUNAMADI" cikar ve bu, sessiz bir toplu arizadir.
+    """
+    hedef = {str(k) for k in referans}
+    if not hedef:
+        raise ValueError("referans kumesi bos -- hizalama anlamsiz olurdu")
+    alias = {str(k): str(v) for k, v in (takma_adlar or {}).items()}
+
+    sonuc: dict[str, AnahtarKurtarma] = {}
+    for ham in ham_anahtarlar:
+        metin = str(ham)
+        if metin in sonuc:
+            continue
+        temel = join_key(metin)
+        adaylar = {
+            "dogrudan": temel,
+            "niteleyici": _niteleyiciyi_at(metin),
+            "bilesik": _bilesikten_ilce(metin),
+            "takma_ad": alias.get(temel, ""),
+        }
+        for yontem in _KURTARMA_SIRASI:
+            aday = adaylar[yontem]
+            if aday and aday in hedef:
+                sonuc[metin] = AnahtarKurtarma(ham=metin, anahtar=aday, yontem=yontem)
+                break
+        else:
+            sonuc[metin] = AnahtarKurtarma(ham=metin, anahtar=temel, yontem="BULUNAMADI")
+    return sonuc
+
+
+@dataclass(frozen=True)
+class GrupSecimi:
+    """Grup kolonu adaylarindan hangisinin secildiginin OLCULMUS kaydi.
+
+    Attributes:
+        kolon: Secilen kolon adi; hicbir aday yoksa ``None``.
+        eslesme_orani: Secilen kolonun benzersiz degerlerinin referans
+            anahtar kumesine hizalanabilen orani (0..1).
+        adaylar: ``aday -> oran`` tam tablo; rapor icin.
+    """
+
+    kolon: str | None
+    eslesme_orani: float
+    adaylar: dict[str, float]
+
+    def __str__(self) -> str:
+        if self.kolon is None:
+            return "grup adayi yok"
+        tablo = ", ".join(f"{ad}=%{100 * oran:.0f}" for ad, oran in self.adaylar.items())
+        return f"grup kolonu {self.kolon!r} secildi (referans eslesmesi: {tablo})"
+
+
+def grup_adayini_sec(
+    frame: pd.DataFrame,  # noqa: F821 -- pandas yalnizca tip icin, calisma aninda degil
+    *,
+    adaylar: Iterable[str],
+    referans: Iterable[str],
+) -> GrupSecimi:
+    """Grup kolonu adaylari arasindan REFERANSA en cok eslesenini secer.
+
+    NEDEN OLCUM, TERCIH DEGIL (2026-08-21, dusmanca prova olctu)
+    ------------------------------------------------------------
+    ``suggest_scheme`` birden fazla grup adayi bulunca ilkini aliyordu ve
+    gercek veride bu ``il`` oldu -- 5 degerli. Oysa butun dis tablolar
+    ``ilce`` anahtarli, 96 degerli. Yanlis aday secilince ``attach_external``
+    ya %0 eslesir ya hic cagrilmaz; ikisi de 219 dis kolonun kaybi demektir.
+
+    Dogru aday tahmin edilmez, OLCULUR: her adayin benzersiz degerleri
+    ``hizala_ilce_anahtarlari`` ile referansa vurulur ve en yuksek eslesme
+    orani kazanir. Berabere kalirsa listedeki ilk aday korunur, yani
+    sezicinin kendi sirasina saygi duyulur.
+
+    Hicbir aday eslesmiyorsa (oran 0) bu muhtemelen ilce paneli DEGILDIR --
+    baska bir varlik tipi olabilir. O durumda uydurma bir secim yapilmaz;
+    ilk aday dondurulur ve oran 0 raporlanir ki cagiran taraf gorsun.
+
+    Args:
+        frame: Aday kolonlari iceren tablo.
+        adaylar: Sirali aday kolon adlari (sezicinin verdigi sira).
+        referans: Hedef anahtar kumesi -- dis tablolarin ``ilce_key``i.
+
+    Returns:
+        Olculmus secim kaydi.
+    """
+    sirali = [ad for ad in adaylar if ad in frame.columns]
+    if not sirali:
+        return GrupSecimi(kolon=None, eslesme_orani=0.0, adaylar={})
+
+    hedef = {str(k) for k in referans}
+    oranlar: dict[str, float] = {}
+    for ad in sirali:
+        degerler = frame[ad].dropna().astype(str).unique()
+        if len(degerler) == 0:
+            oranlar[ad] = 0.0
+            continue
+        kurtarmalar = hizala_ilce_anahtarlari(degerler, referans=hedef)
+        tutan = sum(1 for k in kurtarmalar.values() if k.yontem != "BULUNAMADI")
+        oranlar[ad] = tutan / len(degerler)
+
+    en_iyi = max(sirali, key=lambda ad: oranlar[ad])
+    if oranlar[en_iyi] == 0.0:
+        en_iyi = sirali[0]
+    return GrupSecimi(kolon=en_iyi, eslesme_orani=oranlar[en_iyi], adaylar=oranlar)

@@ -26,6 +26,9 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # kardes betikler
+
+from epias_panel import MERKEZ_KURTARMA  # noqa: E402
 
 from gridup import (  # noqa: E402
     build_panel,
@@ -66,10 +69,16 @@ from gridup.refit import (  # noqa: E402
     multi_seed_refit,
 )
 from gridup.stores import SQLiteExperimentStore  # noqa: E402
-from gridup.turkish import join_key, normalize_columns  # noqa: E402
+from gridup.turkish import (  # noqa: E402
+    grup_adayini_sec,
+    hizala_ilce_anahtarlari,
+    join_key,
+    normalize_columns,
+)
 from gridup.validation import (  # noqa: E402
     build_splitter,
     forecast_geometry,
+    hedefi_sayisallastir,
     parse_time_series,
     purged_time_series_split,
 )
@@ -387,6 +396,91 @@ def find_files(data_dir: Path) -> dict[str, Path]:
     return found
 
 
+#: Hizalanmis ilce anahtarinin yazildigi kolon. Panelin KENDI grup kolonuna
+#: dokunmayiz -- o CV gruplamasinda ve submission'da kullaniliyor olabilir.
+HARICI_ANAHTAR_KOLONU = "_harici_ilce_key"
+
+#: Referans anahtar kumesinin okundugu tablolar. Statik ilce tablolari tam
+#: 96 kanonik anahtari tasir; gunluk tablolar yedektir.
+_REFERANS_TABLOLARI = (
+    "data/external/arazi_ortusu_ilce.parquet",
+    "data/external/osm_altyapi_ilce.parquet",
+    "data/external/hava_gunluk.parquet",
+)
+
+
+def _referans_anahtarlar() -> set[str]:
+    """Dis tablolarin ``ilce_key`` kumesini birlestirir."""
+    anahtarlar: set[str] = set()
+    for gorece in _REFERANS_TABLOLARI:
+        yol = ROOT / gorece
+        if not yol.exists():
+            continue
+        try:
+            tablo = pd.read_parquet(yol, columns=["ilce_key"])
+        except (ValueError, KeyError):
+            continue
+        anahtarlar.update(tablo["ilce_key"].dropna().astype(str))
+    return anahtarlar
+
+
+def anahtarlari_hizala(train: pd.DataFrame, test: pd.DataFrame | None, *, group_column: str) -> str:
+    """Grup kolonunu dis tablolarin anahtarina hizalar; kolon adini dondurur.
+
+    NEDEN BU ADIM VAR (2026-08-21, ``dusmanca_prova.py`` olctu)
+    -----------------------------------------------------------
+    ``attach_external`` %0 eslesmede durur, %50 altinda uyarir. Gercek veri
+    tam ARADAKI kor banda dustu: 96 ilcenin 91'i esledi (%94,8), yani ne
+    hata ne uyari. Eslesmeyen 5 ilce EPIAS'in kendi yazimindan geliyordu
+    (``BOZKURT / DENIZLI``, ``AYDIN MERKEZ``, ...) ve o 5 ilcenin BUTUN dis
+    kolonlari sessizce NaN kaldi. Model bunu "bilgi yok" diye degil "bu
+    ilcede orman yok" diye okur.
+
+    Hizalama basarisiz olursa hat DURMAZ: ham kolon adiyla devam edilir ve
+    ``attach_external``in kendi kapilari isini yapar. Bu adim bir guvence
+    katmanidir, bir on kosul degil.
+
+    Returns:
+        ``attach_external``a verilecek kolon adi. Hizalama bir sey
+        degistirmediyse ``group_column``in kendisi.
+    """
+    referans = _referans_anahtarlar()
+    if not referans:
+        print("  Hizalama atlandi: referans tablo bulunamadi.")
+        return group_column
+
+    ham = pd.concat(
+        [train[group_column]] + ([test[group_column]] if test is not None else []),
+        ignore_index=True,
+    )
+    kurtarmalar = hizala_ilce_anahtarlari(
+        ham.dropna().astype(str).unique(),
+        referans=referans,
+        takma_adlar={ham_ad: yeni for (_, ham_ad), yeni in MERKEZ_KURTARMA.items()},
+    )
+    esleme = {ad: kayit.anahtar for ad, kayit in kurtarmalar.items()}
+
+    kurtarilan = [k for k in kurtarmalar.values() if k.yontem not in {"dogrudan", "BULUNAMADI"}]
+    bulunamayan = [k for k in kurtarmalar.values() if k.yontem == "BULUNAMADI"]
+    print(
+        f"  Anahtar hizalama: {len(kurtarmalar)} benzersiz ad, "
+        f"{len(kurtarilan)} kurtarildi, {len(bulunamayan)} bulunamadi."
+    )
+    for kayit in kurtarilan[:10]:
+        print(f"    KURTARILDI {kayit}")
+    for kayit in bulunamayan[:10]:
+        print(f"    BULUNAMADI {kayit.ham!r} -- bu ilcenin dis kolonlari NaN olacak")
+    if len(bulunamayan) > 10:
+        print(f"    ... {len(bulunamayan) - 10} bulunamayan daha")
+
+    if not kurtarilan:
+        return group_column
+    train[HARICI_ANAHTAR_KOLONU] = train[group_column].astype(str).map(esleme)
+    if test is not None:
+        test[HARICI_ANAHTAR_KOLONU] = test[group_column].astype(str).map(esleme)
+    return HARICI_ANAHTAR_KOLONU
+
+
 def baseline_karsilastir(
     y: np.ndarray,
     result: Any,
@@ -557,6 +651,22 @@ def main() -> int:
         print(f"\n  HATA: hedef kolon belirlenemedi. Kolonlar: {list(train.columns)}")
         return 1
 
+    # HEDEF SAYISALLIGI PROFILDEN ONCE DOGRULANIR (2026-08-21, dusmanca prova).
+    # Ondalik-virgullu bir dosyada NOKTA ondalikli hedef kolon sessizce ``str``
+    # kalir. Eski davranista hicbir sey durmuyordu: profil, CV, feature ve 5
+    # tohumlu yeniden egitim sonuna kadar kosuyor, is ancak 7/7'de ``np.mod``
+    # bir metin serisine uygulanirken coküyordu -- yani tum egitim maliyeti
+    # odendikten sonra, gonderim uretmeden. Yukaridaki ID dogrulamasiyla ayni
+    # ders, farkli kolon.
+    try:
+        hedef_kayit = hedefi_sayisallastir(train[args.target], ad=args.target)
+    except ValueError as error:
+        print(f"\n  HATA: {error}")
+        return 1
+    if hedef_kayit.donusum != "gerek yok":
+        print(f"  {hedef_kayit}")
+        train[args.target] = hedef_kayit.deger
+
     # ---------------------------------------------------------------- 2
     banner("2/7", "PROFIL")
     report = profile(train, test, target=args.target)
@@ -658,6 +768,44 @@ def main() -> int:
         known_group=args.group_column,
     )
     print(suggestion)
+
+    # SEZILEN GRUP KOLONU BENIMSENIR (2026-08-21, dusmanca prova olctu).
+    #
+    # Eskiden sezim yalnizca EKRANA yaziliyordu ("Grup kolonu: il") ama
+    # ``args.group_column``a geri yazilmiyordu. Iki yer bu degiskene bakar:
+    # panel kurulumu ve ``attach_external``. ``--group`` elle verilmediginde
+    # her ikisi de SESSIZCE atlaniyordu -- hata yok, uyari yok, kosu
+    # "basarili" bitiyor. Olculdu: 27 feature (beklenen ~230), hava/arazi/
+    # altyapi/turizm ailelerinin hicbiri baglanmamis.
+    #
+    # Hangi adayin secilecegi de TAHMIN EDILMEZ, OLCULUR: sezici gercek
+    # veride 'il' dedi (5 deger) ama butun dis tablolar 'ilce' anahtarli
+    # (96 deger). ``grup_adayini_sec`` adaylari referans anahtar kumesine
+    # vurup en cok eslesenini secer.
+    if args.group_column is None:
+        referans = _referans_anahtarlar()
+        adaylar = [suggestion.group_column] if suggestion.group_column else []
+        adaylar += [
+            kolon
+            for kolon in train.columns
+            if kolon not in {args.target, args.id_column, time_column, *adaylar}
+            and (
+                pd.api.types.is_string_dtype(train[kolon].dtype)
+                or pd.api.types.is_object_dtype(train[kolon].dtype)
+                or isinstance(train[kolon].dtype, pd.CategoricalDtype)
+            )
+            and (test is None or kolon in test.columns)
+        ]
+        secim = grup_adayini_sec(train, adaylar=adaylar, referans=referans or {"__yok__"})
+        if secim.kolon is not None:
+            args.group_column = secim.kolon
+            print(f"  {secim}")
+            print(
+                f"  -> grup kolonu OTOMATIK secildi: {secim.kolon!r}. "
+                f"Yanlissa --group ILE EZ (panel ve harici veri buna bagli)."
+            )
+        else:
+            print("  UYARI: grup kolonu sezilemedi -- panel ve harici veri ATLANACAK.")
 
     horizon = 1
     bosluk_gun = 0
@@ -762,9 +910,12 @@ def main() -> int:
     # --harici-yok ile kapatilir (sema tanimadiginda zaman kaybettirmesin).
     if not args.harici_yok and args.group_column and time_column:
         try:
+            harici_anahtar = anahtarlari_hizala(
+                train_features, test_features, group_column=args.group_column
+            )
             ek_train = attach_external(
                 train_features,
-                key_column=args.group_column,
+                key_column=harici_anahtar,
                 time_column=time_column,
                 horizon=horizon,
                 root=ROOT,
@@ -775,7 +926,7 @@ def main() -> int:
             if test_features is not None:
                 ek_test = attach_external(
                     test_features,
-                    key_column=args.group_column,
+                    key_column=harici_anahtar,
                     time_column=time_column,
                     horizon=horizon,
                     families=list(ek_train.families),
