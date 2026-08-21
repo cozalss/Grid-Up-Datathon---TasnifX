@@ -44,13 +44,26 @@ iyi karışım ağırlığı, ufka göre düzgün biçimde kayıyor:
 | 105–122 | 0,503 | 1,0303 | 0,9893 |
 
 Havuzlanmış: son30 tek **0,8062**, ufka göre değişen karışım **0,7792**.
-Modelin sıcak skoru 0,80–0,84 bandında. **İki öznitelik ve sekiz parametre,
-144 öznitelikli topluluğu geçiyor.**
 
-Model `ufuk_gun`, `t_log_son30` ve `t_log_ort`'un üçüne de sahip. Yani bu
-etkileşimi öğrenebilecekken öğrenmiyor. En olası neden soğuk maskeleme:
-eğitimde trafoların %22'sinin geçmişini siliyoruz, bu modele geçmişe
-güvenmemeyi öğretiyor.
+> **DÜZELTME (aynı gece, ölçümle).** Bu tablodan "iki öznitelik modeli
+> geçiyor" sonucu çıkarılmıştı ve o sonuç **yanlıştı**. Karışım ağırlıkları
+> değerlendirilen satırların *kendisine* uyduruldu (örneklem içi), model ise
+> blok-dışı ölçüldü — haksız karşılaştırma. Ağırlıklar diğer bloklardan
+> kestirilerek dürüst kurulduğunda üstünlük yok oluyor:
+>
+> ```
+> TABAN (mevcut)              1,10805
+> A: t_naif OZNITELIK olarak  1,10783    fark 0,0002 -- hic
+> B: t_naif HEDEF TABANI      1,14322    fark +0,035 -- SERT RET
+> ```
+>
+> B'nin neden bu kadar kötü olduğu öğretici: en iyi ağırlık bloktan bloğa
+> **taşınmıyor**. Bir blokta doğru olan taban diğerinde sistematik olarak
+> yanlış ve model o yanlışı geri alamıyor (yaz25 1,0936→1,1187,
+> guz25 1,1171→1,2232, ama kis26 1,1135→1,0878).
+>
+> Ayakta kalan geçerli ifade: **sıfır parametreli** `t_log_son30` 1,1232,
+> modelimiz 1,10665 — model onu 0,017 geçiyor, eşik 0,020.
 
 ## 3. Soğuk rejim: tavan çok uzakta
 
