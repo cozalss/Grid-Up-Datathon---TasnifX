@@ -165,9 +165,17 @@ def uret(zorluk: str, senaryo: str = "sayim") -> dict[str, Path]:
         panel["il_display"] = panel["il_display"].str.upper()
 
     panel = panel.sort_values(["ilce_key", "gun"]).reset_index(drop=True)
-    bolme = pd.Timestamp(BOLME_GUNU)
-    egitim = panel[panel["gun"] < bolme].copy()
-    test = panel[panel["gun"] >= bolme].copy()
+    if senaryo == "gercek_geometri":
+        # Yarismanin ILAN EDILEN takvimi. Hedef degerleri bu senaryoda
+        # onemli degil -- sinanan sey GEOMETRI: 15 ay egitim, 4 ay test,
+        # 122 gunluk ufuk.
+        egitim = panel[panel["gun"].between("2025-01-01", "2026-03-31")].copy()
+        test = panel[panel["gun"].between("2026-04-01", "2026-07-31")].copy()
+        print(f"  GERCEK GEOMETRI: egitim {len(egitim):,} satir, test {len(test):,} satir")
+    else:
+        bolme = pd.Timestamp(BOLME_GUNU)
+        egitim = panel[panel["gun"] < bolme].copy()
+        test = panel[panel["gun"] >= bolme].copy()
     if egitim.empty or test.empty:
         raise RuntimeError(f"bolme gunu {BOLME_GUNU} paneli ikiye ayirmadi")
 
@@ -307,6 +315,14 @@ SENARYO_METRIGI = {
     # 2023 ayrica log-olcekli hatalari da gundeme getirir; RMSLE negatif
     # tahminde tanimsizdir ve log1p donusumu ZORUNLU kilar.
     "rmsle": "rmsle",
+    # GERCEK YARISMA GEOMETRISI (2026-08-21 acilis sunumu):
+    #   egitim  Ocak 2025 - Mart 2026   (15 ay = 455 gun)
+    #   test    Nisan 2026 - Temmuz 2026 (4 ay = 122 gun)
+    # Simdiye kadarki provalar 48 gunluk ufukla kostu. 122 gunluk ufuk
+    # lag/rolling kaydirmasini uce katlar ve 455 gunluk egitim setinde bu
+    # ciddi bir pay -- ufuk kadar kaydirilan bir lag, egitimin ilk 122
+    # gununu bos birakir. Kirilip kirilmadigi TAHMIN EDILMEZ, olculur.
+    "gercek_geometri": "mape",
 }
 
 SENARYOLAR = tuple(SENARYO_METRIGI)
