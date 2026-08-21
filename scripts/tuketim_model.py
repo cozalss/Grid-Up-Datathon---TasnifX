@@ -795,7 +795,52 @@ _GECMIS_ONEKI = ("t_",)
 #: 0 -> 0,9) ve ic optimum yok. NeurIPS hakemi tam bu soruyu sormus
 #: ("neden maskeli tek model yerine ayri bir soguk model?"); yazarlar
 #: cevap vermemis.
-REJIM_MASKELERI: dict[str, float] | None = {"sicak": 0.15, "soguk": 1.00}
+REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
+    "sicak": {"maske": 0.15, "cat": {"random_strength": 4.0}},
+    "soguk": {"maske": 1.00, "cat": {"depth": 7}},
+}
+
+#: YALIN OZNITELIK SETI -- bu onekli kolonlar CIKARILIR (144 -> 105).
+#:
+#: Olculdu (2026-08-22 gece, yigin deneyi): yalin set + soguk uzmani d7 +
+#: sicak uzmani random_strength=4, BIRLIKTE 1,08143 -> 1,05194, yani
+#: -0,0295. Esik 0,01995.
+#:
+#: Kazanc PARCALARIN TOPLAMINDAN buyuk (beklenen 0,017) ve tamami SOGUK
+#: tarafta: sicak 0,7979 -> 0,7962 (hicbir sey), soguk 1,7404 -> 1,6576.
+#: Izole olculdugunde soguk derinlik kazanci 0,015'ti; birlikte 0,083.
+#:
+#: Mekanizma: soguk uzmani gecmis gormuyor, elinde kalan ~125 kolonun
+#: cogu ilce duzeyinde hava/takvim -- yani trafolari birbirinden AYIRMAYAN
+#: kolonlar. 39 gurultu kolonunu atmak kit sinyali yogunlastiriyor,
+#: derinlik 7 de onu kullanabilmesini sagliyor. Tek basina ne budama ne
+#: derinlik yetiyor; ikisi birlikte aciyor.
+YALIN_CIKARILAN: tuple[str, ...] = (
+    # OLCULEN yalin set: takvim + panel yapisi + grup seviye/profil.
+    "tk_",
+    "tatil",
+    "ramazan",
+    "p_",
+    "g_",
+    "gp_",
+    # OLCUMUN DISINDA KALANLAR -- yigin 144 kolonluk bir ONBELLEK uzerinde
+    # olculdu (dun 17:10'da kurulmus), uretim ise 151 kolon kuruyor. Aradaki
+    # 7 kolon olcume HIC girmedi:
+    #   * nufus ailesi (5): onbellekten SONRA hatta girdi. Daha once
+    #     olculmustu ve DEGERSIZ cikti (artikla korelasyon 0,038). Yiginin
+    #     kazanci tam olarak 39 gurultu kolonunu atmaktan geliyor; geri
+    #     5 gurultu kolonu koymak o kazanci kismen geri alirdi.
+    #   * t_mevsim_* (2): bu gece eklendi, HIC olculmedi.
+    # Ikisi de "kotu oldugu icin" degil, "olcumun disinda oldugu icin"
+    # cikariliyor. Onbellek yenilenip yeniden olculunce karar gozden
+    # gecirilmeli -- ozellikle t_mevsim_*, ki fikir umut verici.
+    "nufus",
+    "alan_km2",
+    "ilce_nufus_yogunlugu",
+    "trafo_basina_nufus",
+    "kva_basina_nufus",
+    "t_mevsim_",
+)
 
 
 def soguk_maskele(
@@ -867,8 +912,16 @@ def rmsle(gercek: np.ndarray, tahmin: np.ndarray) -> float:
 AILE_AGIRLIKLARI: dict[str, float] = {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0}
 
 
-def aile_modeli(aile: str, tohum: int, *, hizli: bool):  # noqa: ANN201 - kosullu import
-    """Uc GBDT ailesinden biri. Ayarlar ``scripts/deney.py`` ile BIREBIR ayni."""
+def aile_modeli(aile: str, tohum: int, *, hizli: bool, cat_ustyazim=None):  # noqa: ANN001, ANN201
+    """Uc GBDT ailesinden biri. Ayarlar ``scripts/deney.py`` ile BIREBIR ayni.
+
+    ``cat_ustyazim`` YALNIZCA CatBoost'a uygulanir. Bu bilerek boyle:
+    ``depth`` ve ``random_strength`` CatBoost parametreleri, ve olculdu
+    (2026-08-22) -- LightGBM/XGBoost'a gecirildiginde saklaniyor ama
+    ``max_depth``i DEGISTIRMIYOR (lgbm -1, xgb 8 kaliyor), yani atillar.
+    Tezgahta olculen yigin da tam olarak bu davranisla olculdu; uretimde
+    ACIKCA yazmak, o sessiz atilligi belgelenmis bir karara cevirir.
+    """
     if aile == "lgbm":
         return model_kur(hizli=hizli, tohum=tohum)
     if aile == "xgb":
@@ -894,7 +947,7 @@ def aile_modeli(aile: str, tohum: int, *, hizli: bool):  # noqa: ANN201 - kosull
 
         # Derinlik 5 / 250 iterasyon -- taranarak bulundu. Onceki ayar
         # (d8/400) yuzeyin en kotu kosesiydi: 1,12817 ye karsi 1,11075.
-        return cb.CatBoostRegressor(
+        p: dict[str, object] = dict(
             loss_function="RMSE",
             iterations=100 if hizli else 250,
             learning_rate=0.05,
@@ -905,6 +958,8 @@ def aile_modeli(aile: str, tohum: int, *, hizli: bool):  # noqa: ANN201 - kosull
             verbose=0,
             allow_writing_files=False,
         )
+        p.update(cat_ustyazim or {})
+        return cb.CatBoostRegressor(**p)
     raise ValueError(f"bilinmeyen aile: {aile}")
 
 
@@ -917,6 +972,7 @@ def aile_tahmini(
     *,
     hizli: bool,
     maske_orani: float | None = None,
+    cat_ustyazim: dict[str, object] | None = None,
 ) -> np.ndarray:
     """Bir aileyi egitip LOG UZAYINDA tahmin dondurur.
 
@@ -928,7 +984,7 @@ def aile_tahmini(
     """
     egitim = soguk_maskele(egitim, kolonlar, tohum, maske_orani)
     y = ofsetli_hedef(egitim)
-    model = aile_modeli(aile, tohum, hizli=hizli)
+    model = aile_modeli(aile, tohum, hizli=hizli, cat_ustyazim=cat_ustyazim)
     x_egitim, x_hedef = egitim[kolonlar], hedef_cerceve[kolonlar]
     if aile == "cat":
         # CatBoost kategorik dtype'i dogrudan yutmuyor; ayri bildirilmeli.
@@ -956,16 +1012,16 @@ def rejim_tahmini(
     Neden mesru: test aninda bir trafonun gecmisi olup olmadigini biliyoruz
     (``soguk_mu``), yani yonlendirme etiket kullanmiyor. Neden gerekli:
     maskeleme orani sicak ve soguk satirlarda ters yonde calisiyor, bkz.
-    ``REJIM_MASKELERI``.
+    ``REJIM_AYARLARI``.
 
     Uzman basina AILE HARMANI ayni kalir (``AILE_AGIRLIKLARI``); degisen
-    tek sey her uzmanin gordugu maske orani. Tahmin yalnizca ilgili
-    satirlar icin uretilir -- geri kalanini hesaplamanin anlami yok.
+    her uzmanin gordugu maske orani ve CatBoost ustyazimi. Tahmin yalnizca
+    ilgili satirlar icin uretilir -- geri kalanini hesaplamanin anlami yok.
 
-    ``REJIM_MASKELERI is None`` ise eski tek-model davranisina duser.
+    ``REJIM_AYARLARI is None`` ise eski tek-model davranisina duser.
     """
     toplam = sum(AILE_AGIRLIKLARI.values())
-    if REJIM_MASKELERI is None:
+    if REJIM_AYARLARI is None:
         return (
             sum(
                 w * aile_tahmini(a, egitim, hedef, kolonlar, tohum, hizli=hizli)
@@ -976,14 +1032,24 @@ def rejim_tahmini(
 
     soguk = (hedef["soguk_mu"] == 1).to_numpy()
     cikti = np.zeros(len(hedef), dtype="float64")
-    for rejim, oran in REJIM_MASKELERI.items():
+    for rejim, ayar in REJIM_AYARLARI.items():
         maske = soguk if rejim == "soguk" else ~soguk
         if not maske.any():
             continue
         alt = hedef.loc[maske]
         cikti[maske] = (
             sum(
-                w * aile_tahmini(a, egitim, alt, kolonlar, tohum, hizli=hizli, maske_orani=oran)
+                w
+                * aile_tahmini(
+                    a,
+                    egitim,
+                    alt,
+                    kolonlar,
+                    tohum,
+                    hizli=hizli,
+                    maske_orani=float(ayar["maske"]),  # type: ignore[arg-type]
+                    cat_ustyazim=ayar.get("cat"),  # type: ignore[arg-type]
+                )
                 for a, w in AILE_AGIRLIKLARI.items()
             )
             / toplam
@@ -1141,6 +1207,10 @@ def main() -> int:
 
     kolonlar = oznitelikler(egitim)
     kolonlar = [k for k in kolonlar if k in test.columns]
+    if YALIN_CIKARILAN:
+        tam = len(kolonlar)
+        kolonlar = [k for k in kolonlar if not k.startswith(YALIN_CIKARILAN)]
+        print(f"  yalin set: {tam} -> {len(kolonlar)} kolon ({tam - len(kolonlar)} cikarildi)")
     kategorik_kodla(egitim, test)
     print(f"\n  {len(kolonlar)} oznitelik")
 
@@ -1168,8 +1238,8 @@ def main() -> int:
     # sayisi taranarak sabitlendi (bkz. ``aile_modeli``).
     print(f"  harman: {AILE_AGIRLIKLARI}  x {args.tohum} tohum (log uzayinda)")
     print(
-        f"  rejim uzmanlari: {REJIM_MASKELERI}"
-        if REJIM_MASKELERI
+        f"  rejim uzmanlari: {REJIM_AYARLARI}"
+        if REJIM_AYARLARI
         else f"  yonlendirme KAPALI, tek maske {SOGUK_MASKE_ORANI}"
     )
 
