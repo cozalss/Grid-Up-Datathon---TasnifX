@@ -10,7 +10,8 @@ bu dosyayi zip'in yanina kopyalar; USB'de su uc sey bulunur::
 
     kur.py            <- bunu calistir
     datahon_*.zip     <- veri paketi (otomatik bulunur)
-    .env              <- gizli bilgiler (varsa otomatik yerlestirilir)
+    .env              <- FIRMS/EPIAS kimlikleri (varsa yerlestirilir)
+    kaggle.json       <- Kaggle API belirteci (varsa ~/.kaggle/ altina konur)
 
 NEDEN AYRI BIR BETIK
 --------------------
@@ -109,8 +110,9 @@ def on_kosullar() -> None:
     print("    git         bulundu")
     paket = paketi_bul()
     print(f"    veri paketi {paket.name if paket else 'YOK -- veri adimi atlanacak'}")
-    if (BURASI / ".env").is_file():
-        print("    .env        bulundu")
+    for ad in (".env", "kaggle.json"):
+        if (BURASI / ad).is_file():
+            print(f"    {ad:11s} bulundu")
 
 
 def depoyu_al() -> Path:
@@ -170,20 +172,47 @@ def veriyi_ac(depo: Path, py: Path) -> bool:
     return True
 
 
-def gizliyi_yerlestir(depo: Path) -> None:
-    basla("5/6  .env")
-    kaynak = BURASI / ".env"
-    hedef = depo / ".env"
+def _kopyala_gizli(kaynak: Path, hedef: Path, ad: str, eksik_notu: str) -> None:
+    """Gizli bir ayar dosyasini yerine koyar; yoksa NE KAYBEDILDIGINI soyler."""
     if hedef.is_file():
-        print("    zaten yerinde.")
+        print(f"    {ad:14s} zaten yerinde")
         return
     if not kaynak.is_file():
-        print("    .env bulunamadi -- ATLANDI.")
-        print("    Onsuz her sey calisir; yalnizca EPIAS ve FIRMS CEKICILERI calismaz.")
-        print("    Sonra eklemek icin dosyayi su yola koy: " + str(hedef))
+        print(f"    {ad:14s} BULUNAMADI -- {eksik_notu}")
+        print(f"    {'':14s} sonra eklemek icin: {hedef}")
         return
+    hedef.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(kaynak, hedef)
-    print(f"    yerlestirildi: {hedef}")
+    if os.name != "nt":
+        hedef.chmod(0o600)
+    print(f"    {ad:14s} yerlestirildi -> {hedef}")
+
+
+def gizliyi_yerlestir(depo: Path) -> None:
+    """Iki gizli dosyayi yerine koyar. Ikisi de PAKETE KONMAZ.
+
+    ``.env``        -> depo koku      (FIRMS anahtari, EPIAS kimligi)
+    ``kaggle.json`` -> ~/.kaggle/     (Kaggle API belirteci)
+
+    ``kaggle.json`` OZELLIKLE onemli ve kolay unutulur: depo icinde DEGIL,
+    ev dizininde durur. Yani ``git clone`` onu getirmez, veri paketi de
+    tasimaz. Onsuz ``kaggle competitions submit`` calismaz -- yani laptoptan
+    GONDERIM YAPILAMAZ. Bunun en kotu ogrenilme ani, gonderim hakki
+    yanarken oldugu andir.
+    """
+    basla("5/6  Gizli ayarlar")
+    _kopyala_gizli(
+        BURASI / ".env",
+        depo / ".env",
+        ".env",
+        "EPIAS ve FIRMS cekicileri calismaz (gerisi calisir)",
+    )
+    _kopyala_gizli(
+        BURASI / "kaggle.json",
+        Path.home() / ".kaggle" / "kaggle.json",
+        "kaggle.json",
+        "kaggle CLI ile GONDERIM YAPILAMAZ",
+    )
 
 
 def kapilari_kos(depo: Path, py: Path, veri_var: bool) -> int:
