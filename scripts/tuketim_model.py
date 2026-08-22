@@ -796,9 +796,27 @@ _GECMIS_ONEKI = ("t_",)
 #: ("neden maskeli tek model yerine ayri bir soguk model?"); yazarlar
 #: cevap vermemis.
 REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
-    "sicak": {"maske": 0.15, "cat": {"random_strength": 4.0}},
+    # l2_leaf_reg=1 + depth=6 (2026-08-22): MERKEZLI olcumde +0,00628, uc
+    # blokta da pozitif. Ham olcumde yalnizca +0,00317 gorunuyordu -- cunku
+    # dogrulama kurgumuz kapasiteyi ARTIRAN degisiklikleri haksiz yere
+    # cezalandiriyor (bkz. docs/27, §14). Uretimde o kurgusal sapma yok.
+    "sicak": {"maske": 0.15, "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6}},
     "soguk": {"maske": 1.00, "cat": {"depth": 7}},
 }
+
+#: EK KOKENLERI EGITIME KAT. Olculdu (2026-08-22, ``deney_koken2.py``):
+#: eslenik fark +0,00782, SH 0,00260, **t = +3,01** -- gunun esigi gecen
+#: TEK degisikligi. Uc blokta da pozitif, test ikizi yaz25 dahil (+0,00686).
+#:
+#: Egitim 1.038.737 -> 2.855.584 satir. Satir sayisi kadar BILGI artmaz
+#: (ortusen bloklar korele); kazanc, ayni etiketin farkli tazelikteki
+#: ozetlerle tekrar gorulmesinden geliyor -- model "eski ozete ne kadar
+#: guvenmeli" sorusunu uc ornek yerine dokuz ornekten ogreniyor.
+#:
+#: Olculen deger bir ALT SINIR: dogrulamada hedef blokla kesisen kokenler
+#: ``kokenleri_ayikla`` ile ATILIYOR, uretimde ise hepsi kullanilabiliyor
+#: cunku test butun egitim verisinden sonra geliyor.
+EK_KOKEN_KULLAN = True
 
 #: YALIN OZNITELIK SETI -- bu onekli kolonlar CIKARILIR (144 -> 105).
 #:
@@ -1203,6 +1221,14 @@ def main() -> int:
 
     print("\n3/5  BLOKLAR (yuvarlanan koken)")
     egitim = egitim_kur(tr)
+    if EK_KOKEN_KULLAN:
+        ek = ek_kokenleri_kur(tr)
+        fark = set(egitim.columns) ^ set(ek.columns)
+        if fark:
+            # Sessizce kesismek, olculenden BASKA bir model uretmek demek.
+            raise RuntimeError(f"ek koken kolonlari ana bloklardan farkli: {sorted(fark)}")
+        egitim = pd.concat([egitim, ek[egitim.columns]], ignore_index=True)
+        print(f"  ek kokenlerle egitim {len(egitim):,} satir")
     test = test_kur(tr, te)
 
     kolonlar = oznitelikler(egitim)
@@ -1218,7 +1244,14 @@ def main() -> int:
     sonuclar: dict[str, Dogrulama] = {}
     for b in BLOKLAR:
         dogrulama = egitim[egitim["_blok"] == b.ad]
-        kalan = egitim[egitim["_blok"] != b.ad]
+        # Ek kokenler bilerek ortusuyor; dogrulamada ortusme SIZINTIDIR.
+        # ``kokenleri_ayikla`` hedef blokla tek gun bile kesisen her kokeni
+        # atar -- ana bloklarin kendisi dahil.
+        kalan = (
+            kokenleri_ayikla(egitim, b.ad)
+            if EK_KOKEN_KULLAN
+            else egitim[egitim["_blok"] != b.ad]
+        )
         sonuclar[b.ad] = egit_ve_olc(kalan, dogrulama, kolonlar, hizli=args.hizli)
         print(sonuclar[b.ad].satir(b.ad, len(dogrulama)))
     print(f"  ORTALAMA (ham)            {np.mean([s.genel for s in sonuclar.values()]):.5f}")
