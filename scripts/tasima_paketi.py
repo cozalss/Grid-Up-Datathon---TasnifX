@@ -51,9 +51,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-#: Pakete girecek dizinler. ``data/`` altindaki her sey -- gizli kontrol
-#: noktasi dizinleri DAHIL (pahali olan onlar).
-KAYNAK_DIZINLER = ("data",)
+#: Pakete girecek dizinler. Ikisi de .gitignore kapsamindadir, yani
+#: ``git clone`` onlari GETIRMEZ:
+#:   data/        -- yarisma verisi, harici veri, kontrol noktalari
+#:   submissions/ -- uretilmis gonderim dosyalari (herbiri ~27 MB)
+KAYNAK_DIZINLER = ("data", "submissions")
+
+#: ``--yalin`` modda dislanan, YENIDEN URETILEBILIR yollar.
+#: Dislanan her sey ciktida ACIKCA listelenir -- sessiz kirpma yok.
+YALIN_DISLANAN = ("data/interim",)
+
+#: ``--yalin`` modda saklanacak en yeni gonderim sayisi. Eskiler yeniden
+#: uretilebilir; yenisi LB karsilastirmasi icin gerekir.
+YALIN_GONDERIM_SAYISI = 4
 
 #: Pakete ASLA girmeyecekler. ``.env`` gizli bilgi tasir; digerleri ya
 #: yeniden uretilir ya da devasa.
@@ -74,9 +84,14 @@ def _dosya_hash(yol: Path) -> str:
     return ozet.hexdigest()
 
 
-def _tasinacaklar() -> list[Path]:
-    """Pakete girecek dosyalarin listesi (koke gore gorece)."""
+def _tasinacaklar(yalin: bool = False) -> tuple[list[Path], list[str]]:
+    """Pakete girecek dosyalar ve DISLANANLARIN gerekceleri.
+
+    Dislananlar ayrica dondurulur cunku sessiz kirpma, "her sey tasindi"
+    izlenimi verir ve karsi tarafta eksik fark edilmez.
+    """
     secilen: list[Path] = []
+    notlar: list[str] = []
     for dizin in KAYNAK_DIZINLER:
         kok = ROOT / dizin
         if not kok.is_dir():
@@ -89,11 +104,41 @@ def _tasinacaklar() -> list[Path]:
             if any(parca in yol.parts for parca in DISLANAN_PARCALAR):
                 continue
             secilen.append(yol.relative_to(ROOT))
-    return secilen
+
+    if not yalin:
+        return secilen, notlar
+
+    onceki = len(secilen)
+    boyut = lambda ys: sum((ROOT / y).stat().st_size for y in ys) / 1024 / 1024  # noqa: E731
+    atilan = [y for y in secilen if any(y.as_posix().startswith(d) for d in YALIN_DISLANAN)]
+    if atilan:
+        notlar.append(
+            f"{len(atilan)} dosya ({boyut(atilan):.0f} MB) DISLANDI: {', '.join(YALIN_DISLANAN)}"
+            " -- deney tezgahi bunlari raw+external'dan yeniden uretir."
+        )
+    secilen = [y for y in secilen if y not in set(atilan)]
+
+    gonderimler = sorted(
+        (y for y in secilen if y.as_posix().startswith("submissions/")),
+        key=lambda y: (ROOT / y).stat().st_mtime,
+        reverse=True,
+    )
+    eski_gonderim = gonderimler[YALIN_GONDERIM_SAYISI:]
+    if eski_gonderim:
+        notlar.append(
+            f"{len(eski_gonderim)} eski gonderim ({boyut(eski_gonderim):.0f} MB) DISLANDI; "
+            f"en yeni {YALIN_GONDERIM_SAYISI} tanesi tasiniyor: "
+            + ", ".join(y.name for y in gonderimler[:YALIN_GONDERIM_SAYISI])
+        )
+    secilen = [y for y in secilen if y not in set(eski_gonderim)]
+    notlar.append(f"toplam {onceki - len(secilen)} dosya dislandi.")
+    return secilen, notlar
 
 
-def paketle(cikti: Path) -> int:
-    dosyalar = _tasinacaklar()
+def paketle(cikti: Path, yalin: bool = False) -> int:
+    dosyalar, notlar = _tasinacaklar(yalin)
+    for not_ in notlar:
+        print(f"  NOT: {not_}")
     if not dosyalar:
         print("HATA: tasinacak dosya bulunamadi. data/ dizini bos mu?")
         return 1
@@ -212,6 +257,11 @@ def main() -> int:
 
     p_paket = alt.add_parser("paketle", help="Bu makinedeki veriyi paketle")
     p_paket.add_argument("--cikti", default=VARSAYILAN_CIKTI)
+    p_paket.add_argument(
+        "--yalin",
+        action="store_true",
+        help="Yeniden uretilebilirleri disla (data/interim + eski gonderimler)",
+    )
 
     p_ac = alt.add_parser("ac", help="Paketi ac ve dogrula")
     p_ac.add_argument("paket")
@@ -221,7 +271,7 @@ def main() -> int:
 
     args = ap.parse_args()
     if args.komut == "paketle":
-        return paketle(Path(args.cikti).resolve())
+        return paketle(Path(args.cikti).resolve(), yalin=args.yalin)
     if args.komut == "ac":
         return ac(Path(args.paket).resolve())
     return dogrula(Path(args.paket).resolve() if args.paket else None)
