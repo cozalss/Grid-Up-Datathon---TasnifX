@@ -216,3 +216,49 @@ aktarım değil, tek bir katılımcının elle işaretlemesi.
 **İşletme notu:** `overpass-api.de` bu tarama sırasında IP'mizi engelledi.
 Sonuçlar `maps.mail.ru/osm/tools/overpass` aynasından alındı. Üretimin
 ihtiyacı olan `osm_altyapi_ilce.parquet` zaten çekilmiş durumda, etkilenmiyor.
+
+---
+
+## 9. DÜZELTME: ilçe x zaman ayrı bir havuz — ölçüldü ve o da kapalı
+
+§3'teki 0,0007'lik tavan yalnızca **küresel gün** eksenini kapsıyor.
+İlçe x zaman etkileşimi ayrı bir havuz ve ilk kez burada ölçüldü.
+
+```
+ilce x gun hucre ort. varyansi   0,020856   (17.155 hucre, ortanca 50 satir)
+  ornekleme gurultusu            0,006481   (%31,1)
+  GERCEK ilce-zaman sinyali      0,014374   -> RMSLE tavani 0,0070
+```
+
+Yani küresel gün havuzunun **10 katı**. Ama içeriği ölçülünce kanal yine kapanıyor:
+
+```
+modelin hava kolonlarinin aldigi           %0,0   (n>=40 hucrelerde de %0,0)
+ilce x HAFTA GUNU aciklamasi               %6,7
+ilce x AY aciklamasi                       %105,2      <- sinyalin TAMAMI
+
+otokorelasyon  1 gun +0,866   7 gun +0,789   30 gun +0,525
+```
+
+**Sinyal olay kaynaklı değil, yavaş mevsimsel kayma.** Kesinti, tatil,
+grev, yerel olay gibi gün ölçekli hiçbir dış veri buraya dokunamaz —
+otokorelasyon zaten olay olmadığını söylüyor.
+
+İlçenin aylık profili ise dış veri değil, **kendi verimizde** olan bir şey
+ve karşılığı olan öznitelik zaten mevcut: `gp_ilce_ay`. Soğuk uzmanında
+ölçüldü: **−0,00285, t=−1,86 (eşik altı)**; `g_*` grubu ise açıkça zararlı
+(−0,0246, t=−3,08). Sıcak uzmanda `t_ay_sapma` ve `t_egim_sicaklik_ort`
+aynı bilgiyi trafo başına, daha ince taşıyor.
+
+### Çatı GES hipotezi — mekanizma göründü, doğrulanamadı
+
+Işınım katsayısı çeyrekler boyunca +0,0065 → +0,0078 → +0,0034 → −0,0061
+(t=−2,6); 2026 Oca-Mar'da −0,0116 (t=−2,9). Öz-tüketim büyürse beklenen
+işaret. **Ama mevsim karıştırıcısından arındırılamadı:** deney çerçevesi
+2025-04-01'de başlıyor, 2025 Oca-Mar yok, aynı mevsimin yıldan yıla
+karşılaştırması yapılamıyor. Ayrıca GES büyümesi yavaş bir kaymadır ve
+yukarıdaki ayrıştırma o kaymanın tamamının `ilce x ay` içinde durduğunu
+gösteriyor — yani 75 PDF kazınsa bile varılacak yer `gp_ilce_ay`.
+
+**Hüküm: lisanssız GES arşivi kazınmıyor.** Ulaşacağı havuz ölçüldü ve
+o havuzun karşılığı olan öznitelik zaten var, zaten test edildi.
