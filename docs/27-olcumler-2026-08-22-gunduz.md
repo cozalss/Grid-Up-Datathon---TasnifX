@@ -515,3 +515,46 @@ Ve bugünün kazandıran iki değişikliğinin **hiçbiri** parametre ayarından
 gelmedi. On üç hiperparametre adayı denendi, hepsi eşiğin altında kaldı.
 Kazandıran şey yapısaldı: eğitim setini büyütmek, ve onu **doğru uzmana**
 vermek.
+
+---
+
+## 21. `v18` üretildi ve doğrulandı — GÖNDERİM BEKLİYOR
+
+```
+                    yaz25 CV    genel CV       LB
+v15 (LB'de duran)    0,99715     1,05818    1,03910
+v18                  0,99115     1,04611    ~1,031 ongoru
+birinci                                     1,03170
+```
+
+Dosya: `submissions/tuketim_v18.csv` (56,5 dakika, 7 tohum).
+
+### Bütünlük denetimi
+
+```
+satir            714.688      id SIRASI sample_submission ile BIREBIR
+kolonlar         ['id','tuketim']      NaN 0      negatif 0
+medyan           1034,5 -> 995,8
+
+rejim        satir   ort log fark     std
+SICAK      556.319     -0,0378      0,1285
+SOGUK      158.369     +0,0011      0,0494   <- DEGISMEDI, dogru
+```
+
+Soğuk uzmanının yapılandırması değişmedi ve tahminleri de değişmemiş
+(+0,0011, yalnızca 3→7 tohumun varyans etkisi). Bütün değişim sıcak
+tarafta. Yani `dar_egitim` yönlendirmesi doğru çalışıyor.
+
+Gönderim: `submissions/tuketim_v18.csv`, not olarak
+"v18: ek kokenler YALNIZ sicak uzmanina + sicak l2=1/d6 + 7 tohum".
+
+**Aşağı yönlü risk yok:** Kaggle en iyi skoru koruyor. v18 kötü gelse bile
+v15'in 1,03910'u ve 2. sıra durur.
+
+### Sonuç geldiğinde okunacak
+
+| gelen skor | anlamı | sıradaki |
+|---|---|---|
+| ≤ 1,0317 | **birinci** — kalibrasyon ikinci kez doğrulanır | ek köken sayısını artır (şu an 6) |
+| 1,032–1,036 | beklenen bandın içi, kalibrasyon tutuyor | aynı yön: sıcak uzmanına daha çok veri |
+| > 1,040 | **CV↔LB kırıldı** — v15'e dön, nedeni ara | gönderim hakkı çok değerli hale gelir |
