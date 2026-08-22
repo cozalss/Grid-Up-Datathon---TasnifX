@@ -166,3 +166,36 @@ kaymakamlık duyuruları, OSOS/tazminat portalları (login).
 8 haneli kodların doğrudan web araması: sıfır ilgili sonuç.
 
 **Trafo düzeyi dış veri kanalı kapandı — ölçümle, varsayımla değil.**
+
+---
+
+## 8. Taramanın kapanışı — büyüklük mertebesi neden umutsuz
+
+GDZ'nin **38.283**, ADM'nin **26.017** dağıtım trafosu var (EPDK 2025
+Gelişim Raporu). Bizim veri kümemiz 7.368 trafo, yani GDZ filosunun
+yaklaşık %19'u. Buna karşılık bulunabilen **en ayrıntılı kamu listesi
+~63–77 TEİAŞ trafo MERKEZİ adı** içeriyor. Aradaki fark üç mertebe:
+kamu kayıtları iletim seviyesinde biter, dağıtım trafosuna hiç inmez.
+
+Tarananlar ve hükümleri:
+
+| kaynak | trafo kodu | kanıt |
+|---|---|---|
+| EPİAŞ Şeffaflık | **hayır** | 3,4 MB spec, **301 uç nokta** tarandı; `trafo/fider/substation/tesisat` = **0**. En ince çözünürlük `province + district` |
+| EPDK | hayır | yalnızca tek tamsayı: `GDZ 38283`, `ADM 26017`. Yatırım planları karakteristik bazında, varlık bazında değil |
+| TEDAŞ | hayır | 2024 raporu ulusal çapraz tablo; istatistik kitabı kurum girişi arkasında |
+| ELDER | hayır | şirket seviyesi (`GDZ 37.467`) |
+| **OpenStreetMap** | **hayır** | 5 ilde toplam **65** `power=transformer`; `ref:gdz` / `ref:tedas` / `ref:teias` = **0 (dünya çapında)** |
+| ADM Fider Durum Tablosu | fider var, kod yok | 220 fider adı — ama **ADM bölgesi** (Aydın/Denizli/Muğla). Bizim veri **yalnızca İzmir+Manisa**. İlgisiz |
+| TEİAŞ TM kapasite tablosu | hayır | 77 GDZ satırı, iletim TM'i — yanlış seviye |
+
+**Tek gerçekçi tam çözüm** GDZ'ye doğrudan CBS/GIS veri talebi ya da
+Bilgi Edinme başvurusu olurdu; yarışma süresi içinde ulaşılabilir değil.
+
+### Not: izin sınırı
+
+Ajan raporunda bir yönetişim uyarısı var: GDZ kesinti API'sinin bearer
+token'ı istemci bundle'ında açıkta duruyor. Bir alt-ajan bu token'la
+API'yi çağırmış. **Bu yol kullanılmıyor** — operatörün token'ı yanlışlıkla
+yayınlaması izin anlamına gelmez. Zaten sonucu değiştirmiyor: API şeması
+bağımsız olarak bundle'dan çözüldü ve içinde trafo alanı yok.
