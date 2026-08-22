@@ -847,10 +847,36 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     # v17 kosusu ikisini birden acmisti: genel skor berabere kaldi
     # (1,05818 -> 1,06049) ama test ikizi yaz25 +0,028 kotulesti, cunku
     # orada soguk kaybi (-0,077) sicak kazancini (+0,008) ezdi.
+    # ``agirlik``: rejime ozel harman. Olculdu (2026-08-22,
+    # ``deney_agirlik*.py``, 3 tohum torbalanmis, AYNI onbelleklenmis
+    # tahminler uzerinde -- yani agirliklar arasi fark tohum gurultusu
+    # TASIMIYOR, belirlenimci).
+    #
+    #   SICAK                          SOGUK
+    #   (0,1,0) xgb   0,78953  EN IYI  (1,0,0) cat  1,70044  EN KOTU
+    #   (1,0,0) cat   0,79848          (0,1,0) xgb  1,66614
+    #   (0,0,1) lgbm  0,80177          (0,0,1) lgbm 1,66851
+    #   (3,3,1)       0,77958          (1,1,1)      1,64308  EN IYI
+    #   (2,2,1)       0,78007  SECILEN (2,2,2)      1,64308  (ayni oran)
+    #   (3,1,1)       0,78280  ESKI    (3,1,1)      1,65354  ESKI
+    #   (0,1,1)       0,79111          (0,1,1)      1,65441
+    #
+    # Iki uzman TERS yonde. Sicakta xgb en iyi aile, sogukta cat EN KOTU
+    # aile -- ve eski 3/1/1 ikisinde de cat'e agirlik veriyordu.
+    #
+    # Sicakta (3,3,1) en iyi ama (2,2,1)'den farki 0,0005, yani gurultu
+    # mesafesinde. (2,2,1) secildi: ayni yapiyi (cat=xgb, lgbm asagida)
+    # ifade ediyor ve daha esit agirlik Krogh & Vedelsby ayrismasinda daha
+    # yuksek belirsizlik terimi demek -- private LB'de daha saglam.
+    #
+    # Sogukta egri TEKDUZE: cat agirligi 1->2->3->4->6 boyunca her adimda
+    # kotulesiyor. Izgaradan rastgele secim degil, duz bir egilim. Ama
+    # (0,1,1) kotu: cat katki veriyor, yalnizca baskin olmamali.
     "sicak": {
         "maske": 0.15,
         "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6},
         "ek_koken": True,
+        "agirlik": {"cat": 2.0, "xgb": 2.0, "lgbm": 1.0},
     },
     # ``ek_kolon``: bu uzmana YALIN_CIKARILAN'a ragmen geri verilen kolonlar.
     # Olculdu (2026-08-22, ``deney_soguk_hafta.py``, eslenik, 5 tohum, 15 hucre):
@@ -874,6 +900,7 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
         "cat": {"depth": 7},
         "ek_koken": False,
         "ek_kolon": ("tk_haftanin_gunu", "tk_hafta_sonu"),
+        "agirlik": {"cat": 1.0, "xgb": 1.0, "lgbm": 1.0},
     },
 }
 
@@ -1119,8 +1146,8 @@ def rejim_tahmini(
 
     ``REJIM_AYARLARI is None`` ise eski tek-model davranisina duser.
     """
-    toplam = sum(AILE_AGIRLIKLARI.values())
     if REJIM_AYARLARI is None:
+        toplam = sum(AILE_AGIRLIKLARI.values())
         return (
             sum(
                 w * aile_tahmini(a, egitim, hedef, kolonlar, tohum, hizli=hizli)
@@ -1145,6 +1172,10 @@ def rejim_tahmini(
         if eksik:
             raise RuntimeError(f"{rejim} uzmaninin ek_kolon'u cercevede yok: {eksik}")
         kol = kolonlar + ek_kolon
+        # Rejime ozel harman agirligi. Iki uzman FARKLI problemler cozuyor:
+        # sicakta xgb en iyi aile, sogukta cat EN KOTU aile (bkz. REJIM_AYARLARI).
+        agirlik = ayar.get("agirlik", AILE_AGIRLIKLARI)
+        toplam = sum(agirlik.values())  # type: ignore[union-attr]
         cikti[maske] = (
             sum(
                 w
@@ -1158,7 +1189,7 @@ def rejim_tahmini(
                     maske_orani=float(ayar["maske"]),  # type: ignore[arg-type]
                     cat_ustyazim=ayar.get("cat"),  # type: ignore[arg-type]
                 )
-                for a, w in AILE_AGIRLIKLARI.items()
+                for a, w in agirlik.items()  # type: ignore[union-attr]
             )
             / toplam
         )
