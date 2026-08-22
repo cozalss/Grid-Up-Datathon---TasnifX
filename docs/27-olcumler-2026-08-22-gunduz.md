@@ -357,3 +357,92 @@ geriye kalan kökenler kış/sonbahar ağırlıklı. Yani yaz25 için ek kökenl
 Deney ilk koşuda çöktü — `ek_kokenler.parquet` 21 Ağustos 18:58'de kurulmuş,
 `t_mevsim_*` 22 Ağustos 00:42'de eklenmiş. Ana önbellek için bayatlık testi
 var (`test_aile_kapsami.py`), bunun için yok. Artık açık uyarı veriyor.
+
+---
+
+## 16. EK KÖKENLER — DOĞRULANDI, üretime alındı
+
+Eşlenik ölçüm, 3 tohum, üretim seti (`deney_koken2.py`):
+
+```
+ANA (3 blok)   GENEL 1,09411   yaz25 1,07373  guz25 1,10237  kis26 1,10623
+EK KOKENLI     GENEL 1,08679   yaz25 1,06542  guz25 1,09556  kis26 1,09938
+
+ESLENIK FARK  +0,00782   SH 0,00260   t = +3,01
+  yaz25  +0,00686        guz25  +0,00774        kis26  +0,00885
+```
+
+**Bugün eşiği geçen tek değişiklik.** Üç blokta da pozitif, test ikizi
+`yaz25` dahil. Tek tohumda yaz25'in kötü görünmesi gürültüymüş
+(tohumlar −0,006 / +0,013 / +0,014).
+
+Ve bu bir büzülme **değil** — eğitimi 1.038.737 satırdan 2.855.584'e
+çıkarıyor, yani §14'teki kurgusal ödülün tersi yönde. Dahası ölçülen değer
+bir **alt sınır**: doğrulamada hedef blokla kesişen kökenler
+`kokenleri_ayikla` ile atılıyor, üretimde hepsi kullanılabiliyor çünkü
+test bütün eğitim verisinden sonra geliyor.
+
+Mekanizma: model aynı etiketi farklı tazelikteki özetlerle tekrar görüyor,
+yani "eski özete ne kadar güvenmeli" sorusunu üç örnek yerine dokuz
+örnekten öğreniyor.
+
+### Beklenmedik yan fayda — soğuk payı
+
+```
+koken     etiket satir   ozet gun   soguk payi
+sub25       123.473        31          %1,5
+bah25       290.561       120         %11,3
+yaz25b      308.221       181          %9,4
+guz25b      345.941       243         %21,2   <-- test'e yakin
+kis26b      410.464       304         %23,4   <-- test'e yakin
+bah26       338.187       365          %7,9
+TEST                      455         %22,2
+```
+
+Ana blokların soğuk payı %7,5–13,9'du. `guz25b` ve `kis26b` ile model ilk
+kez test'inkine denk bir soğuk karışımı görüyor.
+
+---
+
+## 17. Üretime bağlanan yapılandırma — 22 Ağustos öğle
+
+```
+1  EK_KOKENLER            +0,0078  t=+3,01   OLCULDU
+2  sicak l2=1 + d6        +0,0063  3/3 blok  MERKEZLI olcum
+3  tohum 3 -> 7           ~0,0040  garanti (Krogh & Vedelsby)
+4  yalin set 105 kolon    degismedi
+5  soguk uzmani d7        degismedi -- l2 orada olculmedi
+6  harman 3/1/1           degismedi
+```
+
+Sızıntı denetimi elle doğrulandı — `yaz25` doğrulanırken düşen kökenler:
+`yaz25` (kendisi), `bah25` (May-Ağu, kesişiyor), `yaz25b` (Tem-Eki,
+kesişiyor). Kalanlar: `sub25`, `guz25`, `kis26`, `guz25b`, `kis26b`,
+`bah26`. Doğru.
+
+Sessiz bir hata kaynağı da kapatıldı: ek köken kolonları ana bloklarınkinden
+farklıysa artık kesişim alınmıyor, **hata veriliyor**. Sessizce kesişmek,
+ölçülenden başka bir model üretmek demekti — dün gece tam bu sınıftan bir
+hata 151-kolonluk üretimle 144-kolonluk ölçümü ayırmıştı.
+
+---
+
+## 18. Bugünün karnesi
+
+| ne | sonuç |
+|---|---|
+| **EK KÖKENLER** | **+0,0078 · t=3,01 · ALINDI** |
+| **sıcak `l2=1 + d6`** | **+0,0063 merkezli · ALINDI** |
+| `t_mevsim_*` | reddedildi — yön tutarsız |
+| yeni-trafo indirimi | reddedildi — indirim yok |
+| ufuk kayması | reddedildi — kayma yok |
+| ufuk yanlılığı düzeltmesi | **reddedildi — çapraz doğrulamada +0,13** |
+| 8 kolonu atmak | **reddedildi — serap, merkezli +0,0017** |
+| `-sekil` (3 kolon) | reddedildi — serap, merkezli +0,0034 |
+| `iterations=500` | reddedildi — eksik uydurma hipotezi çürüdü |
+| `langevin` (SGLB) | reddedildi — zarar veriyor |
+| `rsm=0,55` | reddedildi |
+| yalın seti geri açmak | berabere — dokunulmadı |
+
+**On bir yol kapandı, iki yol açıldı.** Kapananların ikisi (ufuk düzeltmesi
+−0,018 vaat ediyordu, 8 kolon −0,0183) gönderilseydi LB'de sert kaybettirirdi.
