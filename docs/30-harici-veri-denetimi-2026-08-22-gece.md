@@ -199,3 +199,20 @@ token'ı istemci bundle'ında açıkta duruyor. Bir alt-ajan bu token'la
 API'yi çağırmış. **Bu yol kullanılmıyor** — operatörün token'ı yanlışlıkla
 yayınlaması izin anlamına gelmez. Zaten sonucu değiştirmiyor: API şeması
 bağımsız olarak bundle'dan çözüldü ve içinde trafo alanı yok.
+
+### OSM ayrıntısı (bağımsız doğrulama, 2026-08-22T18:49Z)
+
+Beş ilin tamamında **65** `power=transformer` (İzmir 33, Manisa 3, Aydın 3,
+Denizli 9, Muğla 17) ve 364 `power=substation`, bunların yalnızca 18'i
+`substation=minor_distribution`. Türkiye genelinde toplam 1.390 trafo —
+GDZ'nin tek başına 38.283 trafosu olduğu düşünülürse kapsam **binde 2**.
+
+Dünya çapında `ref:gdz` / `ref:tedas` / `ref:teias` etiketli **0** nesne.
+Türkiye genelinde 8 haneli ya da `NN-NN-NNNN` biçimli kod taşıyan yalnızca
+**6** nesne var: 4'ü Eskişehir (`operator=OEDAŞ`), 2'si Denizli
+(`operator=TEDAŞ`) — **GDZ bölgesinde sıfır**. Bunlar sistematik bir içe
+aktarım değil, tek bir katılımcının elle işaretlemesi.
+
+**İşletme notu:** `overpass-api.de` bu tarama sırasında IP'mizi engelledi.
+Sonuçlar `maps.mail.ru/osm/tools/overpass` aynasından alındı. Üretimin
+ihtiyacı olan `osm_altyapi_ilce.parquet` zaten çekilmiş durumda, etkilenmiyor.
