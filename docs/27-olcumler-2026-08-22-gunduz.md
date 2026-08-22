@@ -275,3 +275,85 @@ kesişimler +0,10…+0,38 arasında oynuyordu. Aynı olgu, iki farklı yerden.
 `guc`, `il_key`, `bolge`, `soguk_mu` — hepsi yapısal, öyle olması doğru.
 Dün gece aileler düzeltilince açık kapanmış. Deney yine de o kolonların
 faydalı olup olmadığını ölçüyor.
+
+---
+
+## 14. SERAP YAKALANDI — 8 kolon, ve doğrulama kurgumuzun kör noktası
+
+`deney_kacan` sekiz kolonu atmanın sıcak skoru **0,01833** iyileştirdiğini
+buldu (t=−1,99, genel skorda ~0,0065 — aradaki farkın %88'i). Alınmaya
+değer büyüklükte görünüyordu. Ama kazancın **tamamı guz25'teydi** ve guz25
+aynı gün en büyük kurgusal yanlılığı (−0,3268) ölçtüğümüz blok.
+
+Ayrım şu özdeşlikle yapıldı:
+
+```
+MSE = Var(artik) + ortalama(artik)²
+      \_________/   \______________/
+        SACILIM        YANLILIK
+```
+
+```
+-HEPSI (8) vs TABAN
+  blok    HAM fark    MERKEZLI fark    yanlilik taban -> aday
+  yaz25   +0,00108      +0,00659        +0,1004 -> +0,0332
+  guz25   -0,05382      -0,00704        -0,3674 -> -0,2425
+  kis26   -0,00201      +0,00562        +0,1998 -> +0,1679
+ORTALAMA  -0,01825      +0,00172
+```
+
+**Ham skorda 0,018 kazanıyor, yanlılık giderilince 0,0017 kaybediyor.**
+Kazancın tamamı — fazlası — bloğun kendi sapmasını küçültmekten geliyor.
+`-sekil` de aynı: ham −0,0179, merkezli **+0,0034**. İkisi de REDDEDİLDİ.
+
+### Genel kural — bundan sonraki her ölçüm için
+
+Doğrulama kurgumuz **büzülmeyi ödüllendiriyor.** Modeli ifadesizleştiren
+her değişiklik (kolon atmak, düzenlileştirmeyi artırmak, kapasiteyi kısmak)
+tahminleri ortalamaya büzer; bu, görülmemiş-mevsim sapmasını küçülttüğü
+için CV'de haksız yere iyi görünür. **Tersi de doğru: kapasiteyi artıran
+her değişiklik haksız yere cezalanır.**
+
+Okuma kuralı:
+
+| ham | merkezli | hüküm |
+|---|---|---|
+| + | + | GERÇEK — al |
+| + | − | **KURGUSAL — reddet** (8 kolon böyleydi) |
+| − | + | gerçek ama CV maskeliyor — dikkatle al |
+| − | − | gerçekten kötü — reddet |
+
+Bu, iki eski kararı yeniden sorgulatıyor ve ikisi de ölçülüyor
+(`deney_merkezli.py`): `l2=1 + d6` (kapasiteyi **artırıyor**, CV cezasına
+rağmen 3/3 blokta pozitifti — gerçek etkisi ölçtüğümüzden büyük olabilir)
+ve **yalın set** (39 kolon atmak da bir büzülmeydi, ham −0,0095 kazandırıp
+üretime alınmıştı).
+
+---
+
+## 15. EK KÖKENLER — tek tohumda kazandırıyor
+
+`EK_KOKENLER` kodda tanımlı, sızıntıya karşı korumalı (`kokenleri_ayikla`),
+ama **üretim eğitiminde kullanılmıyor** ve sonucuna dair hiçbir kayıt yoktu.
+
+```
+ana bloklar 1.038.737 satir -> ek kokenlerle 2.855.584
+
+ANA (3 blok)   GENEL 1,10449   yaz25 1,08137  guz25 1,11481  kis26 1,11730
+EK KOKENLI     GENEL 1,09941   yaz25 1,08426  guz25 1,10957  kis26 1,10441
+                    -0,00508         +0,0029       -0,0052       -0,0129
+```
+
+Tek tohum, CatBoost, test-ağırlıklı. Genelde −0,005 ama **test ikizi olan
+yaz25'te +0,0029**. Üç tohumlu eşlenik ölçüm koşuyor.
+
+Kusurun kurgusal bir açıklaması var: yaz25 doğrulanırken onunla kesişen
+`bah25` (May-Ağu) ve `yaz25b` (Tem-Eki) sızıntı olmasın diye **atılıyor**;
+geriye kalan kökenler kış/sonbahar ağırlıklı. Yani yaz25 için ek kökenler
+"yazı daha az gör" demek. **Üretimde bu kısıt yok.**
+
+### Yan bulgu: ikinci bir bayat önbellek
+
+Deney ilk koşuda çöktü — `ek_kokenler.parquet` 21 Ağustos 18:58'de kurulmuş,
+`t_mevsim_*` 22 Ağustos 00:42'de eklenmiş. Ana önbellek için bayatlık testi
+var (`test_aile_kapsami.py`), bunun için yok. Artık açık uyarı veriyor.
