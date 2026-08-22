@@ -177,3 +177,101 @@ tehlikeli kılar. Seçim CV'de yapılacak, LB yalnızca doğrulama.
 (RMSLE log uzayında kareli hata), birleştirici de aritmetik ortalama. Daha
 fazla torba **kötüleştiremez**. Ölçüm gerekmiyor; beklenen −0,003…−0,005.
 Yapılandırma kesinleşince son üretim koşusunda.
+
+---
+
+## 10. Sıcak tarama, 2. tur — eksik uydurma hipotezi ÇÜRÜDÜ
+
+Eşlenik *t* testi, 9 hücre (3 blok × 3 tohum), aynı maskeler.
+
+| aday | eşlenik fark | SH | *t* | iyi blok |
+|---|---|---|---|---|
+| `l2=1 + d6` | +0,00226 | 0,00286 | +0,79 | **3/3** |
+| `it=500 lr=0,035 l2=1 d6` | +0,00233 | 0,00349 | +0,67 | 2/3 |
+| `l2=1` | +0,00161 | 0,00142 | +1,13 | 2/3 |
+| `l2=1 + d6 + Bernoulli` | +0,00135 | 0,00377 | +0,36 | 2/3 |
+| `iterations=500` | **−0,00864** | 0,00647 | −1,33 | 1/3 |
+
+Kapasitenin **en doğrudan kolu** — `iterations` 250 → 500 — skoru kötüleştirdi.
+Hipotez çürüdü: model eksik uydurmuyor. Hiçbir aday |*t*| ≥ 2'ye ulaşmadı.
+
+Ayakta kalan tek şey `l2=1 + d6`: üç blokta da artı, ve iki parçası 1. turda
+bağımsız olarak ölçülmüştü. Genel skora katkısı **+0,0008**. Alınabilir,
+ama farkı kapatmaz.
+
+---
+
+## 11. SICAK HATANIN HARİTASI — teşhis, tahmin değil
+
+yaz25, tek tohum, üretim sıcak uzmanı. RMSLE 0,81450.
+
+```
+GERCEK TUKETIM       satir%   HATA%   yogunluk   yanlilik
+tam sifir              5,5     27,2      4,91     +0,846
+10-100                 8,4      6,6      0,78     +0,030
+1k+                   52,6     39,1      0,74     -0,185
+
+TRAFONUN SIFIR ORANI
+%50+                   5,8     27,4      4,74     +0,192
+
+OYNAKLIK t_log_std
+1,0+                   1,9     20,9     ~11       -0,3
+```
+
+**Sıcak tarafın da kendi sıfır yığılması var:** satırların %5,5'i tam sıfır,
+karesel hatanın %27,2'si orada. Soğuktan farkı: burada geçmiş **elimizde**
+(`t_sifir_orani ≥ %50` onları %5,8'lik bir dilimde topluyor).
+
+---
+
+## 12. UFUK YANLILIĞI — büyük görünen, TAŞINMAYAN düzeltme
+
+yaz25'te hata ufukla tekdüze yoğunlaşıyordu (yoğunluk 0,47 → 1,69) ve
+yanlılık işaret değiştiriyordu (+0,126 → −0,374). Kareli hatada bir kovayı
+ortalama yanlılığı kadar kaydırmak MSE'yi tam olarak `b²` azaltır; hesap
+**−0,031 sıcak = −0,018 genel** veriyordu — aradaki farkın **iki buçuk katı**.
+
+Üç blokta ölçüldü:
+
+```
+  ufuk        yaz25      guz25      kis26     YON
+  1-15      -0,0880    -0,3405    +0,1977   farkli
+  16-30     -0,1644    -0,3684    +0,2402   farkli
+  46-60     -0,1070    -0,2560    +0,2302   farkli
+  76-90     +0,2388    -0,3375    +0,1675   farkli
+  106+      +0,4196    -0,2967    +0,1352   farkli
+```
+
+**Sekiz kovanın sekizinde de yön farklı.** Çapraz doğrulama (negatif = iyileşti):
+
+```
+  kaynak -> hedef    yaz25     guz25     kis26
+           yaz25   -0,03300  +0,05116  +0,02821
+           guz25   +0,08617  -0,06729  +0,13348
+           kis26   +0,01832  +0,09142  -0,02373
+```
+
+Köşegen dışındaki **her** hücre pozitif. Bir blokta ölçülen düzeltme
+diğerlerinde kötüleştiriyor, en fenası +0,133.
+
+### Neden — ve bu, doğrulama kurgumuz hakkında bir şey söylüyor
+
+Yanlılık ufuktan değil **mevsimden** geliyor: guz25 düz −0,33, kis26 düz
++0,19. Sebebi kurgusal: `yaz25` **tek** yaz bloğu, `guz25` **tek** sonbahar
+bloğu. Bir blok dışarıda bırakılınca model o mevsimin etiketini **hiç**
+görmemiş oluyor.
+
+Sonuç: **CV'miz sistematik olarak kötümser**, ve mevsimle etkileşen her
+şeyde yanıltıcı. Üretim modeli üç mevsimi de görüyor.
+
+Bu, dün "büzülme" denemesinin neden başarısız olduğunu da açıklıyor —
+kesişimler +0,10…+0,38 arasında oynuyordu. Aynı olgu, iki farklı yerden.
+
+---
+
+## 13. Kaçan kolonlar — kapsama açığı zaten kapanmış
+
+Üretim setinde (105 kolon) aile dışında kalan yalnızca **4** kolon var:
+`guc`, `il_key`, `bolge`, `soguk_mu` — hepsi yapısal, öyle olması doğru.
+Dün gece aileler düzeltilince açık kapanmış. Deney yine de o kolonların
+faydalı olup olmadığını ölçüyor.
