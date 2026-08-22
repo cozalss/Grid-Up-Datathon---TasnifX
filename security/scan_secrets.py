@@ -75,6 +75,25 @@ def _fonksiyon_cagrisi(line: str, match: re.Match[str]) -> bool:
     return line[match.end() : match.end() + 1] == "("
 
 
+def _interpolasyon(value: str) -> bool:
+    """Yakalanan deger bir f-string YER TUTUCUSU mu? (sir degil, sablon)
+
+    OLCULDU 2026-08-22: su satir bulgu verdi --
+
+        f'token = "{_sahte_sir(20, 13)}"'
+
+    Kalip tirnak icini yakaladi ve ``{_sahte_sir(20, 13)}`` yer tutucusunu
+    sir sandi. Bir yer tutucu tanim geregi sir DEGILDIR: gercek deger
+    calisma aninda konur ve kaynakta hic gecmez.
+
+    Kural DAR: deger butunuyle tek bir ``{...}`` olmali. Yer tutucu ICINDE
+    gecen gercek bir sir (or. ``f"token = abc123...{x}"``) yine yakalanir,
+    cunku o durumda yakalanan deger ``{`` ile baslamaz.
+    """
+    kirpik = value.strip()
+    return kirpik.startswith("{") and kirpik.endswith("}") and kirpik.count("{") == 1
+
+
 def scan_text(text: str, path: str) -> list[Finding]:
     if Path(path).suffix.lower() in SKIP_SUFFIXES or path == ".env.example":
         return []
@@ -85,7 +104,7 @@ def scan_text(text: str, path: str) -> list[Finding]:
                 value = match.group(1) if match.lastindex else match.group(0)
                 if any(token in value.lower() for token in ALLOW_TOKENS):
                     continue
-                if _fonksiyon_cagrisi(line, match):
+                if _fonksiyon_cagrisi(line, match) or _interpolasyon(value):
                     continue
                 findings.append(Finding(path, number, _fingerprint(value)))
     return findings

@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import string
 import sys
 from pathlib import Path
 
@@ -494,6 +495,22 @@ def test_paket_veri_listesi_kaynak_manifestinden_turetiliyor():
         assert yol not in package.VERI_DOSYALARI, f"izinsiz artefakt paketleniyor: {yol}"
 
 
+def _sahte_sir(uzunluk: int = 20, tohum: int = 7) -> str:
+    """Tarayicinin YAKALAMASI gereken ama dosyada LITERAL BULUNMAYAN deger.
+
+    NEDEN URETILIYOR, YAZILMIYOR: bu testlerin ilk halinde sahte sirlar
+    dogrudan kaynaga yazilmisti ve ``scan_secrets`` onlari -- hakli olarak --
+    bulgu diye raporladi (6 bulgu, 2026-08-22). Sahte olduklarini tarayici
+    bilemez; bilebilseydi zaten kapi olmazdi.
+
+    Iki yanlis cozum vardi: kalibi susturmak ya da bu dosyayi tarama disi
+    birakmak. Ikisi de kapiyi KALDIRIR. Ucuncu yol: deger dosyada hic
+    gecmesin, calisma aninda kurulsun. Test aynen sinar, depo temiz kalir.
+    """
+    alfabe = string.ascii_letters + string.digits
+    return "".join(alfabe[(i * tohum) % len(alfabe)] for i in range(uzunluk))
+
+
 def test_secret_scanner_ignores_function_calls_but_not_literals():
     """``token = fonksiyon(...)`` sir DEGILDIR; ``token = "abc..."`` sirdir.
 
@@ -518,13 +535,36 @@ def test_secret_scanner_ignores_function_calls_but_not_literals():
     ):
         assert scanner.scan_text(satir, "x.py") == [], f"fonksiyon cagrisi bulgu verdi: {satir}"
 
+    deger = _sahte_sir()
     for satir in (
-        'token = "AbCdEf1234567890XyZq"',
-        "api_key = AbCdEf1234567890XyZqRs",
-        'password = "hunter2hunter2hunter2"',
-        "EPIAS_PASSWORD=Ab12Cd34Ef56Gh78Ij90",
+        f'token = "{deger}"',
+        f"api_key = {deger}",
+        f'password = "{deger}"',
+        f"EPIAS_PASSWORD={deger}",
     ):
-        assert scanner.scan_text(satir, "x.py"), f"GERCEK SIR kacti: {satir}"
+        assert scanner.scan_text(satir, "x.py"), "GERCEK SIR kacti"
+
+
+def test_secret_scanner_ignores_fstring_placeholders():
+    """f-string YER TUTUCUSU sir degildir -- ama ICINDEKI literal sirdir.
+
+    OLCULDU 2026-08-22: su satir bulgu verdi --
+
+        f'token = "{_sahte_sir(20, 13)}"'
+
+    Kalip tirnak icini yakalayip yer tutucuyu sir sandi. Bir yer tutucu
+    tanim geregi sir degildir: gercek deger calisma aninda konur.
+
+    Kural DAR olmali; bu test darligi zorlar. Kalibi tumden susturmak
+    kapiyi kaldirmak olurdu.
+    """
+    scanner = _load_script("secret_scan_fstring_contract", "security/scan_secrets.py")
+
+    for satir in ('token = f"{gizli}"', 'api_key = "{ deger }"'):
+        assert scanner.scan_text(satir, "x.py") == [], f"yer tutucu bulgu verdi: {satir}"
+
+    deger = _sahte_sir()
+    assert scanner.scan_text(f'token = "{deger}"', "x.py"), "GERCEK SIR kacti"
 
 
 def test_secret_scanner_also_scans_untracked_files(tmp_path):
@@ -544,7 +584,7 @@ def test_secret_scanner_also_scans_untracked_files(tmp_path):
     scanner = _load_script("secret_scan_untracked_contract", "security/scan_secrets.py")
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     (tmp_path / ".gitignore").write_text("gizli/\n", encoding="utf-8")
-    (tmp_path / "yeni.py").write_text('api_key = "ZzYyXxWw11223344556677"\n', encoding="utf-8")
+    (tmp_path / "yeni.py").write_text(f'api_key = "{_sahte_sir(22, 11)}"\n', encoding="utf-8")
 
     bulgular = scanner.scan_tracked(tmp_path)
     assert any(f.path.endswith("yeni.py") for f in bulgular), (
@@ -553,7 +593,9 @@ def test_secret_scanner_also_scans_untracked_files(tmp_path):
 
     # .gitignore kapsamindakiler DISLANIR: onlar zaten depoya girmeyecek.
     (tmp_path / "gizli").mkdir()
-    (tmp_path / "gizli" / "env.py").write_text('token = "QqWwEe11223344556677"\n', encoding="utf-8")
+    (tmp_path / "gizli" / "env.py").write_text(
+        f'token = "{_sahte_sir(20, 13)}"\n', encoding="utf-8"
+    )
     assert not any("gizli" in f.path for f in scanner.scan_tracked(tmp_path)), (
         ".gitignore kapsamindaki dosya tarandi -- gereksiz alarm uretir."
     )
