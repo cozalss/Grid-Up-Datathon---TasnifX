@@ -331,3 +331,73 @@ transfer olmaması.
 
 **Bu sonuç ÇED, OSB, turizm, sulama dosyalarını da kapsıyor:** hepsi
 ilçe x zaman değişkenidir, ve ilçe x zaman ileriye taşınmıyor.
+
+---
+
+## 11. YAN ÜRÜN: ölü trafo hedge'i — ölçülmüş, bedava, 0,002–0,003
+
+Gönderim dosyalarının uçuş öncesi kontrolünde bulundu.
+
+### Sorun
+
+Üretim `np.clip(np.expm1(log_tahmin), 0.0, None)` uyguluyor. Log tahmini
+sıfırın altına düştüğünde çıktı **tam sıfır** oluyor: `v23`'te 8.748 satır,
+121 trafo. Bu düşünülmüş bir tahmin değil, **kırpma artığı** — aynı
+trafoların diğer günlerinde model 0,05–0,26 arası değerler yazıyor
+(ortanca 0,13, yani log1p ≈ 0,12).
+
+RMSLE'de tam sıfır asimetrik bir bahis: trafo gerçekten ölüyse bedava,
+dirilirse satır başına kare hata ~48.
+
+### Ölçüm — ölü trafolar diriliyor
+
+Testin **mevsimsel eşi** (eğitim 31 Mart'ta biter, Nisan–Temmuz tahmin
+edilir) ve bağımsız bir ikinci pencere:
+
+```
+                 Nisan-Temmuz            Ekim-Ocak
+olu sure    sifir-degil  optimal    sifir-degil  optimal
+  1-15 gun     %33,5      1,030        %41,3      2,069
+ 15-30 gun     %21,0      1,103        %23,5      0,855
+ 30-60 gun     %20,8      2,121        % 9,7      1,071
+ 60-90 gun     % 2,9      0,161        % 8,9      0,883
+   90+ gun     % 3,4      0,230        %11,0      0,867
+```
+
+İki pencere de aynı yönü söylüyor. İnce kovalar kırılgan olduğu için
+(30-60 kovası analogda yalnızca 13 trafo) her kovada **iki ölçümün
+küçüğü** kullanıldı.
+
+### Beklenen etki
+
+```
+mevsimsel es dogruysa    RMSLE -0,00234
+ikinci pencere dogruysa  RMSLE -0,00325
+hepsi gercekten oluyse   RMSLE +0,00118   (en kotu durum)
+```
+
+En kötü durum gerçekçi değil — iki bağımsız pencerede de %3–41 diriliş
+ölçüldü. Beklenen kazanç, birinciyle aramızdaki farktan (0,0020) büyük.
+
+### Uygulama
+
+`scripts/olu_hedge.py` — yeniden eğitim yok, yalnızca CSV sonrası işlem,
+saniyeler sürüyor, herhangi bir gönderim dosyasına uygulanabilir.
+
+```
+python scripts/olu_hedge.py --girdi submissions/tuketim_vNN.csv \
+                            --cikti submissions/tuketim_vNN_hedge.csv
+```
+
+Doğrulandı: 8.748 satır değişti, diğer 705.940 satır bit düzeyinde aynı
+(sapma 8,9e-16, `log1p` yuvarlama artığı), NaN/negatif yok, id sırası aynı.
+
+### Gönderim planı değişti
+
+```
+1) v20                    -> kalibrasyon ucuncu kez sinanir
+2) v23                    -> yaz mi kis mi hakli belli olur
+3) KAZANAN + hedge        -> farki YALNIZCA 8.748 satir, hedge izole olculur
+```
+
+Prob (`v24_prob`) yarına kalıyor: kazancı bilinmiyor, hedge'inki ölçülmüş.
