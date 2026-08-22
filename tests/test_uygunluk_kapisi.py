@@ -105,3 +105,56 @@ def test_hata_mesaji_kurali_alintiar() -> None:
     metin = str(hata.value)
     assert "notebook" in metin.lower()
     assert "prova" in metin.lower()  # nerede KULLANILABILECEGI de yazmali
+
+
+def test_manifest_yokken_ithal_cokmez(tmp_path) -> None:
+    """Kutuphane, gelistirme deposu OLMADAN da ithal edilebilmeli.
+
+    OLCULDU 2026-08-22: CI'in "kurulmus wheel'i dumanla" adimi coktu.
+    ``import gridup`` bu kapiyi ithal aninda kosuyor; kapi manifesti
+    ``__file__``in iki ust dizininde ariyor. Depoda orasi kok, kurulmus
+    pakette ``site-packages/../..`` -- orada ``data/`` yok::
+
+        FileNotFoundError: .../lib/python3.11/data/sources.yml
+
+    Yani paket, kendi deposu olmadan ITHAL EDILEMIYORDU. Bir kutuphanenin
+    ithal edilmesi, gelistirme agacinin varligina bagli olamaz.
+
+    Atlamak korunmayi kaldirmaz: manifestin olmadigi yerde ``data/`` dizini
+    de yoktur, dolayisiyla yasakli aile o dosyayi zaten OKUYAMAZ.
+    """
+    assert model_girdisi_yasak_yollar(root=tmp_path) == {}
+    # Yasakli bir aile verilse bile CAGRI PATLAMAMALI -- orada okunacak
+    # dosya yok; hata artifact'in kendisinde cikar.
+    yasakli_aileleri_dogrula({"kotu": "data/external/epias/kesinti_plansiz.parquet"}, root=tmp_path)
+
+
+def test_bozuk_manifest_hala_patlar(tmp_path) -> None:
+    """Tolerans DAR: yalnizca dosyanin YOKLUGU. Bozuk manifest patlamali.
+
+    "Dosya yok" ile "dosya bozuk" ayri seylerdir. Birincisi kutuphane
+    olarak kurulmus olmak demek; ikincisi manifestin bozulmus olmasi --
+    ve onu sessiz gecirmek, kapinin varlik sebebini ortadan kaldirir.
+    """
+    import json
+
+    veri = tmp_path / "data"
+    veri.mkdir()
+    (veri / "sources.yml").write_text("{bozuk json", encoding="utf-8")
+
+    with pytest.raises(json.JSONDecodeError):
+        model_girdisi_yasak_yollar(root=tmp_path)
+
+
+def test_manifest_varken_kapi_aynen_calisir() -> None:
+    """Duzeltmenin kapiyi ZAYIFLATMADIGININ kaniti.
+
+    Yukaridaki iki test toleransi olcer; bu test toleransin depoda
+    HICBIR SEYI degistirmedigini olcer. Ucu birlikte olmazsa "kapi
+    atlandi" ile "kapi calisiyor" ayirt edilemez.
+    """
+    yasak = model_girdisi_yasak_yollar()
+    assert yasak, "Depoda yasakli yol goruNMUYOR -- kapi fiilen kapali."
+
+    with pytest.raises(ValueError, match="UYGUNLUK IHLALI"):
+        yasakli_aileleri_dogrula({"kotu": next(iter(yasak))})

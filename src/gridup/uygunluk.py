@@ -72,7 +72,33 @@ def model_girdisi_yasak_yollar(root: str | Path | None = None) -> dict[str, str]
         "gereksiz" diye silinir.
     """
     manifest = _kok(root) / MANIFEST_YOLU
-    veri = json.loads(manifest.read_text(encoding="utf-8"))
+
+    # MANIFEST YOKSA KAPI SESSIZCE ATLANIR -- ama YALNIZCA yoklugunda.
+    #
+    # OLCULDU 2026-08-22: CI'in "kurulmus wheel'i dumanla" adimi coktu.
+    # ``import gridup`` bu kapiyi ithal aninda kosuyor, kapi manifesti
+    # ``__file__``in iki ust dizininde ariyor. Depoda orasi kok, kurulmus
+    # pakette ise ``site-packages/../..`` -- orada ``data/`` YOK:
+    #
+    #     FileNotFoundError: .../lib/python3.11/data/sources.yml
+    #
+    # Yani kutuphane, kendi gelistirme deposu olmadan ITHAL EDILEMIYORDU.
+    #
+    # Atlamak korunmayi kaldirmiyor: manifestin olmadigi yerde ``data/``
+    # dizini de yoktur, dolayisiyla yasakli bir aile o dosyayi zaten
+    # OKUYAMAZ -- ``attach_external`` artifact'in kendisinde
+    # FileNotFoundError verir. Kapinin gercek isledigi yer gelistirme ve
+    # CI'dir; ikisinde de manifest vardir ve kapi aynen calisir.
+    #
+    # Tolerans DAR: yalnizca dosyanin YOKLUGU. Bozuk JSON hala patlar --
+    # o "kutuphane olarak kurulmus" degil "manifest bozulmus" demektir ve
+    # sessiz gecirilmesi tam olarak kacinilan sey olurdu.
+    try:
+        ham = manifest.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return {}
+
+    veri = json.loads(ham)
     return {
         kayit["path"]: str(kayit.get("model_girdisi_gerekce", ""))
         for kayit in veri.get("artifacts", [])
