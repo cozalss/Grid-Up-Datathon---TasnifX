@@ -209,3 +209,42 @@ yani `t_log_son30` zaten Mart 2026'yı okuyor ve yıllık büyümenin çoğu o
 pencereye girmiş. Dışdeğerlenecek kısım yalnızca Nisan–Temmuz arası 1–4 ay.
 Ölçülen panel büyümesi (aynı trafo, Oca–Mar 2025 → Oca–Mar 2026) satır
 ağırlıklı **+0,149**, medyan **+0,057** — ama bunun çoğu zaten fiyatlanmış.
+
+---
+
+## 9. Grup profilleri soğuk uzmanına — REDDEDİLDİ, ve neden öğretici
+
+`g_*` kolonları `trafo.py`'de **açıkça soğuk trafolar için** tasarlanmış:
+"SOGUK trafolarin dusecegi yedek seviyeler... guc kovasi tek basina
+log-varyansin %26,2'sini, ilce %15,5'ini acikliyor."
+
+Yalın set onları 39'luk demet içinde atmıştı ve o ölçüm **yönlendirme
+öncesi** tek model üzerindeydi. `ek_kolon` mekanizması artık rejim bazında
+geri vermeyi mümkün kıldığı için ölçüldü:
+
+```
+TABAN (v20 soguk)  1,70044
++g_ (5)            1,72368   -0,02458   t=-3,08   ZARARLI
++gp_ (3)           1,70329   -0,00285   t=-1,86   esik alti
++g_ +gp_ (8)       1,72530   -0,02541   t=-2,84   ZARARLI
+   yaz25 -0,054 (0/3)   guz25 -0,029 (0/3)   kis26 +0,007 (3/3)
+```
+
+**Neden:** `profil_kaynak = tam_egitim[~etiket_maske]`. yaz25 doğrulanırken
+grup ortalaması **Ağustos–Mart** verisinden hesaplanıyor — sonbahar/kış
+seviyesi çapa yapılıp ilkbahar/yaz tahmin ediliyor. Mevsimsel çapa
+uyuşmazlığı.
+
+Bu, günün **beşinci** aynı-mekanizma reddi. Bir liste olarak:
+
+| aday | mekanizma | sonuç |
+|---|---|---|
+| ufuk düzeltmesi | blok yanlılığı taşınmıyor | çapraz doğrulamada +0,13 |
+| 8 kolonu atmak | büzülme, blok yanlılığını maskeliyor | merkezli +0,0017 |
+| büzülme (dün) | kesişim +0,10…+0,38 oynuyor | reddedildi |
+| uydurulmuş taban | seviye modeli blok yanlılığı taşıyor | −0,043 |
+| grup profilleri | grup ortalaması yanlış mevsimden | −0,025 |
+
+**Genel kural:** bloklarımız mevsimsel olarak ayrık. Bir bloğa uydurulmuş
+ya da bir bloktan hesaplanmış **hiçbir sabit** diğerine taşınmıyor. Yeni
+bir aday bu şekli taşıyorsa, ölçmeden önce beklenti düşük tutulmalı.
