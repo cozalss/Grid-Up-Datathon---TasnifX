@@ -800,8 +800,29 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     # blokta da pozitif. Ham olcumde yalnizca +0,00317 gorunuyordu -- cunku
     # dogrulama kurgumuz kapasiteyi ARTIRAN degisiklikleri haksiz yere
     # cezalandiriyor (bkz. docs/27, §14). Uretimde o kurgusal sapma yok.
-    "sicak": {"maske": 0.15, "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6}},
-    "soguk": {"maske": 1.00, "cat": {"depth": 7}},
+    # ``ek_koken``: bu uzman EK KOKENLI egitim setini gorsun mu. Olculdu
+    # (2026-08-22, ``deney_koken_rejim.py``, eslenik, 3 tohum):
+    #
+    #     SICAK  ANA 0,80675 -> EK 0,79848   +0,00946  t=+1,46
+    #     SOGUK  ANA 1,70349 -> EK 1,73612   -0,03273  t=-2,59  ZARARLI
+    #
+    # Neden ters yonde: ek kokenler AYNI (trafo, gun) satirini farkli ozet
+    # pencereleriyle tekrar gosteriyor. Sicak uzmani icin bu gercek veri
+    # artirmadir -- ``t_*`` ozetleri gercekten farkli geliyor. Soguk uzmani
+    # maske 1,00'da calisiyor, yani butun ``t_*`` NaN; kopyalar arasinda
+    # geriye yalnizca ``ozet_pencere_gun``, ``t_doluluk``, ``ufuk_gun``
+    # farki kaliyor ve hedef BIREBIR ayni. Veri artirma degil, kopya
+    # cogaltma -- ve etiketleri tarih boyunca yeniden agirliklandiriyor.
+    #
+    # v17 kosusu ikisini birden acmisti: genel skor berabere kaldi
+    # (1,05818 -> 1,06049) ama test ikizi yaz25 +0,028 kotulesti, cunku
+    # orada soguk kaybi (-0,077) sicak kazancini (+0,008) ezdi.
+    "sicak": {
+        "maske": 0.15,
+        "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6},
+        "ek_koken": True,
+    },
+    "soguk": {"maske": 1.00, "cat": {"depth": 7}, "ek_koken": False},
 }
 
 #: EK KOKENLERI EGITIME KAT. Olculdu (2026-08-22, ``deney_koken2.py``):
@@ -1024,6 +1045,7 @@ def rejim_tahmini(
     tohum: int,
     *,
     hizli: bool,
+    dar_egitim: pd.DataFrame | None = None,
 ) -> np.ndarray:
     """Rejim uzmanlarini egitip satiri rejimine gore YONLENDIRIR.
 
@@ -1033,8 +1055,15 @@ def rejim_tahmini(
     ``REJIM_AYARLARI``.
 
     Uzman basina AILE HARMANI ayni kalir (``AILE_AGIRLIKLARI``); degisen
-    her uzmanin gordugu maske orani ve CatBoost ustyazimi. Tahmin yalnizca
-    ilgili satirlar icin uretilir -- geri kalanini hesaplamanin anlami yok.
+    her uzmanin gordugu maske orani, CatBoost ustyazimi ve EGITIM SETI.
+
+    ``dar_egitim`` verilirse, ``ek_koken: False`` isaretli uzmanlar onu
+    kullanir -- ek kokensiz, yalnizca ana bloklar. Olculdu: ek kokenler
+    sicak uzmanina yariyor, soguk uzmanina zarar veriyor (bkz.
+    ``REJIM_AYARLARI``). Verilmezse butun uzmanlar ``egitim``i gorur.
+
+    Tahmin yalnizca ilgili satirlar icin uretilir -- geri kalanini
+    hesaplamanin anlami yok.
 
     ``REJIM_AYARLARI is None`` ise eski tek-model davranisina duser.
     """
@@ -1055,12 +1084,15 @@ def rejim_tahmini(
         if not maske.any():
             continue
         alt = hedef.loc[maske]
+        kaynak = egitim
+        if not ayar.get("ek_koken", True) and dar_egitim is not None:
+            kaynak = dar_egitim
         cikti[maske] = (
             sum(
                 w
                 * aile_tahmini(
                     a,
-                    egitim,
+                    kaynak,
                     alt,
                     kolonlar,
                     tohum,
@@ -1155,7 +1187,12 @@ class Dogrulama:
 
 
 def egit_ve_olc(
-    egitim: pd.DataFrame, dogrulama: pd.DataFrame, kolonlar: list[str], *, hizli: bool
+    egitim: pd.DataFrame,
+    dogrulama: pd.DataFrame,
+    kolonlar: list[str],
+    *,
+    hizli: bool,
+    dar_egitim: pd.DataFrame | None = None,
 ) -> Dogrulama:
     """Egitir, dogrular ve skoru IKI REJIME AYIRIR.
 
@@ -1167,7 +1204,9 @@ def egit_ve_olc(
     # Erken durdurma YOK. Olculdu: skor 200-1000 agac arasi duz, ama erken
     # durdurma her kosuda baska yerde durup GURULTU uretiyordu (22-382 agac).
     # Sabit agac, tezgahtaki olcumlerle ayni kosullari verir.
-    tahmin = np.expm1(rejim_tahmini(egitim, dogrulama, kolonlar, 42, hizli=hizli))
+    tahmin = np.expm1(
+        rejim_tahmini(egitim, dogrulama, kolonlar, 42, hizli=hizli, dar_egitim=dar_egitim)
+    )
     gercek = dogrulama[HEDEF].to_numpy()
     soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
     return Dogrulama(
@@ -1187,6 +1226,11 @@ def main() -> int:
     ap.add_argument("--gonder", metavar="NOT", help="uret ve Kaggle'a gonder")
     ap.add_argument("--tohum", type=int, default=3, help="son egitimde ortalanacak tohum sayisi")
     ap.add_argument("--cikti", default="tuketim_v1.csv")
+    ap.add_argument(
+        "--sadece-dogrulama",
+        action="store_true",
+        help="4/5 dogrulamayi kosup dur -- yapilandirma karsilastirmasi icin",
+    )
     args = ap.parse_args()
 
     t0 = time.time()
@@ -1221,6 +1265,7 @@ def main() -> int:
 
     print("\n3/5  BLOKLAR (yuvarlanan koken)")
     egitim = egitim_kur(tr)
+    dar = egitim  # ek kokensiz -- soguk uzmani bunu gorur
     if EK_KOKEN_KULLAN:
         ek = ek_kokenleri_kur(tr)
         fark = set(egitim.columns) ^ set(ek.columns)
@@ -1228,7 +1273,7 @@ def main() -> int:
             # Sessizce kesismek, olculenden BASKA bir model uretmek demek.
             raise RuntimeError(f"ek koken kolonlari ana bloklardan farkli: {sorted(fark)}")
         egitim = pd.concat([egitim, ek[egitim.columns]], ignore_index=True)
-        print(f"  ek kokenlerle egitim {len(egitim):,} satir")
+        print(f"  ek kokenlerle egitim {len(egitim):,} satir (dar set {len(dar):,})")
     test = test_kur(tr, te)
 
     kolonlar = oznitelikler(egitim)
@@ -1237,7 +1282,12 @@ def main() -> int:
         tam = len(kolonlar)
         kolonlar = [k for k in kolonlar if not k.startswith(YALIN_CIKARILAN)]
         print(f"  yalin set: {tam} -> {len(kolonlar)} kolon ({tam - len(kolonlar)} cikarildi)")
-    kategorik_kodla(egitim, test)
+    if dar is egitim:
+        kategorik_kodla(egitim, test)
+    else:
+        # ``dar`` concat ONCESI cerceveye isaret ediyor; ayri kodlanmali.
+        # Seviyeler GENIS cerceveden geliyor, yani ikisi ayni sozlugu paylasir.
+        kategorik_kodla(egitim, dar, test)
     print(f"\n  {len(kolonlar)} oznitelik")
 
     print("\n4/5  DOGRULAMA")
@@ -1252,7 +1302,10 @@ def main() -> int:
             if EK_KOKEN_KULLAN
             else egitim[egitim["_blok"] != b.ad]
         )
-        sonuclar[b.ad] = egit_ve_olc(kalan, dogrulama, kolonlar, hizli=args.hizli)
+        kalan_dar = dar[dar["_blok"] != b.ad]
+        sonuclar[b.ad] = egit_ve_olc(
+            kalan, dogrulama, kolonlar, hizli=args.hizli, dar_egitim=kalan_dar
+        )
         print(sonuclar[b.ad].satir(b.ad, len(dogrulama)))
     print(f"  ORTALAMA (ham)            {np.mean([s.genel for s in sonuclar.values()]):.5f}")
     print(
@@ -1262,6 +1315,10 @@ def main() -> int:
         f"  YAZ IKIZI (yaz25)         {sonuclar['yaz25'].test_agirlikli:.5f}"
         f"  <-- test donemine en yakin, test karisimina agirliklandirilmis"
     )
+
+    if args.sadece_dogrulama:
+        print(f"\n--sadece-dogrulama: son egitim ATLANDI  ({(time.time() - t0) / 60:.1f} dakika)")
+        return 0
 
     print("\n5/5  SON EGITIM + GONDERIM")
 
@@ -1287,7 +1344,9 @@ def main() -> int:
     birikim = np.zeros(len(test), dtype="float64")
     for i in range(args.tohum):
         t_tohum = time.time()
-        birikim += rejim_tahmini(egitim, test, kolonlar, 100 + i, hizli=args.hizli)
+        birikim += rejim_tahmini(
+            egitim, test, kolonlar, 100 + i, hizli=args.hizli, dar_egitim=dar
+        )
         print(f"    tohum {i + 1}/{args.tohum} bitti ({time.time() - t_tohum:.0f} sn)")
     tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
 
