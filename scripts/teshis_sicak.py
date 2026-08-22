@@ -104,38 +104,59 @@ def main() -> int:
 
     _kir(
         "GERCEK TUKETIM",
-        kovala(dv["_y"], [-1, 0, 1, 10, 100, 1000, 1e12],
-               ["tam sifir", "0-1", "1-10", "10-100", "100-1k", "1k+"]),
-        kare, yanlilik,
+        kovala(
+            dv["_y"],
+            [-1, 0, 1, 10, 100, 1000, 1e12],
+            ["tam sifir", "0-1", "1-10", "10-100", "100-1k", "1k+"],
+        ),
+        kare,
+        yanlilik,
     )
     _kir(
         "TRAFONUN SIFIR ORANI (gecmis)",
-        kovala(dv["t_sifir_orani"], [-0.01, 0.001, 0.05, 0.2, 0.5, 1.0],
-               ["0", "0-5%", "5-20%", "20-50%", "50%+"]),
-        kare, yanlilik,
+        kovala(
+            dv["t_sifir_orani"],
+            [-0.01, 0.001, 0.05, 0.2, 0.5, 1.0],
+            ["0", "0-5%", "5-20%", "20-50%", "50%+"],
+        ),
+        kare,
+        yanlilik,
     )
     _kir(
         "TRAFONUN OYNAKLIGI t_log_std",
-        kovala(dv["t_log_std"], [-0.01, 0.3, 0.6, 1.0, 1.5, 99],
-               ["<0,3", "0,3-0,6", "0,6-1,0", "1,0-1,5", "1,5+"]),
-        kare, yanlilik,
+        kovala(
+            dv["t_log_std"],
+            [-0.01, 0.3, 0.6, 1.0, 1.5, 99],
+            ["<0,3", "0,3-0,6", "0,6-1,0", "1,0-1,5", "1,5+"],
+        ),
+        kare,
+        yanlilik,
     )
     _kir(
         "GECMIS UZUNLUGU t_gun_sayisi",
-        kovala(dv["t_gun_sayisi"], [-1, 7, 30, 60, 90, 9999],
-               ["<=7 gun", "8-30", "31-60", "61-90", "90+"]),
-        kare, yanlilik,
+        kovala(
+            dv["t_gun_sayisi"],
+            [-1, 7, 30, 60, 90, 9999],
+            ["<=7 gun", "8-30", "31-60", "61-90", "90+"],
+        ),
+        kare,
+        yanlilik,
     )
     _kir(
         "UFUK (tahmin mesafesi)",
         kovala(dv["ufuk_gun"], [0, 30, 60, 90, 200], ["1-30", "31-60", "61-90", "90+"]),
-        kare, yanlilik,
+        kare,
+        yanlilik,
     )
     _kir(
         "KAPASITE guc",
-        kovala(dv["guc"], [-1, 50, 160, 400, 1000, 1e9],
-               ["<=50", "51-160", "161-400", "401-1000", "1000+"]),
-        kare, yanlilik,
+        kovala(
+            dv["guc"],
+            [-1, 50, 160, 400, 1000, 1e9],
+            ["<=50", "51-160", "161-400", "401-1000", "1000+"],
+        ),
+        kare,
+        yanlilik,
     )
 
     print(f"\nTAMAM  {(time.time() - t0) / 60:.1f} dakika")

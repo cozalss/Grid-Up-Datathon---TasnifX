@@ -95,9 +95,11 @@ def main() -> int:
             {
                 "kova": pd.cut(
                     dogrulama.loc[sic, "ufuk_gun"].to_numpy(),
-                    bins=KENAR, labels=ETIKET, include_lowest=True,
+                    bins=KENAR,
+                    labels=ETIKET,
+                    include_lowest=True,
                 ),
-                "artik": ln_y - ln_t,   # + = model EKSIK tahmin etmis
+                "artik": ln_y - ln_t,  # + = model EKSIK tahmin etmis
             }
         )
         tarih = dogrulama.loc[sic, "tarih"]

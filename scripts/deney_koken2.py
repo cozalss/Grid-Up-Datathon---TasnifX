@@ -94,9 +94,7 @@ def main() -> int:
             log_tahminler = []
             for tohum in di.TOHUMLAR:
                 maskeli = d.soguk_maskele(kalan, kolonlar, SICAK_MASKE, tohum)
-                log_t = di.egit_tahmin(
-                    "cat", maskeli, dogrulama, kolonlar, tohum, **USTYAZIM
-                )
+                log_t = di.egit_tahmin("cat", maskeli, dogrulama, kolonlar, tohum, **USTYAZIM)
                 log_tahminler.append(log_t)
                 tek = np.clip(np.expm1(log_t), 0.0, None)
                 tekil[ad][(b.ad, tohum)] = _test_agirlikli(gercek, soguk, tek)

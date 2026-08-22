@@ -88,9 +88,11 @@ def main() -> int:
     egitim, test = d.cerceveleri_kur()
     tum = [k for k in tm.oznitelikler(egitim) if k in test.columns]
     uretim = [k for k in tum if not k.startswith(tm.YALIN_CIKARILAN)]
-    genis = [k for k in tum if not k.startswith(tuple(
-        o for o in tm.YALIN_CIKARILAN if o not in YALIN_ONEKLER
-    ))]
+    genis = [
+        k
+        for k in tum
+        if not k.startswith(tuple(o for o in tm.YALIN_CIKARILAN if o not in YALIN_ONEKLER))
+    ]
     tm.kategorik_kodla(egitim, test)
     print(f"  onbellek {len(tum)} | uretim {len(uretim)} | genis {len(genis)}")
 
@@ -121,8 +123,12 @@ def main() -> int:
             tahminler = []
             for tohum in di.TOHUMLAR:
                 log_t = di.egit_tahmin(
-                    "cat", maskeli[(b.ad, tohum, len(kol))], dogrulama, kol,
-                    tohum, **ustyazim,
+                    "cat",
+                    maskeli[(b.ad, tohum, len(kol))],
+                    dogrulama,
+                    kol,
+                    tohum,
+                    **ustyazim,
                 )
                 tahminler.append(np.log1p(np.clip(np.expm1(log_t), 0.0, None))[sic])
             artik = ln_y - np.mean(tahminler, axis=0)
@@ -156,8 +162,10 @@ def main() -> int:
         print(f"  {ad:20} {hf:>+10.5f} {mf:>+15.5f}   {hukum:>28}")
         for b in tm.BLOKLAR:
             h, m, y = sonuc[ad][b.ad]
-            print(f"    {b.ad:>16} {taban[b.ad][0] - h:>+10.5f} {taban[b.ad][1] - m:>+15.5f}"
-                  f"   yanlilik {taban[b.ad][2]:+.4f} -> {y:+.4f}")
+            print(
+                f"    {b.ad:>16} {taban[b.ad][0] - h:>+10.5f} {taban[b.ad][1] - m:>+15.5f}"
+                f"   yanlilik {taban[b.ad][2]:+.4f} -> {y:+.4f}"
+            )
         kayitlar.append({"aday": ad, "ham_fark": hf, "merkezli_fark": mf, "hukum": hukum})
 
     KAYIT.parent.mkdir(parents=True, exist_ok=True)

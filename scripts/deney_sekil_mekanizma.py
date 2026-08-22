@@ -65,9 +65,14 @@ SICAK_MASKE = 0.15
 USTYAZIM: dict[str, object] = {"random_strength": 4.0}
 
 SEKIZ = (
-    "t_gy_log_ort", "t_gy_sifir_orani", "t_gy_gun",
-    "t_yayilma", "t_kayma", "t_hg_genligi",
-    "ozet_pencere_gun", "t_doluluk",
+    "t_gy_log_ort",
+    "t_gy_sifir_orani",
+    "t_gy_gun",
+    "t_yayilma",
+    "t_kayma",
+    "t_hg_genligi",
+    "ozet_pencere_gun",
+    "t_doluluk",
 )
 UC_SEKIL = ("t_yayilma", "t_kayma", "t_hg_genligi")
 
@@ -123,19 +128,22 @@ def main() -> int:
     taban = sonuc[ADAYLAR[0][0]]
     for ad, _ in ADAYLAR[1:]:
         print(f"\n  --- {ad} vs TABAN ---")
-        print(f"  {'blok':>8} {'HAM fark':>10} {'MERKEZLI fark':>15} "
-              f"{'yanlilik taban':>15} {'yanlilik aday':>14}")
+        print(
+            f"  {'blok':>8} {'HAM fark':>10} {'MERKEZLI fark':>15} "
+            f"{'yanlilik taban':>15} {'yanlilik aday':>14}"
+        )
         for b in tm.BLOKLAR:
             h0, m0, y0 = taban[b.ad]
             h1, m1, y1 = sonuc[ad][b.ad]
-            print(f"  {b.ad:>8} {h1 - h0:>+10.5f} {m1 - m0:>+15.5f} "
-                  f"{y0:>+15.4f} {y1:>+14.4f}")
+            print(f"  {b.ad:>8} {h1 - h0:>+10.5f} {m1 - m0:>+15.5f} {y0:>+15.4f} {y1:>+14.4f}")
         hf = float(np.mean([sonuc[ad][b.ad][0] - taban[b.ad][0] for b in tm.BLOKLAR]))
         mf = float(np.mean([sonuc[ad][b.ad][1] - taban[b.ad][1] for b in tm.BLOKLAR]))
         print(f"  {'ORTALAMA':>8} {hf:>+10.5f} {mf:>+15.5f}")
         pay = mf / hf if abs(hf) > 1e-9 else 0.0
-        print(f"  kazancin SACILIM'dan gelen payi: %{100 * pay:.0f}"
-              f"  (kalani blogun kendi yanliligindan -- URETIME TASINMAZ)")
+        print(
+            f"  kazancin SACILIM'dan gelen payi: %{100 * pay:.0f}"
+            f"  (kalani blogun kendi yanliligindan -- URETIME TASINMAZ)"
+        )
 
     print(f"\nTAMAM  {(time.time() - t_bas) / 60:.1f} dakika")
     return 0

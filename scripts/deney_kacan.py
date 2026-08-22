@@ -84,8 +84,10 @@ def main() -> int:
     for onek in d.AILELER.values():
         kapsanan |= {k for k in kolonlar if k.startswith(onek)}
     kacan = [k for k in kolonlar if k not in kapsanan]
-    print(f"  onbellek {len(tum)} | URETIM SETI {len(kolonlar)} | ablasyonun kapsadigi"
-          f" {len(kapsanan)} | KACAN {len(kacan)}")
+    print(
+        f"  onbellek {len(tum)} | URETIM SETI {len(kolonlar)} | ablasyonun kapsadigi"
+        f" {len(kapsanan)} | KACAN {len(kacan)}"
+    )
     print(f"  kacanlar: {kacan}")
     print("  hukum: eslenik t testi, |t| >= 2 (9 hucre: 3 blok x 3 tohum)")
 

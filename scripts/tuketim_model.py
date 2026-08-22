@@ -1298,9 +1298,7 @@ def main() -> int:
         # ``kokenleri_ayikla`` hedef blokla tek gun bile kesisen her kokeni
         # atar -- ana bloklarin kendisi dahil.
         kalan = (
-            kokenleri_ayikla(egitim, b.ad)
-            if EK_KOKEN_KULLAN
-            else egitim[egitim["_blok"] != b.ad]
+            kokenleri_ayikla(egitim, b.ad) if EK_KOKEN_KULLAN else egitim[egitim["_blok"] != b.ad]
         )
         kalan_dar = dar[dar["_blok"] != b.ad]
         sonuclar[b.ad] = egit_ve_olc(
@@ -1344,9 +1342,7 @@ def main() -> int:
     birikim = np.zeros(len(test), dtype="float64")
     for i in range(args.tohum):
         t_tohum = time.time()
-        birikim += rejim_tahmini(
-            egitim, test, kolonlar, 100 + i, hizli=args.hizli, dar_egitim=dar
-        )
+        birikim += rejim_tahmini(egitim, test, kolonlar, 100 + i, hizli=args.hizli, dar_egitim=dar)
         print(f"    tohum {i + 1}/{args.tohum} bitti ({time.time() - t_tohum:.0f} sn)")
     tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
 

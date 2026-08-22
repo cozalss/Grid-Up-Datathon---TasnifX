@@ -104,9 +104,7 @@ def main() -> int:
             for b in tm.BLOKLAR:
                 dogrulama = egitim[egitim["_blok"] == b.ad]
                 kalan = (
-                    tm.kokenleri_ayikla(kaynak, b.ad)
-                    if ayikla
-                    else kaynak[kaynak["_blok"] != b.ad]
+                    tm.kokenleri_ayikla(kaynak, b.ad) if ayikla else kaynak[kaynak["_blok"] != b.ad]
                 )
                 gercek = dogrulama[tm.HEDEF].to_numpy()
                 soguk = (dogrulama["soguk_mu"] == 1).to_numpy()
@@ -114,9 +112,7 @@ def main() -> int:
                 log_tahminler = []
                 for tohum in di.TOHUMLAR:
                     maskeli = d.soguk_maskele(kalan, kolonlar, maske, tohum)
-                    log_t = di.egit_tahmin(
-                        "cat", maskeli, dogrulama, kolonlar, tohum, **ustyazim
-                    )
+                    log_t = di.egit_tahmin("cat", maskeli, dogrulama, kolonlar, tohum, **ustyazim)
                     log_tahminler.append(log_t)
                     tek = np.clip(np.expm1(log_t), 0.0, None)
                     tekil[ad][(b.ad, tohum)] = tm.rmsle(gercek[secim], tek[secim])
@@ -129,13 +125,16 @@ def main() -> int:
         farklar = np.array([tekil["ANA"][k] - tekil["EK KOKENLI"][k] for k in tekil["ANA"]])
         o, sh = float(farklar.mean()), float(farklar.std(ddof=1) / np.sqrt(len(farklar)))
         t_deger = o / sh if sh > 0 else 0.0
-        hukum = "EK KOKEN KAZANDIRIYOR" if t_deger >= 2 else (
-            "EK KOKEN ZARAR VERIYOR" if t_deger <= -2 else "olculemedi"
+        hukum = (
+            "EK KOKEN KAZANDIRIYOR"
+            if t_deger >= 2
+            else ("EK KOKEN ZARAR VERIYOR" if t_deger <= -2 else "olculemedi")
         )
         print(f"    ESLENIK FARK (ANA - EK) {o:+.5f}  SH {sh:.5f}  t {t_deger:+.2f}   {hukum}")
         for b in tm.BLOKLAR:
-            f = np.array([tekil["ANA"][(b.ad, t)] - tekil["EK KOKENLI"][(b.ad, t)]
-                          for t in di.TOHUMLAR])
+            f = np.array(
+                [tekil["ANA"][(b.ad, t)] - tekil["EK KOKENLI"][(b.ad, t)] for t in di.TOHUMLAR]
+            )
             print(f"      {b.ad:6} {f.mean():+.5f}")
         kayitlar.append({"rejim": rejim, "fark": o, "sh": sh, "t": t_deger, "hukum": hukum})
 
