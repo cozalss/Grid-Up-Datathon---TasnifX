@@ -161,7 +161,9 @@ def main() -> int:
     maskeli = {}
     for b in tm.BLOKLAR:
         for tohum in di.TOHUMLAR:
-            maskeli[(b.ad, tohum)] = d.soguk_maskele(parcalar[b.ad][0], kolonlar, SICAK_MASKE, tohum)
+            maskeli[(b.ad, tohum)] = d.soguk_maskele(
+                parcalar[b.ad][0], kolonlar, SICAK_MASKE, tohum
+            )
 
     # Blok basina seviye modeli -- DIGER bloklarin trafolarindan uyduruluyor.
     seviye: dict[str, tuple[np.ndarray, pd.Series]] = {}
