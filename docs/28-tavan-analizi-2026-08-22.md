@@ -248,3 +248,85 @@ Bu, günün **beşinci** aynı-mekanizma reddi. Bir liste olarak:
 **Genel kural:** bloklarımız mevsimsel olarak ayrık. Bir bloğa uydurulmuş
 ya da bir bloktan hesaplanmış **hiçbir sabit** diğerine taşınmıyor. Yeni
 bir aday bu şekli taşıyorsa, ölçmeden önce beklenti düşük tutulmalı.
+
+---
+
+## 10. DÜZELTME — "seviye tahmincisi modeli geçiyor" bulgusu YAPAYDI
+
+§4'te şu tablo vardı ve bu belgenin en etkili iddiasıydı:
+
+```
+dogrusal: son30    hata std 0,5459  ->  sicak 0,7603  ->  LB 1,0087
+MODEL (105 kolon)  hata std 0,6010  ->  sicak 0,8008  ->  LB 1,0338
+```
+
+**Yanlış.** `0,5459`, `t_log_son30`'u eksik olan trafolar **atılarak** hesaplanmıştı.
+Ofset ise her satıra bir değer vermek zorunda:
+
+```
+AYNI tahminci, iki farkli NaN islemesi (2.213 trafo, yaz25)
+  (A) NaN'li trafolari AT      2.143 trafo   hata std 0,5504
+  (B) NaN'i MEDYANLA doldur    2.213 trafo   hata std 0,6130   <- GECERLI OLAN
+  MODELIN kendi seviye hatasi                        0,6010
+```
+
+Atılan %3,2, geçmişi kısa olan **en zor** trafolar. Dürüst kıyasta model
+(0,6010) tahminciden (0,6130) **daha iyi**.
+
+Bu tek düzeltme üç ayrı gözlemi birden açıklıyor:
+
+| gözlem | açıklaması |
+|---|---|
+| uydurulmuş taban battı (−0,043) | modelden kötü bir tahminciyi katsayı 1 ile dayatıyordu |
+| merkezlemek hiçbir şey değiştirmedi | ofsete sabit eklemek modelin kesişimince **tam** soğurulur — matematiksel olarak işlemsiz |
+| hiçbir GBDT varyantı da geçemedi | geçilecek bir şey yoktu |
+
+> **Merkezleme neden işlemsiz:** hedef `log1p(y) − ofset + c` olunca model
+> `f(x) + c` öğrenir; tahmin `f(x) + c + ofset − c = f(x) + ofset` çıkar.
+> Deney bunu birebir doğruladı (0,85171, altı hane aynı).
+
+### Düzeltilmiş tavan
+
+```
+                                   sicak   soguk    yaz25      LB
+v23 (hazir)                       0,8008  1,4291  0,97587   1,0182
+soguk ORACLE'inda (ilce x kova)   0,8008  1,4126  0,97052   1,0128
+sicakta gercekci tavan            ~0,79   1,4126  ~0,96      ~1,00
+```
+
+**Gerçekçi tavan ~1,00–1,01, ~0,98 değil.** Sıcak tarafta teorik boşluk
+duruyor (seviye oracle'ı 0,5831) ama ölçülen hiçbir tahminci modelin kendi
+örtük tahminini geçmiyor: doğrusal 0,6130 · LightGBM 0,61–0,68 ·
+`linear_tree` 0,6770 · **model 0,6010**.
+
+### Ders
+
+**Bir tahminciyi modelle kıyaslarken ikisi de AYNI satır kümesinde
+ölçülmeli.** Zor vakaları atmak, kıyası sessizce kazanır. Bu, günün
+"ölçüm düzeneği üretimden ayrılırsa" dersinin bir başka yüzü.
+
+---
+
+## 11. SOĞUK TARAFIN BİLGİ TAVANI — iş orada bitmiş
+
+`yaz25`, 20.633 soğuk satır, 678 trafo. Oracle = gerçek grup ortalamasını
+biliyormuş gibi (dolayısıyla hiçbir model bunu geçemez).
+
+```
+                                RMSLE    hucre    medyan satir   hukum
+tek sabit                      2,1620        1                   —
+kapasite kovasi                1,7663        8                   —
+ilce                           1,7588       47                   —
+ilce x kapasite kovasi         1,4126      201        66        DURUST
+ilce x kova x GUN              1,0892   10.029         1        EZBER
+trafo                          0,7196      678        32        kimlik gerek
+
+URETIM MODELI (v23)            1,4291
+```
+
+**Model, (ilçe × kapasite) oracle'ının 0,017 uzağında.** Yani soğuk tarafta
+konum ve kapasitenin verebileceği her şey çıkarılmış. Daha ileri gitmek
+trafo kimliği ister (0,7196) ve o bilgi veride yok.
+
+`ilce × kova × gun` oracle'ı (1,0892) cazip görünüyor ama 10.029 hücrenin
+%77,7'sinde ≤2 satır var — bu bir tavan değil, ezber.
