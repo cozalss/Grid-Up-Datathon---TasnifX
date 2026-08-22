@@ -864,10 +864,26 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     # Iki uzman TERS yonde. Sicakta xgb en iyi aile, sogukta cat EN KOTU
     # aile -- ve eski 3/1/1 ikisinde de cat'e agirlik veriyordu.
     #
-    # Sicakta (3,3,1) en iyi ama (2,2,1)'den farki 0,0005, yani gurultu
-    # mesafesinde. (2,2,1) secildi: ayni yapiyi (cat=xgb, lgbm asagida)
-    # ifade ediyor ve daha esit agirlik Krogh & Vedelsby ayrismasinda daha
-    # yuksek belirsizlik terimi demek -- private LB'de daha saglam.
+    # SICAK AGIRLIK DEGISIKLIGI DENENDI VE REDDEDILDI. Izgara (2,2,1)'in
+    # (3,1,1)'den 0,0027 iyi oldugunu soyluyordu; URETIM DOGRULAMASINDA uc
+    # blokta da KOTU cikti (yaz25 +0,0027, guz25 +0,0006, kis26 +0,0040).
+    #
+    # Neden yaniltti: izgara 3 tohum TORBALANMIS tahminler uzerindeydi,
+    # uretimin dogrulama adimi ise TEK tohum (42). Iki farkli tahminci icin
+    # optimum agirlik farkli. Gunun tekrarlayan dersi: olcum duzenegi
+    # uretimden bir adim bile ayrilirsa, olctugun sey gonderdigin sey degil.
+    #
+    # Soguk degisikligi AYRISTIRILARAK olculdu (--sadece-dogrulama):
+    #             yaz25     guz25     kis26    ORTALAMA
+    #   v20     0,98863   1,05023   1,09700   1,04529
+    #   A soguk 0,97559   1,04238   1,11354   1,04384  <- ALINDI
+    #   B sicak 0,99129   1,05079   1,10104   1,04771  <- reddedildi
+    #   ikisi   0,97828   1,04294   1,11752   1,04625
+    #
+    # A'da bloklar AYRISIYOR (yaz25 -0,0130, kis26 +0,0165). CV'den hangisinin
+    # hakli oldugu soylenemez: yaz25 test'in mevsimsel ikizi ve kalibrasyon
+    # iki kez tuttu, ama kis26 ozet penceresi uzunlugu ve soguk payi
+    # bakimindan test'e daha yakin. Belirsizlik LB'de cozulecek.
     #
     # Sogukta egri TEKDUZE: cat agirligi 1->2->3->4->6 boyunca her adimda
     # kotulesiyor. Izgaradan rastgele secim degil, duz bir egilim. Ama
@@ -876,7 +892,7 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
         "maske": 0.15,
         "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6},
         "ek_koken": True,
-        "agirlik": {"cat": 2.0, "xgb": 2.0, "lgbm": 1.0},
+        "agirlik": {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0},
     },
     # ``ek_kolon``: bu uzmana YALIN_CIKARILAN'a ragmen geri verilen kolonlar.
     # Olculdu (2026-08-22, ``deney_soguk_hafta.py``, eslenik, 5 tohum, 15 hucre):
