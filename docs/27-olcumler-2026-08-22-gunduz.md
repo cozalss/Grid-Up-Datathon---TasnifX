@@ -446,3 +446,72 @@ hata 151-kolonluk üretimle 144-kolonluk ölçümü ayırmıştı.
 
 **On bir yol kapandı, iki yol açıldı.** Kapananların ikisi (ufuk düzeltmesi
 −0,018 vaat ediyordu, 8 kolon −0,0183) gönderilseydi LB'de sert kaybettirirdi.
+
+---
+
+## 19. EK KÖKENLER YALNIZ SICAK UZMANINA — v17'nin neden battığı
+
+`v17` ek kökenleri **her iki uzmana** verdi ve battı:
+
+```
+              v15        v17       fark
+yaz25       0,99715    1,02530   +0,0282   KOTU
+guz25       1,05966    1,06442   +0,0048
+kis26       1,11772    1,09177   -0,0260   iyi
+ORTALAMA    1,05818    1,06049   +0,0023   berabere
+```
+
+Rejim bazında ölçüldü (`deney_koken_rejim.py`, eşlenik, 3 tohum, her rejim
+kendi üretim ayarlarıyla ve kendi satırlarında):
+
+```
+SICAK  ANA 0,80675 -> EK 0,79848   +0,00946  t=+1,46
+SOGUK  ANA 1,70349 -> EK 1,73612   -0,03273  t=-2,59  ZARARLI
+   soguk blok bazinda: yaz25 -0,077  guz25 -0,030  kis26 +0,009
+```
+
+**Mekanizma.** Ek kökenler aynı `(trafo, gün)` satırını farklı özet
+pencereleriyle tekrar gösteriyor. Sıcak uzmanı (maske %15) için bu gerçek
+veri artırma — `t_*` özetleri gerçekten farklı geliyor. Soğuk uzmanı maske
+%100'de çalışıyor, yani bütün `t_*` NaN; kopyalar arasında geriye yalnızca
+`ozet_pencere_gun`, `t_doluluk` ve `ufuk_gun` farkı kalıyor ve hedef
+**birebir aynı**. Veri artırma değil, kopya çoğaltma.
+
+v17'de yaz25'te soğuk kaybı (−0,077) sıcak kazancını (+0,008) ezmişti.
+
+### Düzeltilmiş sonuç — üç blokta da v15'in altında
+
+```
+              v15        v18       fark
+yaz25       0,99715    0,99115   -0,0060
+guz25       1,05966    1,04950   -0,0102
+kis26       1,11772    1,09768   -0,0200
+ORTALAMA    1,05818    1,04611   -0,0121
+```
+
+Hesap kapanıyor: soğuk taraf v15'le **birebir aynı** (yaz25 1,47665 —
+yapılandırması değişmedi), sıcak taraf 0,80985 → 0,80081, yani **−0,0090**.
+Kazancın tamamı sıcak uzmanından, ve `l2=1+d6` ile ek kökenlerin ayrı ayrı
+ölçülen parçalarının toplamıyla örtüşüyor.
+
+---
+
+## 20. Günün asıl dersi — ölçüm düzeneği üretimden ayrılırsa
+
+Bugün **üç kez** aynı sınıftan hata yapıldı:
+
+1. Sabah: tezgâh 144 kolonla ölçüyordu, üretim 151 kuruyordu (dün gece
+   yakalanmıştı, bugün `deney_kacan` aynı hataya düştü — tabanı tam setti)
+2. `deney_koken2`: ek kökenleri **yönlendirmesiz** tek CatBoost'la ölçtü,
+   üretim iki uzman çalıştırıyor → +0,0078 ölçüldü, üretimde +0,0023 kötü
+3. `deney_sicak`: mutlak skorların yayılımını raporluyordu, oysa adaylar
+   eşlenikti → hüküm verilemiyordu
+
+**Ortak ders: ölçüm düzeneği üretimden bir adım bile ayrılırsa, ölçtüğün
+şey gönderdiğin şey değildir.** Üçünün de bedeli ölçüm zamanıydı; ilk
+ikisi gönderilseydi LB'de kaybettirirdi.
+
+Ve bugünün kazandıran iki değişikliğinin **hiçbiri** parametre ayarından
+gelmedi. On üç hiperparametre adayı denendi, hepsi eşiğin altında kaldı.
+Kazandıran şey yapısaldı: eğitim setini büyütmek, ve onu **doğru uzmana**
+vermek.
