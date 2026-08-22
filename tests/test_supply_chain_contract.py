@@ -599,3 +599,40 @@ def test_secret_scanner_also_scans_untracked_files(tmp_path):
     assert not any("gizli" in f.path for f in scanner.scan_tracked(tmp_path)), (
         ".gitignore kapsamindaki dosya tarandi -- gereksiz alarm uretir."
     )
+
+
+def test_history_exceptions_do_not_weaken_the_tracked_scan(tmp_path):
+    """Gecmis istisnasi GECMISI temizler, KAPIYI degil.
+
+    2026-08-22'de CI kirmizi yandi: ``--history`` git gecmisini de tarar ve
+    610558d'de test fiksturu olarak eklenen alti sahte deger orada kalmisti.
+    Calisma agacindan silmek gecmisten silmez.
+
+    Gecmis yeniden YAZILMADI: ``filter-repo`` + force-push paylasilan
+    ``main``de, paralel bir oturum aktif commit atarken calisacakti ve
+    kurtarilacak bir sir yoktu -- alti degerin altisi da elle uydurulmus,
+    hicbir serviste gecerli olmayan dizeler (parmak izleri birebir
+    dogrulandi, aciklanamayan bulgu kalmadi).
+
+    Bunun yerine istisna kaydi tutuluyor. TEHLIKE: boyle bir liste, gercek
+    bir sizintiyi susturmaya da yarayabilir. Guvenlik su: istisna YALNIZCA
+    gecmise uygulanir. Ayni deger BUGUN bir dosyaya yazilirsa kapi yine
+    bagirir -- bu test tam olarak onu zorlar.
+    """
+    scanner = _load_script("secret_scan_history_exception", "security/scan_secrets.py")
+
+    assert scanner.GECMIS_ISTISNALARI, "Istisna kaydi bos -- test anlamsiz."
+    for parmak_izi, gerekce in scanner.GECMIS_ISTISNALARI.items():
+        assert len(parmak_izi) == 12, f"parmak izi bicimi bozuk: {parmak_izi}"
+        assert len(gerekce) > 20, f"{parmak_izi} icin gerekce yok -- kor istisna."
+
+    # Istisnadaki degerin KENDISI, bugun bir dosyada gecerse YAKALANMALI.
+    ornek = _sahte_sir()
+    hedef = tmp_path / "yeni.py"
+    hedef.write_text(f'token = "{ornek}"\n', encoding="utf-8")
+    parmak = scanner._fingerprint(ornek)
+
+    bulgular = scanner.scan_text(hedef.read_text(encoding="utf-8"), "yeni.py")
+    assert any(f.fingerprint == parmak for f in bulgular), (
+        "scan_text istisnaya bakiyor olabilir -- istisna YALNIZCA gecmise uygulanmali."
+    )

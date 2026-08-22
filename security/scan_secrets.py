@@ -45,6 +45,31 @@ ALLOW_TOKENS = (
 )
 SKIP_SUFFIXES = {".csv", ".parquet", ".png", ".jpg", ".jpeg", ".pdf", ".whl"}
 
+#: GECMISTE kalan ve FABRIKASYON oldugu KANITLANMIS degerlerin parmak izleri.
+#:
+#: YALNIZCA ``scan_history``ye uygulanir -- ``scan_tracked``e ASLA. Yani ayni
+#: deger bugun bir dosyaya yazilirsa kapi YINE bagirir. Istisna gecmisi
+#: temizler, kapiyi degil.
+#:
+#: NEDEN GECMIS YENIDEN YAZILMADI: bu degerler 610558d'de test fiksturu
+#: olarak eklendi ve 2f29ed0'da kaldirildi; ama commit gecmisinde kaldilar.
+#: ``git filter-repo`` + force-push tek cozumdu ve paylasilan ``main``de,
+#: paralel bir oturum aktif commit atarken calistirilacakti. Kurtarilacak
+#: bir sir da yok: alti degerin altisi da elle uydurulmus, hicbir serviste
+#: gecerli olmayan dizeler. Risk, kazancin kat kat ustunde.
+#:
+#: Her giris DOGRULANARAK yazildi: CI'in bildirdigi alti parmak izinin
+#: alti da asagidaki dizelerin SHA-256'siyla birebir eslesti; aciklanamayan
+#: bulgu KALMADI. Kor bir izin listesi degil, kapatilmis bir hesap.
+GECMIS_ISTISNALARI: dict[str, str] = {
+    "eeccb4efac88": "610558d test fiksturu -- token atamasi, uydurma dize",
+    "524ed7ee6717": "610558d test fiksturu -- api_key atamasi, uydurma dize",
+    "76b8a571c3a0": "610558d test fiksturu -- password atamasi, uydurma dize",
+    "8a0b4449164a": "610558d test fiksturu -- EPIAS_PASSWORD atamasi, uydurma dize",
+    "5eb12cfd8118": "610558d izlenmeyen-dosya testi -- api_key, uydurma dize",
+    "2062ca3cbe51": "610558d gitignore testi -- token, uydurma dize",
+}
+
 
 @dataclass(frozen=True)
 class Finding:
@@ -173,7 +198,10 @@ def scan_history(root: Path) -> list[Finding]:
         if line.startswith("+") and not line.startswith("+++"):
             findings.extend(scan_text(line[1:], current))
             line_number += 1
-    return findings
+    # Kanitlanmis fabrikasyon degerler gecmisten dislanir. Bu filtre
+    # BURADA -- scan_tracked'de DEGIL: ayni deger bugun bir dosyaya
+    # yazilirsa kapi yine bagirmali.
+    return [f for f in findings if f.fingerprint not in GECMIS_ISTISNALARI]
 
 
 def main() -> int:
