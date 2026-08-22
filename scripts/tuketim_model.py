@@ -165,22 +165,28 @@ EGITIM_BASI = "2025-01-01"
 #: Bes yeni koken hem aradaki bosluklari dolduruyor hem de 455'e uzaniyor.
 #: ``sub26`` ve ``mar26`` kisa etiketli/uzun ozetli: amaclari satir sayisi
 #: degil, merdivenin ust ucunu test'e yaklastirmak.
+#: YOGUNLASTIRMA DENENDI VE ALINMADI (2026-08-22, ``deney_koken_yogun.py``).
+#: Bes koken daha eklenip merdiven 31/59/90/120/151/181/212/243/273/304/
+#: 334/365/396/424'e cikarildi (eskisi 365'te bitiyordu, TEST 455)::
+#:
+#:     V18 (6 koken)   SICAK 0,79848
+#:     TUM (11 koken)  SICAK 0,79703   fark +0,00184  t=+0,24
+#:       yaz25 +0,0018   guz25 +0,0276   kis26 -0,0238
+#:
+#: Bloklar birbirini yiyor -- klasik blok yapayligi deseni. Kazanc alti
+#: kokende DOYMUS. Merdiven argumani makuldu ama veri desteklemedi;
+#: LB'de dogrulanmis olan altili korundu.
 EK_KOKENLER: tuple[tuple[str, str, str], ...] = (
     ("sub25", "2025-02-01", "2025-03-31"),
-    ("mar25", "2025-03-01", "2025-06-30"),
     ("bah25", "2025-05-01", "2025-08-31"),
-    ("haz25", "2025-06-01", "2025-09-30"),
     ("yaz25b", "2025-07-01", "2025-10-31"),
     ("guz25b", "2025-09-01", "2025-12-31"),
-    ("eki25", "2025-10-01", "2026-01-31"),
     ("kis26b", "2025-11-01", "2026-02-28"),
     ("bah26", "2026-01-01", "2026-03-31"),
-    ("sub26", "2026-02-01", "2026-03-31"),
-    ("mar26", "2026-03-01", "2026-03-31"),
 )
 
-#: ``v18``in gonderdigi kokenler -- yeni eklenenlerin degeri buna gore
-#: olculuyor (``deney_koken_yogun.py``). Kaldirilirsa olcum tabani kaybolur.
+#: ``v18``in gonderdigi kokenler. Su an ``EK_KOKENLER`` ile ayni; yogunlastirma
+#: yeniden denenirse olcum tabani bu kalsin diye ayri duruyor.
 KOKENLER_V18: tuple[str, ...] = ("sub25", "bah25", "yaz25b", "guz25b", "kis26b", "bah26")
 
 #: Gunluk hava tablolari: (dosya, kullanilacak kolonlar).

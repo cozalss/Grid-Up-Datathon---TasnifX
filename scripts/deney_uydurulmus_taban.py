@@ -81,10 +81,20 @@ SICAK_MASKE = 0.15
 USTYAZIM: dict[str, object] = {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6}
 
 #: Seviye modelinin girdileri -- hepsi blok icinde trafo basina SABIT.
-SEVIYE_GIRDI: tuple[str, ...] = (
-    "t_log_son7", "t_log_son14", "t_log_son30", "t_log_son60", "t_log_son90",
-    "t_log_ort", "t_log_medyan", "t_log_std", "t_sifir_orani", "t_gun_sayisi",
-)
+#:
+#: MINIMAL TUTULUYOR ve bu OLCULDU (2026-08-22, blok disi uydurup yaz25'te
+#: sinayarak). Zengin set TRANSFERI BOZUYOR::
+#:
+#:     yalniz son30                  hata std 0,5459
+#:     son30 + ort                            0,5503
+#:     butun pencereler                       0,5476
+#:     pencereler + yapi (10 kolon)           0,5776
+#:     on bir kolon + guc                     0,6370   <- ilk denemem
+#:     (kiyas) 105 kolonluk MODEL             0,6010
+#:
+#: Iki kolon secildi: ``t_log_son30`` en iyisi, ``t_log_ort`` ise son30
+#: NaN oldugunda dolgu gorevi goruyor (kisa gecmisli trafolar).
+SEVIYE_GIRDI: tuple[str, ...] = ("t_log_son30", "t_log_ort")
 
 KAYIT = KOK / "experiments" / "uydurulmus_taban.jsonl"
 
@@ -100,9 +110,8 @@ def _trafo_tablosu(cerceve: pd.DataFrame) -> pd.DataFrame:
 
 def _seviye_modeli(egit: pd.DataFrame) -> tuple[np.ndarray, pd.Series]:
     """En kucuk kareler. NaN'lar uydurma kumesinin MEDYANIYLA dolduruluyor."""
-    girdi = [*SEVIYE_GIRDI, "guc"]
+    girdi = list(SEVIYE_GIRDI)
     x = egit[girdi].copy()
-    x["guc"] = np.log1p(x["guc"])
     medyan = x.median()
     x = x.fillna(medyan)
     tasarim = np.c_[np.ones(len(x)), x.to_numpy()]
@@ -111,10 +120,7 @@ def _seviye_modeli(egit: pd.DataFrame) -> tuple[np.ndarray, pd.Series]:
 
 
 def _seviye_uygula(katsayi: np.ndarray, medyan: pd.Series, cerceve: pd.DataFrame) -> np.ndarray:
-    girdi = [*SEVIYE_GIRDI, "guc"]
-    x = cerceve[girdi].copy()
-    x["guc"] = np.log1p(x["guc"])
-    x = x.fillna(medyan)
+    x = cerceve[list(SEVIYE_GIRDI)].copy().fillna(medyan)
     return np.c_[np.ones(len(x)), x.to_numpy()] @ katsayi
 
 
