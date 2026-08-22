@@ -188,7 +188,7 @@ def main() -> int:
         print(f"  {b.ad:6} seviye modeli: {len(egit_t):,} trafodan uydu -> "
               f"{len(sina_t):,} trafoda hata std {hata.std():.4f} ort {hata.mean():+.4f}")
 
-    adaylar = ("TABAN (guc ofseti)", "UYDURULMUS", "UYDURULMUS+OZNITELIK")
+    adaylar = ("TABAN (guc ofseti)", "UYDURULMUS", "MERKEZLI UYDURULMUS")
     tekil: dict[str, dict[tuple[str, int], float]] = {a: {} for a in adaylar}
     torbali: dict[str, dict[str, float]] = {a: {} for a in adaylar}
 
@@ -206,11 +206,22 @@ def main() -> int:
                 else:
                     oe = _seviye_uygula(*seviye[b.ad], m)
                     oh = _seviye_uygula(*seviye[b.ad], dv)
-                    if ad.endswith("OZNITELIK"):
-                        m, dv = m.copy(), dv.copy()
-                        m["seviye_tahmin"] = oe
-                        dv["seviye_tahmin"] = oh
-                        kol = [*kolonlar, "seviye_tahmin"]
+                    if ad.startswith("MERKEZLI"):
+                        # Kesisimi KALDIR. Uydurulmus tabanin blok bazinda
+                        # buyuk bir yanliligi var (yaz25 +0,1747, guz25
+                        # -0,2875, kis26 +0,0934) ve ofset onu katsayi 1 ile
+                        # dogrudan tahmine geciriyordu -- ilk denemenin
+                        # -0,043 batmasinin sebebi buydu.
+                        #
+                        # Merkezlenince geriye yalnizca TRAFOLAR ARASI
+                        # goreli yapi kaliyor; aradigimiz da zaten o, cunku
+                        # seviye hatasi trafolar arasi bir hata. Genel
+                        # seviyeyi model kendisi ogreniyor (iyi yaptigi is).
+                        #
+                        # Egitim ve hedef AYNI sabitle kaydiriliyor, yoksa
+                        # ofset egitimle hedef arasinda kayar.
+                        ort = float(oe.mean())
+                        oe, oh = oe - ort, oh - ort
                 log_t = _egit_tahmin(m, dv, kol, tohum, oe, oh)
                 log_tahminler.append(log_t)
                 tek = np.clip(np.expm1(log_t), 0.0, None)
