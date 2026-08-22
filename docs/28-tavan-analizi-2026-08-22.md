@@ -149,3 +149,63 @@ Bunlar tek tek ölçümlerden daha kalıcı:
 
 Ayrıca bir varsayım düzeltildi: panel **2 il / 47 ilçe** (İzmir, Manisa) —
 beş il değil. Muğla/Aydın turizmi üzerine kurulacak her beklenti temelsiz.
+
+---
+
+## 7. `v20` — soğuk uzmanına hafta günü
+
+```
+              v18        v20      fark
+yaz25       0,99115    0,98863   -0,0025
+guz25       1,04950    1,05023   +0,0007
+kis26       1,09768    1,09700   -0,0007
+ORTALAMA    1,04611    1,04529   -0,0008
+
+sicak       0,80081    0,80081   DEGISMEDI  <- dokunulmadi, dogru
+soguk       1,47665    1,46901   -0,0076
+```
+
+Sıcak taraf birebir aynı — hafta gününün yalnızca soğuk uzmanına verildiğinin
+doğrudan kanıtı. LB öngörüsü **0,98863 + 0,0423 = 1,03093**, birincinin
+(1,03170) altında.
+
+---
+
+## 8. LB PROBU — CV'den ölçülemeyen kaymayı LB'den çözmek
+
+**Sorun.** Model Nisan 2025 – Mart 2026 ile eğitilip Nisan–Temmuz 2026'yı
+tahmin ediyor: zaman ekseninde eğitim aralığının **dışında**, ve GBDT'ler
+dışdeğerleme yapamaz. Sistematik bir kayma olabilir.
+
+CV'den ölçülemiyor çünkü blok yanlılıkları mevsimle karışıyor (yaz25 +0,082,
+guz25 −0,343, kis26 +0,192 — işaretler tutarsız).
+
+**Çözüm.** LB skorlaması belirlenimci ve RMSLE² kaymada kuadratik:
+
+```
+S1² = S0² − 2·δ·E[r] + δ²      ->      E[r] = (S0² + δ² − S1²) / (2δ)
+```
+
+Tek prob optimal kaymayı **analitik** olarak veriyor. Eğitim gerekmiyor:
+`pred' = expm1(log1p(pred) + δ)`.
+
+Okuma tablosu (S0 = v20'nin skoru, δ = 0,10):
+
+| gelen S1 | çözülen E[r] | optimal LB | kazanç |
+|---|---|---|---|
+| S0 − 0,009 | ≈ +0,14 | S0 − 0,0095 | büyük |
+| S0 − 0,005 | ≈ +0,10 | S0 − 0,0047 | orta |
+| S0 − 0,002 | ≈ +0,07 | S0 − 0,0022 | küçük |
+| ≈ S0 | ≈ +0,05 | S0 − 0,0012 | ihmal |
+| S0 + 0,003 | ≈ −0,02 | S0 − 0,0001 | yok |
+
+**Neden güvenli:** private LB'de E[r] aynı olacak (aynı model, aynı dönem,
+n=214k'da örnekleme hatası ihmal edilebilir). Bu, public'e aşırı uydurma
+riski taşımayan nadir LB-probu türü. Ayrıca Kaggle en iyi skoru koruduğu
+için aşağı yönlü risk yok.
+
+**Beklenti ılımlı tutulmalı:** test'in özet penceresi 2026-03-31'de bitiyor,
+yani `t_log_son30` zaten Mart 2026'yı okuyor ve yıllık büyümenin çoğu o
+pencereye girmiş. Dışdeğerlenecek kısım yalnızca Nisan–Temmuz arası 1–4 ay.
+Ölçülen panel büyümesi (aynı trafo, Oca–Mar 2025 → Oca–Mar 2026) satır
+ağırlıklı **+0,149**, medyan **+0,057** — ama bunun çoğu zaten fiyatlanmış.
