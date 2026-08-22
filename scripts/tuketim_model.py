@@ -150,14 +150,38 @@ EGITIM_BASI = "2025-01-01"
 #: fazla kez gorulur ve model "ozet ne kadar eskiyse tahmin o kadar
 #: belirsiz" iliskisini ogrenir. Dogrulamada ortusme YASAKTIR; ilgili
 #: fonksiyon hedef blokla kesisen her kokeni atar.
+#: Her koken kendi ozet penceresini EGITIM_BASI'ndan etiketin bir gun
+#: oncesine kadar kurar. Yani etiket ne kadar gec baslarsa ozet o kadar uzun.
+#:
+#: OZET PENCERESI MERDIVENI -- eklemelerin gerekcesi bu. Test'in ozet
+#: penceresi 455 GUN ve ``ozet_pencere_gun`` modele ACIK bir kolon olarak
+#: veriliyor; yani model test'te hic gormedigi bir degere disdegerleme
+#: yapmak zorunda kaliyordu::
+#:
+#:     eski merdiven   31  90  120  181  212  243  304  334  365   | TEST 455
+#:     yeni merdiven   31  59  90  120  151  181  212  243  273
+#:                     304  334  365  396  424                     | TEST 455
+#:
+#: Bes yeni koken hem aradaki bosluklari dolduruyor hem de 455'e uzaniyor.
+#: ``sub26`` ve ``mar26`` kisa etiketli/uzun ozetli: amaclari satir sayisi
+#: degil, merdivenin ust ucunu test'e yaklastirmak.
 EK_KOKENLER: tuple[tuple[str, str, str], ...] = (
     ("sub25", "2025-02-01", "2025-03-31"),
+    ("mar25", "2025-03-01", "2025-06-30"),
     ("bah25", "2025-05-01", "2025-08-31"),
+    ("haz25", "2025-06-01", "2025-09-30"),
     ("yaz25b", "2025-07-01", "2025-10-31"),
     ("guz25b", "2025-09-01", "2025-12-31"),
+    ("eki25", "2025-10-01", "2026-01-31"),
     ("kis26b", "2025-11-01", "2026-02-28"),
     ("bah26", "2026-01-01", "2026-03-31"),
+    ("sub26", "2026-02-01", "2026-03-31"),
+    ("mar26", "2026-03-01", "2026-03-31"),
 )
+
+#: ``v18``in gonderdigi kokenler -- yeni eklenenlerin degeri buna gore
+#: olculuyor (``deney_koken_yogun.py``). Kaldirilirsa olcum tabani kaybolur.
+KOKENLER_V18: tuple[str, ...] = ("sub25", "bah25", "yaz25b", "guz25b", "kis26b", "bah26")
 
 #: Gunluk hava tablolari: (dosya, kullanilacak kolonlar).
 #: Konvektif ve hava kalitesi BILEREK yok -- ikisi de kesinti fizigi icin
