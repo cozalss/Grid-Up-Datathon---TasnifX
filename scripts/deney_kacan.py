@@ -74,16 +74,20 @@ def main() -> int:
     print("ABLASYONDAN KACAN KOLONLAR -- sicak uzmani (maske %15), sicak satirlarda")
     print("=" * 100)
     egitim, test = d.cerceveleri_kur()
-    kolonlar = [k for k in tm.oznitelikler(egitim) if k in test.columns]
+    tum = [k for k in tm.oznitelikler(egitim) if k in test.columns]
+    # URETIM SETI (105). Taban tam set olsaydi, sekizinin degeri atilmis 46
+    # kolonun VARLIGINDA olculurdu ve uretime tasinmazdi.
+    kolonlar = [k for k in tum if not k.startswith(tm.YALIN_CIKARILAN)]
     tm.kategorik_kodla(egitim, test)
 
     kapsanan = set()
     for onek in d.AILELER.values():
         kapsanan |= {k for k in kolonlar if k.startswith(onek)}
     kacan = [k for k in kolonlar if k not in kapsanan]
-    print(f"  {len(kolonlar)} kolon | ablasyonun kapsadigi {len(kapsanan)} | KACAN {len(kacan)}")
+    print(f"  onbellek {len(tum)} | URETIM SETI {len(kolonlar)} | ablasyonun kapsadigi"
+          f" {len(kapsanan)} | KACAN {len(kacan)}")
     print(f"  kacanlar: {kacan}")
-    print(f"  esik {di.ESIK:.5f}")
+    print("  hukum: eslenik t testi, |t| >= 2 (9 hucre: 3 blok x 3 tohum)")
 
     parcalar = {b.ad: di.blok_parcalari(egitim, b.ad) for b in tm.BLOKLAR}
     maskeli = {}
@@ -91,29 +95,36 @@ def main() -> int:
         for tohum in di.TOHUMLAR:
             maskeli[(b.ad, tohum)] = d.soguk_maskele(parcalar[b.ad][0], kolonlar, 0.15, tohum)
 
-    taban = None
+    taban_tekil: dict[tuple[str, int], float] = {}
     for ad, cikar in ADAYLAR:
         t0 = time.time()
         alt = [k for k in kolonlar if k not in cikar]
-        skorlar = {}
+        skorlar, tekil = {}, {}
         for b in tm.BLOKLAR:
             _, dogrulama, gercek, soguk = parcalar[b.ad]
-            tahminler = [
-                di.egit_tahmin("cat", maskeli[(b.ad, tohum)], dogrulama, alt, tohum)
-                for tohum in di.TOHUMLAR
-            ]
+            tahminler = []
+            for tohum in di.TOHUMLAR:
+                log_t = di.egit_tahmin("cat", maskeli[(b.ad, tohum)], dogrulama, alt, tohum)
+                tahminler.append(log_t)
+                tek = np.clip(np.expm1(log_t), 0.0, None)
+                tekil[(b.ad, tohum)] = tm.rmsle(gercek[~soguk], tek[~soguk])
             t = np.clip(np.expm1(np.mean(tahminler, axis=0)), 0.0, None)
             skorlar[b.ad] = tm.rmsle(gercek[~soguk], t[~soguk])
         genel = float(np.mean(list(skorlar.values())))
-        if taban is None:
-            taban = genel
+        if not taban_tekil:
+            taban_tekil = tekil
             isaret = "TABAN"
         else:
-            fark = genel - taban  # pozitif = kolonlar FAYDALI (cikarinca kotulesti)
-            isaret = f"{fark:+.5f} " + ("FAYDALI" if fark > di.ESIK else "olculemez")
+            # pozitif fark = kolonlar FAYDALI (cikarinca skor kotulesti)
+            farklar = np.array([tekil[k] - taban_tekil[k] for k in taban_tekil])
+            ort = float(farklar.mean())
+            sh = float(farklar.std(ddof=1) / np.sqrt(len(farklar)))
+            t_deger = ort / sh if sh > 0 else 0.0
+            hukum = ("FAYDALI" if ort > 0 else "ZARARLI") if abs(t_deger) >= 2.0 else "olculemez"
+            isaret = f"{ort:+.5f} t={t_deger:+.2f} {hukum}"
         detay = "  ".join(f"{k} {v:.4f}" for k, v in skorlar.items())
         sure = f"({time.time() - t0:.0f} sn)"
-        print(f"  {ad:34} [{len(alt):3d}] SICAK {genel:.5f}  {isaret:20} {detay}  {sure}")
+        print(f"  {ad:34} [{len(alt):3d}] SICAK {genel:.5f}  {isaret:28} {detay}  {sure}")
 
     print("\n  pozitif fark = kolonlar FAYDALI (cikarinca skor kotulesti)")
     print("  negatif fark = kolonlar ZARARLI (cikarinca skor iyilesti)")
