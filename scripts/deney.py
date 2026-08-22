@@ -687,6 +687,17 @@ def koken_deneyi(egitim: pd.DataFrame, kolonlar: list[str], yenile: bool) -> Non
         genis[k] = pd.Categorical(genis[k], categories=egitim[k].cat.categories)
     print(f"  ana bloklar {len(egitim):>9,} satir -> ek kokenlerle {len(genis):>9,} satir")
 
+    # URETIM SETI. Iki nedenle: (1) olcum uretime tasinsin, (2) ek koken
+    # onbellegi ana onbellekten eski olabiliyor ve eksik kolonla cokuyordu
+    # -- 2026-08-22'de tam bunu yapti (t_mevsim_* yoktu).
+    kolonlar = [k for k in kolonlar if not k.startswith(tm.YALIN_CIKARILAN)]
+    eksik = [k for k in kolonlar if k not in ek.columns]
+    if eksik:
+        print(f"  UYARI: ek koken onbellegi BAYAT, {len(eksik)} kolon eksik: {eksik[:5]}")
+        print("  'python scripts/deney.py --deney koken --yenile' ile yeniden kur.")
+        kolonlar = [k for k in kolonlar if k in ek.columns]
+    print(f"  {len(kolonlar)} oznitelik (uretim seti)")
+
     for ad, kaynak, ayikla in (("ANA (3 blok)", egitim, False), ("EK KOKENLI", genis, True)):
         blok_skor = {}
         for b in tm.BLOKLAR:
