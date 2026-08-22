@@ -1286,9 +1286,9 @@ def main() -> int:
     # ve hepsine ayni maskeyi vermek o cesitliligi bosa harcardi.
     birikim = np.zeros(len(test), dtype="float64")
     for i in range(args.tohum):
-        t0 = time.time()
+        t_tohum = time.time()
         birikim += rejim_tahmini(egitim, test, kolonlar, 100 + i, hizli=args.hizli)
-        print(f"    tohum {i + 1}/{args.tohum} bitti ({time.time() - t0:.0f} sn)")
+        print(f"    tohum {i + 1}/{args.tohum} bitti ({time.time() - t_tohum:.0f} sn)")
     tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
 
     GONDERIM.mkdir(parents=True, exist_ok=True)
