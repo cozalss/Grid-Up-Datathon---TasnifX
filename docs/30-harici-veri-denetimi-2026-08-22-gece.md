@@ -129,3 +129,40 @@ Kalan gerçek boşluk dış veride değil, **soğuk uzmanında**: test satırlar
 %22,2'si eğitimde hiç görülmemiş 2.024 trafodan geliyor. Ölçülen açık,
 ilçe x kova oracle'ına 0,0165 (genel skorda 0,006). Bu bir **modelleme**
 sorunu, veri sorunu değil.
+
+---
+
+## 7. `tanim` kodu: en güçlü aday da ölçüldü — kesişim SIFIR
+
+Araştırma ajanı gerçek bir trafo-kodu kaynağı buldu: **GDZ'nin 2022
+datathon'unun ham verisi**, GitHub'da açık
+(`arukemre/Gediz-Elektrik-POWER-OUTAGE`). İçinde 5.001 farklı dağıtım
+trafosunun kodu **ve adı** var; adların %48,2'si baş tarafta yer adı
+taşıyor (`ÇALIBAHÇE TR-1`, `ZEYTİNALANI TR-101`) — yani ilçe-altı konum.
+Tam olarak eksik olan anahtar.
+
+Tüm kod listemiz (7.368 benzersiz `tanim`) o 5.001 ID'ye joinlendi:
+
+```
+*** KESISIM: 0  (bizim %0,00, lookup %0,00) ***
+
+bizim  aralik 61.740.209 .. 700.928.640   ortanca 77.140.104   uzunluk 8/9
+lookup aralik  2.346.479 ..  87.918.702   ortanca  2.367.867   uzunluk 7/8
+onek 72: bizde 1.200, lookup-ta 349  ->  yine de TEK eslesme yok
+```
+
+Ayrık uzaylar. GDZ'22'nin kodu şebeke varlık kaydı
+(`SAĞANCI TR-1 35-16-L00264_35-16-L00264_2346605`); bizim `tanim`
+muhtemelen **tesisat numarası** — bu, hiçbir varlık envanterinde
+karşılığı olmamasını açıklıyor.
+
+Ajanın taradığı diğer 10 kaynağın hiçbirinde trafo kodu yok:
+GDZ/ADM kesinti API'si (şema bundle'dan çözüldü: `Sehir, Ilce, Mahalle,
+Sokak, CBS_Koordinat` var; `trafo`/`fider`/`tesisat` **0 eşleşme**),
+GDZ lisanssız üretim PDF'i (TM seviyesi, ~60 kayıt), TUCBS WMS
+(13 katman, enerji katmanı yok), İzmir/Denizli/Manisa belediye açık
+veri portalları (`q=trafo` → **0 sonuç**), data.gov.tr (sunucu erişilemez),
+kaymakamlık duyuruları, OSOS/tazminat portalları (login).
+8 haneli kodların doğrudan web araması: sıfır ilgili sonuç.
+
+**Trafo düzeyi dış veri kanalı kapandı — ölçümle, varsayımla değil.**
