@@ -262,3 +262,72 @@ gösteriyor — yani 75 PDF kazınsa bile varılacak yer `gp_ilce_ay`.
 
 **Hüküm: lisanssız GES arşivi kazınmıyor.** Ulaşacağı havuz ölçüldü ve
 o havuzun karşılığı olan öznitelik zaten var, zaten test edildi.
+
+---
+
+## 10. İŞ YAPILDI: lisanssız GES arşivi indirildi, ayrıştırıldı, ölçüldü
+
+§9'da "kazınmıyor" demiştim. O eleme fazla hızlıydı ve düzeltildi:
+`gp_ilce_ay` **takvim ayına** göre bir profildir — Nisan 2026'ya Nisan
+2025'in değerini verir. Bir ilçenin yükü yıldan yıla kayıyorsa hiçbir
+takvim-ayı özniteliği bunu ifade **edemez**, ve test dönemi eğitimin
+4–7 ay ötesinde. Kümülatif GES kapasitesi bu boşluğu doldurabilirdi.
+Bu yüzden iş tam olarak yapıldı.
+
+### İndirilen ve ayrıştırılan
+
+```
+GDZ lisanssiz uretim teknik degerlendirme arsivi
+  ajax ucu   POST /ajax/evaluation  (csrf, kimlik gerekmiyor)
+  indirilen  170 PDF / 112 MB  ->  data/external/ham/lisanssiz_ges/
+  ayiklanan  3.269 kayit, 2018-2025, 47 ilce x 103 TEIAS TM
+  cikti      data/external/lisanssiz_ges.parquet
+             (basvuru, tarih, il, ilce, tm, tesis, sekil, kw, sonuc)
+ayrica       CED Olumlu 1993-2024 (924 KB), TEIAS TM kapasite 2026 (939 KB)
+```
+
+Ayrıştırıcı iki ayrı sütun düzenini kapsıyor: eski PDF'lerde tarih önce,
+yenilerde başvuru no önce; 2023 dosyalarında TM sütunu hiç yok.
+
+### Ölçüm 1 — sürücü bizim pencerede DÜZ
+
+`AG` bağlantılı (dağıtım trafosu arkasındaki) **onaylı** kapasite:
+
+```
+2018  0,9 MW    2021  16,5 MW    2024  1,5 MW
+2019 16,2 MW    2022   3,7 MW    2025  0,3 MW   <- veri donemimiz
+2020 67,9 MW    2023   3,7 MW
+```
+
+Çatı GES bağlantıları **2019–2021'de tamamlanmış**. Bizim pencerede
+(2025-04 → 2026-07) yıllık ilave 0,3 MW — tüm bölgede, gürültü seviyesinde.
+Hipotezin ihtiyaç duyduğu *zamanla değişen* sürücü **düz**. Kümülatif stok
+ise ilçe-sabit bir büyüklüktür ve modelin `ilce_key`'i onu zaten öğrenebilir.
+
+Ayrıca arşiv yapısal olarak **25 kW üstü** başvuruları içeriyor; konut çatı
+GES'i (asıl trafo arkası kütle) bu listede hiç yok. Kaynak, hipotezin
+ihtiyaç duyduğu büyüklüğü barındırmıyor.
+
+### Ölçüm 2 — asıl bulgu: ilçe bilgisi İLERİYE TAŞINMIYOR
+
+Son 4 ay tutuldu, ilk 8 ayla tahmin edildi (ağırlıklı MSE, düşük = iyi):
+
+```
+TAHMIN YOK (sifir)                   0,012391    <- EN IYI
+ilce x TAKVIM AYI profili            0,012391    (esdeger)
+ilce SON 3 AY ortalamasi             0,027354    2,2 kat kotu
+ilce SABIT ortalamasi                0,032103    2,6 kat kotu
+ilce DOGRUSAL TREND (ileri uzatma)   0,040354    3,3 kat kotu
+```
+
+İlçe kayması **trend değil, ortalamaya dönen salınım**. Geçmişini bilmek
+ileri tahmini **bozuyor**.
+
+Bu, §9'daki 0,0070'lik havuzun neden erişilemez olduğunu açıklıyor: havuz
+in-sample gerçek, ama **ileri yönde öngörülemez**. Ve aynı anda `g_*`
+(−0,0246, t=−3,08) ile `gp_*` (−0,0028) ölçümlerinin neden negatif
+çıktığını açıklıyor — sebep CV kusuru değilmiş, ilçe bilgisinin gerçekten
+transfer olmaması.
+
+**Bu sonuç ÇED, OSB, turizm, sulama dosyalarını da kapsıyor:** hepsi
+ilçe x zaman değişkenidir, ve ilçe x zaman ileriye taşınmıyor.
