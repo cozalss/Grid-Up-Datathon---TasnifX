@@ -116,11 +116,7 @@ def main() -> int:
         blok_skor = {}
         for b in tm.BLOKLAR:
             dogrulama = egitim[egitim["_blok"] == b.ad]
-            kalan = (
-                tm.kokenleri_ayikla(kaynak, b.ad)
-                if ayikla
-                else kaynak[kaynak["_blok"] != b.ad]
-            )
+            kalan = tm.kokenleri_ayikla(kaynak, b.ad) if ayikla else kaynak[kaynak["_blok"] != b.ad]
             gercek = dogrulama[tm.HEDEF].to_numpy()
             sic = (dogrulama["soguk_mu"] == 0).to_numpy()
             log_tahminler = []

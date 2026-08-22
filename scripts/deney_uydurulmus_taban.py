@@ -143,8 +143,13 @@ def _egit_tahmin(
 
     y = np.log1p(egitim[tm.HEDEF].clip(lower=0).to_numpy()) - ofset_e
     p: dict[str, object] = {
-        "loss_function": "RMSE", "iterations": 250, "learning_rate": 0.05,
-        "rsm": 0.75, "random_seed": tohum, "verbose": 0, "allow_writing_files": False,
+        "loss_function": "RMSE",
+        "iterations": 250,
+        "learning_rate": 0.05,
+        "rsm": 0.75,
+        "random_seed": tohum,
+        "verbose": 0,
+        "allow_writing_files": False,
         **USTYAZIM,
     }
     model = cb.CatBoostRegressor(**p)
@@ -185,8 +190,10 @@ def main() -> int:
         sina_t = _trafo_tablosu(egitim[egitim["_blok"] == b.ad]).dropna(subset=["hedef"])
         tahmin = _seviye_uygula(*seviye[b.ad], sina_t)
         hata = sina_t["hedef"].to_numpy() - tahmin
-        print(f"  {b.ad:6} seviye modeli: {len(egit_t):,} trafodan uydu -> "
-              f"{len(sina_t):,} trafoda hata std {hata.std():.4f} ort {hata.mean():+.4f}")
+        print(
+            f"  {b.ad:6} seviye modeli: {len(egit_t):,} trafodan uydu -> "
+            f"{len(sina_t):,} trafoda hata std {hata.std():.4f} ort {hata.mean():+.4f}"
+        )
 
     adaylar = ("TABAN (guc ofseti)", "UYDURULMUS", "MERKEZLI UYDURULMUS")
     tekil: dict[str, dict[tuple[str, int], float]] = {a: {} for a in adaylar}

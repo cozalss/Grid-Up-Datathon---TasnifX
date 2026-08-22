@@ -110,8 +110,13 @@ def main() -> int:
 
     KAYIT.parent.mkdir(parents=True, exist_ok=True)
     with KAYIT.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps({"fark": o, "sh": sh, "t": t_d, "hukum": hukum,
-                             "tohum": len(TOHUMLAR)}, ensure_ascii=False) + "\n")
+        fh.write(
+            json.dumps(
+                {"fark": o, "sh": sh, "t": t_d, "hukum": hukum, "tohum": len(TOHUMLAR)},
+                ensure_ascii=False,
+            )
+            + "\n"
+        )
     print(f"\nTAMAM  {(time.time() - t_bas) / 60:.1f} dakika")
     return 0
 

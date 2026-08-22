@@ -56,10 +56,25 @@ AILELER = ("cat", "xgb", "lgbm")
 
 #: Taranacak (cat, xgb, lgbm) agirliklari. Uretim 3/1/1.
 AGIRLIKLAR: tuple[tuple[float, float, float], ...] = (
-    (1, 0, 0), (0, 1, 0), (0, 0, 1),
-    (0, 1, 1), (1, 1, 1), (1, 2, 2), (1, 3, 3), (2, 3, 3),
-    (1, 2, 1), (1, 1, 2), (2, 2, 1), (2, 1, 2), (2, 2, 2),
-    (2, 1, 1), (3, 2, 1), (3, 1, 2), (3, 3, 1), (3, 1, 1), (4, 1, 1),
+    (1, 0, 0),
+    (0, 1, 0),
+    (0, 0, 1),
+    (0, 1, 1),
+    (1, 1, 1),
+    (1, 2, 2),
+    (1, 3, 3),
+    (2, 3, 3),
+    (1, 2, 1),
+    (1, 1, 2),
+    (2, 2, 1),
+    (2, 1, 2),
+    (2, 2, 2),
+    (2, 1, 1),
+    (3, 2, 1),
+    (3, 1, 2),
+    (3, 3, 1),
+    (3, 1, 1),
+    (4, 1, 1),
 )
 
 KAYIT = KOK / "experiments" / "agirlik_soguk.jsonl"
@@ -93,9 +108,7 @@ def main() -> int:
     for kol_ad, kaynak, ayikla in (("ANA (soguk ek koken almaz)", egitim, False),):
         for b in tm.BLOKLAR:
             dogrulama = egitim[egitim["_blok"] == b.ad]
-            kalan = (
-                tm.kokenleri_ayikla(kaynak, b.ad) if ayikla else kaynak[kaynak["_blok"] != b.ad]
-            )
+            kalan = tm.kokenleri_ayikla(kaynak, b.ad) if ayikla else kaynak[kaynak["_blok"] != b.ad]
             gercek = dogrulama[tm.HEDEF].to_numpy()
             sic = (dogrulama["soguk_mu"] == 1).to_numpy()  # SOGUK satirlar
             hedefler[b.ad] = (gercek, sic)
@@ -114,11 +127,17 @@ def main() -> int:
         blok = []
         for b in tm.BLOKLAR:
             gercek, sic = hedefler[b.ad]
-            log_t = np.mean([
-                sum(wi * onbellek[(kol_ad, b.ad, a, tohum)]
-                    for a, wi in zip(AILELER, w, strict=True)) / toplam
-                for tohum in TOHUMLAR
-            ], axis=0)
+            log_t = np.mean(
+                [
+                    sum(
+                        wi * onbellek[(kol_ad, b.ad, a, tohum)]
+                        for a, wi in zip(AILELER, w, strict=True)
+                    )
+                    / toplam
+                    for tohum in TOHUMLAR
+                ],
+                axis=0,
+            )
             t = np.clip(np.expm1(log_t), 0.0, None)
             blok.append(tm.rmsle(gercek[sic], t[sic]))
         return float(np.mean(blok))
@@ -147,8 +166,10 @@ def main() -> int:
     print()
     for kol_ad, (w, v) in en_iyi.items():
         uretim = skor(kol_ad, (3, 1, 1))
-        print(f"  {kol_ad:11} en iyi {str(w):12} {v:.5f}   uretim 3/1/1 {uretim:.5f}"
-              f"   fark {uretim - v:+.5f}")
+        print(
+            f"  {kol_ad:11} en iyi {str(w):12} {v:.5f}   uretim 3/1/1 {uretim:.5f}"
+            f"   fark {uretim - v:+.5f}"
+        )
     print("\n  UYARI: 12 hucrelik izgaradan en iyisini secmek ASIRI UYDURMADIR.")
     print("  Uretim agirligini ancak fark tohum gurultusunun USTUNDEYSE degistir.")
 

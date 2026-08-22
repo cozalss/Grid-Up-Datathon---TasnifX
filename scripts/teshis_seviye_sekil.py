@@ -87,10 +87,14 @@ def main() -> int:
     print(f"\n  sicak satir {len(dv):,} | trafo {dv['tanim'].nunique():,}")
     print(f"  RMSLE {np.sqrt(toplam_mse):.5f}   (MSE {toplam_mse:.5f})")
     print(f"\n  {'bilesen':32}{'MSE':>10}{'pay':>8}{'RMSLE karsiligi':>18}")
-    print(f"  {'SEVIYE (trafo bazinda ort artik)':32}{seviye:>10.5f}{seviye / toplam_mse:>8.1%}"
-          f"{np.sqrt(seviye):>18.4f}")
-    print(f"  {'SEKIL (trafo ici sapma)':32}{sekil:>10.5f}{sekil / toplam_mse:>8.1%}"
-          f"{np.sqrt(sekil):>18.4f}")
+    print(
+        f"  {'SEVIYE (trafo bazinda ort artik)':32}{seviye:>10.5f}{seviye / toplam_mse:>8.1%}"
+        f"{np.sqrt(seviye):>18.4f}"
+    )
+    print(
+        f"  {'SEKIL (trafo ici sapma)':32}{sekil:>10.5f}{sekil / toplam_mse:>8.1%}"
+        f"{np.sqrt(sekil):>18.4f}"
+    )
     print(f"\n  SEVIYE tamamen cozulseydi RMSLE {np.sqrt(sekil):.5f} olurdu")
     print("  (oracle seviye olcumu 0,6101 demisti -- ikisi ortusmeli)")
 
@@ -115,9 +119,11 @@ def main() -> int:
         r = float(np.corrcoef(alt["sapma"], alt[k])[0, 1])
         print(f"  {k:16}{r:>+12.3f}{'EVET' if abs(r) > 0.15 else '':>14}")
 
-    print(f"\n  trafo bazinda ort artik: ort {trafo['sapma'].mean():+.4f} "
-          f"std {trafo['sapma'].std():.4f} "
-          f"p05 {trafo['sapma'].quantile(.05):+.3f} p95 {trafo['sapma'].quantile(.95):+.3f}")
+    print(
+        f"\n  trafo bazinda ort artik: ort {trafo['sapma'].mean():+.4f} "
+        f"std {trafo['sapma'].std():.4f} "
+        f"p05 {trafo['sapma'].quantile(0.05):+.3f} p95 {trafo['sapma'].quantile(0.95):+.3f}"
+    )
     print(f"\nTAMAM  {(time.time() - t0) / 60:.1f} dakika")
     return 0
 

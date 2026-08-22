@@ -132,8 +132,7 @@ def main() -> int:
         hukum = ("KAZANDIRIYOR" if o > 0 else "ZARARLI") if abs(t_d) >= 2 else "esik alti"
         print(f"\n  {ad} vs TABAN: {o:+.5f}  SH {sh:.5f}  t {t_d:+.2f}   {hukum}")
         for b in tm.BLOKLAR:
-            bb = np.array([tekil[taban_ad][(b.ad, t)] - tekil[ad][(b.ad, t)]
-                           for t in di.TOHUMLAR])
+            bb = np.array([tekil[taban_ad][(b.ad, t)] - tekil[ad][(b.ad, t)] for t in di.TOHUMLAR])
             print(f"      {b.ad:6} {bb.mean():+.5f}  ({(bb > 0).sum()}/{len(bb)} tohum pozitif)")
         print(f"      genel skora etkisi {o * 0.350:+.5f}")
         kayitlar.append({"aday": ad, "fark": o, "sh": sh, "t": t_d, "hukum": hukum})

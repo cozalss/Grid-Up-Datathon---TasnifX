@@ -132,11 +132,13 @@ def main() -> int:
             hukum = ("KAZANDIRIYOR" if o > 0 else "ZARAR VERIYOR") if abs(t_d) >= 2 else "esik alti"
             print(f"    {ad} vs TABAN: {o:+.5f}  SH {sh:.5f}  t {t_d:+.2f}   {hukum}")
             for b in tm.BLOKLAR:
-                bb = np.array([tekil[taban_ad][(b.ad, t)] - tekil[ad][(b.ad, t)]
-                               for t in di.TOHUMLAR])
+                bb = np.array(
+                    [tekil[taban_ad][(b.ad, t)] - tekil[ad][(b.ad, t)] for t in di.TOHUMLAR]
+                )
                 print(f"        {b.ad:6} {bb.mean():+.5f}")
-            kayitlar.append({"rejim": rejim, "aday": ad, "fark": o, "sh": sh,
-                             "t": t_d, "hukum": hukum})
+            kayitlar.append(
+                {"rejim": rejim, "aday": ad, "fark": o, "sh": sh, "t": t_d, "hukum": hukum}
+            )
 
     KAYIT.parent.mkdir(parents=True, exist_ok=True)
     with KAYIT.open("a", encoding="utf-8") as f:
