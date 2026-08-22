@@ -492,3 +492,68 @@ def test_paket_veri_listesi_kaynak_manifestinden_turetiliyor():
     yasakli = [a["path"] for a in manifest["artifacts"] if a.get("redistribution") != "allowed"]
     for yol in yasakli:
         assert yol not in package.VERI_DOSYALARI, f"izinsiz artefakt paketleniyor: {yol}"
+
+
+def test_secret_scanner_ignores_function_calls_but_not_literals():
+    """``token = fonksiyon(...)`` sir DEGILDIR; ``token = "abc..."`` sirdir.
+
+    OLCULDU 2026-08-22: tarayici su satira bulgu verdi --
+
+        _js_adresi, token = _uygulama_bilgisi(session)
+
+    Kalip ``token = ([A-Za-z0-9_./+=-]{16,})`` ile eslesip FONKSIYON ADINI
+    sir sandi. Token gercekte calisma aninda cekiliyor; sabit deger yok.
+
+    Duzeltme DAR: yalnizca degerin hemen ardindan ``(`` geliyorsa atlanir.
+    Bu test, darligin korundugunu -- yani gercek sirlarin hala
+    yakalandigini -- ayni anda dogrular. Kalibi tumden susturmak kapiyi
+    kaldirmak olurdu.
+    """
+    scanner = _load_script("secret_scan_call_contract", "security/scan_secrets.py")
+
+    for satir in (
+        "_js_adresi, token = _uygulama_bilgisi(session)",
+        'api_key = os.getenv("GRIDUP_API_KEY")',
+        "password = kimlik_cozucu.parolayi_al(kullanici)",
+    ):
+        assert scanner.scan_text(satir, "x.py") == [], f"fonksiyon cagrisi bulgu verdi: {satir}"
+
+    for satir in (
+        'token = "AbCdEf1234567890XyZq"',
+        "api_key = AbCdEf1234567890XyZqRs",
+        'password = "hunter2hunter2hunter2"',
+        "EPIAS_PASSWORD=Ab12Cd34Ef56Gh78Ij90",
+    ):
+        assert scanner.scan_text(satir, "x.py"), f"GERCEK SIR kacti: {satir}"
+
+
+def test_secret_scanner_also_scans_untracked_files(tmp_path):
+    """Yeni ama HENUZ COMMIT EDILMEMIS dosyalar da taranmali.
+
+    OLCULDU 2026-08-22: tarayici yalnizca ``git ls-files`` kullaniyordu,
+    yani yalnizca IZLENEN dosyalari. Yeni bir dosya commit edilene kadar
+    gorunmuyordu -- oysa yapistirilmis bir sirrin en olasi oldugu an tam
+    olarak odur.
+
+    Somut yasandi: yeni bir cekici eklendi, tarama "0 bulgu" dedi, dosya
+    commit edildi ve bulgu ANCAK ondan sonra ortaya cikti. Yani kapi,
+    korumasi gereken anda kapaliydi.
+    """
+    import subprocess
+
+    scanner = _load_script("secret_scan_untracked_contract", "security/scan_secrets.py")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / ".gitignore").write_text("gizli/\n", encoding="utf-8")
+    (tmp_path / "yeni.py").write_text('api_key = "ZzYyXxWw11223344556677"\n', encoding="utf-8")
+
+    bulgular = scanner.scan_tracked(tmp_path)
+    assert any(f.path.endswith("yeni.py") for f in bulgular), (
+        "Izlenmeyen dosya taranmadi -- kapi, korumasi gereken anda kapali."
+    )
+
+    # .gitignore kapsamindakiler DISLANIR: onlar zaten depoya girmeyecek.
+    (tmp_path / "gizli").mkdir()
+    (tmp_path / "gizli" / "env.py").write_text('token = "QqWwEe11223344556677"\n', encoding="utf-8")
+    assert not any("gizli" in f.path for f in scanner.scan_tracked(tmp_path)), (
+        ".gitignore kapsamindaki dosya tarandi -- gereksiz alarm uretir."
+    )

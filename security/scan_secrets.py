@@ -57,6 +57,24 @@ def _fingerprint(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8", errors="replace")).hexdigest()[:12]
 
 
+def _fonksiyon_cagrisi(line: str, match: re.Match[str]) -> bool:
+    """Yakalanan deger bir FONKSIYON CAGRISI mi? (sir degil, kod)
+
+    OLCULDU 2026-08-22: ``fetch_gdz_kesinti_cbs.py:142`` bulgu verdi. Satir:
+
+        _js_adresi, token = _uygulama_bilgisi(session)
+
+    Ikinci kalip ``token = ([A-Za-z0-9_./+=-]{16,})`` ile eslesip
+    ``_uygulama_bilgisi`` FONKSIYON ADINI sir sandi. Token gercekte
+    calisma aninda GDZ'nin acik web istemcisinden kaziniyor; sabit deger yok.
+
+    Kural DAR tutuldu: yalnizca degerin hemen ardindan ``(`` geliyorsa
+    atlanir. Gercek bir sir literalinin ardindan parantez gelmez. Genel bir
+    susturma DEGIL -- kalibi susturmak, kapiyi kaldirmak olurdu.
+    """
+    return line[match.end() : match.end() + 1] == "("
+
+
 def scan_text(text: str, path: str) -> list[Finding]:
     if Path(path).suffix.lower() in SKIP_SUFFIXES or path == ".env.example":
         return []
@@ -66,6 +84,8 @@ def scan_text(text: str, path: str) -> list[Finding]:
             for match in pattern.finditer(line):
                 value = match.group(1) if match.lastindex else match.group(0)
                 if any(token in value.lower() for token in ALLOW_TOKENS):
+                    continue
+                if _fonksiyon_cagrisi(line, match):
                     continue
                 findings.append(Finding(path, number, _fingerprint(value)))
     return findings
@@ -87,8 +107,25 @@ def _git(args: list[str], root: Path) -> str:
 
 
 def scan_tracked(root: Path) -> list[Finding]:
+    """Izlenen VE izlenmeyen (ama .gitignore disi) dosyalari tarar.
+
+    OLCULDU 2026-08-22: onceki surum yalnizca ``git ls-files`` kullaniyordu,
+    yani YALNIZCA izlenen dosyalari. Yeni bir dosya commit edilene kadar
+    goruNMEZ -- oysa yapistirilmis bir sirrin en olasi oldugu an tam olarak
+    odur: dosya yeni yazilmis, henuz commit edilmemis.
+
+    Somut yasandi: yeni bir cekici dosyasi eklendi, tarama "0 bulgu" dedi
+    (dosya izlenmiyordu), dosya commit edildi ve bulgu ANCAK ondan sonra
+    ortaya cikti. Yani kapi, korumasi gereken anda kapali degildi.
+
+    ``--others --exclude-standard`` izlenmeyenleri getirir ama .gitignore
+    kapsamindakileri (or. .env, data/) DISLAR -- onlar zaten depoya
+    girmeyecek.
+    """
     findings: list[Finding] = []
-    for relative in _git(["ls-files"], root).splitlines():
+    izlenen = _git(["ls-files"], root).splitlines()
+    izlenmeyen = _git(["ls-files", "--others", "--exclude-standard"], root).splitlines()
+    for relative in [*izlenen, *izlenmeyen]:
         path = root / relative
         if not path.is_file() or path.suffix.lower() in SKIP_SUFFIXES:
             continue
