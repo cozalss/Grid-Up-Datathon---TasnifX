@@ -18,7 +18,7 @@
   "artifacts": [
     {
       "path": "data/external/hava_gunluk.parquet",
-      "sha256": "430185ee2d3cf2c97ca0c16e072e457e7aff669fbcb89c16f09480fe89b89498",
+      "sha256": "452f299362fd6827bb9a008da498091ed5352e95490bd987eb9b309aae03f742",
       "license": "CC-BY-4.0",
       "redistribution": "allowed",
       "attribution": "Weather data by Open-Meteo.com under CC BY 4.0.",

@@ -46,6 +46,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -168,15 +169,23 @@ def paketle(cikti: Path, yalin: bool = False) -> int:
     boyut = cikti.stat().st_size / 1024 / 1024
     print(f"\n\nYazildi: {cikti}  ({boyut:.0f} MB)")
     print("\n" + "=" * 70)
-    print("YENI MAKINEDE SIRASIYLA:")
-    print("  1. git clone https://github.com/cozalss/Grid-Up-Datathon---TasnifX.git")
-    print("  2. cd Grid-Up-Datathon---TasnifX")
-    print("  3. python -m pip install --require-hashes -r requirements/uv-bootstrap.txt")
-    print("  4. uv sync --locked --extra full --extra dev")
-    print(f"  5. python scripts/tasima_paketi.py ac {cikti.name}")
-    print("\nAYRICA ELLE KOPYALA:  .env")
-    print("  Pakete BILEREK konmadi -- FIRMS anahtari ve EPIAS kimlik bilgisi")
-    print("  tasir. Bir arsiv kazara paylasilirsa sizinti kalici olur.")
+    # Kurucuyu zip'in YANINA koy. Boylece hedef makinede tek komut yeter:
+    # kur.py depoyu klonlar, ortami kurar, bu zip'i bulup acar ve dogrular.
+    kurucu = ROOT / "kur.py"
+    if kurucu.is_file():
+        hedef = cikti.parent / "kur.py"
+        shutil.copy2(kurucu, hedef)
+        print(f"Yazildi: {hedef}")
+
+    print("=" * 70)
+    print("YENI MAKINEDE TEK KOMUT:")
+    print("\n    python kur.py\n")
+    print(f"  ({cikti.parent} icindeki kur.py'yi calistir -- zip'i kendisi bulur)")
+    print("\nUSB'ye/buluta su UC dosyayi koy:")
+    print(f"  kur.py  ·  {cikti.name}  ·  .env")
+    print("\n.env pakete BILEREK konmadi -- FIRMS anahtari ve EPIAS kimlik")
+    print("  bilgisi tasir. Bir arsiv kazara paylasilirsa sizinti kalici olur.")
+    print("  kur.py onu yaninda bulursa depoya kendisi yerlestirir.")
     return 0
 
 
