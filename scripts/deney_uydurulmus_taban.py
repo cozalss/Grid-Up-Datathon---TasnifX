@@ -100,9 +100,15 @@ KAYIT = KOK / "experiments" / "uydurulmus_taban.jsonl"
 
 
 def _trafo_tablosu(cerceve: pd.DataFrame) -> pd.DataFrame:
-    """Trafo basina: ozet ozellikleri (ilk satir) + etiket penceresi seviyesi."""
+    """(blok, trafo) basina: ozet ozellikleri + etiket penceresi seviyesi.
+
+    BLOGA GORE DE gruplaniyor. Yalnizca ``tanim``a gore gruplamak, iki
+    blokta birden gorunen bir trafonun IKI FARKLI (ozet, etiket) ciftini
+    tek satira karistirir -- ilk denememde tam bunu yapmis ve seviye
+    modelinin hatasini 0,60'a sismisti (ham son30 0,5651 iken).
+    """
     alt = cerceve[cerceve["soguk_mu"] == 0]
-    g = alt.groupby("tanim", observed=True)
+    g = alt.groupby(["_blok", "tanim"], observed=True)
     t = g[list(SEVIYE_GIRDI) + ["guc"]].first()
     t["hedef"] = g[tm.HEDEF].apply(lambda s: float(np.log1p(s.clip(lower=0)).mean()))
     return t
