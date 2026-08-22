@@ -852,7 +852,29 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
         "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6},
         "ek_koken": True,
     },
-    "soguk": {"maske": 1.00, "cat": {"depth": 7}, "ek_koken": False},
+    # ``ek_kolon``: bu uzmana YALIN_CIKARILAN'a ragmen geri verilen kolonlar.
+    # Olculdu (2026-08-22, ``deney_soguk_hafta.py``, eslenik, 5 tohum, 15 hucre):
+    #
+    #     SOGUK  TABAN 1,70391 -> +HAFTA 1,70120   +0,00274  SH 0,00115  t=+2,39
+    #       yaz25 +0,00214 (3/5)  guz25 +0,00439 (5/5)  kis26 +0,00169 (4/5)
+    #     SICAK  +HAFTA  -0,00270  t=-0,83  ZARARLI (deney_takvim.py)
+    #
+    # Ikinci rejim ayrimi: ek kokenler gibi hafta gunu de yalnizca BIR uzmana
+    # yariyor. Mekanizma: soguk uzmani maske 1,00'da calisiyor ve elinde
+    # trafoyu ayirt eden HICBIR sey yok -- butun t_* kolonlari NaN. Hafta
+    # gunu onun icin nadir bulunan gercek bir sinyal. Sicak uzmaninin ise
+    # gecmis ozetleri (t_hg_genligi, t_hg_sapma) haftalik deseni zaten
+    # tasiyor, ustelik 105 kolonun icinde seyreltme maliyeti agir basiyor.
+    #
+    # tk_ oneki _GECMIS_ONEKI ("t_") ile eslesmiyor, yani maskelenmiyor.
+    # +HAFTA+TAKVIM (tk_ay, tk_yilin_gunu, tatil_mi eklenmis) ZARARLI
+    # cikti (soguk -0,02323, kis26 -0,074) -- yalnizca bu iki kolon.
+    "soguk": {
+        "maske": 1.00,
+        "cat": {"depth": 7},
+        "ek_koken": False,
+        "ek_kolon": ("tk_haftanin_gunu", "tk_hafta_sonu"),
+    },
 }
 
 #: EK KOKENLERI EGITIME KAT. Olculdu (2026-08-22, ``deney_koken2.py``):
@@ -1117,6 +1139,12 @@ def rejim_tahmini(
         kaynak = egitim
         if not ayar.get("ek_koken", True) and dar_egitim is not None:
             kaynak = dar_egitim
+        # Rejime ozel geri verilen kolonlar (bkz. ``REJIM_AYARLARI``).
+        ek_kolon = [k for k in ayar.get("ek_kolon", ()) if k not in kolonlar]  # type: ignore[union-attr]
+        eksik = [k for k in ek_kolon if k not in kaynak.columns or k not in alt.columns]
+        if eksik:
+            raise RuntimeError(f"{rejim} uzmaninin ek_kolon'u cercevede yok: {eksik}")
+        kol = kolonlar + ek_kolon
         cikti[maske] = (
             sum(
                 w
@@ -1124,7 +1152,7 @@ def rejim_tahmini(
                     a,
                     kaynak,
                     alt,
-                    kolonlar,
+                    kol,
                     tohum,
                     hizli=hizli,
                     maske_orani=float(ayar["maske"]),  # type: ignore[arg-type]
