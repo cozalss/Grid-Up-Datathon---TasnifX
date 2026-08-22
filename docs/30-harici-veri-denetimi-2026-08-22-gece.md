@@ -401,3 +401,72 @@ Doğrulandı: 8.748 satır değişti, diğer 705.940 satır bit düzeyinde aynı
 ```
 
 Prob (`v24_prob`) yarına kalıyor: kazancı bilinmiyor, hedge'inki ölçülmüş.
+
+---
+
+## 12. VERİ HATTI DENETİMİ — bir kusur düzeltildi, bir hipotez ÇÜRÜTÜLDÜ
+
+### Temiz çıkanlar (denetlendi, sorun yok)
+
+```
+satir butunlugu   ham test 714.688 = cerceve, yinelenen 0, hedef NaN/negatif 0
+kategorik         testte egitimde olmayan seviye YOK; kodlama YALNIZ egitimden
+ufuk_gun          egitimde de testte de 1..122, semantik ayni
+t_log_son7..90    ozet penceresinin SONUNDAN geriye, etikete degmiyor
+soguk_mu          ayni kural iki tarafta; maskeleme tahmin cercevesine ASLA
+hava / ulusal     rolling geriye bakiyor, ileri bakan pencere yok
+fit-transform     hicbir yerde scaler/quantile/median-impute yok
+hedef sizintisi   105 kolonun hicbiri hedeften turemiyor
+```
+
+**Klasik anlamda etiket sızıntısı yok.**
+
+### ÇÜRÜTÜLEN hipotez: `ozet_pencere_gun` "gizli blok kimliği"
+
+Kolon eğitimde yalnızca üç değer alıyor (90/212/334, her biri bir blok),
+testte 455 — eğitim aralığının tamamen dışında. Buradan "ağaçlar tüm test
+satırlarını kış dalına yolluyor, kolon zararlı" diye akıl yürüttüm.
+**Ölçüm bunu çürüttü** (2 rejim × 3 blok × 3 tohum):
+
+```
+SICAK  -ozet_pencere_gun  -0,00051  t=-0,16   esik alti
+SOGUK  -ozet_pencere_gun  -0,00092  t=-0,20   esik alti
+
+blok deseni (iki rejimde de AYNI yonde):
+  yaz25 (deger  90, aralik ALTI)   cikarmak +0,0014 / +0,0033  iyi
+  guz25 (deger 212, aralik ICI)    cikarmak +0,0060 / +0,0115  iyi
+  kis26 (deger 334, aralik USTU)   cikarmak -0,0090 / -0,0175  KOTU
+```
+
+Belirleyici olan son satır: **testin durumu kis26'nınki** — değer eğitim
+aralığının ÜSTÜNDE. O durumda kolonu çıkarmak zarar veriyor, çünkü
+"pencere uzadıkça özet güvenilir" ilişkisi monoton ve aralık dışına taşan
+değer doğru tarafa düşüyor. Yapısal akıl yürütmem yanlıştı.
+
+**Hüküm: `ozet_pencere_gun` KALIYOR.**
+
+### DOĞRULANAN kusur: dört kolon yaz25'te ölçülemiyor
+
+```
+kolon              uretimde   yaz25   guz25   kis26    TEST   TEST(sicak)
+t_ay_sapma         EVET       0,000   0,000   0,136   0,364      0,468
+t_gy_log_ort       EVET       0,000   0,000   0,499   0,410      0,526
+t_gy_sifir_orani   EVET       0,000   0,000   0,499   0,410      0,526
+t_gy_gun           EVET       0,000   0,000   0,499   0,410      0,526
+```
+
+Kalibrasyon çapamız `yaz25`'te bu dört kolon **%100 boş**; gerçek testte
+sıcak satırların **yarısında dolu**. Yani `LB ≈ yaz25_CV + 0,0423`
+pratikte 101 kolonlu bir model üzerinde ölçülüp 105 kolonlu bir modele
+uygulanıyor. **CV'nin LB'yi takip etmemesinin en olası mekanik açıklaması.**
+
+Sebebi yapısal: `t_gy_*` "geçen yılın aynı dönemi"; eğitim 2025-01-01'de
+başladığı için yaz25'in (Nis–Tem 2025) geçen yılı YOK, testin (Nis–Tem
+2026) VAR. Hem test mevsimiyle eşleşen hem arkasında tam yıl olan bir blok
+ancak Nisan 2026 sonrası veriyle kurulabilir — o veri bizde yok.
+
+**Bu bir hata değil, kalıcı bir ölçüm sınırı.** Bu gece düzeltilmiyor:
+kolonlar yaz25'te %100 NaN olduğu için çıkarılmaları yaz25 CV'sini
+değiştiremez — yani CV bu kararı ölçemez.
+
+Sonuç: `v23`'ün LB öngörüsü sandığımdan kırılgan bir zemine oturuyor.
