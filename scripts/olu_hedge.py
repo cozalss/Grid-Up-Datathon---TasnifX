@@ -80,8 +80,9 @@ def main() -> int:
     tr["tarih"] = pd.to_datetime(tr["tarih"])
     olu = olu_gun_sayisi(tr)
 
-    te = pd.read_csv(KOK / "data/raw/test.csv", usecols=["id", "tanim"],
-                     encoding="utf-8", dtype={"tanim": str})
+    te = pd.read_csv(
+        KOK / "data/raw/test.csv", usecols=["id", "tanim"], encoding="utf-8", dtype={"tanim": str}
+    )
     sub = pd.read_csv(ar.girdi, encoding="utf-8")
     n0 = len(sub)
     m = sub.merge(te, on="id", how="left", validate="one_to_one")
@@ -100,12 +101,13 @@ def main() -> int:
 
     print(f"girdi  {ar.girdi}")
     print(f"cikti  {ar.cikti}")
-    print(f"  degisen satir {int(hedef.sum())} / {n0}  ({100*hedef.mean():.2f}%)")
+    print(f"  degisen satir {int(hedef.sum())} / {n0}  ({100 * hedef.mean():.2f}%)")
     print(f"  farkli trafo  {m.loc[hedef, 'tanim'].nunique()}")
     for alt, ust, hh in KOVALAR:
         k = int(((m["_olu"] >= alt) & (m["_olu"] < ust) & hedef).sum())
         if k:
-            print(f"    {alt:3d}-{ust if ust < 10**6 else 999:<4} {k:5d} satir -> log1p {hh*ar.olcek:.3f}")
+            ust_etiket = ust if ust < 10**6 else 999
+            print(f"    {alt:3d}-{ust_etiket:<4} {k:5d} satir -> log1p {hh * ar.olcek:.3f}")
     print(f"  yeni min tahmin {out['tuketim'].min():.4f}")
     return 0
 

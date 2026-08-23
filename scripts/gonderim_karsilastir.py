@@ -57,8 +57,12 @@ def main() -> int:
     a = argparse.ArgumentParser(description=__doc__)
     a.add_argument("bir")
     a.add_argument("iki")
-    a.add_argument("--taban-lb", type=float, default=None,
-                   help="Verilirse en kotu hal riziko hesabi yapilir (ilk dosya taban kabul edilir)")
+    a.add_argument(
+        "--taban-lb",
+        type=float,
+        default=None,
+        help="En kotu hal riziko hesabi yapilir (ilk dosya taban kabul edilir)",
+    )
     ar = a.parse_args()
 
     p1, p2 = Path(ar.bir), Path(ar.iki)
@@ -75,7 +79,7 @@ def main() -> int:
     v1, v2 = d1["tuketim"].to_numpy(), d2["tuketim"].to_numpy()
     z1, z2 = v1 == 0, v2 == 0
     kesisim = int((z1 & z2).sum())
-    print(f"\nTAM-SIFIR KUMELERI")
+    print("\nTAM-SIFIR KUMELERI")
     print(f"  A          {int(z1.sum()):>8,}")
     print(f"  B          {int(z2.sum()):>8,}")
     print(f"  kesisim    {kesisim:>8,}")
@@ -86,17 +90,19 @@ def main() -> int:
 
     degisen = ~np.isclose(v1, v2, rtol=AYNI_TOLERANS, atol=AYNI_TOLERANS)
     n = len(v1)
-    print(f"\nFARK")
+    print("\nFARK")
     print(f"  degisen satir  {int(degisen.sum()):>8,}  (%{100 * degisen.mean():.2f})")
     print(f"  ayni satir     {int((~degisen).sum()):>8,}")
     if degisen.any():
         f = np.log1p(v1) - np.log1p(v2)
         print(f"  ortalama |log farki|  {np.abs(f).mean():.5f}")
-        print(f"  RMS log farki         {np.sqrt((f ** 2).mean()):.5f}")
+        print(f"  RMS log farki         {np.sqrt((f**2).mean()):.5f}")
         # mudahale yalnizca A'nin sifirlarinda mi
         disari = int((degisen & ~z1).sum())
-        print(f"  A'nin sifir olmayan satirlarinda degisim: {disari:,}"
-              + ("   -> mudahale IZOLE" if disari == 0 else "   -> mudahale izole DEGIL"))
+        print(
+            f"  A'nin sifir olmayan satirlarinda degisim: {disari:,}"
+            + ("   -> mudahale IZOLE" if disari == 0 else "   -> mudahale izole DEGIL")
+        )
 
     if ar.taban_lb is not None:
         hedef = z1 & degisen
@@ -104,7 +110,7 @@ def main() -> int:
             print("\nRIZIKO: A'nin sifirlarinda degisim yok -- hesap uygulanamaz")
             return 0
         ek = float((np.log1p(v2[hedef]) ** 2).sum())
-        yeni = float(np.sqrt(ar.taban_lb ** 2 + ek / n))
+        yeni = float(np.sqrt(ar.taban_lb**2 + ek / n))
         print(f"\nEN KOTU HAL  (degisen {int(hedef.sum()):,} satirin HEPSI gercekten olu ise)")
         print(f"  ek kare toplami   {ek:.2f}")
         print(f"  {ar.taban_lb:.5f}  ->  {yeni:.5f}   (+{yeni - ar.taban_lb:.5f})")
