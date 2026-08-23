@@ -7,3 +7,4 @@
 {"ad": "v33 kurgusu", "tur": "blok", "sicak": 0.74263, "soguk": 1.8225, "skor": 1.0795058375363051, "not": "SON ISLEM SONRASI: gun korumali + hucre, beta=0,25 bagli, cat-only soguk"}
 {"ad": "v36 kurgusu", "tur": "blok", "sicak": 0.74263, "soguk": 1.82138, "skor": 1.079086869260302, "not": "SON ISLEM SONRASI: a=0,55 b=0,25 ayrik + M_gun=50 seyrek gun kapisi"}
 {"ad": "v39 kurgusu", "tur": "blok", "sicak": 0.74263, "soguk": 1.82127, "skor": 1.0790457257102686, "not": "a=0,55 b=0,25 M_gun=50 + tablo penceresi (en eski 2 ay atildi); BUTUNLUK SINAMASI GECTI"}
+{"ad": "v40 (9 tohum)", "tur": "blok", "sicak": 0.74263, "soguk": 1.82127, "skor": 1.0790457257102686, "not": "v39 ile AYNI yapilandirma, 9 tohum. Tohum kazanci bu olcutte GORUNMEZ (dogrulama tek tohum 42, gonderim 9 tohum): ayri olculdu, k=3->9 sicakta -0,0022, test-agirlikli -0,0012"}
