@@ -919,11 +919,24 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     # tk_ oneki _GECMIS_ONEKI ("t_") ile eslesmiyor, yani maskelenmiyor.
     # +HAFTA+TAKVIM (tk_ay, tk_yilin_gunu, tatil_mi eklenmis) ZARARLI
     # cikti (soguk -0,02323, kis26 -0,074) -- yalnizca bu iki kolon.
+    #
+    # SOGUK HARMAN -> YALNIZ cat (2026-08-23, ``deney_soguk_taban.py``).
+    # Eski 3/1/1 hukmu KIRLI bloklarin ortalamasindan geliyordu. kis26 tek
+    # basina bakildiginda ve YENI son islem (gun korumali buzme, beta=0,25)
+    # altinda olculdu -- ayni onbelleklenmis tahminler, saf aritmetik:
+    #
+    #     harman     beta=1,00   0,30      0,25      0,20
+    #     3/1/1        1,86931  1,83083  1,83041  1,83031
+    #     5/1/1        1,85717  1,82767  1,82750  1,82758
+    #     YALNIZ cat   1,84106  1,82245  1,82250  1,82274   <- SECILEN
+    #
+    # beta ne olursa olsun siralama ayni: cat tek basina, harmandan iyi.
+    # kis26 soguk kazanci -0,0079; d(genel)/d(soguk)=0,377 ile genel -0,0030.
     "soguk": {
         "maske": 1.00,
         "cat": {"depth": 7},
         "ek_koken": False,
-        "agirlik": {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0},
+        "agirlik": {"cat": 1.0},
     },
 }
 
