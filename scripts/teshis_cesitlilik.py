@@ -82,8 +82,8 @@ def main() -> int:
         print(f"  ortalama ikili korelasyon: {ort_dis:.4f}")
 
         topluluk = H.mean(axis=1)
-        E_uye = float((H ** 2).mean())
-        E_top = float((topluluk ** 2).mean())
+        E_uye = float((H**2).mean())
+        E_top = float((topluluk**2).mean())
         A = E_uye - E_top
         print("\n  KROGH-VEDELSBY:")
         print(f"    ortalama uye hatasi (MSE) {E_uye:.5f}  -> RMSLE {np.sqrt(E_uye):.5f}")
@@ -91,7 +91,7 @@ def main() -> int:
         print(f"    TOPLULUK              {E_top:.5f}  -> RMSLE {np.sqrt(E_top):.5f}")
 
         # 4. uye: mevcut uyelerle korelasyonu r, tekil hatasi ayni olsun
-        s2 = float((H ** 2).mean())
+        s2 = float((H**2).mean())
         for r4 in (0.99, 0.95, 0.90, 0.80, 0.70):
             # 4 uyeli esit agirlikli toplulugun beklenen MSE'si
             # kovaryans: kosegen s2, ilk uc arasi ort_dis*s2, 4. ile r4*s2
@@ -99,8 +99,10 @@ def main() -> int:
             C[3, :3] = C[:3, 3] = r4 * s2
             np.fill_diagonal(C, s2)
             yeni = float(np.ones(4) @ C @ np.ones(4) / 16)
-            print(f"    4. uye korelasyon {r4:.2f} -> topluluk RMSLE {np.sqrt(yeni):.5f}"
-                  f"  ({np.sqrt(yeni) - np.sqrt(E_top):+.5f})")
+            print(
+                f"    4. uye korelasyon {r4:.2f} -> topluluk RMSLE {np.sqrt(yeni):.5f}"
+                f"  ({np.sqrt(yeni) - np.sqrt(E_top):+.5f})"
+            )
 
     print(f"\nTAMAM  {(time.time() - t0) / 60:.1f} dakika")
     return 0

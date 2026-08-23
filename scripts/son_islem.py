@@ -56,10 +56,15 @@ def main() -> int:
     ar = a.parse_args()
 
     ornek = pd.read_csv(KOK / "data/raw/sample_submission.csv", encoding="utf-8")
-    te = pd.read_csv(KOK / "data/raw/test.csv", usecols=["id", "tanim", "guc"],
-                     encoding="utf-8", dtype={"tanim": str})
-    tr = pd.read_csv(KOK / "data/raw/train.csv", usecols=["tanim"],
-                     encoding="utf-8", dtype={"tanim": str})
+    te = pd.read_csv(
+        KOK / "data/raw/test.csv",
+        usecols=["id", "tanim", "guc"],
+        encoding="utf-8",
+        dtype={"tanim": str},
+    )
+    tr = pd.read_csv(
+        KOK / "data/raw/train.csv", usecols=["tanim"], encoding="utf-8", dtype={"tanim": str}
+    )
     sub = pd.read_csv(ar.giris, encoding="utf-8")
     if not sub["id"].equals(ornek["id"]):
         raise RuntimeError("id sirasi sample_submission ile ayni degil")
@@ -92,8 +97,10 @@ def main() -> int:
 
     f = np.log1p(yeni) - np.log1p(m["tuketim"].to_numpy())
     print(f"  degisen satir {int((np.abs(f) > 1e-9).sum()):,}")
-    print(f"  soguk kayma: min {f[soguk].min():+.4f}  medyan {np.median(f[soguk]):+.4f}"
-          f"  max {f[soguk].max():+.4f}")
+    print(
+        f"  soguk kayma: min {f[soguk].min():+.4f}  medyan {np.median(f[soguk]):+.4f}"
+        f"  max {f[soguk].max():+.4f}"
+    )
     print(f"  yazildi: {ar.cikis}")
     return 0
 

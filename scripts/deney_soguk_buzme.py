@@ -83,7 +83,7 @@ def main() -> int:
             for tohum in TOHUMLAR:
                 pay = sum(w.values())
                 log_t = sum(w[a] * ham[(tohum, a)] for a in w) / pay
-                ofs = log_t - log_guc               # ofset uzayina gec
+                ofs = log_t - log_guc  # ofset uzayina gec
                 ofs = ofs.mean() + beta * (ofs - ofs.mean())
                 tah = np.clip(np.expm1(ofs + log_guc), 0.0, None)
                 skor.append(tm.rmsle(y, tah))

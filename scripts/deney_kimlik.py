@@ -67,7 +67,6 @@ def main() -> int:
     tekil: dict[str, dict[tuple[str, int], float]] = {"TABAN": {}, "-KIMLIK": {}}
     for b in tm.BLOKLAR:
         parca, dogrulama, gercek, soguk = di.blok_parcalari(egitim, b.ad)
-        log_gercek = np.log1p(gercek)
         satir = []
         for ad, kol in (("TABAN", uretim), ("-KIMLIK", [k for k in uretim if k not in var])):
             blok_skor = []
@@ -86,7 +85,10 @@ def main() -> int:
             satir.append(f"{ad} {np.mean(blok_skor):.5f}")
         f = np.array([tekil["TABAN"][(b.ad, t)] - tekil["-KIMLIK"][(b.ad, t)] for t in TOHUMLAR])
         isaret = "KAZANC" if f.mean() > 0 else "KAYIP"
-        print(f"  {b.ad:6} {satir[0]:20} {satir[1]:22} fark {f.mean():+.5f}  ({(f > 0).sum()}/3)  {isaret}")
+        print(
+            f"  {b.ad:6} {satir[0]:20} {satir[1]:22} "
+            f"fark {f.mean():+.5f}  ({(f > 0).sum()}/3)  {isaret}"
+        )
 
     print("\n--- KARAR: yalnizca kis26 ---")
     fk = np.array([tekil["TABAN"][("kis26", t)] - tekil["-KIMLIK"][("kis26", t)] for t in TOHUMLAR])
@@ -99,7 +101,8 @@ def main() -> int:
 
     KAYIT.parent.mkdir(parents=True, exist_ok=True)
     with KAYIT.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps({"kis26_fark": o, "sh": sh, "t": t_d, "hukum": hukum}, ensure_ascii=False) + "\n")
+        kayit = {"kis26_fark": o, "sh": sh, "t": t_d, "hukum": hukum}
+        fh.write(json.dumps(kayit, ensure_ascii=False) + "\n")
     print(f"\nTAMAM  {(time.time() - t0) / 60:.1f} dakika")
     return 0
 
