@@ -82,8 +82,28 @@ import pandas as pd
 
 KOK = Path(__file__).resolve().parents[1]
 
-#: Buzme katsayisi. kis26'da 0,20-0,30 arasi duz; 0,25 secildi.
-BETA = 0.25
+#: HUCRE tablosunun agirligi. Cebir: gun ortalamasi korundugu icin
+#:     r' = gun + a*etki + b*(r - gun)
+#: yani a EGITIMDEN gelen tabloya, b MODELIN kendi gun-ici sinyaline gider.
+#: Eskiden ikisi tek bir beta ile bagliydi (a = 1-beta) ve bunun turetilmis
+#: hicbir dayanagi yoktu. Iki bagimsiz olcum ayni yeri gosterdi:
+#:   trafo-bazli holdout (2025-04..07 mevsimsel ikizi)   a* = 0,545
+#:   kis26 izgarasi (deney_ikili_agirlik.py)             a* = 0,55
+#: kis26'da a=0,75 -> 1,82250, a=0,55 -> 1,82131  (kazanc 0,00120).
+A_HUCRE = 0.55
+
+#: MODELIN gun-ici sinyalinin agirligi. kis26'da 0,20-0,30 arasi duz.
+B_MODEL = 0.25
+
+#: Gun ortalamasi AYLIK ortalamaya dogru ampirik-Bayes ile buzulur:
+#: n soguk satirlik bir gun n/(n+M_GUN) agirlik alir. Neden gerekli --
+#: testte 2026-04-01'de yalnizca 1, 2026-04-08'de 10 soguk satir var ve
+#: gun ortalamasi o satirlarin KENDISINDEN hesaplaniyordu: islem seyrek
+#: gunlerde tersine donuyor (n=2-5 bandinda yayilma 3,16 KAT artiyor),
+#: n=1'de tam no-op oluyordu. Aylik seviye korundugu icin mevsim rampasi
+#: bozulmaz; yalnizca ay ICINDEKI gun gurultusu yumusar.
+#: kis26'da maliyeti 0,00007 (orada en seyrek gun 14 satir).
+M_GUN = 50.0
 
 #: kVA kademesi sayisi. Kenarlar YALNIZ egitimden turetilir ve teste AYNI
 #: kenarlarla uygulanir -- iki tarafta ayri hesaplamak kovalari kaydirir.
@@ -131,7 +151,9 @@ def main() -> int:
     a = argparse.ArgumentParser(description="soguk buzme -- gun ekseni korumali")
     a.add_argument("--giris", required=True)
     a.add_argument("--cikis", required=True)
-    a.add_argument("--beta", type=float, default=BETA)
+    a.add_argument("--a-hucre", type=float, default=A_HUCRE)
+    a.add_argument("--b-model", type=float, default=B_MODEL)
+    a.add_argument("--m-gun", type=float, default=M_GUN)
     a.add_argument("--hucresiz", action="store_true",
                    help="hucre etkisini kapat (yalniz gun korumasi)")
     ar = a.parse_args()
@@ -153,45 +175,67 @@ def main() -> int:
     r = np.log1p(ham) - log_guc
     gun = m["tarih"].to_numpy()
 
-    # --- taban: gun ortalamasi (modelden) + hucre etkisi (egitimden) ---
-    gun_s = pd.Series(gun[soguk])
-    gun_ort = pd.Series(r[soguk]).groupby(gun_s.to_numpy()).transform("mean").to_numpy()
+    # --- referans seviye: gun ortalamasi, aya dogru ampirik-Bayes buzulmus ---
+    gun_a = gun[soguk]
+    ay_a = pd.to_datetime(m.loc[soguk, "tarih"]).dt.to_period("M").astype(str).to_numpy()
+    r_s = r[soguk]
+
+    def gruplu(v, anahtar):  # noqa: ANN001, ANN202
+        return pd.Series(v).groupby(anahtar).transform("mean").to_numpy()
+
+    n_gun = pd.Series(gun_a).groupby(gun_a).transform("size").to_numpy().astype("float64")
+    w = n_gun / (n_gun + ar.m_gun) if ar.m_gun > 0 else np.ones_like(n_gun)
+    # Gun agirliklari ay icinde ESIT DEGIL (test'te 1 satirlik gun de var,
+    # 1962 satirlik gun de). Duz bir harman aylik seviyeyi kaydirirdi --
+    # olculdu: en buyuk sapma 0,0184. Ay icinde yeniden merkezleyerek
+    # garantiyi TAM yapiyoruz: aylik seviye = mevsim rampasi, dokunulmaz.
+    seviye = w * gruplu(r_s, gun_a) + (1.0 - w) * gruplu(r_s, ay_a)
+    seviye = seviye - gruplu(seviye, ay_a) + gruplu(r_s, ay_a)
+
     if ar.hucresiz:
         etki = np.zeros(int(soguk.sum()))
     else:
         hucre = hucre_etkisi(tr, m)[soguk]
-        # GUN ICINDE merkezle -- boylece gun ortalamasi TAM korunur
-        etki = hucre - pd.Series(hucre).groupby(gun_s.to_numpy()).transform("mean").to_numpy()
-    taban = gun_ort + etki
+        # Etkiyi AYNI referansa gore merkezle, sonra ay icinde sifirla.
+        h_ref = w * gruplu(hucre, gun_a) + (1.0 - w) * gruplu(hucre, ay_a)
+        etki = hucre - h_ref
+        etki = etki - gruplu(etki, ay_a)
 
     r_yeni = r.copy()
-    r_yeni[soguk] = taban + ar.beta * (r[soguk] - taban)
+    r_yeni[soguk] = seviye + ar.a_hucre * etki + ar.b_model * (r_s - seviye)
     yeni = ham.copy()  # sicak satirlar gidis-donusumsuz, birebir kopya
     yeni[soguk] = np.clip(np.expm1(r_yeni[soguk] + log_guc[soguk]), 0.0, None)
 
     # --- guvenlik kapilari ---
     if not np.array_equal(yeni[~soguk], ham[~soguk]):
         raise RuntimeError("SICAK satirlar degismis olmamaliydi")
-    onceki = pd.Series(r[soguk]).groupby(gun_s.to_numpy()).mean()
-    sonraki = pd.Series(r_yeni[soguk]).groupby(gun_s.to_numpy()).mean()
-    sapma = float(np.abs(onceki - sonraki).max())
-    if sapma > 1e-9:
-        raise RuntimeError(f"gun ortalamasi korunmadi: en buyuk sapma {sapma:.3e}")
+    ay_once = pd.Series(r_s).groupby(ay_a).mean()
+    ay_sonra = pd.Series(r_yeni[soguk]).groupby(ay_a).mean()
+    ay_sapma = float(np.abs(ay_once - ay_sonra).max())
+    if ay_sapma > 5e-3:
+        raise RuntimeError(f"AYLIK seviye korunmadi: en buyuk sapma {ay_sapma:.3e}")
+    # Kapi 2: islemin adi BUZME -- gun ici yayilma her ayda DUSMELI.
+    ici_once = pd.Series(r_s - gruplu(r_s, gun_a)).groupby(ay_a).std()
+    ici_sonra = pd.Series(r_yeni[soguk] - gruplu(r_yeni[soguk], gun_a)).groupby(ay_a).std()
+    if (ici_sonra > ici_once + 1e-9).any():
+        raise RuntimeError(f"gun ici yayilma ARTMIS: {dict(ici_once)} -> {dict(ici_sonra)}")
     if not np.isfinite(yeni).all() or (yeni < 0).any():
         raise RuntimeError("cikti NaN/sonsuz/negatif iceriyor")
 
     n_s = int(soguk.sum())
     hucre_ad = "KAPALI" if ar.hucresiz else f"ilce x kova (M={M_HUCRE:.0f})"
     trafo_sayisi = int(m.loc[soguk, "tanim"].nunique())
-    print(f"  beta {ar.beta:.2f}  hucre {hucre_ad}")
+    print(f"  a(hucre) {ar.a_hucre:.2f}  b(model) {ar.b_model:.2f}  "
+          f"M_gun {ar.m_gun:.0f}  hucre {hucre_ad}")
     print(f"  soguk {n_s:,} satir (%{100 * n_s / len(m):.2f}), {trafo_sayisi:,} trafo")
-    print(f"  gun ortalamasi korundu (en buyuk sapma {sapma:.2e})")
-    print(f"  soguk ofset std   {r[soguk].std():.5f} -> {r_yeni[soguk].std():.5f}")
-    print(f"  gun-ort std       {onceki.std():.5f} -> {sonraki.std():.5f}   (DEGISMEMELI)")
-    ay = pd.to_datetime(m["tarih"]).dt.month.to_numpy()
+    print(f"  en seyrek gun {n_gun.min():.0f} satir, medyan {np.median(n_gun):.0f}")
+    print(f"  AYLIK seviye korundu (en buyuk sapma {ay_sapma:.2e})")
+    print(f"  gun ici yayilma  {float(ici_once.mean()):.5f} -> {float(ici_sonra.mean()):.5f}")
+    print(f"  toplam soguk ofset std   {r_s.std():.5f} -> {r_yeni[soguk].std():.5f}")
+    ay_no = pd.to_datetime(m["tarih"]).dt.month.to_numpy()
     print("   ay   once    sonra")
-    for k in np.unique(ay):
-        d = soguk & (ay == k)
+    for k in np.unique(ay_no):
+        d = soguk & (ay_no == k)
         print(f"   {k:2d}  {r[d].mean():+.4f}  {r_yeni[d].mean():+.4f}")
 
     cikti = pd.DataFrame({"id": m["id"], "tuketim": yeni})
