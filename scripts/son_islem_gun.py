@@ -105,6 +105,25 @@ B_MODEL = 0.25
 #: kis26'da maliyeti 0,00007 (orada en seyrek gun 14 satir).
 M_GUN = 50.0
 
+#: HUCRE TABLOSU KAYNAGININ BASLANGICI. Tablo train.csv'nin TAMAMINDAN
+#: kurulmamali: en eski aylar farkli bir rejimden geliyor. Trafo nufusu
+#: donem boyunca neredeyse ikiye katlaniyor (gunluk 2.065 -> 3.896 satir),
+#: yani ilk aylar hem seyrek hem baska bir populasyon.
+#:
+#: Modelden BAGIMSIZ olculdu (deney_tablo_pencere2.py) -- tablo etkisinin
+#: gun ici gercek sapmayi acikladigi R^2 %:
+#:
+#:     pencere            kis26    guz25
+#:     tumu               1,043    0,457    <- eski uretim, IKISINDE DE EN KOTU
+#:     en eski 2 ay atik  1,167    0,508    <- ikisinde de daha iyi
+#:     yalniz son 3 ay    0,823    0,578
+#:
+#: Iki blok pencerenin NE KADAR kisalacaginda ayrisiyor (kis26 uzun, guz25
+#: kisa istiyor) ama "tamamini kullanma" hukmunde BIRLESIYOR. Ortak kural
+#: secildi: veri setinin ilk 2 ayini at. kis26 RMSLE'sinde 1,82233 ->
+#: 1,82127 (kazanc 0,00106); guz25'te de R^2 yukseliyor.
+TABLO_BASLANGIC = "2025-03-01"
+
 #: kVA kademesi sayisi. Kenarlar YALNIZ egitimden turetilir ve teste AYNI
 #: kenarlarla uygulanir -- iki tarafta ayri hesaplamak kovalari kaydirir.
 KOVA_SAYISI = 24
@@ -130,7 +149,10 @@ def _eb(anahtar_e: np.ndarray, ofs_e: np.ndarray, anahtar_h: np.ndarray,
 
 
 def hucre_etkisi(tr: pd.DataFrame, hedef: pd.DataFrame) -> np.ndarray:
-    """Egitimden ilce x kova ofset ortalamasi (ham, merkezlenmemis)."""
+    """Egitimden ilce x kova ofset ortalamasi (ham, merkezlenmemis).
+
+    ``tr`` cagiran tarafta ZATEN ``TABLO_BASLANGIC``a gore kirpilmis gelmeli.
+    """
     ofs = (np.log1p(tr["tuketim"].clip(lower=0.0).to_numpy(dtype="float64"))
            - np.log1p(tr["guc"].to_numpy(dtype="float64")))
     lg_e = np.log1p(tr["guc"].to_numpy(dtype="float64"))
@@ -154,6 +176,7 @@ def main() -> int:
     a.add_argument("--a-hucre", type=float, default=A_HUCRE)
     a.add_argument("--b-model", type=float, default=B_MODEL)
     a.add_argument("--m-gun", type=float, default=M_GUN)
+    a.add_argument("--tablo-baslangic", default=TABLO_BASLANGIC)
     a.add_argument("--hucresiz", action="store_true",
                    help="hucre etkisini kapat (yalniz gun korumasi)")
     ar = a.parse_args()
@@ -161,7 +184,8 @@ def main() -> int:
     ornek = pd.read_csv(KOK / "data/raw/sample_submission.csv", encoding="utf-8")
     te = pd.read_csv(KOK / "data/raw/test.csv", usecols=["id", "tanim", "guc", "tarih", "lokasyon"],
                      encoding="utf-8", dtype={"tanim": str})
-    tr = pd.read_csv(KOK / "data/raw/train.csv", usecols=["tanim", "guc", "tuketim", "lokasyon"],
+    tr = pd.read_csv(KOK / "data/raw/train.csv",
+                     usecols=["tanim", "guc", "tuketim", "lokasyon", "tarih"],
                      encoding="utf-8", dtype={"tanim": str})
     giris = pd.read_csv(KOK / ar.giris, encoding="utf-8")
 
@@ -195,7 +219,10 @@ def main() -> int:
     if ar.hucresiz:
         etki = np.zeros(int(soguk.sum()))
     else:
-        hucre = hucre_etkisi(tr, m)[soguk]
+        tablo_kaynak = tr[pd.to_datetime(tr["tarih"]) >= ar.tablo_baslangic]
+        if len(tablo_kaynak) < 100_000:
+            raise RuntimeError(f"tablo kaynagi cok seyrek: {len(tablo_kaynak):,} satir")
+        hucre = hucre_etkisi(tablo_kaynak, m)[soguk]
         # Etkiyi AYNI referansa gore merkezle, sonra ay icinde sifirla.
         h_ref = w * gruplu(hucre, gun_a) + (1.0 - w) * gruplu(hucre, ay_a)
         etki = hucre - h_ref
@@ -227,6 +254,9 @@ def main() -> int:
     trafo_sayisi = int(m.loc[soguk, "tanim"].nunique())
     print(f"  a(hucre) {ar.a_hucre:.2f}  b(model) {ar.b_model:.2f}  "
           f"M_gun {ar.m_gun:.0f}  hucre {hucre_ad}")
+    if not ar.hucresiz:
+        print(f"  tablo kaynagi {ar.tablo_baslangic}'ten itibaren "
+              f"{len(tablo_kaynak):,} satir ({len(tr):,} icinden)")
     print(f"  soguk {n_s:,} satir (%{100 * n_s / len(m):.2f}), {trafo_sayisi:,} trafo")
     print(f"  en seyrek gun {n_gun.min():.0f} satir, medyan {np.median(n_gun):.0f}")
     print(f"  AYLIK seviye korundu (en buyuk sapma {ay_sapma:.2e})")
