@@ -1,0 +1,5 @@
+{"ad": "v18 (dun)", "tur": "lb", "skor": 1.03362, "not": "v27 = v18 + olu hedge"}
+{"ad": "v25 (v23+hedge)", "tur": "lb", "skor": 1.0482, "not": "dunku soguk degisiklikler zararliydi"}
+{"ad": "v30 (v27+buzme)", "tur": "lb", "skor": 1.02639, "not": "eski son islem, kendi ortalamasina beta=0,60"}
+{"ad": "v27 harman 3/1/1", "tur": "blok", "sicak": 0.74263, "soguk": 1.86509, "skor": 1.0955072437870597, "not": "onceki uretim: soguk 3/1/1, sinir agi sicakta bagli"}
+{"ad": "v32 cat-only soguk", "tur": "blok", "sicak": 0.74263, "soguk": 1.83606, "skor": 1.0845858405791218, "not": "soguk harman cat-only; v33/v35 bundan tureiyor"}
