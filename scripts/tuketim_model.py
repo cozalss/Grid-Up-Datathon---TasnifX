@@ -1362,6 +1362,18 @@ def main() -> int:
     ap.add_argument("--tohum", type=int, default=3, help="son egitimde ortalanacak tohum sayisi")
     ap.add_argument("--cikti", default="tuketim_v1.csv")
     ap.add_argument(
+        "--tohum-baslangic",
+        type=int,
+        default=100,
+        help="son egitimde ilk tohum. Var olan bir gonderime EK tohum uretip log "
+        "uzayinda birlestirmek icin kullanilir: yanlilik degismez, varyans duser.",
+    )
+    ap.add_argument(
+        "--dogrulama-atla",
+        action="store_true",
+        help="4/5 dogrulamayi atla -- yapilandirma degismediyse tekrar kosmak bos zaman",
+    )
+    ap.add_argument(
         "--sadece-dogrulama",
         action="store_true",
         help="4/5 dogrulamayi kosup dur -- yapilandirma karsilastirmasi icin",
@@ -1427,7 +1439,7 @@ def main() -> int:
 
     print("\n4/5  DOGRULAMA")
     sonuclar: dict[str, Dogrulama] = {}
-    for b in BLOKLAR:
+    for b in BLOKLAR if not args.dogrulama_atla else ():
         dogrulama = egitim[egitim["_blok"] == b.ad]
         # Ek kokenler bilerek ortusuyor; dogrulamada ortusme SIZINTIDIR.
         # ``kokenleri_ayikla`` hedef blokla tek gun bile kesisen her kokeni
@@ -1440,14 +1452,18 @@ def main() -> int:
             kalan, dogrulama, kolonlar, hizli=args.hizli, dar_egitim=kalan_dar
         )
         print(sonuclar[b.ad].satir(b.ad, len(dogrulama)))
-    print(f"  ORTALAMA (ham)            {np.mean([s.genel for s in sonuclar.values()]):.5f}")
-    print(
-        f"  ORTALAMA (test-agirlikli) {np.mean([s.test_agirlikli for s in sonuclar.values()]):.5f}"
-    )
-    print(
-        f"  YAZ IKIZI (yaz25)         {sonuclar['yaz25'].test_agirlikli:.5f}"
-        f"  <-- test donemine en yakin, test karisimina agirliklandirilmis"
-    )
+    if sonuclar:
+        print(f"  ORTALAMA (ham)            {np.mean([s.genel for s in sonuclar.values()]):.5f}")
+        print(
+            "  ORTALAMA (test-agirlikli) "
+            f"{np.mean([s.test_agirlikli for s in sonuclar.values()]):.5f}"
+        )
+        print(
+            f"  YAZ IKIZI (yaz25)         {sonuclar['yaz25'].test_agirlikli:.5f}"
+            f"  <-- test donemine en yakin, test karisimina agirliklandirilmis"
+        )
+    else:
+        print("  --dogrulama-atla: bu adim atlandi")
 
     if args.sadece_dogrulama:
         print(f"\n--sadece-dogrulama: son egitim ATLANDI  ({(time.time() - t0) / 60:.1f} dakika)")
@@ -1477,8 +1493,11 @@ def main() -> int:
     birikim = np.zeros(len(test), dtype="float64")
     for i in range(args.tohum):
         t_tohum = time.time()
-        birikim += rejim_tahmini(egitim, test, kolonlar, 100 + i, hizli=args.hizli, dar_egitim=dar)
-        print(f"    tohum {i + 1}/{args.tohum} bitti ({time.time() - t_tohum:.0f} sn)")
+        tohum = args.tohum_baslangic + i
+        birikim += rejim_tahmini(
+            egitim, test, kolonlar, tohum, hizli=args.hizli, dar_egitim=dar
+        )
+        print(f"    tohum {tohum} ({i + 1}/{args.tohum}) bitti ({time.time() - t_tohum:.0f} sn)")
     tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
 
     GONDERIM.mkdir(parents=True, exist_ok=True)
