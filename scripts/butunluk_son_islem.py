@@ -45,11 +45,10 @@ from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 BLOK = "kis26"
 TOHUMLAR = (1000, 1001, 1002)
 ONBELLEK = KOK / "data" / "interim" / "deney" / f"soguk_tahmin_{BLOK}.npz"
-#: Beklenen sayi: deney_ikili_agirlik.py a=0,55 b=0,25 icin 1,82131 (M_gun=0)
-#: bildirdi; M_gun=50'nin kis26'daki bilinen maliyeti +0,00008; tablo
-#: penceresi (TABLO_BASLANGIC) kis26 RMSLE'sinde -0,00012 getiriyor
-#: (1,82139 -> 1,82127, ayni cebirle olculdu).
-BEKLENEN = 1.82135
+#: Beklenen sayi: deney_soguk_seviye.py, a=0,40 kayma=0, uretim tablosu ve
+#: uretim cebiriyle kis26 HAM 1,82133 bildirdi. M_gun=50'nin bilinen
+#: maliyeti +0,00008. Toplam 1,82141.
+BEKLENEN = 1.82141
 ESIK = 5e-4
 
 

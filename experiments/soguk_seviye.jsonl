@@ -1,0 +1,48 @@
+{"olcut": "kis26 HAM", "a": 0.3, "kayma": 0.0, "rmsle": 1.8219829749617016}
+{"olcut": "kis26 HAM", "a": 0.3, "kayma": 0.05, "rmsle": 1.8169450169722428}
+{"olcut": "kis26 HAM", "a": 0.3, "kayma": 0.1, "rmsle": 1.8126689960779718}
+{"olcut": "kis26 HAM", "a": 0.3, "kayma": 0.15, "rmsle": 1.8091603146349111}
+{"olcut": "kis26 HAM", "a": 0.3, "kayma": 0.2, "rmsle": 1.8064234437382416}
+{"olcut": "kis26 HAM", "a": 0.3, "kayma": 0.3, "rmsle": 1.803278198786514}
+{"olcut": "kis26 HAM", "a": 0.4, "kayma": 0.0, "rmsle": 1.8213326145493731}
+{"olcut": "kis26 HAM", "a": 0.4, "kayma": 0.05, "rmsle": 1.8162928555005138}
+{"olcut": "kis26 HAM", "a": 0.4, "kayma": 0.1, "rmsle": 1.8120152985445455}
+{"olcut": "kis26 HAM", "a": 0.4, "kayma": 0.15, "rmsle": 1.8085053518084984}
+{"olcut": "kis26 HAM", "a": 0.4, "kayma": 0.2, "rmsle": 1.8057674911960993}
+{"olcut": "kis26 HAM", "a": 0.4, "kayma": 0.3, "rmsle": 1.8026211076761414}
+{"olcut": "kis26 HAM", "a": 0.47, "kayma": 0.0, "rmsle": 1.8211667614955847}
+{"olcut": "kis26 HAM", "a": 0.47, "kayma": 0.05, "rmsle": 1.8161265442039032}
+{"olcut": "kis26 HAM", "a": 0.47, "kayma": 0.1, "rmsle": 1.8118485966355837}
+{"olcut": "kis26 HAM", "a": 0.47, "kayma": 0.15, "rmsle": 1.808338328386107}
+{"olcut": "kis26 HAM", "a": 0.47, "kayma": 0.2, "rmsle": 1.8056002165817784}
+{"olcut": "kis26 HAM", "a": 0.47, "kayma": 0.3, "rmsle": 1.8024535452295194}
+{"olcut": "kis26 HAM", "a": 0.55, "kayma": 0.0, "rmsle": 1.8212691509729864}
+{"olcut": "kis26 HAM", "a": 0.55, "kayma": 0.05, "rmsle": 1.8162292200877033}
+{"olcut": "kis26 HAM", "a": 0.55, "kayma": 0.1, "rmsle": 1.8119515172347878}
+{"olcut": "kis26 HAM", "a": 0.55, "kayma": 0.15, "rmsle": 1.8084414510904638}
+{"olcut": "kis26 HAM", "a": 0.55, "kayma": 0.2, "rmsle": 1.8057034980129707}
+{"olcut": "kis26 HAM", "a": 0.55, "kayma": 0.3, "rmsle": 1.8025570117095235}
+{"olcut": "TEST kVA karisimi", "a": 0.3, "kayma": 0.0, "rmsle": 2.0105503260726816}
+{"olcut": "TEST kVA karisimi", "a": 0.3, "kayma": 0.05, "rmsle": 2.007699652184918}
+{"olcut": "TEST kVA karisimi", "a": 0.3, "kayma": 0.1, "rmsle": 2.0055462169011733}
+{"olcut": "TEST kVA karisimi", "a": 0.3, "kayma": 0.15, "rmsle": 2.0040922677705377}
+{"olcut": "TEST kVA karisimi", "a": 0.3, "kayma": 0.2, "rmsle": 2.0033393277830998}
+{"olcut": "TEST kVA karisimi", "a": 0.3, "kayma": 0.3, "rmsle": 2.0039389005118893}
+{"olcut": "TEST kVA karisimi", "a": 0.4, "kayma": 0.0, "rmsle": 2.0104380015809102}
+{"olcut": "TEST kVA karisimi", "a": 0.4, "kayma": 0.05, "rmsle": 2.007584280729923}
+{"olcut": "TEST kVA karisimi", "a": 0.4, "kayma": 0.1, "rmsle": 2.005427830992467}
+{"olcut": "TEST kVA karisimi", "a": 0.4, "kayma": 0.15, "rmsle": 2.0039709032998867}
+{"olcut": "TEST kVA karisimi", "a": 0.4, "kayma": 0.2, "rmsle": 2.003215023929975}
+{"olcut": "TEST kVA karisimi", "a": 0.4, "kayma": 0.3, "rmsle": 2.003808848003375}
+{"olcut": "TEST kVA karisimi", "a": 0.47, "kayma": 0.0, "rmsle": 2.0106252153530275}
+{"olcut": "TEST kVA karisimi", "a": 0.47, "kayma": 0.05, "rmsle": 2.007769739553689}
+{"olcut": "TEST kVA karisimi", "a": 0.47, "kayma": 0.1, "rmsle": 2.005611466012679}
+{"olcut": "TEST kVA karisimi", "a": 0.47, "kayma": 0.15, "rmsle": 2.0041526471346955}
+{"olcut": "TEST kVA karisimi", "a": 0.47, "kayma": 0.2, "rmsle": 2.0033948108906903}
+{"olcut": "TEST kVA karisimi", "a": 0.47, "kayma": 0.3, "rmsle": 2.003984531975823}
+{"olcut": "TEST kVA karisimi", "a": 0.55, "kayma": 0.0, "rmsle": 2.0111071671396927}
+{"olcut": "TEST kVA karisimi", "a": 0.55, "kayma": 0.05, "rmsle": 2.008250067401154}
+{"olcut": "TEST kVA karisimi", "a": 0.55, "kayma": 0.1, "rmsle": 2.0060899989376804}
+{"olcut": "TEST kVA karisimi", "a": 0.55, "kayma": 0.15, "rmsle": 2.004629214934436}
+{"olcut": "TEST kVA karisimi", "a": 0.55, "kayma": 0.2, "rmsle": 2.003869244681962}
+{"olcut": "TEST kVA karisimi", "a": 0.55, "kayma": 0.3, "rmsle": 2.004454199051811}

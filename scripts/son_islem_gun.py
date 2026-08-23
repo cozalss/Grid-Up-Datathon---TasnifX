@@ -90,7 +90,17 @@ KOK = Path(__file__).resolve().parents[1]
 #:   trafo-bazli holdout (2025-04..07 mevsimsel ikizi)   a* = 0,545
 #:   kis26 izgarasi (deney_ikili_agirlik.py)             a* = 0,55
 #: kis26'da a=0,75 -> 1,82250, a=0,55 -> 1,82131  (kazanc 0,00120).
-A_HUCRE = 0.55
+#:
+#: SONRA DAHA DA DUSURULDU (deney_soguk_seviye.py). kis26'nin HAM optimumu
+#: 0,47 ama kis26 soguk kVA medyani 400, TESTinki 630 -- karisim testinkine
+#: agirliklandirilinca optimum 0,40'a kayiyor:
+#:                     a=0,30    0,40      0,47      0,55
+#:     kis26 HAM      1,82198  1,82133   1,82117   1,82127
+#:     TEST kVA kar.  2,01055  2,01044   2,01063   2,01111
+#: Bagimsiz bir mevsim analizi de Nisan-Temmuz icin a* = 0,39-0,41 olcmus
+#: (a* mevsime gore oynuyor: Nis-Tem 0,412, Ara-Mar 0,829). Test Nis-Tem.
+#: Iki test-ilgili sinyal ayni yerde; kis26 HAM maliyeti yalnizca 0,00006.
+A_HUCRE = 0.40
 
 #: MODELIN gun-ici sinyalinin agirligi. kis26'da 0,20-0,30 arasi duz.
 B_MODEL = 0.25
