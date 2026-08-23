@@ -825,6 +825,14 @@ _GECMIS_ONEKI = ("t_",)
 #: 0 -> 0,9) ve ic optimum yok. NeurIPS hakemi tam bu soruyu sormus
 #: ("neden maskeli tek model yerine ayri bir soguk model?"); yazarlar
 #: cevap vermemis.
+# GERI ALINDI 2026-08-23: soguk uzmanina eklenen ``ek_kolon`` (hafta gunu)
+# ve harman agirliginin 3/1/1 -> 1/1/1 degistirilmesi LB'de OLCULDU ve
+# ZARARLI cikti: v18 1,03370 -> v23 1,04820 (+0,0145). Sebep docs/35:
+# ``tanim_num`` bire-bir trafo kimligi ve maskelemeden sag ciktigi icin
+# CV soguk satirlarinin %48'i EZBERLENEBILIR (testte %0). Bu yuzden
+# ``yaz25`` (ezber %97,2) her iki degisikligi de ONAYLADI, ``kis26``
+# (ezber %0,0) ikisine de HAYIR dedi -- ve LB kis26'yi hakli cikardi.
+# SOGUK REJIM KARARLARI BUNDAN SONRA ``kis26`` ILE VERILIR.
 REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     # l2_leaf_reg=1 + depth=6 (2026-08-22): MERKEZLI olcumde +0,00628, uc
     # blokta da pozitif. Ham olcumde yalnizca +0,00317 gorunuyordu -- cunku
@@ -892,7 +900,7 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
         "maske": 0.15,
         "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6},
         "ek_koken": True,
-        "agirlik": {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0},
+        "agirlik": {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0, "sinir_agi": 1.4},
     },
     # ``ek_kolon``: bu uzmana YALIN_CIKARILAN'a ragmen geri verilen kolonlar.
     # Olculdu (2026-08-22, ``deney_soguk_hafta.py``, eslenik, 5 tohum, 15 hucre):
@@ -915,8 +923,7 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
         "maske": 1.00,
         "cat": {"depth": 7},
         "ek_koken": False,
-        "ek_kolon": ("tk_haftanin_gunu", "tk_hafta_sonu"),
-        "agirlik": {"cat": 1.0, "xgb": 1.0, "lgbm": 1.0},
+        "agirlik": {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0},
     },
 }
 
@@ -1118,6 +1125,16 @@ def aile_tahmini(
     """
     egitim = soguk_maskele(egitim, kolonlar, tohum, maske_orani)
     y = ofsetli_hedef(egitim)
+    if aile == "sinir_agi":
+        # 4. UYE -- agac degil. Neden: uc GBDT ailesinin hata korelasyonu
+        # 0,914 ve cesitliligin payi yalnizca %5,6 (olculdu 2026-08-23,
+        # scripts/teshis_cesitlilik.py). Farkli tumevarim onyargisi olan bir
+        # uye, TEK BASINA daha kotu olsa bile harmani duzeltir.
+        from sinir_agi import SinirAgi
+
+        ag = SinirAgi(tohum=tohum, hizli=hizli)
+        ag.fit(egitim[kolonlar], y)
+        return ofseti_geri_ekle(ag.predict(hedef_cerceve[kolonlar]), hedef_cerceve)
     model = aile_modeli(aile, tohum, hizli=hizli, cat_ustyazim=cat_ustyazim)
     x_egitim, x_hedef = egitim[kolonlar], hedef_cerceve[kolonlar]
     if aile == "cat":

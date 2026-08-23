@@ -84,3 +84,4 @@ kaggle_paket/
 # kurali bu dosyayi yakalamasin diye istisna en sonda durur.
 !data/prior/ayna/MANISA_IZMIR_PLANSIZ_KESINTILER.csv
 .venv-ci/
+catboost_info/
