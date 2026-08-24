@@ -58,14 +58,14 @@ VERI_DIZINLERI = ("data",)
 
 #: submissions/ 1,3 GB; yalniz bunlar tasinir.
 GONDERIMLER = (
-    "tuketim_v47_eskison.csv",    # KAZANAN, LB 1,01750
-    "tuketim_v46_ham15.csv",      # 15 tohumluk HAM tahmin -> 30 tohuma buradan gidilir
-    "tuketim_v30_buzme.csv",      # LB referansi 1,02639
-    "tuketim_v32_ham.csv",        # tohum partisi 1 (100-102)
-    "tuketim_v34_ek3tohum.csv",   # parti 2 (103-105)
-    "tuketim_v38_ek3tohum.csv",   # parti 3 (106-108)
-    "tuketim_v41_ek3tohum.csv",   # parti 4 (109-111)
-    "tuketim_v42_ek3tohum.csv",   # parti 5 (112-114)
+    "tuketim_v47_eskison.csv",  # KAZANAN, LB 1,01750
+    "tuketim_v46_ham15.csv",  # 15 tohumluk HAM tahmin -> 30 tohuma buradan gidilir
+    "tuketim_v30_buzme.csv",  # LB referansi 1,02639
+    "tuketim_v32_ham.csv",  # tohum partisi 1 (100-102)
+    "tuketim_v34_ek3tohum.csv",  # parti 2 (103-105)
+    "tuketim_v38_ek3tohum.csv",  # parti 3 (106-108)
+    "tuketim_v41_ek3tohum.csv",  # parti 4 (109-111)
+    "tuketim_v42_ek3tohum.csv",  # parti 5 (112-114)
 )
 
 #: Depoda olmayan ama gereken gizli dosyalar: (kaynak, paket icindeki ad).
@@ -147,8 +147,10 @@ def paketle(hedef_kok: Path) -> int:
             ekle(p, f"gonderimler/{ad}", "gonderim")
         else:
             eksik.append(ad)
-    print(f"  gonderim {len(GONDERIMLER) - len(eksik)}/{len(GONDERIMLER)} dosya"
-          + (f"  EKSIK: {eksik}" if eksik else ""))
+    print(
+        f"  gonderim {len(GONDERIMLER) - len(eksik)}/{len(GONDERIMLER)} dosya"
+        + (f"  EKSIK: {eksik}" if eksik else "")
+    )
 
     # --- 3. CLAUDE GECMISI ---
     gecmis = gecmis_klasoru(KOK)
@@ -171,8 +173,11 @@ def paketle(hedef_kok: Path) -> int:
             print(f"  UYARI: {kaynak} yok")
 
     (hedef_kok / MANIFEST).write_text(
-        json.dumps({"kaynak_slug": slug(KOK), "kaynak_yol": str(KOK),
-                    "dosyalar": kayitlar}, ensure_ascii=False, indent=1),
+        json.dumps(
+            {"kaynak_slug": slug(KOK), "kaynak_yol": str(KOK), "dosyalar": kayitlar},
+            ensure_ascii=False,
+            indent=1,
+        ),
         encoding="utf-8",
     )
     (hedef_kok / "KURULUM.md").write_text(kurulum_metni(slug(KOK)), encoding="utf-8")
