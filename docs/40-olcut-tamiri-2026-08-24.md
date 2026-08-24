@@ -350,6 +350,87 @@ benzediği blokta zararlıdır. **Hüküm: REDDEDİLDİ.**
 
 ---
 
+## 7b. AKSAM EKI: rig provenans denetimi ve kapasite
+
+Akşam bir ajan denetimi, bugün bulduğum rig kusurunun **daha genis** oldugunu
+gosterdi. `deney_ayar2.py:151` ve `deney_soguk_uzman.py:72` kolonlari soyle
+kuruyor:
+
+```python
+kolonlar = [k for k in tm.oznitelikler(egitim) if k in test.columns]
+```
+
+`YALIN_CIKARILAN` filtresi YOK. Yani hiperparametreler **151 kolonda** tarandi,
+uretim **105 kolonda** kosuyor. Sicak tarafta ustune bir de ek_kokensizlik var
+(1,04M vs 2,86M).
+
+### Soguk kapasite: REDDEDILDI (11. eksen)
+
+`depth=7` uretim genisliginde hic gorulmemisti. Olculdu (kis26, son islem
+sonrasi, kVA duzeltilmis, 3 tohum eslenik):
+
+```
+aday      fark      SH        t      tohum
+d6i250  +0,00160  0,00198  +0,81     2/3
+d8i250  +0,00080  0,00166  +0,48     1/3
+d6i500  +0,00125  0,00699  +0,18     2/3
+d7i500  -0,01008  0,00434  -2,32     0/3   <- ANLAMLI, ama KOTU
+```
+
+Hicbir aday anlamli degil. Tek anlamli sonuc `d7i500`in **daha kotu** olmasi
+-- yani soguk uzman yetersiz uydurmuyor, 250 agacta zaten kapasitesinde.
+
+> **Toplu tablo yaniltti:** orada `d6i500` "+0,00223 en iyi" gorunuyordu; SH
+> 0,00699 ve tohumlar 1,97480-1,99572 arasi savruluyor. Bu yuzden
+> `scripts/kapasite_hukmu.py` yazildi: hukum artik (blok, tohum) ciftleri
+> uzerinde eslenik SH ile veriliyor, toplu noktaya bakilarak degil.
+
+### Sicak kapasite: BLOKLAR ZIT, LB'YE SORULACAK
+
+```
+aday           fark      SH       t     yaz25   guz25   kis26
+cat_kap500   +0,00056  0,00327  +0,17   0/3     0/3     3/3
+cat_kap900   -0,00208  0,00444  -0,47   0/3     0/3     3/3
+cat_kap500d7 +0,00047  0,00404  +0,12   1/3     0/3     3/3
+```
+
+Blok **icinde** mukemmel tutarli, bloklar **arasinda** tam zit; havuzlanmis t
+sifir cunku birbirlerini goturuyorlar. Etki gercek ve buyuk (kis26 +0,0142,
+guz25 -0,0126) -- soru hangi yonun teste uydugu.
+
+**Kismi mekanizma.** `t_gy_*` (gecen yilin ayni donemi) yaz25/guz25'te **%0**
+dolu, kis26'da **%58**, testin sicak tarafinda **%52,6**. Kapasite ancak
+gercek sinyal varsa ise yarar. Olculdu:
+
+```
+blok    t_gy grup      250       500       fark
+yaz25   BOS (%100)   0,79655   0,79912   -0,00257
+guz25   BOS (%100)   0,80548   0,81860   -0,01311
+kis26   DOLU         0,73325   0,72440   +0,00885
+kis26   BOS          0,75679   0,75432   +0,00247
+```
+
+Kazanc kis26'da `t_gy` dolu satirlarda **3,6 kat** buyuk -- mekanizma kismen
+dogrulandi. Ama kis26'nin BOS satirlari da kazaniyor, digerlerinin bos
+satirlari kaybediyor: `t_gy` tek basina blok farkini aciklamiyor.
+
+**Ikinci hipotez CURUDU:** "daha cok veri daha cok kapasite ister" olsaydi en
+buyuk egitim setine sahip blok kazanirdi. Olculdu: yaz25 1.981.873, kis26
+1.316.916, guz25 1.180.665 (uretim 2.855.584). En buyugu yaz25 ve kaybediyor.
+
+**Onemli ayrim:** kis26'nin "tek durust kat" statusu EZBER kanalindan gelir ve
+o kanal yalnizca SOGUK satirlari kirletir (docs/35). Bu olcum SICAK
+satirlarda, yani orada uc blok da mesru. kis26'nin buradaki ustunluk iddiasi
+daha zayif: daha buyuk orneklem (382k), testle eslesen `t_gy` dolulugu, ve
+teste en yakin ozet penceresi (334 gun; test 455, guz25 212, yaz25 ~90).
+
+**Karar: LB'de izole sinanacak.** Public LB takimin EN IYI skorunu gosteriyor
+(kendi gecmisimiz kanitliyor: v44 1,03053 gonderildi, tablo 1,01750 kaldi),
+yani kotu bir gonderim siralamayi dusurmez. Belirsizligi tahminle degil olcumle
+cozmenin maliyeti bir gonderim hakki.
+
+---
+
 ## 8. Kapanış: teslimat ve dürüst muhasebe
 
 ### Teslim edilen
