@@ -1,0 +1,13 @@
+#!/bin/sh
+# Commit oncesi kapi. Mantik scripts/kapi_oncesi.py icinde -- gerekce orada yazili.
+# Kurulum: git config core.hooksPath .githooks
+kok=$(git rev-parse --show-toplevel)
+if [ -x "$kok/.venv/Scripts/python.exe" ]; then
+    py="$kok/.venv/Scripts/python.exe"
+elif [ -x "$kok/.venv/bin/python" ]; then
+    py="$kok/.venv/bin/python"
+else
+    echo "[kapi] .venv bulunamadi -- kapi ATLANDI (CI yine denetler)"
+    exit 0
+fi
+exec "$py" "$kok/scripts/kapi_oncesi.py"
