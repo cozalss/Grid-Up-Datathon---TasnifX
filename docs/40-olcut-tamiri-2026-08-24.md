@@ -203,28 +203,65 @@ ayrıca üç ajan beta için üç çelişkili cevap verdi (0,80 / 0,20-0,40 / ö
 
 ---
 
-## 7. Loop sonrası tek gerçek fırsat kümesi: SİNİR AĞI
+## 7. Sinir ağı ÖLÇÜLDÜ — ağırlık doğru, değeri çeşitlilikten geliyor
 
-Ağ **hiç ayarlanmadı** — tek commit (`317cfc7`) ile üretime girdi. Ve
-[deney_sicak_agirlik.py:18](../scripts/deney_sicak_agirlik.py#L18) açıkça
-yazıyor: *"sinir_agi izgaraya GIREMEZ (tek fit ~20 dakika, 27 fit imkansiz)"*.
-Yani ağırlığı **hiç ızgaraya girmemiş**. Üç somut madde:
+Ağ üretime tek commit ile girdi (`317cfc7`) ve hiç ayarlanmadı: `sinir_agi: 1,4`
+hiçbir ölçüm kaydında geçmiyor, çünkü
+[deney_sicak_agirlik.py:18](../scripts/deney_sicak_agirlik.py#L18) *"sinir_agi
+izgaraya GIREMEZ (tek fit ~20 dakika, 27 fit imkansiz)"* diyor.
 
-1. **`ayri_gosterge` varsayılanı `False`** — eksiklik göstergeleri
-   `SimpleImputer(add_indicator=True)`'dan çıkıp `QuantileTransformer`'a
-   giriyor. Dosya bunun için zaten "A5 ablasyonu" anahtarı taşıyor. İkili
-   kolonları kuantil dönüşümünden geçirmek, dosyanın kendi yasakladığı şey.
-2. **`sinir_agi` ağırlığı 1,4** hiçbir ölçüm kaydında geçmiyor, yalnızca
-   yapılandırma satırı olarak. Kapalı çözüm iddiası ~2,2 diyor (doğrulanmadı).
-3. **Ağ, üretimdeki tek erken duran aile** ve `max_iter=100`'e çarpıp
-   yakınsamadan duruyor (`ConvergenceWarning`, her tohumda).
+`scripts/aile_onbellegi.py` o duvarı yıktı: üretim eşli (ek kökenli) aile
+tahminleri diske yazıldı (GBDT 34 dk, ağ 178 dk), sonrası saf aritmetik.
 
-**Neden bu loopta yapılmadı:** üçü de modeli değiştiriyor, yani eldeki 15
-tohumu geçersiz kılıyor; doğrulaması ağ başına ~24 dk × 9 fit ≈ 3,5 saat; ve
-kuyruk koşarken `tuketim_model.py`'ye dokunmak garantili kanalı riske atıyor.
-Aile bazında tahminler hiçbir yerde saklanmadığı için her harman sorusu tam
-koşuya mal oluyor — **önce üretim koşusuna aile bazında tahmin önbelleği
-eklenmeli**, sonra bu üç madde bedava knob olur.
+### Ağırlık taraması
+
+```
+ag w       agirlikli    yaz25     guz25     kis26
+0,0         0,90065    0,81238   0,99624   0,88249
+0,5         0,89753    0,80898   0,99507   0,87789
+1,0         0,89675    0,80700   0,99559   0,87676   <- en iyi
+1,4         0,89718    0,80608   0,99674   0,87742   <- URETIM
+2,0         0,89888    0,80545   0,99914   0,87997
+2,6         0,90131    0,80539   1,00199   0,88360
+```
+
+Eğri 0,5–2,0 arasında düz; üretim platonun içinde. En iyiye fark **0,00043
+sıcak = 0,00023 genel**, blok tutarlılığı **2/3** (yaz25 tersini söylüyor).
+**Hüküm: 1,4 kalıyor.**
+
+Bir ajan taraması "kapalı çözüm optimumu w*=2,22, güvenli plato 1,8–2,6"
+demişti. Ölçüm bunu **reddediyor**: w=2,6'da skor 0,90131, yani w=0'dan bile
+kötü. O iddia ağ önbellekte yokken yapılmış bir ekstrapolasyondu.
+
+### Ağın topluluğa kattığı: çeşitlilik, doğruluk değil
+
+Krogh & Vedelsby (NeurIPS 1994), log uzayında özdeşlik:
+`ortalama_üye_hatası − AYRIŞMA = harman_hatası`.
+
+```
+blok     ag tek basina   GBDT harman   AYRISMA(GBDT)   AYRISMA(+ag)
+yaz25       0,82752        0,80297        0,01734        0,03200
+guz25       0,88805        0,80912        0,02402        0,05190
+kis26       0,87295        0,73932        0,02856        0,06363
+```
+
+Ağ tek başına GBDT harmanından **çok daha kötü** (kis26: 0,873 vs 0,739) ama
+ayrışmayı **ikiye katlıyor**, ve harmanı 0,90065 → 0,89718 çekiyor. Yani
+yerini tamamen çeşitlilikle hak ediyor.
+
+> **Sıradaki oturum için yön:** ağı *daha doğru* yapmaya çalışmak yanlış
+> kaldıraç. Değeri farklılığından geliyorsa, kaldıraç onu **daha farklı**
+> yapmaktır — farklı mimari, farklı hedef dönüşümü (`ofset=False` üyesi),
+> farklı öznitelik altkümesi.
+
+### Hâlâ açık: A5 ablasyonu
+
+`ayri_gosterge` varsayılanı `False`, yani `SimpleImputer(add_indicator=True)`
+göstergeleri `QuantileTransformer`'dan geçiyor — kuantil dönüşümü ikili
+kolonlarda anlamsız. A1–A5 ablasyonları
+[sinir_agi.py:796-798](../scripts/sinir_agi.py#L796)'de CLI bayrağı olarak
+tanımlı ama `experiments/` altında tek sonuç dosyası yok. A5 önbelleği bu
+loopun sonunda koşuyor; sonucu `scripts/deney_ag_karsilastir.py` §2 verecek.
 
 ---
 
