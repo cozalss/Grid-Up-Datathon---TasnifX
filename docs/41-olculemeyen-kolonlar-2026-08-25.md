@@ -458,6 +458,81 @@ Kapılar: genel seviye kayması **tam sıfır**; dokunulmayan rejimde göreli sa
 
 ---
 
+## 6e. DÜZELTME: §6c'deki soğuk gün ekseni iddiası KOMPOZİSYONLA KİRLİYDİ
+
+§6c soğuk tarafta "GÜN ekseni OLS eğimi +1,828, korelasyon +0,865" demişti ve
+`son_islem_gunsade.py` (v54) buna dayanıyordu. **O ölçüm ham gün ortalamaları
+üzerindeydi**, yani trafo etkisi çıkarılmamıştı. Günler arasında *hangi
+trafoların bulunduğu* değişiyor ve model o trafoların seviyesini doğru bildiği
+için hem korelasyon hem oran şişiyor.
+
+Dik ayrıştırmayla (`r = μ + a_trafo + b_gün + e`, trafo etkisi ÖNCE çıkarılır),
+kis26 soğuk:
+
+| bileşen | model std | gerçek std | kor | **optimum c** | üretim |
+|---|---|---|---|---|---|
+| TRAFO | 0,4027 | 1,7849 | +0,102 | 0,453 | 0,60 |
+| **GÜN** | 0,0418 | 0,0751 | **+0,359** | **0,645** | 0,60 |
+| ARTIK | 0,0871 | 0,3277 | +0,173 | 0,649 | 0,60 |
+
+Doğrudan ızgara taraması da aynı şeyi söylüyor: v54'ün (0,60/1,00/0,60)
+kis26'daki kazancı **+0,00027** — gürültü. Üç parametreli en iyi nokta
+(0,50/1,40/0,45) +0,00125 veriyor ki bu da tek blokta üç parametre uydurmaktır,
+reddedilir.
+
+> **HÜKÜM: v54 ve v56 DÜŞTÜ.** Soğuk taraf üretimde kalıyor (beta=0,60).
+> Sıcak taraf etkilenmiyor: orada zaten `gun_etkisi` (trafo etkisi çıkarılmış)
+> kullanıldı **ve** optimum doğrudan RMSLE ızgarasıyla teyit edildi
+> (yaz25 ölçülen c\*=2,65, formül 2,576).
+
+Kalıcı kural 6: **gün ekseni ölçümü, trafo etkisi çıkarılmadan yapılmaz.**
+Aksi halde ölçülen şey mevsim değil kompozisyondur.
+
+---
+
+## 7. GÖNDERIM PLANI -- parabol tasarımı ve ÖN KAYITLI TAHMİNLER
+
+Gün bileşeninin MSLE'ye katkısı `c` cinsinden **tam kuadratiktir**:
+
+```
+MSLE(c) = MSLE(c*) + pay_sicak * sigma_model^2 * (c - c*)^2
+```
+
+LB skoru gürültüsüz olduğu için **üç nokta A, B ve c\*'yi kesin belirler.**
+Bu yüzden üç hak, üç farklı `c` değerine ayrılıyor.
+
+| hak | dosya | c | **ön kayıtlı tahmin** |
+|---|---|---|---|
+| 1 | `tuketim_v50_nihai30` | 1,00 (taban) | **1,01710** |
+| 2 | `tuketim_v55_gunolcek` | **1,49** (formülden) | **1,01450** |
+| 3 | `tuketim_v57_gunolcek20` | 2,00 (üst köşe + yukarı hedge) | **1,01728** |
+
+Türetim: `sigma_model = 0,1675`, `pay_sicak = 0,7784`, `c* = 1,492`,
+`v50 MSLE = 1,034493`.
+
+```
+MSLE(c) = 1,034493 + 0,021839 * [ (c-1,492)^2 - 0,242064 ]
+```
+
+c=2,00 kasıtlı olarak optimumun **üstünde**: hem parabolü kapatıyor hem de
+`sigma_gercek` tahminim düşükse (2026 yazı 2025'ten oynak olabilir, yaz25'in
+kendi optimumu 2,65 idi) yukarı yönlü riski karşılıyor.
+
+**Karar kuralı:** üç skor gelince parabol çözülür, gerçek `c*` bulunur ve
+kalan altı günde tam optimumdan gönderilir. Tahminler tutmazsa çerçeve
+yanlıştır — o da bilgidir ve aynı netlikte kayda geçer.
+
+Doğrulama (üçü de geçti): id sırası sample_submission ile aynı, 714.688 satır,
+NaN/negatif yok, **soğuk satırlar birebir aynı** (azami sapma 1,1e-14),
+genel seviye kayması tam sıfır. Sıcak gün ekseni std'si 0,1675 -> 0,2473 -> 0,3294.
+
+
+---
+
+## EK: onceki plan taslaklari (tarihsel)
+
+---
+
 ## 7. Gönderim planı ve ÖN KAYITLI TAHMİNLER
 
 Kota 03:00'te açılıyor. Üçlü **tam izolasyon** verir: MSLE satır kümeleri

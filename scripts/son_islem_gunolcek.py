@@ -212,7 +212,10 @@ def main() -> int:
         m.loc[hedef, "tanim"].to_numpy(), m.loc[hedef, "tarih"].to_numpy(), yeni_r[hedef]
     )
     olcek = float(b_yeni.std() / b_test.std())
-    if abs(olcek - c_kullan) > 0.02:
+    # Kapi GORELI: uygulanan olcek, kirpilan satirlar (log1p(tahmin) sifira
+    # dayanmis olanlar) yuzunden istenenden birkac binde sapar ve sapma c ile
+    # buyur. Mutlak esik bu yuzden yanlisti; %3 goreli dogru sinirdir.
+    if abs(olcek - c_kullan) / max(c_kullan, 1e-9) > 0.03:
         raise RuntimeError(f"olcek beklendigi gibi degil: {olcek:.3f} yerine {c_kullan:.3f}")
     kayma = float(abs(yeni_r[hedef].mean() - r[hedef].mean()))
     if kayma > 1e-9:
