@@ -123,6 +123,13 @@ def main() -> int:
     adaylar = {}
     for ad in istenen:
         c = [k for k in _aday_kolonlar(genis, SECICILER[ad]) if k in test.columns and k not in kol]
+        # CatBoost kategorik dtype'i cat_features'ta bildirilmeden KABUL ETMEZ
+        # (tk_mevsim bu yuzden ilk kosuda betigi cokertti). Uretimde bu kolonlar
+        # YALIN_CIKARILAN ile zaten disarida oldugu icin sorun hic gorulmemisti.
+        atilan = [k for k in c if str(genis[k].dtype) == "category" and k not in tm.KATEGORIK]
+        if atilan:
+            print(f"    {ad:8} kategorik dtype atlandi: {atilan}")
+            c = [k for k in c if k not in atilan]
         adaylar[ad] = c
         print(f"    {ad:8} +{len(c):2d} kolon  {c[:4]}{' ...' if len(c) > 4 else ''}")
 
