@@ -137,22 +137,39 @@ Yalnızca "ek_köken YOK, üretim değil" notu düşülmeli.
 
 ---
 
-## 4. Varyans kanalı 30 tohumda tükeniyor
+## 4. Varyans kanalı neredeyse tükenmiş — docs/39 §6 dört kat abartıyor
 
 Ölçüldü: tohum 115 **1834 sn** sürdü, **1433'ü sinir ağı** — üretim koşusunun
-**%78'i ağ**. `n_ag=5` iç torbalaması en pahalı kalem, ve 15+ tohumda büyük
-ölçüde gereksiz. "Ağı hızlandır, iki kat tohum al" fikri cazip görünüyor.
+**%78'i ağ**, ve o dal tek çekirdekli. `n_ag=5` iç torbalaması en pahalı kalem.
 
-**Ama hesap kapatıyor.** `MSLE(k) = yanlılık² + σ²/k` ile docs/39 §6 eğrisinden:
+docs/39 §6 *"15 → 30 tohum, ~0,0016 daha"* diyor. **Bu sayı yanlış.** k=3'e
+çapalı bir tablonun iki satırı farklanarak okunmuş ve o tablo kendi içinde
+tutarsız: k=12 ile k=15 aynı değeri (−0,00302) veriyor, ki `σ²/k` ile mümkün
+değil.
+
+Altı üretim partisinden (v32, v34, v38, v41, v42, v48_p1) yeniden ölçüldü:
 
 ```
-k=3 -> 15    -0,00302
-k=3 -> 30    -0,00468      (yani 15 -> 30 = -0,00166)
-k=30 -> 60   -0,00026      <- ihmal edilebilir
+sigma (tek tohum, TUM)   0,15558      sicak 0,16470   soguk 0,11805
+tohumdan bagimsiz taban  MSLE 1,033693      (v47 = k15, LB 1,01750)
+
+ k       MSLE      RMSLE    v47'ye gore
+15    1,035306   1,01750     +0,00000
+18    1,035037   1,01737     -0,00013
+24    1,034701   1,01720     -0,00030
+30    1,034499   1,01710     -0,00040   <- 15->30'un TAMAMI
+60    1,034096   1,01691     -0,00059
 ```
 
-Yani ağı iki kat hızlandırıp 60 tohuma çıkmak **−0,00026** getirir. Kanal
-30'da bitiyor. `n_ag`'a dokunmanın tohum gerekçesi YOK.
+`tohum_gurultusu.py`'nin kendi tablosundaki k=15↔k=18 farkı (0,00013) bu
+hesapla birebir tutuyor — iki bağımsız yol aynı sayıyı veriyor.
+
+**Sonuç: 15 → 30 tohum −0,00040 getirir.** Kanal 30'da fiilen bitiyor; k=60
+bile yalnızca −0,00059. `n_ag`'a dokunup tohum artırmanın gerekçesi YOK.
+
+> Bu, ölçmenin neden pazarlık kabul etmediğinin bir örneği: aynı gün içinde
+> hem bir kazanç (bayatlık ağırlığı) hem bir kayıp (tohum ölçeği) abartılmış
+> çıktı, ikisi de yalnızca doğru çapayla hesaplanınca görüldü.
 
 ---
 
@@ -219,7 +236,7 @@ loopta 6 eksen daha kapandı, varyans kanalı 30 tohumda tükeniyor.
 
 ```
 v47 (15 tohum)                          1,01750
-+ 30 tohum                              ~1,0158    garantili
++ 30 tohum                              ~1,0171    garantili (-0,00040)
 + bayatlık eğitim ağırlığı              REDDEDILDI (§2)
 ```
 
