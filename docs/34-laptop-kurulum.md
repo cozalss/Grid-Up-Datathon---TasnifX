@@ -1,5 +1,23 @@
 # İkinci makineye taşıma (laptop) — 2026-08-23
 
+> ### ⚠ GÜNCEL YOL: `scripts/tasima_tam.py`
+>
+> Bu belge 23 Ağustos'ta yazıldı ve **konuşma geçmişini kapsamıyordu**.
+> Artık tek komut her şeyi topluyor ve SHA-256 ile doğruluyor:
+>
+> ```powershell
+> python scripts/tasima_tam.py --hedef E:/DATAHON_TASIMA    # kaynak makine
+> python scripts/tasima_tam.py --dogrula E:/DATAHON_TASIMA  # hedef makine
+> ```
+>
+> Paket dört parça taşır (~1,70 GB): `data/` tamamı (899 MB, içinde
+> yeniden çekilmesi kotaya takılan `data/external`), seçili gönderimler
+> (217 MB), **Claude konuşma geçmişi + memory** (512 MB, yeniden
+> üretilemez) ve gizli dosyalar (`.env`, `kaggle.json`).
+> Paketin içine adım adım `KURULUM.md` yazılır.
+>
+> Aşağısı, senaryo anlatımı için duruyor.
+
 Hedef makine: Lenovo Ideapad Slim 3 15IRH10, i7-13620H (6P+4E / 16 iş
 parçacığı), **24 GB RAM**, 1 TB SSD.
 
