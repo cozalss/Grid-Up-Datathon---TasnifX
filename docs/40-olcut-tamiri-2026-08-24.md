@@ -1,0 +1,199 @@
+# Ölçüt tamiri ve bayatlık ekseni — 24 Ağustos 2026 (10 saatlik loop)
+
+**Compact sonrası okunacak ikinci belge.** İlki hâlâ
+[39-loop-sonucu](39-loop-sonucu-2026-08-24.md) — üretim yapılandırması ve
+kalıcı kurallar orada. Bu belge o günün akşamı yapılan ölçüt tamirini,
+kapanan eksenleri ve loop sonrası tek gerçek fırsat kümesini kaydeder.
+
+Başlangıç durumu: LB **1,01750**, birincilik, fark 0,00548. Hedef 1,00 altı.
+
+---
+
+## 1. Asıl iş: ölçütün kendisi yanlış karışımı ölçüyordu
+
+Dün gece LB, `kis26` üzerinde iyileşen bir revizyonun bütününü +0,00414 ile
+çürüttü. Teşhis doğru konmuştu — hata modelde değil **ölçütte** — ama ilaç
+yalnızca soğuk tarafa yazılmıştı. Aynı hastalık sıcak tarafta duruyordu.
+
+`scripts/olcut.py` doğrulama satırlarını testin ortak dağılımına taşır:
+
+```
+w_i = p_test(tabaka_i) / p_dogrulama(tabaka_i)
+```
+
+Kovaryat kayma altında standart önem ağırlıklandırma kestiricisi. `p(y|x)`
+bloklar arası aynı kaldığı sürece yansız. Bedeli varyans, o yüzden modül her
+çağrıda **ESS** ve **kapsanmayan tabaka payını** bildirir.
+
+> **Kova kenarları YALNIZCA testten türetilir** ve iki tarafa da aynı dizi
+> verilir. Kenarları iki tarafta ayrı hesaplamak hücreleri kaydırır ve sessizce
+> sahte sonuç üretir — `deney_soguk_taban.py`'de tam bu olmuş, `ilce_kova`
+> uydurma bir 1,97083 skorlamıştı.
+
+### Üç üretim kararı düzeltilmiş ölçüt altında yeniden puanlandı
+
+| karar | üretim | düzeltilmiş ölçütte | hüküm |
+|---|---|---|---|
+| sıcak harman | 3/1/1 | dört ölçütte de en iyi (k=1, k=3, düz, ağırlıklı) | **kalıyor** |
+| soğuk harman | yalnız cat | düzeltilmiş kVA karışımında da en iyi (1,98461 vs 1,98857) | **kalıyor** |
+| `son_islem.py` beta | 0,60 | düzeltilmiş dip 0,50, kazanç yalnızca 0,00043 → genele −0,00016 | **kalıyor** |
+
+Yapılandırma sağlam. Bu, "değiştirilecek bir şey bulamadık" değil; üç ayrı
+ekseni bağımsız bir ölçütle sınayıp doğrulamaktır.
+
+---
+
+## 2. Bayatlık ekseni: ölçüt sorunu GERÇEK, düzeltmesi ÇÜRÜK
+
+`t_son_kayit_yasi` ekseninde kayma devasa:
+
+```
+kova     TEST%   EGITIM+EK%   oran      kis26 sicak RMSLE
+0 gun    84,47      97,78     0,86x         0,748
+1-6       7,76       0,51    15,2x          1,041
+7-29      0,34       0,71     0,48x         1,471
+30-89     0,80       0,59     1,36x         0,902
+90+       6,63       0,41    16,2x          1,585
+```
+
+Testin sıcak tarafının **%14,4'ü** eğitimde **%0,9** oranında görülen iki
+kovada, ve o iki kova sıcak MSLE'nin **%34'ünü** taşıyor.
+
+### Son işlemle düzeltme: 0/3 blokta kaybetti
+
+Kova başına yanlılık ezici (t = +11 … +34). Ama **"0 gün" kovasında işaret
+bloktan bloğa dönüyor**:
+
+```
+        yaz25      guz25      kis26
+0 gun  +0,1386   -0,3561    +0,1906
+```
+
+O kova testin %84'ü. Yani bu bir bayatlık etkisi değil, **mevsimsel seviye
+etkisi** — `son_islem_gun.py`'yi LB'de çürüten şeyin aynısı. Göreli düzeltme
+(bayat kova − taze kova) de kararsız, `guz25` her satırda aykırı.
+
+Blok-dışı protokol (düzeltme diğer iki blokta uydurulur, üçüncüde ölçülür)
+**0/3 kaybetti, ortalama −0,02514**. Bir LB gönderimi yakılmadan elendi.
+
+> **Genelleşen kural:** doğrulama bloklarında ölçülen hiçbir **seviye/ofset**
+> düzeltmesi taşımıyor. Artık üç bağımsız doğrulaması var: soğuk seviye
+> kaydırması, `son_islem_gun.py` bütünü, bayatlık kaydırması.
+
+---
+
+## 3. Ölçüm tezgâhında yapısal bir kusur bulundu
+
+`data/interim/deney/sicak_tahmin.npz` **ek_kökensiz** eğitilmiş
+([deney_sicak_agirlik.py:79](../scripts/deney_sicak_agirlik.py#L79) `blok_parcalari`
+kullanıyor), üretim sıcak uzmanı ise `ek_koken: True`. Önbellek `cat = 0,80675`
+veriyor ve bu, [tuketim_model.py:844](../scripts/tuketim_model.py#L844)'teki
+*"SICAK ANA 0,80675 → EK 0,79848"* satırının **ANA** kolu.
+
+Sonuçları:
+
+- **Aile sıralaması bu kolda TERSİNE dönüyor.** ek_köken aileleri eşit olmayan
+  ölçüde güçlendiriyor: cat +0,0083, lgbm +0,0171, xgb +0,0327. Yani ANA kolda
+  cat en iyi, EK kolda xgb en iyi.
+- Bu önbellekten çıkan **hiçbir sıcak harman hükmü üretime taşınmaz.** Doğru
+  koldaki ızgara zaten var (`experiments/aile_koken.jsonl:31-52`) ve oradaki
+  kazanan (3,3,1) üretim doğrulamasında üç blokta da kötü çıkıp reddedilmiş.
+  Yani hüküm aynı — 3/1/1 kalıyor — ama gerekçe bu önbellek değil.
+- **docs/39 §8'in bayatlık sayıları (0,77882 → 0,87811) de bu koldan.** Yani
+  bayatlık cezası üretimden ZAYIF bir tahminci üzerinde ölçülmüş. ek_kökenler
+  bayat satır üretiyor (1-6: %0,38→%0,56; 90+: %0,25→%0,46), dolayısıyla
+  üretim bu satırlarda ölçülenden iyi olabilir.
+
+Önbellek **silinmemeli**: docs/37 tabanı (0,80675), docs/38 §6 tohum ölçeği ve
+docs/39 §8 bayatlık sayıları hep bu dosyadan ve hepsi ANA kolu olarak doğru.
+Yalnızca "ek_köken YOK, üretim değil" notu düşülmeli.
+
+---
+
+## 4. Varyans kanalı 30 tohumda tükeniyor
+
+Ölçüldü: tohum 115 **1834 sn** sürdü, **1433'ü sinir ağı** — üretim koşusunun
+**%78'i ağ**. `n_ag=5` iç torbalaması en pahalı kalem, ve 15+ tohumda büyük
+ölçüde gereksiz. "Ağı hızlandır, iki kat tohum al" fikri cazip görünüyor.
+
+**Ama hesap kapatıyor.** `MSLE(k) = yanlılık² + σ²/k` ile docs/39 §6 eğrisinden:
+
+```
+k=3 -> 15    -0,00302
+k=3 -> 30    -0,00468      (yani 15 -> 30 = -0,00166)
+k=30 -> 60   -0,00026      <- ihmal edilebilir
+```
+
+Yani ağı iki kat hızlandırıp 60 tohuma çıkmak **−0,00026** getirir. Kanal
+30'da bitiyor. `n_ag`'a dokunmanın tohum gerekçesi YOK.
+
+---
+
+## 5. Kapanan eksenler (bu loop)
+
+| eksen | nasıl elendi |
+|---|---|
+| sıcak harman ağırlıkları | dört ölçütte de üretim en iyi; doğru kolda zaten reddedilmiş |
+| soğuk harman | düzeltilmiş kVA karışımında da cat-only kazanıyor |
+| `son_islem` beta | düzeltilmiş dip 0,50, kazanç 0,00043 |
+| bayatlık son-işlem kaydırması | blok-dışı 0/3, −0,02514 |
+| soğuk tarafta eğitim ağırlıklandırma | eğitim dağılımı zaten teste yakın (1,35x) |
+| `n_ag` düşürüp tohum artırma | k=30→60 yalnızca −0,00026 |
+
+`tanim` alanı da kontrol edildi: yalnızca sayısal kimlik (`70122340`),
+açıklayıcı isim değil — site-tipi metin sinyali YOK.
+
+---
+
+## 6. REDDEDİLEN kanal: LB problaması
+
+Bir ajan taraması, test etiketlerini LB skor geri bildiriminden geri çözmek
+için "prob gönderimleri" önerdi (+0,0038 iddiası) ve 6 LB skorundan 5 parametre
+çözen bir varyant (+0,0012). Ajanın kendi araştırması bunun yarışma kurallarını
+ihlal ettiğini söylüyor.
+
+**Bu kanal kullanılmayacak.** Beta'yı "LB'den ölçme" iddiası da aynı aileden;
+ayrıca üç ajan beta için üç çelişkili cevap verdi (0,80 / 0,20-0,40 / ölçülen
+0,50) — çelişkinin kendisi o büyüklüğün tanımlı olmadığının kanıtı.
+
+---
+
+## 7. Loop sonrası tek gerçek fırsat kümesi: SİNİR AĞI
+
+Ağ **hiç ayarlanmadı** — tek commit (`317cfc7`) ile üretime girdi. Ve
+[deney_sicak_agirlik.py:18](../scripts/deney_sicak_agirlik.py#L18) açıkça
+yazıyor: *"sinir_agi izgaraya GIREMEZ (tek fit ~20 dakika, 27 fit imkansiz)"*.
+Yani ağırlığı **hiç ızgaraya girmemiş**. Üç somut madde:
+
+1. **`ayri_gosterge` varsayılanı `False`** — eksiklik göstergeleri
+   `SimpleImputer(add_indicator=True)`'dan çıkıp `QuantileTransformer`'a
+   giriyor. Dosya bunun için zaten "A5 ablasyonu" anahtarı taşıyor. İkili
+   kolonları kuantil dönüşümünden geçirmek, dosyanın kendi yasakladığı şey.
+2. **`sinir_agi` ağırlığı 1,4** hiçbir ölçüm kaydında geçmiyor, yalnızca
+   yapılandırma satırı olarak. Kapalı çözüm iddiası ~2,2 diyor (doğrulanmadı).
+3. **Ağ, üretimdeki tek erken duran aile** ve `max_iter=100`'e çarpıp
+   yakınsamadan duruyor (`ConvergenceWarning`, her tohumda).
+
+**Neden bu loopta yapılmadı:** üçü de modeli değiştiriyor, yani eldeki 15
+tohumu geçersiz kılıyor; doğrulaması ağ başına ~24 dk × 9 fit ≈ 3,5 saat; ve
+kuyruk koşarken `tuketim_model.py`'ye dokunmak garantili kanalı riske atıyor.
+Aile bazında tahminler hiçbir yerde saklanmadığı için her harman sorusu tam
+koşuya mal oluyor — **önce üretim koşusuna aile bazında tahmin önbelleği
+eklenmeli**, sonra bu üç madde bedava knob olur.
+
+---
+
+## 8. Hedefe dair dürüst muhasebe
+
+1,00'in altı, MSLE cinsinden −0,0355 demek. Yani sıcak veya soğuk taraflardan
+birinde **%20'nin üzerinde göreli** iyileşme. 21 fikir daha önce elenmiş, bu
+loopta 6 eksen daha kapandı, varyans kanalı 30 tohumda tükeniyor.
+
+```
+v47 (15 tohum)                          1,01750
++ 30 tohum                              ~1,0158    garantili
++ bayatlık eğitim ağırlığı (tutarsa)    ~1,011     belirsiz
+```
+
+Gerçekçi bant **1,011–1,016**. Bu birinciliği genişletir; 1,00'i vermez.
+Bunu bilerek gönderiyoruz.
