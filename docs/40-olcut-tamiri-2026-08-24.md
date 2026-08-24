@@ -254,6 +254,44 @@ yerini tamamen çeşitlilikle hak ediyor.
 > yapmaktır — farklı mimari, farklı hedef dönüşümü (`ofset=False` üyesi),
 > farklı öznitelik altkümesi.
 
+### 5. üye (`ofset=False`) — reddedildi, ve nedeni öğretici
+
+[deney_ileri.py:226-231](../scripts/deney_ileri.py#L226) `ofset=False`'u ASHRAE
+birincisinin çeşitlilik hilesi olarak yazıyor; tek ölçümü "TEK BAŞINA daha
+kötü" idi, yani harman üyesi olarak hiç ölçülmemişti.
+
+**Rig sınaması önce geçti:** `di.egit_tahmin(ofset=True)` üretim yolunun
+önbelleğini `1,3e-07` ile yeniden üretiyor (float32 depolama sınırı) — iki kod
+yolu özdeş.
+
+```
+yeni w   agirlikli    yaz25     guz25     kis26
+0,0      0,89718    0,80608   0,99674   0,87742   <- URETIM
+1,0      0,89645    0,80664   0,99685   0,87520   <- en iyi (havuzlanmis)
+```
+
+Havuzlanmış +0,00073 ama **blok tutarlılığı 1/3**. Ve ayrışma açıklıyor:
+
+```
+blok    5.uye tek   AYR(uretim)   AYR(+5.uye)
+yaz25     0,81276      0,03200       0,03015
+guz25     0,87491      0,05190       0,05116
+kis26     0,75647      0,06363       0,06170     <- DUSUYOR
+```
+
+Üye çeşitliliği **artırmıyor, azaltıyor**. Mekanizma: kapasite ofseti
+`log1p(guc)` satır başına sabit ve `guc` modelin zaten gördüğü bir kolon —
+yani `log1p(y) − log1p(guc)` ile `log1p(y)` ağaç için neredeyse denk hedefler.
+ASHRAE'de işe yarayan şey burada işe yaramıyor çünkü bizde ofset modele zaten
+verilmiş durumda.
+
+kis26'daki −0,0022 bu yüzden çeşitlilik değil **fazladan torbalama**; k=3'te
+görünür, üretimin k=30'unda erir. **Hüküm: REDDEDİLDİ.**
+
+> Bu, "çeşitlilik üyesi ekle" fikrinin yanlış olduğunu göstermez — yanlış
+> olan bu üyenin çeşitli olduğu varsayımıydı. Gerçek çeşitlilik ölçülebilir
+> (ayrışma) ve bir aday ancak ayrışmayı BÜYÜTÜYORSA umut vaat eder.
+
 ### Hâlâ açık: A5 ablasyonu
 
 `ayri_gosterge` varsayılanı `False`, yani `SimpleImputer(add_indicator=True)`
