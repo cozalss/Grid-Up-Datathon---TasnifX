@@ -58,14 +58,26 @@ VERI_DIZINLERI = ("data",)
 
 #: submissions/ 1,3 GB; yalniz bunlar tasinir.
 GONDERIMLER = (
-    "tuketim_v47_eskison.csv",  # KAZANAN, LB 1,01750
-    "tuketim_v46_ham15.csv",  # 15 tohumluk HAM tahmin -> 30 tohuma buradan gidilir
-    "tuketim_v30_buzme.csv",  # LB referansi 1,02639
-    "tuketim_v32_ham.csv",  # tohum partisi 1 (100-102)
+    # --- LB'de skoru BILINEN dosyalar (referans noktalari) ---
+    "tuketim_v47_eskison.csv",  # LB 1,01750 -- 15 tohum, gunun basindaki kazanan
+    "tuketim_v30_buzme.csv",  # LB 1,02639 -- eski taban, olcek referansi
+    # --- 30 TOHUMLUK teslimat (2026-08-24 aksami) ---
+    "tuketim_v50_nihai30.csv",  # GONDERILECEK: 30 tohum + son_islem beta=0,60
+    "tuketim_v50_ham30.csv",  # ayni, son islem ONCESI -- beta degistirmek icin
+    # --- TOHUM PARTILERI: her biri ~85 dakikalik uretim kosusu ---
+    # Yeniden uretilemez sayilir. Bunlardan herhangi bir k icin
+    # birlestir_tohum.py ile yeni bir harman kurulabilir.
+    "tuketim_v46_ham15.csv",  # tohum 100-114 (bes parti, birlesik)
+    "tuketim_v32_ham.csv",  # parti 1 (100-102)
     "tuketim_v34_ek3tohum.csv",  # parti 2 (103-105)
     "tuketim_v38_ek3tohum.csv",  # parti 3 (106-108)
     "tuketim_v41_ek3tohum.csv",  # parti 4 (109-111)
     "tuketim_v42_ek3tohum.csv",  # parti 5 (112-114)
+    "tuketim_v48_p1.csv",  # parti 6 (115-117)
+    "tuketim_v48_p2.csv",  # parti 7 (118-120)
+    "tuketim_v48_p3.csv",  # parti 8 (121-123)
+    "tuketim_v48_p4.csv",  # parti 9 (124-126)
+    "tuketim_v48_p5.csv",  # parti 10 (127-129)
 )
 
 #: Depoda olmayan ama gereken gizli dosyalar: (kaynak, paket icindeki ad).
