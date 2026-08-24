@@ -106,7 +106,9 @@ def main() -> int:
     for b in tm.BLOKLAR:
         bb = np.array([tekil["TABAN"][(b.ad, t)] - tekil["-KOR NOKTA"][(b.ad, t)]
                        for t in di.TOHUMLAR])
-        print(f"     {b.ad:6} {bb.mean():+.5f}  ({(bb > 0).sum()}/{len(bb)} tohum kolonlar YARARLI)")
+        yon = "YARARLI" if bb.mean() > 0 else "gereksiz"
+        print(f"     {b.ad:6} {bb.mean():+.5f}  "
+              f"({(bb > 0).sum()}/{len(bb)} tohum kolonlar {yon})")
     print("\n  YORUM: |fark| = kolonlarin OLCULEBILIR degeri. Testte yanlis")
     print("  calisma riski de bu buyuklukte sinirli. Karar test etiketi")
     print("  olmadan verilemez; bu sayi yalnizca BAHSI olcer.")

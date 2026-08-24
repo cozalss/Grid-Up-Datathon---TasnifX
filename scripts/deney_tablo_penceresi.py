@@ -79,7 +79,9 @@ def tablo_kur(kaynak: pd.DataFrame, hedef_guc: np.ndarray, hedef_ilce: np.ndarra
     lg_e = np.log1p(kaynak["guc"].to_numpy(dtype="float64"))
     kenar = np.linspace(float(lg_e.min()), float(lg_e.max()) + 1e-9, KOVA_SAYISI + 1)
     kv_e = np.clip(np.searchsorted(kenar, lg_e, side="right") - 1, 0, KOVA_SAYISI - 1)
-    kv_h = np.clip(np.searchsorted(kenar, np.log1p(hedef_guc), side="right") - 1, 0, KOVA_SAYISI - 1)
+    kv_h = np.clip(
+        np.searchsorted(kenar, np.log1p(hedef_guc), side="right") - 1,
+        0, KOVA_SAYISI - 1)
     il_e = kaynak["lokasyon"].astype(str).to_numpy()
     genel = np.full(len(hedef_guc), float(ofs.mean()))
     ilce = _eb(il_e, ofs, hedef_ilce, genel, M_ANA)

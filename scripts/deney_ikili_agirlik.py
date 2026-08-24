@@ -117,7 +117,8 @@ def main() -> int:
 
     kayitlar: list[dict] = []
     print("\n--- A) a (hucre) x b (model),  gun ortalamasi buzmesiz ---")
-    print(f"  {'a\\b':>6}" + "".join(f"{b:>10.2f}" for b in B_DEGERLERI))
+    print("  " + f"{'a / b':>6}"
+          + "".join(f"{b:>10.2f}" for b in B_DEGERLERI))
     for a in A_DEGERLERI:
         satir = []
         for b in B_DEGERLERI:
@@ -128,7 +129,7 @@ def main() -> int:
         print(f"  {a:6.2f}" + "".join(f"{v:10.5f}" for v in satir) + isaret)
 
     en_iyi_ab = min(kayitlar, key=lambda k: k["rmsle"])
-    print(f"\n--- B) gun ortalamasi aya dogru buzulurse (en iyi a,b ile) ---")
+    print("\n--- B) gun ortalamasi aya dogru buzulurse (en iyi a,b ile) ---")
     a, b = en_iyi_ab["a"], en_iyi_ab["b"]
     print(f"  {'M_gun':>8}{'RMSLE':>10}")
     for m_gun in M_GUN_DEGERLERI:
