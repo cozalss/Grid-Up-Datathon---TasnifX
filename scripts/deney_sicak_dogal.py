@@ -90,9 +90,7 @@ def main() -> int:
             loglar = []
             for tohum in di.TOHUMLAR:
                 maskeli = d.soguk_maskele(parca, kol, maske, tohum)
-                log_t = di.egit_tahmin(
-                    "cat", maskeli, dogrulama, kol, tohum, **SICAK_USTYAZIM
-                )
+                log_t = di.egit_tahmin("cat", maskeli, dogrulama, kol, tohum, **SICAK_USTYAZIM)
                 loglar.append(log_t)
                 tek = np.clip(np.expm1(log_t), 0.0, None)
                 tekil[ad][(b.ad, tohum)] = tm.rmsle(gercek[sicak], tek[sicak])

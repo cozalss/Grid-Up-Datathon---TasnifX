@@ -70,12 +70,19 @@ M_ONCE = 200.0
 BETALAR = (0.80, 0.60, 0.50, 0.40, 0.30, 0.25, 0.20, 0.15, 0.10, 0.00)
 
 #: Taranan buzme hedefleri -- hepsi YALNIZ egitim parcasindan tureyor.
-HEDEFLER = ("genel", "ilce", "ilcexkova_M1000", "ilcexkova_M2000", "ilcexkova_M5000",
-    "ilcexkova_M20000")
+HEDEFLER = (
+    "genel",
+    "ilce",
+    "ilcexkova_M1000",
+    "ilcexkova_M2000",
+    "ilcexkova_M5000",
+    "ilcexkova_M20000",
+)
 
 
-def _tahminleri_getir(egitim: pd.DataFrame, test: pd.DataFrame) -> tuple[dict, pd.DataFrame,
-    np.ndarray, np.ndarray]:
+def _tahminleri_getir(
+    egitim: pd.DataFrame, test: pd.DataFrame
+) -> tuple[dict, pd.DataFrame, np.ndarray, np.ndarray]:
     """Aile x tohum log tahminlerini uretir ya da onbellekten okur."""
     tum = [k for k in tm.oznitelikler(egitim) if k in test.columns]
     kol = [k for k in tum if not k.startswith(tm.YALIN_CIKARILAN)]
@@ -134,16 +141,18 @@ def _hucre_ortalamasi(
     return (top + m_once * ebeveyn) / (n + m_once)
 
 
-def tabanlari_kur(parca: pd.DataFrame, dogrulama: pd.DataFrame, soguk: np.ndarray) -> dict[str,
-    np.ndarray]:
+def tabanlari_kur(
+    parca: pd.DataFrame, dogrulama: pd.DataFrame, soguk: np.ndarray
+) -> dict[str, np.ndarray]:
     """OFSET uzayinda kosullu tabanlar. Kaynak YALNIZ ``parca``.
 
     Hucre yapisi ``deney_taban_ince.py`` ile UC BLOKTA tarandi. Kazanan:
     ilce x kova, EBEVEYN ``ilce`` (``kova`` degil -- ilce tek basina kovadan
     iyi ve seyrek hucre oraya dusmeli), kova sayisi 24, M ~ 1000.
     """
-    of_e = (np.log1p(parca[tm.HEDEF].clip(lower=0.0).to_numpy(dtype="float64"))
-            - np.log1p(parca["guc"].to_numpy(dtype="float64")))
+    of_e = np.log1p(parca[tm.HEDEF].clip(lower=0.0).to_numpy(dtype="float64")) - np.log1p(
+        parca["guc"].to_numpy(dtype="float64")
+    )
     kenar = _kova_kenarlari(parca["guc"].to_numpy(dtype="float64"))
     kova_e = _kova(parca["guc"].to_numpy(dtype="float64"), kenar)
     ilce_e = parca["ilce_key"].to_numpy()
@@ -192,9 +201,7 @@ def main() -> int:
 
     # tohum basina harmanlanmis model ofseti
     pay = sum(HARMAN.values())
-    model_ofs = [
-        sum(HARMAN[a] * ham[(t, a)] for a in HARMAN) / pay - log_guc for t in TOHUMLAR
-    ]
+    model_ofs = [sum(HARMAN[a] * ham[(t, a)] for a in HARMAN) / pay - log_guc for t in TOHUMLAR]
 
     kayitlar: list[dict] = []
 
@@ -206,9 +213,9 @@ def main() -> int:
             sh = float(f.std(ddof=1) / np.sqrt(len(f))) if len(f) > 1 else 0.0
             t_d = float(f.mean() / sh) if sh > 0 else 0.0
             satir += f"   {o - float(np.mean(taban_skorlar)):+.5f}   t={t_d:+7.2f}"
-            kayitlar.append({"etiket": etiket, "rmsle": o,
-                             "fark": o - float(np.mean(taban_skorlar)),
-                             "t": t_d})
+            kayitlar.append(
+                {"etiket": etiket, "rmsle": o, "fark": o - float(np.mean(taban_skorlar)), "t": t_d}
+            )
         else:
             kayitlar.append({"etiket": etiket, "rmsle": o})
         print(satir)
@@ -275,8 +282,10 @@ def main() -> int:
             continue
         etki = tabanlar[ad] - tabanlar[ad].mean()
         for beta in (0.40, 0.30, 0.25, 0.20, 0.10, 0.00):
-            sk = [skorla((gun_ortalamasi(m) + etki)
-                         + beta * (m - (gun_ortalamasi(m) + etki))) for m in model_ofs]
+            sk = [
+                skorla((gun_ortalamasi(m) + etki) + beta * (m - (gun_ortalamasi(m) + etki)))
+                for m in model_ofs
+            ]
             yaz(f"GUN+   {ad:14} beta={beta:.2f}", sk, ref)
 
     print("\n--- D) UST SINIR: kis26 uzerinde OLS ile uydurulmus afin kalibrasyon ---")
@@ -284,8 +293,9 @@ def main() -> int:
     of_gercek = np.log1p(y) - log_guc
     for i, m in enumerate(model_ofs, 1):
         egim, kesme = np.polyfit(m, of_gercek, 1)
-        print(f"  tohum{i}: egim={egim:.4f} kesme={kesme:+.4f}  "
-              f"RMSLE={skorla(kesme + egim * m):.5f}")
+        print(
+            f"  tohum{i}: egim={egim:.4f} kesme={kesme:+.4f}  RMSLE={skorla(kesme + egim * m):.5f}"
+        )
 
     en_iyi = min((k for k in kayitlar if "fark" in k), key=lambda k: k["rmsle"])
     kazanc = float(np.mean(ref)) - en_iyi["rmsle"]

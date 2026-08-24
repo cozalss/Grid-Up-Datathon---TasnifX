@@ -197,8 +197,13 @@ def _kova(guc: np.ndarray, kenar: np.ndarray) -> np.ndarray:
     return np.clip(np.searchsorted(kenar, lg, side="right") - 1, 0, KOVA_SAYISI - 1)
 
 
-def _eb(anahtar_e: np.ndarray, ofs_e: np.ndarray, anahtar_h: np.ndarray,
-        ebeveyn: np.ndarray, m_once: float) -> np.ndarray:
+def _eb(
+    anahtar_e: np.ndarray,
+    ofs_e: np.ndarray,
+    anahtar_h: np.ndarray,
+    ebeveyn: np.ndarray,
+    m_once: float,
+) -> np.ndarray:
     """Ampirik-Bayes hucre ortalamasi: (hucre_toplami + M*ebeveyn) / (n + M)."""
     s = pd.Series(ofs_e).groupby(anahtar_e).agg(["sum", "count"])
     top = np.nan_to_num(pd.Series(s["sum"]).reindex(anahtar_h).to_numpy(dtype="float64"), nan=0.0)
@@ -211,8 +216,9 @@ def hucre_etkisi(tr: pd.DataFrame, hedef: pd.DataFrame) -> np.ndarray:
 
     ``tr`` cagiran tarafta ZATEN ``TABLO_BASLANGIC``a gore kirpilmis gelmeli.
     """
-    ofs = (np.log1p(tr["tuketim"].clip(lower=0.0).to_numpy(dtype="float64"))
-           - np.log1p(tr["guc"].to_numpy(dtype="float64")))
+    ofs = np.log1p(tr["tuketim"].clip(lower=0.0).to_numpy(dtype="float64")) - np.log1p(
+        tr["guc"].to_numpy(dtype="float64")
+    )
     lg_e = np.log1p(tr["guc"].to_numpy(dtype="float64"))
     kenar = np.linspace(float(lg_e.min()), float(lg_e.max()) + 1e-9, KOVA_SAYISI + 1)
     kv_e = _kova(tr["guc"].to_numpy(dtype="float64"), kenar)
@@ -235,16 +241,24 @@ def main() -> int:
     a.add_argument("--b-model", type=float, default=B_MODEL)
     a.add_argument("--m-gun", type=float, default=M_GUN)
     a.add_argument("--tablo-baslangic", default=TABLO_BASLANGIC)
-    a.add_argument("--hucresiz", action="store_true",
-                   help="hucre etkisini kapat (yalniz gun korumasi)")
+    a.add_argument(
+        "--hucresiz", action="store_true", help="hucre etkisini kapat (yalniz gun korumasi)"
+    )
     ar = a.parse_args()
 
     ornek = pd.read_csv(KOK / "data/raw/sample_submission.csv", encoding="utf-8")
-    te = pd.read_csv(KOK / "data/raw/test.csv", usecols=["id", "tanim", "guc", "tarih", "lokasyon"],
-                     encoding="utf-8", dtype={"tanim": str})
-    tr = pd.read_csv(KOK / "data/raw/train.csv",
-                     usecols=["tanim", "guc", "tuketim", "lokasyon", "tarih"],
-                     encoding="utf-8", dtype={"tanim": str})
+    te = pd.read_csv(
+        KOK / "data/raw/test.csv",
+        usecols=["id", "tanim", "guc", "tarih", "lokasyon"],
+        encoding="utf-8",
+        dtype={"tanim": str},
+    )
+    tr = pd.read_csv(
+        KOK / "data/raw/train.csv",
+        usecols=["tanim", "guc", "tuketim", "lokasyon", "tarih"],
+        encoding="utf-8",
+        dtype={"tanim": str},
+    )
     giris = pd.read_csv(KOK / ar.giris, encoding="utf-8")
 
     m = ornek[["id"]].merge(giris, on="id", how="left").merge(te, on="id", how="left")
@@ -310,11 +324,15 @@ def main() -> int:
     n_s = int(soguk.sum())
     hucre_ad = "KAPALI" if ar.hucresiz else f"ilce x kova (M={M_HUCRE:.0f})"
     trafo_sayisi = int(m.loc[soguk, "tanim"].nunique())
-    print(f"  a(hucre) {ar.a_hucre:.2f}  b(model) {ar.b_model:.2f}  "
-          f"M_gun {ar.m_gun:.0f}  hucre {hucre_ad}")
+    print(
+        f"  a(hucre) {ar.a_hucre:.2f}  b(model) {ar.b_model:.2f}  "
+        f"M_gun {ar.m_gun:.0f}  hucre {hucre_ad}"
+    )
     if not ar.hucresiz:
-        print(f"  tablo kaynagi {ar.tablo_baslangic}'ten itibaren "
-              f"{len(tablo_kaynak):,} satir ({len(tr):,} icinden)")
+        print(
+            f"  tablo kaynagi {ar.tablo_baslangic}'ten itibaren "
+            f"{len(tablo_kaynak):,} satir ({len(tr):,} icinden)"
+        )
     print(f"  soguk {n_s:,} satir (%{100 * n_s / len(m):.2f}), {trafo_sayisi:,} trafo")
     print(f"  en seyrek gun {n_gun.min():.0f} satir, medyan {np.median(n_gun):.0f}")
     print(f"  AYLIK seviye korundu (en buyuk sapma {ay_sapma:.2e})")

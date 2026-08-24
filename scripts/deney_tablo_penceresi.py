@@ -74,14 +74,15 @@ def _eb(anahtar_e, ofs_e, anahtar_h, ebeveyn, m_once):  # noqa: ANN001, ANN201
 
 
 def tablo_kur(kaynak: pd.DataFrame, hedef_guc: np.ndarray, hedef_ilce: np.ndarray) -> np.ndarray:
-    ofs = (np.log1p(kaynak["tuketim"].clip(lower=0.0).to_numpy(dtype="float64"))
-           - np.log1p(kaynak["guc"].to_numpy(dtype="float64")))
+    ofs = np.log1p(kaynak["tuketim"].clip(lower=0.0).to_numpy(dtype="float64")) - np.log1p(
+        kaynak["guc"].to_numpy(dtype="float64")
+    )
     lg_e = np.log1p(kaynak["guc"].to_numpy(dtype="float64"))
     kenar = np.linspace(float(lg_e.min()), float(lg_e.max()) + 1e-9, KOVA_SAYISI + 1)
     kv_e = np.clip(np.searchsorted(kenar, lg_e, side="right") - 1, 0, KOVA_SAYISI - 1)
     kv_h = np.clip(
-        np.searchsorted(kenar, np.log1p(hedef_guc), side="right") - 1,
-        0, KOVA_SAYISI - 1)
+        np.searchsorted(kenar, np.log1p(hedef_guc), side="right") - 1, 0, KOVA_SAYISI - 1
+    )
     il_e = kaynak["lokasyon"].astype(str).to_numpy()
     genel = np.full(len(hedef_guc), float(ofs.mean()))
     ilce = _eb(il_e, ofs, hedef_ilce, genel, M_ANA)
@@ -135,15 +136,18 @@ def main() -> int:
             etki = hucre - grup_ort(hucre, tarih)
             sk.append(skorla(gun + A_HUCRE * etki + B_MODEL * (m - gun)))
         o = float(np.mean(sk))
-        kayitlar.append({"pencere": ad, "n": int(len(kaynak)), "std": float(hucre.std()),
-                         "rmsle": o})
+        kayitlar.append(
+            {"pencere": ad, "n": int(len(kaynak)), "std": float(hucre.std()), "rmsle": o}
+        )
         print(f"  {ad:22}{len(kaynak):13,}{hucre.std():11.4f}{o:10.5f}")
 
     taban = kayitlar[0]["rmsle"]
     en_iyi = min(kayitlar, key=lambda k: k["rmsle"])
     print(f"\n  TABAN (tum aylar): {taban:.5f}")
-    print(f"  EN IYI: {en_iyi['pencere']}  {en_iyi['rmsle']:.5f}   "
-          f"kazanc {taban - en_iyi['rmsle']:+.5f}")
+    print(
+        f"  EN IYI: {en_iyi['pencere']}  {en_iyi['rmsle']:.5f}   "
+        f"kazanc {taban - en_iyi['rmsle']:+.5f}"
+    )
     print(f"  genel skora tahmini etki {-(taban - en_iyi['rmsle']) * 0.377:+.5f}")
 
     KAYIT.parent.mkdir(parents=True, exist_ok=True)

@@ -52,10 +52,12 @@ def main() -> int:
         raise SystemExit("en az iki parti gerekli")
 
     ornek = pd.read_csv(KOK / "data/raw/sample_submission.csv", encoding="utf-8")
-    te = pd.read_csv(KOK / "data/raw/test.csv", usecols=["id", "tanim"],
-                     encoding="utf-8", dtype={"tanim": str})
-    tr = pd.read_csv(KOK / "data/raw/train.csv", usecols=["tanim"],
-                     encoding="utf-8", dtype={"tanim": str})
+    te = pd.read_csv(
+        KOK / "data/raw/test.csv", usecols=["id", "tanim"], encoding="utf-8", dtype={"tanim": str}
+    )
+    tr = pd.read_csv(
+        KOK / "data/raw/train.csv", usecols=["tanim"], encoding="utf-8", dtype={"tanim": str}
+    )
     eslesen = ornek[["id"]].merge(te, on="id", how="left")["tanim"]
     soguk = ~eslesen.isin(set(tr["tanim"])).to_numpy()
 
@@ -72,8 +74,7 @@ def main() -> int:
 
     print(f"\n  {'kesim':7}{'partiler arasi std':>20}{'tek tohum sigma':>18}")
     sigma2 = {}
-    kesimler = (("TUM", np.ones(A.shape[1], dtype=bool)),
-                ("SICAK", ~soguk), ("SOGUK", soguk))
+    kesimler = (("TUM", np.ones(A.shape[1], dtype=bool)), ("SICAK", ~soguk), ("SOGUK", soguk))
     for ad, maske in kesimler:
         v = float(A[:, maske].var(axis=0, ddof=1).mean())
         sigma2[ad] = ar.parti_tohum * v

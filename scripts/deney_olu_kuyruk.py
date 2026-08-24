@@ -95,8 +95,7 @@ def main() -> int:
     tm.kategorik_kodla(egitim, test)
     z = np.load(ONBELLEK)
 
-    print(f"\n  {'blok':7}{'sicak satir':>13}{'kuyruk>=7':>11}{'pay %':>8}"
-          f"{'kare hata payi %':>18}")
+    print(f"\n  {'blok':7}{'sicak satir':>13}{'kuyruk>=7':>11}{'pay %':>8}{'kare hata payi %':>18}")
     veri = {}
     for b in tm.BLOKLAR:
         _, dog, gercek, soguk = di.blok_parcalari(egitim, b.ad)
@@ -114,15 +113,20 @@ def main() -> int:
         hata = (log_t - np.log1p(y)) ** 2
         m7 = np.nan_to_num(kuyruk, nan=0.0) >= 7
         veri[b.ad] = {"log_t": log_t, "y": y, "lg": lg, "kuyruk": kuyruk, "ufuk": ufuk}
-        print(f"  {b.ad:7}{len(y):13,}{int(m7.sum()):11,}{100 * m7.mean():8.2f}"
-              f"{100 * hata[m7].sum() / hata.sum():18.2f}")
+        print(
+            f"  {b.ad:7}{len(y):13,}{int(m7.sum()):11,}{100 * m7.mean():8.2f}"
+            f"{100 * hata[m7].sum() / hata.sum():18.2f}"
+        )
 
     print("\n  ESLENIK ETKI (uc blok, uretim harmani, 3 tohum torbalanmis)")
     kayitlar = []
     for esik in ESIKLER:
         print(f"\n  --- olu kuyruk esigi: son {esik} gun tamamen sifir ---")
-        print(f"  {'delta':>7}" + "".join(f"{b.ad:>12}" for b in tm.BLOKLAR)
-              + f"{'kazanan':>10}{'ortalama':>11}")
+        print(
+            f"  {'delta':>7}"
+            + "".join(f"{b.ad:>12}" for b in tm.BLOKLAR)
+            + f"{'kazanan':>10}{'ortalama':>11}"
+        )
         for delta in DELTALAR:
             farklar = []
             for b in tm.BLOKLAR:
@@ -135,17 +139,28 @@ def main() -> int:
                 sonraki = tm.rmsle(v["y"], np.clip(np.expm1(yeni), 0.0, None))
                 farklar.append(sonraki - onceki)
             kazanan = sum(1 for f in farklar if f < 0)
-            print(f"  {delta:7.2f}" + "".join(f"{f:+12.5f}" for f in farklar)
-                  + f"{kazanan:>7}/3{np.mean(farklar):+11.5f}")
-            kayitlar.append({"esik": esik, "delta": delta,
-                             "bloklar": [float(f) for f in farklar],
-                             "kazanan": kazanan, "ortalama": float(np.mean(farklar))})
+            print(
+                f"  {delta:7.2f}"
+                + "".join(f"{f:+12.5f}" for f in farklar)
+                + f"{kazanan:>7}/3{np.mean(farklar):+11.5f}"
+            )
+            kayitlar.append(
+                {
+                    "esik": esik,
+                    "delta": delta,
+                    "bloklar": [float(f) for f in farklar],
+                    "kazanan": kazanan,
+                    "ortalama": float(np.mean(farklar)),
+                }
+            )
 
     uygun = [k for k in kayitlar if k["kazanan"] == 3 and k["delta"] > 0]
     if uygun:
         en = min(uygun, key=lambda k: k["ortalama"])
-        print(f"\n  3/3 KAZANAN VAR: esik={en['esik']} delta={en['delta']:.2f}"
-              f"  ortalama {en['ortalama']:+.5f}")
+        print(
+            f"\n  3/3 KAZANAN VAR: esik={en['esik']} delta={en['delta']:.2f}"
+            f"  ortalama {en['ortalama']:+.5f}"
+        )
         print(f"  genel skora tahmini etki {en['ortalama'] * 0.528:+.5f}")
         print("  HUKUM: AL" if en["ortalama"] < -0.001 else "  HUKUM: esik alti")
     else:

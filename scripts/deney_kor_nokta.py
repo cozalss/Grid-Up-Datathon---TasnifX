@@ -66,11 +66,15 @@ def main() -> int:
     for b in tm.BLOKLAR:
         _, dog, _, sog = parcalar[b.ad]
         dolu = {k: float(dog.loc[~sog, k].notna().mean()) for k in var}
-        print(f"  {b.ad} sicak doluluk: " + "  ".join(f"{k.split('_', 1)[1]} %{100 * v:.1f}"
-                                                     for k, v in dolu.items()))
+        print(
+            f"  {b.ad} sicak doluluk: "
+            + "  ".join(f"{k.split('_', 1)[1]} %{100 * v:.1f}" for k, v in dolu.items())
+        )
     dolu_test = {k: float(test[k].notna().mean()) for k in var}
-    print("  TEST doluluk:        " + "  ".join(f"{k.split('_', 1)[1]} %{100 * v:.1f}"
-                                                for k, v in dolu_test.items()))
+    print(
+        "  TEST doluluk:        "
+        + "  ".join(f"{k.split('_', 1)[1]} %{100 * v:.1f}" for k, v in dolu_test.items())
+    )
 
     adaylar = (("TABAN", uretim), ("-KOR NOKTA", [k for k in uretim if k not in var]))
     maskeli = {
@@ -88,8 +92,9 @@ def main() -> int:
             sicak = ~soguk
             loglar = []
             for tohum in di.TOHUMLAR:
-                log_t = di.egit_tahmin("cat", maskeli[(b.ad, tohum)], dogrulama, kol,
-                                       tohum, **SICAK_USTYAZIM)
+                log_t = di.egit_tahmin(
+                    "cat", maskeli[(b.ad, tohum)], dogrulama, kol, tohum, **SICAK_USTYAZIM
+                )
                 loglar.append(log_t)
                 tek = np.clip(np.expm1(log_t), 0.0, None)
                 tekil[ad][(b.ad, tohum)] = tm.rmsle(gercek[sicak], tek[sicak])
@@ -104,11 +109,11 @@ def main() -> int:
     t_d = o / sh if sh > 0 else 0.0
     print(f"\n  ESLENIK FARK {o:+.5f}  SH {sh:.5f}  t {t_d:+.2f}")
     for b in tm.BLOKLAR:
-        bb = np.array([tekil["TABAN"][(b.ad, t)] - tekil["-KOR NOKTA"][(b.ad, t)]
-                       for t in di.TOHUMLAR])
+        bb = np.array(
+            [tekil["TABAN"][(b.ad, t)] - tekil["-KOR NOKTA"][(b.ad, t)] for t in di.TOHUMLAR]
+        )
         yon = "YARARLI" if bb.mean() > 0 else "gereksiz"
-        print(f"     {b.ad:6} {bb.mean():+.5f}  "
-              f"({(bb > 0).sum()}/{len(bb)} tohum kolonlar {yon})")
+        print(f"     {b.ad:6} {bb.mean():+.5f}  ({(bb > 0).sum()}/{len(bb)} tohum kolonlar {yon})")
     print("\n  YORUM: |fark| = kolonlarin OLCULEBILIR degeri. Testte yanlis")
     print("  calisma riski de bu buyuklukte sinirli. Karar test etiketi")
     print("  olmadan verilemez; bu sayi yalnizca BAHSI olcer.")
@@ -116,8 +121,9 @@ def main() -> int:
 
     KAYIT.parent.mkdir(parents=True, exist_ok=True)
     with KAYIT.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps({"kolonlar": var, "fark": o, "sh": sh, "t": t_d},
-                            ensure_ascii=False) + "\n")
+        fh.write(
+            json.dumps({"kolonlar": var, "fark": o, "sh": sh, "t": t_d}, ensure_ascii=False) + "\n"
+        )
     print(f"\nTAMAM  {(time.time() - t_bas) / 60:.1f} dakika")
     return 0
 

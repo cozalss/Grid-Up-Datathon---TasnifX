@@ -88,8 +88,17 @@ def main() -> int:
         g = np.log1p(gercek[~soguk]) - lg
         gr = pd.Series(r).groupby(gun).transform("mean").to_numpy()
         gg = pd.Series(g).groupby(gun).transform("mean").to_numpy()
-        veri[b.ad] = {"r": r, "g": g, "lg": lg, "y": gercek[~soguk], "gun": gun,
-                      "gr": gr, "gg": gg, "ri": r - gr, "gi": g - gg}
+        veri[b.ad] = {
+            "r": r,
+            "g": g,
+            "lg": lg,
+            "y": gercek[~soguk],
+            "gun": gun,
+            "gr": gr,
+            "gg": gg,
+            "ri": r - gr,
+            "gi": g - gg,
+        }
 
     print(f"\n  {'blok':7}{'b_gun':>9}{'b_ici':>9}{'global':>9}   (kendi bloklarinda)")
     for b in tm.BLOKLAR:
@@ -112,8 +121,15 @@ def main() -> int:
         onceki = tm.rmsle(v["y"], np.clip(np.expm1(v["r"] + v["lg"]), 0.0, None))
         sonraki = tm.rmsle(v["y"], np.clip(np.expm1(yeni + v["lg"]), 0.0, None))
         print(f"  {b.ad:7}{b_ici:15.4f}{onceki:10.5f}{sonraki:10.5f}{sonraki - onceki:+10.5f}")
-        kayitlar.append({"blok": b.ad, "b_ici": b_ici, "once": onceki, "sonra": sonraki,
-                         "fark": sonraki - onceki})
+        kayitlar.append(
+            {
+                "blok": b.ad,
+                "b_ici": b_ici,
+                "once": onceki,
+                "sonra": sonraki,
+                "fark": sonraki - onceki,
+            }
+        )
 
     kazanan = sum(1 for k in kayitlar if k["fark"] < 0)
     ort = float(np.mean([k["fark"] for k in kayitlar]))

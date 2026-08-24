@@ -67,8 +67,12 @@ def main() -> int:
 
     if ONBELLEK.exists():
         z = np.load(ONBELLEK)
-        ham = {(b.ad, t, a): z[f"{b.ad}_{t}_{a}"]
-               for b in tm.BLOKLAR for t in di.TOHUMLAR for a in AILELER}
+        ham = {
+            (b.ad, t, a): z[f"{b.ad}_{t}_{a}"]
+            for b in tm.BLOKLAR
+            for t in di.TOHUMLAR
+            for a in AILELER
+        }
         print(f"  tahminler onbellekten: {ONBELLEK.name}")
     else:
         ham = {}
@@ -100,8 +104,11 @@ def main() -> int:
                 loglar.append(lt)
                 tekil.append(tm.rmsle(y, np.clip(np.expm1(lt), 0.0, None)))
             torba.append(tm.rmsle(y, np.clip(np.expm1(np.mean(loglar, axis=0)), 0.0, None)))
-        sonuc[w] = {"tek": float(np.mean(tekil)), "torba": float(np.mean(torba)),
-                    "bloklar": [float(v) for v in torba]}
+        sonuc[w] = {
+            "tek": float(np.mean(tekil)),
+            "torba": float(np.mean(torba)),
+            "bloklar": [float(v) for v in torba],
+        }
 
     taban = sonuc[(3, 1, 1)]
     print(f"\n  URETIM (3,1,1): tek {taban['tek']:.5f}   torbalanmis {taban['torba']:.5f}")
@@ -109,9 +116,8 @@ def main() -> int:
     sirali = sorted(sonuc.items(), key=lambda kv: kv[1]["torba"])
     for w, s in sirali[:10]:
         blk = " ".join(f"{v:.5f}" for v in s["bloklar"])
-        fark = s['torba'] - taban['torba']
-        print(f"  {str(w):12}{s['tek']:11.5f}{s['torba']:10.5f}"
-              f"{fark:+12.5f}   {blk}")
+        fark = s["torba"] - taban["torba"]
+        print(f"  {str(w):12}{s['tek']:11.5f}{s['torba']:10.5f}{fark:+12.5f}   {blk}")
 
     en_iyi = sirali[0]
     ayni_yon = (en_iyi[1]["tek"] < taban["tek"]) and (en_iyi[1]["torba"] < taban["torba"])

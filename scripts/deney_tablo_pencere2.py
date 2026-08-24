@@ -84,8 +84,10 @@ def main() -> int:
         g_ici = gercek_ofs - pd.Series(gercek_ofs).groupby(gun).transform("mean").to_numpy()
         blok_bas = pd.Timestamp(gun.min())
         hedef = pd.DataFrame({"guc": dg["guc"].to_numpy(), "lokasyon": dg["lokasyon"].to_numpy()})
-        print(f"\n  {b.ad}  blok basi {blok_bas.date()}  |  {len(g_ici):,} soguk satir"
-              f"  |  gun ici gercek std {g_ici.std():.4f}")
+        print(
+            f"\n  {b.ad}  blok basi {blok_bas.date()}  |  {len(g_ici):,} soguk satir"
+            f"  |  gun ici gercek std {g_ici.std():.4f}"
+        )
         print(f"  {'uzunluk':>8}{'baslangic':>12}{'satir':>10}{'a*':>8}{'R^2 %':>8}")
         for u in UZUNLUKLAR:
             bas = blok_bas - pd.DateOffset(months=u)
@@ -102,8 +104,9 @@ def main() -> int:
             a_yildiz = float(np.dot(e, g_ici) / np.dot(e, e))
             r2 = 100.0 * a_yildiz**2 * var / float(np.dot(g_ici, g_ici) / len(g_ici))
             print(f"  {u:8d}{str(bas.date()):>12}{len(kaynak):10,}{a_yildiz:8.3f}{r2:8.3f}")
-            kayitlar.append({"blok": b.ad, "uzunluk": u, "n": int(len(kaynak)),
-                             "a_yildiz": a_yildiz, "r2": r2})
+            kayitlar.append(
+                {"blok": b.ad, "uzunluk": u, "n": int(len(kaynak)), "a_yildiz": a_yildiz, "r2": r2}
+            )
 
     print("\n  UZUNLUGA GORE ORTALAMA R^2 (yuksek = iyi)")
     print(f"  {'uzunluk':>8}{'blok sayisi':>13}{'ort R^2 %':>11}")

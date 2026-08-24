@@ -65,8 +65,7 @@ def dairesel_uzaklik(ay: np.ndarray, hedef_aylar: np.ndarray) -> np.ndarray:
 
 def egit_tahmin_agirlikli(egitim, hedef, kolonlar, tohum, agirlik):  # noqa: ANN001, ANN201
     """``di.egit_tahmin``in kopyasi -- tek fark: keyfi ornek agirligi."""
-    y = (np.log1p(egitim[tm.HEDEF].clip(lower=0.0))
-         - np.log1p(egitim["guc"]))
+    y = np.log1p(egitim[tm.HEDEF].clip(lower=0.0)) - np.log1p(egitim["guc"])
     model = di.aile_modeli("cat", tohum, **SICAK_USTYAZIM)
     x_e, x_h = egitim[kolonlar].copy(), hedef[kolonlar].copy()
     kat = [k for k in tm.KATEGORIK if k in x_e.columns]
@@ -95,8 +94,10 @@ def main() -> int:
         ha = np.unique(pd.to_datetime(dogrulama["tarih"]).dt.month.to_numpy())
         ea = pd.to_datetime(parca["tarih"]).dt.month.to_numpy()
         u = dairesel_uzaklik(ea, ha)
-        print(f"  {b.ad}: hedef aylar {list(ha)} | egitim uzakligi "
-              f"ort {u.mean():.2f} maks {u.max():.0f}")
+        print(
+            f"  {b.ad}: hedef aylar {list(ha)} | egitim uzakligi "
+            f"ort {u.mean():.2f} maks {u.max():.0f}"
+        )
 
     tekil: dict[str, dict[tuple[str, int], float]] = {}
     for tau in TAULAR:
@@ -138,8 +139,7 @@ def main() -> int:
         hukum = "AL" if t_d >= 2 else ("REDDET" if t_d <= -2 else "esik alti")
         print(f"\n  {ad}: ESLENIK FARK {o:+.5f}  SH {sh:.5f}  t {t_d:+.2f}   {hukum}")
         for b in tm.BLOKLAR:
-            bb = np.array([tekil[taban_ad][(b.ad, t)] - tekil[ad][(b.ad, t)]
-                           for t in di.TOHUMLAR])
+            bb = np.array([tekil[taban_ad][(b.ad, t)] - tekil[ad][(b.ad, t)] for t in di.TOHUMLAR])
             print(f"     {b.ad:6} {bb.mean():+.5f}  ({(bb > 0).sum()}/{len(bb)} tohum kazanc)")
         kayitlar.append({"kol": ad, "fark": o, "sh": sh, "t": t_d, "hukum": hukum})
 

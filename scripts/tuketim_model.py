@@ -1494,9 +1494,7 @@ def main() -> int:
     for i in range(args.tohum):
         t_tohum = time.time()
         tohum = args.tohum_baslangic + i
-        birikim += rejim_tahmini(
-            egitim, test, kolonlar, tohum, hizli=args.hizli, dar_egitim=dar
-        )
+        birikim += rejim_tahmini(egitim, test, kolonlar, tohum, hizli=args.hizli, dar_egitim=dar)
         print(f"    tohum {tohum} ({i + 1}/{args.tohum}) bitti ({time.time() - t_tohum:.0f} sn)")
     tahmin = np.clip(np.expm1(birikim / args.tohum), 0.0, None)
 

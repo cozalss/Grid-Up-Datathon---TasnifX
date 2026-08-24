@@ -49,8 +49,13 @@ PENCERELER = ((None, "tum"), (120, "son120g"), (60, "son60g"))
 M_DEGERLERI = (50.0, 200.0, 1000.0)
 
 
-def _eb(anahtar_e: np.ndarray, ofs_e: np.ndarray, anahtar_h: np.ndarray,
-        ebeveyn: np.ndarray, m_once: float) -> np.ndarray:
+def _eb(
+    anahtar_e: np.ndarray,
+    ofs_e: np.ndarray,
+    anahtar_h: np.ndarray,
+    ebeveyn: np.ndarray,
+    m_once: float,
+) -> np.ndarray:
     s = pd.Series(ofs_e).groupby(anahtar_e).agg(["sum", "count"])
     top = np.nan_to_num(pd.Series(s["sum"]).reindex(anahtar_h).to_numpy(dtype="float64"), nan=0.0)
     n = np.nan_to_num(pd.Series(s["count"]).reindex(anahtar_h).to_numpy(dtype="float64"), nan=0.0)
@@ -71,8 +76,10 @@ def main() -> int:
 
     egitim, test = d.cerceveleri_kur()
 
-    print(f"\n{'blok':7} {'pencere':9} {'M':>6}  {'genel':>8} {'kova':>8} "
-          f"{'ilce':>8} {'ilcexkova':>9}")
+    print(
+        f"\n{'blok':7} {'pencere':9} {'M':>6}  {'genel':>8} {'kova':>8} "
+        f"{'ilce':>8} {'ilcexkova':>9}"
+    )
     for blok in BLOKLAR:
         parca, dogrulama, gercek, soguk = di.blok_parcalari(egitim, blok)
         dg = dogrulama[soguk]
@@ -87,17 +94,23 @@ def main() -> int:
             else:
                 alt = parca[(p_tarih >= blok_bas - pd.Timedelta(days=gun)) & (p_tarih < blok_bas)]
                 if len(alt) < 10_000:
-                    print(f"{blok:7} {p_ad:9} {'':>6}  (pencere cok seyrek: "
-                          f"{len(alt):,} satir) ATLANDI")
+                    print(
+                        f"{blok:7} {p_ad:9} {'':>6}  (pencere cok seyrek: "
+                        f"{len(alt):,} satir) ATLANDI"
+                    )
                     continue
-            of_e = (np.log1p(alt[tm.HEDEF].clip(lower=0.0).to_numpy(dtype="float64"))
-                    - np.log1p(alt["guc"].to_numpy(dtype="float64")))
-            kenar = np.linspace(float(np.log1p(alt["guc"]).min()),
-                                float(np.log1p(alt["guc"]).max()) + 1e-9, 25)
-            kv_e = np.clip(np.searchsorted(
-                kenar, np.log1p(alt["guc"].to_numpy()), side="right") - 1, 0, 23)
-            kv_h = np.clip(np.searchsorted(kenar, np.log1p(dg["guc"].to_numpy()), side="right") - 1,
-                0, 23)
+            of_e = np.log1p(alt[tm.HEDEF].clip(lower=0.0).to_numpy(dtype="float64")) - np.log1p(
+                alt["guc"].to_numpy(dtype="float64")
+            )
+            kenar = np.linspace(
+                float(np.log1p(alt["guc"]).min()), float(np.log1p(alt["guc"]).max()) + 1e-9, 25
+            )
+            kv_e = np.clip(
+                np.searchsorted(kenar, np.log1p(alt["guc"].to_numpy()), side="right") - 1, 0, 23
+            )
+            kv_h = np.clip(
+                np.searchsorted(kenar, np.log1p(dg["guc"].to_numpy()), side="right") - 1, 0, 23
+            )
             il_e = alt["ilce_key"].to_numpy()
             il_h = dg["ilce_key"].to_numpy()
 
@@ -109,12 +122,18 @@ def main() -> int:
                     _metin(il_e) + "|" + _metin(kv_e),
                     of_e,
                     _metin(il_h) + "|" + _metin(kv_h),
-                    kova, m_once,
+                    kova,
+                    m_once,
                 )
-                sk = [tm.rmsle(y, np.clip(np.expm1(v + log_guc), 0.0, None))
-                      for v in (genel, kova, ilce, ik)]
-                print(f"{blok:7} {p_ad:9} {m_once:6.0f}  "
-                      + "  ".join(f"{v:8.5f}" for v in sk[:3]) + f"  {sk[3]:9.5f}")
+                sk = [
+                    tm.rmsle(y, np.clip(np.expm1(v + log_guc), 0.0, None))
+                    for v in (genel, kova, ilce, ik)
+                ]
+                print(
+                    f"{blok:7} {p_ad:9} {m_once:6.0f}  "
+                    + "  ".join(f"{v:8.5f}" for v in sk[:3])
+                    + f"  {sk[3]:9.5f}"
+                )
         print()
 
     print(f"TAMAM  {(time.time() - t0) / 60:.1f} dakika")

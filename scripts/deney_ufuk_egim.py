@@ -88,14 +88,17 @@ def main() -> int:
             "y": gercek[~soguk],
             "ufuk": dg["ufuk_gun"].to_numpy(dtype="float64"),
         }
-        print(f"  {b.ad}: {len(lg):,} sicak satir  ufuk {dg['ufuk_gun'].min():.0f}"
-              f"-{dg['ufuk_gun'].max():.0f}")
+        print(
+            f"  {b.ad}: {len(lg):,} sicak satir  ufuk {dg['ufuk_gun'].min():.0f}"
+            f"-{dg['ufuk_gun'].max():.0f}"
+        )
     te_ufuk = test["ufuk_gun"].to_numpy(dtype="float64")
     print(f"  TEST ufku {te_ufuk.min():.0f}-{te_ufuk.max():.0f}")
 
     def dilim(u: np.ndarray) -> np.ndarray:
-        return np.clip(np.searchsorted(np.array(KENARLAR[1:-1]), u, side="right"), 0,
-                       len(KENARLAR) - 2)
+        return np.clip(
+            np.searchsorted(np.array(KENARLAR[1:-1]), u, side="right"), 0, len(KENARLAR) - 2
+        )
 
     print(f"\n  {'blok':7}{'dilim':>7}{'n':>9}{'egim':>8}{'kesme':>9}")
     kayitlar = []
@@ -118,8 +121,7 @@ def main() -> int:
         onceki = tm.rmsle(hedef["y"], np.clip(np.expm1(hedef["r"] + hedef["lg"]), 0.0, None))
         sonraki = tm.rmsle(hedef["y"], np.clip(np.expm1(yeni + hedef["lg"]), 0.0, None))
         print(f"     -> {b.ad} sicak {onceki:.5f} -> {sonraki:.5f}   {sonraki - onceki:+.5f}")
-        kayitlar.append({"blok": b.ad, "once": onceki, "sonra": sonraki,
-                         "fark": sonraki - onceki})
+        kayitlar.append({"blok": b.ad, "once": onceki, "sonra": sonraki, "fark": sonraki - onceki})
 
     kazanan = sum(1 for k in kayitlar if k["fark"] < 0)
     ort = float(np.mean([k["fark"] for k in kayitlar]))

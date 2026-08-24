@@ -39,7 +39,7 @@ TEST_SOGUK_PAY = 0.2216
 
 
 def test_agirlikli(sicak: float, soguk: float) -> float:
-    return float((( 1.0 - TEST_SOGUK_PAY) * sicak**2 + TEST_SOGUK_PAY * soguk**2) ** 0.5)
+    return float(((1.0 - TEST_SOGUK_PAY) * sicak**2 + TEST_SOGUK_PAY * soguk**2) ** 0.5)
 
 
 def kayitlari_oku() -> list[dict]:
@@ -65,8 +65,14 @@ def main() -> int:
             if ar.sicak is None or ar.soguk is None:
                 raise SystemExit("tur=blok icin --sicak ve --soguk gerekli")
             skor = test_agirlikli(ar.sicak, ar.soguk)
-            kayit = {"ad": ar.ekle, "tur": "blok", "sicak": ar.sicak,
-                     "soguk": ar.soguk, "skor": skor, "not": ar.aciklama}
+            kayit = {
+                "ad": ar.ekle,
+                "tur": "blok",
+                "sicak": ar.sicak,
+                "soguk": ar.soguk,
+                "skor": skor,
+                "not": ar.aciklama,
+            }
         else:
             if ar.skor is None:
                 raise SystemExit("tur=lb icin --skor gerekli")

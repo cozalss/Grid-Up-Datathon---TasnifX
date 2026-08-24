@@ -94,11 +94,13 @@ def main() -> int:
         lg = np.log1p(dog["guc"].to_numpy(dtype="float64"))
         ofs = np.log1p(gercek) - lg
         kenar = np.linspace(lg.min(), lg.max() + 1e-9, 25)
-        anahtar = (pd.to_datetime(dog["tarih"]).astype("int64").astype(str).to_numpy() + "|"
-                   + pd.Series(dog["ilce_key"].to_numpy()).astype(str).to_numpy() + "|"
-                   + pd.Series(
-                       kova(dog["guc"].to_numpy(dtype="float64"), kenar)
-                   ).astype(str).to_numpy())
+        anahtar = (
+            pd.to_datetime(dog["tarih"]).astype("int64").astype(str).to_numpy()
+            + "|"
+            + pd.Series(dog["ilce_key"].to_numpy()).astype(str).to_numpy()
+            + "|"
+            + pd.Series(kova(dog["guc"].to_numpy(dtype="float64"), kenar)).astype(str).to_numpy()
+        )
         df = pd.DataFrame({"a": anahtar, "ofs": ofs, "soguk": soguk})
         g = df.groupby("a")
         sicak_ort = g.apply(lambda x: x.loc[~x["soguk"], "ofs"].mean(), include_groups=False)
@@ -110,8 +112,7 @@ def main() -> int:
         farklar[b.ad] = float(fark.mean())
         print(f"  {b.ad:7}{int(m.sum()):21,}{fark.mean():10.4f}{sh:9.4f}{fark.mean() / sh:8.1f}")
     print(f"  UC BLOKTA DA POZITIF: {all(v > 0 for v in farklar.values())}")
-    print(f"  en kucuk {min(farklar.values()):.4f}  "
-          f"medyan {np.median(list(farklar.values())):.4f}")
+    print(f"  en kucuk {min(farklar.values()):.4f}  medyan {np.median(list(farklar.values())):.4f}")
 
     # --- B) kis26'da kaydirma x a izgarasi, TEST kVA karisimina agirlikli ---
     parca, dog, gercek, soguk = di.blok_parcalari(egitim, "kis26")
@@ -129,21 +130,24 @@ def main() -> int:
     hucre = si.hucre_etkisi(kaynak, hedef)
 
     # TEST kVA karisimina agirlik: kis26 soguk medyani 400, testinki 630
-    te = pd.read_csv(KOK / "data/raw/test.csv", usecols=["tanim", "guc"],
-                     encoding="utf-8", dtype={"tanim": str})
-    tr_t = pd.read_csv(KOK / "data/raw/train.csv", usecols=["tanim"],
-                       encoding="utf-8", dtype={"tanim": str})
+    te = pd.read_csv(
+        KOK / "data/raw/test.csv", usecols=["tanim", "guc"], encoding="utf-8", dtype={"tanim": str}
+    )
+    tr_t = pd.read_csv(
+        KOK / "data/raw/train.csv", usecols=["tanim"], encoding="utf-8", dtype={"tanim": str}
+    )
     te_soguk = te[~te["tanim"].isin(set(tr_t["tanim"]))]
     kenar_g = np.linspace(np.log1p(ham["guc"]).min(), np.log1p(ham["guc"]).max() + 1e-9, 25)
     kv_test = kova(te_soguk["guc"].to_numpy(dtype="float64"), kenar_g)
     kv_kis = kova(dg["guc"].to_numpy(dtype="float64"), kenar_g)
     p_test = pd.Series(kv_test).value_counts(normalize=True)
     p_kis = pd.Series(kv_kis).value_counts(normalize=True)
-    w_test = (pd.Series(kv_kis).map(p_test).fillna(0.0)
-              / pd.Series(kv_kis).map(p_kis)).to_numpy()
+    w_test = (pd.Series(kv_kis).map(p_test).fillna(0.0) / pd.Series(kv_kis).map(p_kis)).to_numpy()
     w_test = w_test / w_test.mean()
-    print(f"\n  kVA kovasi medyani  kis26 soguk {np.median(kv_kis):.0f}  TEST soguk "
-          f"{np.median(kv_test):.0f}   agirlik araligi {w_test.min():.2f}-{w_test.max():.2f}")
+    print(
+        f"\n  kVA kovasi medyani  kis26 soguk {np.median(kv_kis):.0f}  TEST soguk "
+        f"{np.median(kv_test):.0f}   agirlik araligi {w_test.min():.2f}-{w_test.max():.2f}"
+    )
 
     def gruplu(v: np.ndarray, k: np.ndarray) -> np.ndarray:
         return pd.Series(v).groupby(k).transform("mean").to_numpy()
@@ -165,8 +169,7 @@ def main() -> int:
     kayitlar = []
     for etiket, agirlik in (("kis26 HAM", None), ("TEST kVA karisimi", w_test)):
         print(f"\n--- {etiket} ---")
-        print("  " + f"{'a / kayma':>9}"
-              + "".join(f"{k:>10.2f}" for k in KAYMALAR))
+        print("  " + f"{'a / kayma':>9}" + "".join(f"{k:>10.2f}" for k in KAYMALAR))
         for a in A_DEGERLERI:
             satir = []
             for kayma in KAYMALAR:
@@ -179,9 +182,11 @@ def main() -> int:
         alt = [k for k in kayitlar if k["olcut"] == etiket]
         u = next(k for k in alt if k["a"] == 0.55 and k["kayma"] == 0.0)
         e = min(alt, key=lambda k: k["rmsle"])
-        print(f"\n  {etiket}: uretim(a=0,55 kayma=0) {u['rmsle']:.5f}  ->  "
-              f"en iyi a={e['a']:.2f} kayma={e['kayma']:.2f} {e['rmsle']:.5f}"
-              f"  kazanc {u['rmsle'] - e['rmsle']:+.5f}")
+        print(
+            f"\n  {etiket}: uretim(a=0,55 kayma=0) {u['rmsle']:.5f}  ->  "
+            f"en iyi a={e['a']:.2f} kayma={e['kayma']:.2f} {e['rmsle']:.5f}"
+            f"  kazanc {u['rmsle'] - e['rmsle']:+.5f}"
+        )
 
     KAYIT.parent.mkdir(parents=True, exist_ok=True)
     with KAYIT.open("a", encoding="utf-8") as fh:

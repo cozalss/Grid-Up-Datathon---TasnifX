@@ -91,11 +91,15 @@ def main() -> int:
 
     gun_s = pd.Series(tarih)
     n_gun = gun_s.groupby(tarih).transform("size").to_numpy().astype("float64")
-    print(f"  {len(y):,} soguk satir | {len(np.unique(tarih))} gun | "
-          f"gunluk soguk satir: min {n_gun.min():.0f} medyan {np.median(n_gun):.0f} "
-          f"maks {n_gun.max():.0f}")
-    print(f"  n<=100 olan gun: {len(np.unique(tarih[n_gun <= 100]))}, "
-          f"{int((n_gun <= 100).sum())} satir")
+    print(
+        f"  {len(y):,} soguk satir | {len(np.unique(tarih))} gun | "
+        f"gunluk soguk satir: min {n_gun.min():.0f} medyan {np.median(n_gun):.0f} "
+        f"maks {n_gun.max():.0f}"
+    )
+    print(
+        f"  n<=100 olan gun: {len(np.unique(tarih[n_gun <= 100]))}, "
+        f"{int((n_gun <= 100).sum())} satir"
+    )
 
     def grup_ort(v: np.ndarray, anahtar: np.ndarray) -> np.ndarray:
         return pd.Series(v).groupby(anahtar).transform("mean").to_numpy()
@@ -117,8 +121,7 @@ def main() -> int:
 
     kayitlar: list[dict] = []
     print("\n--- A) a (hucre) x b (model),  gun ortalamasi buzmesiz ---")
-    print("  " + f"{'a / b':>6}"
-          + "".join(f"{b:>10.2f}" for b in B_DEGERLERI))
+    print("  " + f"{'a / b':>6}" + "".join(f"{b:>10.2f}" for b in B_DEGERLERI))
     for a in A_DEGERLERI:
         satir = []
         for b in B_DEGERLERI:
@@ -138,13 +141,16 @@ def main() -> int:
         kayitlar.append({"a": a, "b": b, "m_gun": m_gun, "rmsle": o})
         print(f"  {m_gun:8.0f}{o:10.5f}")
 
-    uretim = next(k["rmsle"] for k in kayitlar
-                  if k["a"] == 0.75 and k["b"] == 0.25 and k["m_gun"] == 0.0)
+    uretim = next(
+        k["rmsle"] for k in kayitlar if k["a"] == 0.75 and k["b"] == 0.25 and k["m_gun"] == 0.0
+    )
     en_iyi = min(kayitlar, key=lambda k: k["rmsle"])
     kazanc = uretim - en_iyi["rmsle"]
     print(f"\n  URETIM (a=0,75 b=0,25):  {uretim:.5f}")
-    print(f"  EN IYI a={en_iyi['a']:.2f} b={en_iyi['b']:.2f} M_gun={en_iyi['m_gun']:.0f}"
-          f"  ->  {en_iyi['rmsle']:.5f}   kazanc {kazanc:+.5f}")
+    print(
+        f"  EN IYI a={en_iyi['a']:.2f} b={en_iyi['b']:.2f} M_gun={en_iyi['m_gun']:.0f}"
+        f"  ->  {en_iyi['rmsle']:.5f}   kazanc {kazanc:+.5f}"
+    )
     print(f"  genel skora tahmini etki {-kazanc * 0.377:+.5f}")
 
     KAYIT.parent.mkdir(parents=True, exist_ok=True)

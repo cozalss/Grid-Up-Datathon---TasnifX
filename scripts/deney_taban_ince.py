@@ -42,8 +42,13 @@ KOVA_SAYILARI = (8, 16, 24)
 EBEVEYNLER = ("kova", "ilce", "toplamsal")
 
 
-def _eb(anahtar_e: np.ndarray, ofs_e: np.ndarray, anahtar_h: np.ndarray,
-        ebeveyn: np.ndarray, m_once: float) -> np.ndarray:
+def _eb(
+    anahtar_e: np.ndarray,
+    ofs_e: np.ndarray,
+    anahtar_h: np.ndarray,
+    ebeveyn: np.ndarray,
+    m_once: float,
+) -> np.ndarray:
     s = pd.Series(ofs_e).groupby(anahtar_e).agg(["sum", "count"])
     top = np.nan_to_num(pd.Series(s["sum"]).reindex(anahtar_h).to_numpy(dtype="float64"), nan=0.0)
     n = np.nan_to_num(pd.Series(s["count"]).reindex(anahtar_h).to_numpy(dtype="float64"), nan=0.0)
@@ -65,8 +70,9 @@ def main() -> int:
         dg = dogrulama[soguk]
         y = gercek[soguk]
         log_guc = np.log1p(dg["guc"].to_numpy(dtype="float64"))
-        of_e = (np.log1p(parca[tm.HEDEF].clip(lower=0.0).to_numpy(dtype="float64"))
-                - np.log1p(parca["guc"].to_numpy(dtype="float64")))
+        of_e = np.log1p(parca[tm.HEDEF].clip(lower=0.0).to_numpy(dtype="float64")) - np.log1p(
+            parca["guc"].to_numpy(dtype="float64")
+        )
         lg_e = np.log1p(parca["guc"].to_numpy(dtype="float64"))
         lg_h = np.log1p(dg["guc"].to_numpy(dtype="float64"))
         il_e = parca["ilce_key"].to_numpy()
@@ -80,10 +86,16 @@ def main() -> int:
             kenar = np.linspace(float(lg_e.min()), float(lg_e.max()) + 1e-9, k_sayi + 1)
             kv_e = np.clip(np.searchsorted(kenar, lg_e, side="right") - 1, 0, k_sayi - 1)
             kv_h = np.clip(np.searchsorted(kenar, lg_h, side="right") - 1, 0, k_sayi - 1)
-            anahtar_e = (pd.Series(il_e).astype(str).to_numpy() + "|"
-                         + pd.Series(kv_e).astype(str).to_numpy())
-            anahtar_h = (pd.Series(il_h).astype(str).to_numpy() + "|"
-                         + pd.Series(kv_h).astype(str).to_numpy())
+            anahtar_e = (
+                pd.Series(il_e).astype(str).to_numpy()
+                + "|"
+                + pd.Series(kv_e).astype(str).to_numpy()
+            )
+            anahtar_h = (
+                pd.Series(il_h).astype(str).to_numpy()
+                + "|"
+                + pd.Series(kv_h).astype(str).to_numpy()
+            )
             # ana etkiler hep ayni M ile (sabit, hafif duzlestirme)
             kova = _eb(kv_e, of_e, kv_h, genel, 200.0)
             ilce = _eb(il_e, of_e, il_h, genel, 200.0)
@@ -102,8 +114,10 @@ def main() -> int:
     print("=" * 96)
     sirali = sorted(en_iyi_genel.items(), key=lambda kv: float(np.mean(kv[1])))
     for (k_sayi, eb_ad, m_once), sk in sirali[:12]:
-        print(f"  kova={k_sayi:2d} ebeveyn={eb_ad:10} M={m_once:7.0f}   "
-              f"ort {np.mean(sk):.5f}   [" + " ".join(f"{v:.5f}" for v in sk) + "]")
+        print(
+            f"  kova={k_sayi:2d} ebeveyn={eb_ad:10} M={m_once:7.0f}   "
+            f"ort {np.mean(sk):.5f}   [" + " ".join(f"{v:.5f}" for v in sk) + "]"
+        )
     print(f"\nTAMAM  {(time.time() - t0) / 60:.1f} dakika")
     return 0
 

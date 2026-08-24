@@ -58,8 +58,9 @@ ALFALAR = (1.0, 10.0, 100.0)
 
 def hazirla(egitim, hedef, kolonlar):  # noqa: ANN001, ANN201
     """Sayisal matris + medyan doldurma + eksiklik gostergesi + olcekleme."""
-    sayisal = [k for k in kolonlar
-               if egitim[k].dtype.kind in "ifb" and hedef[k].dtype.kind in "ifb"]
+    sayisal = [
+        k for k in kolonlar if egitim[k].dtype.kind in "ifb" and hedef[k].dtype.kind in "ifb"
+    ]
     xe = egitim[sayisal].to_numpy(dtype="float32")
     xh = hedef[sayisal].to_numpy(dtype="float32")
     eksik_e = np.isnan(xe)
@@ -100,16 +101,19 @@ def main() -> int:
         parca, dogrulama, gercek, soguk = parcalar[b.ad]
         maskeli = d.soguk_maskele(parca, kol, SICAK_MASKE, di.TOHUMLAR[0])
         xe, xh, n_say, n_gos = hazirla(maskeli, dogrulama, kol)
-        ye = (np.log1p(maskeli[tm.HEDEF].clip(lower=0.0).to_numpy(dtype="float64"))
-              - np.log1p(maskeli["guc"].to_numpy(dtype="float64")))
+        ye = np.log1p(maskeli[tm.HEDEF].clip(lower=0.0).to_numpy(dtype="float64")) - np.log1p(
+            maskeli["guc"].to_numpy(dtype="float64")
+        )
         lg = np.log1p(dogrulama["guc"].to_numpy(dtype="float64"))
         for alfa in ALFALAR:
             reg = Ridge(alpha=alfa, solver="lsqr")
             reg.fit(xe, ye)
             dogrusal[(b.ad, alfa)] = (reg.predict(xh) + lg)[~soguk]
         veri[b.ad] = {"y": gercek[~soguk], "lg": lg[~soguk]}
-        print(f"  {b.ad}: {xe.shape[0]:,} x {xe.shape[1]} ({n_say} sayisal + {n_gos} gosterge)"
-              f"  ({time.time() - t0:.0f} sn)")
+        print(
+            f"  {b.ad}: {xe.shape[0]:,} x {xe.shape[1]} ({n_say} sayisal + {n_gos} gosterge)"
+            f"  ({time.time() - t0:.0f} sn)"
+        )
 
     print(f"\n  {'alfa':>7}{'blok':>8}{'tek basina':>12}{'cat':>10}")
     for alfa in ALFALAR:
@@ -143,8 +147,10 @@ def main() -> int:
     en_iyi = min(kayitlar, key=lambda k: k["rmsle"])
     kazanc = taban - en_iyi["rmsle"]
     print(f"\n  TABAN (w=0): {taban:.5f}")
-    print(f"  EN IYI alfa={en_iyi['alfa']:.0f} w={en_iyi['w']:.2f} -> {en_iyi['rmsle']:.5f}"
-          f"   kazanc {kazanc:+.5f}")
+    print(
+        f"  EN IYI alfa={en_iyi['alfa']:.0f} w={en_iyi['w']:.2f} -> {en_iyi['rmsle']:.5f}"
+        f"   kazanc {kazanc:+.5f}"
+    )
     print(f"  genel skora tahmini etki {-kazanc * 0.528:+.5f}")
     print(f"  HUKUM: {'AL' if kazanc > 0.002 else 'REDDET (esik alti)'}")
 

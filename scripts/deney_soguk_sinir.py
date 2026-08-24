@@ -117,9 +117,9 @@ def main() -> int:
     for ad, tab in (("cat", cat), ("sinir_agi", ag_tahmin)):
         sk = [skorla(tab[t] - log_guc) for t in TOHUMLAR]
         print(f"    {ad:10} {np.mean(sk):.5f}   tekil " + " ".join(f"{v:.4f}" for v in sk))
-    kor = float(np.mean([
-        np.corrcoef(cat[t] - log_guc, ag_tahmin[t] - log_guc)[0, 1] for t in TOHUMLAR
-    ]))
+    kor = float(
+        np.mean([np.corrcoef(cat[t] - log_guc, ag_tahmin[t] - log_guc)[0, 1] for t in TOHUMLAR])
+    )
     print(f"    cat <-> sinir_agi tahmin korelasyonu {kor:.4f}")
 
     print("\n  HARMAN x SON ISLEM   (cat agirligi 1,0 sabit)")
@@ -141,8 +141,10 @@ def main() -> int:
     en_iyi = min(kayitlar, key=lambda k: k["rmsle"])
     kazanc = taban - en_iyi["rmsle"]
     print(f"\n  URETIM (cat tek, beta=0,25): {taban:.5f}")
-    print(f"  EN IYI: ag={en_iyi['ag_agirligi']:.1f} beta={en_iyi['beta']:.2f} "
-          f"-> {en_iyi['rmsle']:.5f}   kazanc {kazanc:+.5f}")
+    print(
+        f"  EN IYI: ag={en_iyi['ag_agirligi']:.1f} beta={en_iyi['beta']:.2f} "
+        f"-> {en_iyi['rmsle']:.5f}   kazanc {kazanc:+.5f}"
+    )
     print(f"  genel skora tahmini etki {-kazanc * 0.377:+.5f}   (d(genel)/d(soguk) = 0,377)")
     print(f"  HUKUM: {'AL' if kazanc > 0.004 else 'REDDET (esik alti)'}")
 

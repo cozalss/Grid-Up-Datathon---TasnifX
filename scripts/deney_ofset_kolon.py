@@ -53,8 +53,7 @@ import tuketim_model as tm  # noqa: E402
 from gridup.reporting import satir_tamponlu_cikti  # noqa: E402
 
 #: Ofset uzayina cevrilecek seviye kolonlari. Yeni ad ``t_dofs_*``.
-KAYNAK = ("t_log_son7", "t_log_son14", "t_log_son30", "t_log_son60",
-          "t_log_ort", "t_log_medyan")
+KAYNAK = ("t_log_son7", "t_log_son14", "t_log_son30", "t_log_son60", "t_log_ort", "t_log_medyan")
 SICAK_USTYAZIM: dict[str, object] = {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6}
 SICAK_MASKE = 0.15
 KAYIT = KOK / "experiments" / "ofset_kolon.jsonl"
@@ -137,8 +136,9 @@ def main() -> int:
     hukum = "EKLE" if t_d >= 2 else ("EKLEME" if t_d <= -2 else "esik alti")
     print(f"\n  ESLENIK FARK {o:+.5f}  SH {sh:.5f}  t {t_d:+.2f}   {hukum}")
     for b in tm.BLOKLAR:
-        bb = np.array([tekil["TABAN"][(b.ad, t)] - tekil["+ofset_kolon"][(b.ad, t)]
-                       for t in di.TOHUMLAR])
+        bb = np.array(
+            [tekil["TABAN"][(b.ad, t)] - tekil["+ofset_kolon"][(b.ad, t)] for t in di.TOHUMLAR]
+        )
         print(f"     {b.ad:6} {bb.mean():+.5f}  ({(bb > 0).sum()}/{len(bb)} tohum kazanc)")
     print(f"  genel skora tahmini etki {-o * 0.528:+.5f}   (d(genel)/d(sicak) = 0,528)")
 

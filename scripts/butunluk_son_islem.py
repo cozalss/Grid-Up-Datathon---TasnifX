@@ -52,9 +52,17 @@ BEKLENEN = 1.82141
 ESIK = 5e-4
 
 
-def uygula(r: np.ndarray, hucre: np.ndarray, gun: np.ndarray, ay: np.ndarray,
-           a: float, b: float, m_gun: float) -> np.ndarray:
+def uygula(
+    r: np.ndarray,
+    hucre: np.ndarray,
+    gun: np.ndarray,
+    ay: np.ndarray,
+    a: float,
+    b: float,
+    m_gun: float,
+) -> np.ndarray:
     """``son_islem_gun.main`` icindeki donusumun BIREBIR ayni cebiri."""
+
     def gruplu(v: np.ndarray, anahtar: np.ndarray) -> np.ndarray:
         return pd.Series(v).groupby(anahtar).transform("mean").to_numpy()
 
@@ -74,8 +82,10 @@ def main() -> int:
     print("=" * 92)
     print("BUTUNLUK: uretim son islemi vs olcum tezgahi")
     print("=" * 92)
-    print(f"  uretim sabitleri: A_HUCRE={si.A_HUCRE}  B_MODEL={si.B_MODEL}  "
-          f"M_GUN={si.M_GUN}  KOVA={si.KOVA_SAYISI}  M_ANA={si.M_ANA}  M_HUCRE={si.M_HUCRE}")
+    print(
+        f"  uretim sabitleri: A_HUCRE={si.A_HUCRE}  B_MODEL={si.B_MODEL}  "
+        f"M_GUN={si.M_GUN}  KOVA={si.KOVA_SAYISI}  M_ANA={si.M_ANA}  M_HUCRE={si.M_HUCRE}"
+    )
 
     egitim, test = d.cerceveleri_kur()
     tm.kategorik_kodla(egitim, test)
@@ -96,8 +106,10 @@ def main() -> int:
     kaynak_temiz = ham[(ham["t"] >= si.TABLO_BASLANGIC) & (ham["t"] < blok_bas)]
     hedef = pd.DataFrame({"guc": dg["guc"].to_numpy(), "lokasyon": dg["lokasyon"].to_numpy()})
     hucre_temiz = si.hucre_etkisi(kaynak_temiz, hedef)
-    print(f"  tablo kaynagi (sizintisiz): {len(kaynak_temiz):,} satir, "
-          f"{kaynak_temiz['t'].min().date()} .. {kaynak_temiz['t'].max().date()}")
+    print(
+        f"  tablo kaynagi (sizintisiz): {len(kaynak_temiz):,} satir, "
+        f"{kaynak_temiz['t'].min().date()} .. {kaynak_temiz['t'].max().date()}"
+    )
 
     skorlar = []
     for t in TOHUMLAR:
@@ -114,12 +126,15 @@ def main() -> int:
     # aylik seviye kapisi da uretimdeki gibi kontrol edilsin
     r0 = z[f"{TOHUMLAR[0]}_cat"] - log_guc
     r1 = uygula(r0, hucre_temiz, gun, ay, si.A_HUCRE, si.B_MODEL, si.M_GUN)
-    ay_sapma = float(np.abs(pd.Series(r0).groupby(ay).mean()
-                            - pd.Series(r1).groupby(ay).mean()).max())
+    ay_sapma = float(
+        np.abs(pd.Series(r0).groupby(ay).mean() - pd.Series(r1).groupby(ay).mean()).max()
+    )
     ici0 = pd.Series(r0 - pd.Series(r0).groupby(gun).transform("mean")).groupby(ay).std()
     ici1 = pd.Series(r1 - pd.Series(r1).groupby(gun).transform("mean")).groupby(ay).std()
-    print(f"  aylik seviye sapmasi {ay_sapma:.2e}   gun ici yayilma "
-          f"{float(ici0.mean()):.5f} -> {float(ici1.mean()):.5f}")
+    print(
+        f"  aylik seviye sapmasi {ay_sapma:.2e}   gun ici yayilma "
+        f"{float(ici0.mean()):.5f} -> {float(ici1.mean()):.5f}"
+    )
 
     if fark > ESIK:
         print("\n  HIZASIZLIK: uretim son islemi olcum tezgahiyla AYNI seyi yapmiyor.")
