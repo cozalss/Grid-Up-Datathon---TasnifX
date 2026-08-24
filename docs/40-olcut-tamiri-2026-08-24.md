@@ -476,9 +476,89 @@ cozmenin maliyeti bir gonderim hakki.
 
 ---
 
+## 7c. GECE (24→25 Ağustos): DÖRT ADAY DA ÇÖKTÜ
+
+Akşam iki büyük kazanç bulundu ve **ikisi de düşmanca sınamada yıkıldı.** Onları
+yıkan şey daha iyi bir ölçüt değil, **ayrıştırma** oldu.
+
+### Soğuk grup kolonları — %116'sı tek ölü trafodan
+
+`g_*`/`gp_*` (8 kolon) soğuk uzmana verildi. Ölçüm: `+0,0318`, SH 0,0023,
+**t=+13,71**, 3/3 tohum, genele −0,01189. Karar kuralını fazlasıyla geçiyordu.
+
+Dört mercekli kırma denemesi üç ayrı yerden yıktı:
+
+1. **Tek trafo.** kVA-ağırlıklı `d(MSE)`'nin **%116,4'ü** tek bir trafodan:
+   `tanim=78040011`, Saruhanlı, 1600 kVA, **97 günün 97'sinde tam sıfır** (ölü
+   trafo). Taban ona medyan 3012,5 tahmin ediyor, grup kolonları 445,9. O trafo
+   çıkınca kazanç kayboluyor.
+2. **Ölçülen 8 değil 6 kolondu.** Deneyin uydurma seti yaz25+guz25 ve orada
+   `gp_ilce_ay`/`gp_kova_ay` %100 NaN — `feature_importance` TAM SIFIR, servis
+   anında NaN'a çevirmek tahminleri `0,00000` oynatıyor.
+3. **Üretimde canlanıp çarpıklaşıyorlar** (aşağıya bak).
+
+### Sıcak pg10 — tamamı iki çarpık kolondan
+
+`p_`/`g_`/`gp_` ailesinden 10 kolon sıcak uzmana verilmişti: `+0,0102`,
+**t=+3,59**, 3/3 blok; üretim-sadık kurguda `+0,0097`, t=+3,16.
+
+**Yapısal çarpıklık:** `gp_ilce_ay` ve `gp_kova_ay` EĞİTİMDE yalnızca Ocak–Mart
+satırlarında dolu — *"dolu ⟺ ay ∈ {1,2,3}"* 338.187 satırda **ihlalsiz**.
+TESTTE ise **%100 dolu** ve aylar Nisan–Temmuz. Yani bütün test satırları,
+eğitimde "kış" anlamına gelen dala gidiyor. Değer desteği de kopuk: test
+satırlarının %26'sı eğitim maksimumunun üstünde, **Temmuz'un tamamı destek dışı**.
+
+Sebep zincirinde: `EGITIM_BASI = 2025-01-01` ve eğitim 2026-03-31'de bitiyor, yani
+bir ay ancak **iki kez** geçerse `profil_kaynak`'ta kalabiliyor
+([tuketim_model.py:672](../scripts/tuketim_model.py#L672) her blok kendi etiket
+penceresini siler) — bunu yalnızca Ocak/Şubat/Mart yapıyor. Test hiçbir ayı
+silmiyor ([:766](../scripts/tuketim_model.py#L766)), o yüzden %100 dolu.
+
+O ikisi çıkarılıp kalan 8 kolon tek başına ölçülünce:
+
+```
+fark +0,00256  SH 0,00335  t=+0,76  6/9  uc blok HAYIR
+  yaz25 +0,00352   guz25 +0,00939   kis26 -0,00522
+tek-trafo: yaz25 en buyuk %25,5 / ilk5 %53,6;  kis26 toplam NEGATIF
+```
+
+**Yani +3,59'un tamamı o iki çarpık kolondan geliyormuş.**
+
+### Eşik altı kalan ikisi
+
+```
+sicak pg8 (temiz hali)      t=+0,76   kis26 negatif
+soguk olu kolon temizligi   t=+0,92   genel -0,00035
+```
+
+İkincisinde 33 `t_*` kolonu maske 1,00'da tanım gereği %100 NaN. Atmak
+kazandırır göründü ama `rsm=0,75` **orantılı** örneklediği için kullanışlı aday
+sayısı iki durumda da ~54 — mekanizma baştan zayıftı ve ölçüm doğruladı.
+
+### İKİ KALICI KURAL (bu geceden)
+
+> **1. Soğuk tarafta her kazanç TRAFO BAZINDA ayrıştırılır.** En büyük trafonun
+> ve ilk-5'in payı raporlanmadan hiçbir soğuk bulgu kabul edilmez. 1.223 trafolu
+> bir katta, ağır kuyruklu bir hedefte, tek ölü trafo `t=13,71` üretebiliyor.
+
+> **2. Önerilen her kolonun EĞİTİM ve TEST DOLULUK DESENİ karşılaştırılır.**
+> Desen farklıysa öğrenilen şey kolon değil desendir — ve doğrulama bunu göremez,
+> çünkü doğrulama katları da eğitim tarafındadır.
+
+### Sonuç
+
+Yapılandırma **v50'ye döndü**: her iki uzman da `ek_kolon` almıyor. Gecenin
+getirisi bir skor değil, **kaçınılan bir kayıp** — o iki kolonla gönderseydik
+test satırlarının tamamı desteklenmemiş bir dalda kalacaktı.
+
+---
+
 ## 8. Kapanış: teslimat ve dürüst muhasebe
 
 ### Teslim edilen
+
+> **25 Ağustos güncellemesi:** gecenin dört adayı da çöktü (§7c), yapılandırma
+> v50'ye döndü. Gönderilecek dosya budur.
 
 ```
 submissions/tuketim_v50_nihai30.csv
