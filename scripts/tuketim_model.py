@@ -51,6 +51,7 @@ Calistirma::
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 import time
@@ -1483,6 +1484,37 @@ def main() -> int:
         tam = len(kolonlar)
         kolonlar = [k for k in kolonlar if not k.startswith(YALIN_CIKARILAN)]
         print(f"  yalin set: {tam} -> {len(kolonlar)} kolon ({tam - len(kolonlar)} cikarildi)")
+    # OLCULEMEZ KOLON ABLASYONU -- varsayilan KAPALI, uretim yapilandirmasi degismez.
+    #
+    # 2026-08-25 denetimi (105 kolonun tamami, kalici kural 2) dort kolonun
+    # RIGIN HICBIR KATINDA olculemedigini gosterdi: hicbir blokta hem egitimde
+    # hem dogrulamada dolu degiller.
+    #
+    #   kolon              uretim egitimi   test     yaz25 e/d    guz25 e/d    kis26 e/d
+    #   t_ay_sapma              %5,5        %46,8    %7,9 / %0    %9,8 / %0   %0,9 / %15,8
+    #   t_gy_log_ort           %21,2        %52,6   %30,5 / %0   %32,7 / %0   %0,0 / %58,0
+    #   t_gy_sifir_orani       %21,2        %52,6   %30,5 / %0   %32,7 / %0   %0,0 / %58,0
+    #   t_gy_gun               %21,2        %52,6   %30,5 / %0   %32,7 / %0   %0,0 / %58,0
+    #
+    # Sebep yapisal: t_gy ("gecen yilin ayni donemi") ancak 2026 satirlarinda
+    # dolabilir, cunku veri 2025-01-01'de basliyor. yaz25/guz25 dogrulamalari
+    # 2025'tedir (dolamaz); kis26'nin EGITIMI ise tamamen 2025'tir (ogrenemez).
+    # Uretim ise tam ortada: %21,2 ile ogrenip %52,6 ile tahmin ediyor.
+    #
+    # Ustune ``t_gy_gun`` DESTEK DISI: egitim maksimumu 90 gun (2026 Ocak-Mart),
+    # test 122'ye cikiyor -- test satirlarinin %74,8'i egitimde hic gorulmemis
+    # bir aralikta. Bu, bu gece ``gp_ilce_ay``i curuten desenin AYNISI, farki
+    # aday degil GONDERILEN modelin icinde olmasi.
+    #
+    # Dogrulama bu soruyu CEVAPLAYAMAZ -- tanimi geregi. Tek hakem LB'dir.
+    # Bu yuzden ablasyon bir bayrakla acilir ve varsayilan asla degismez.
+    ek_cikar = tuple(k for k in os.environ.get("GRIDUP_CIKAR", "").split(",") if k.strip())
+    if ek_cikar:
+        once = len(kolonlar)
+        kolonlar = [k for k in kolonlar if k not in ek_cikar]
+        if once == len(kolonlar):
+            raise RuntimeError(f"GRIDUP_CIKAR hicbir kolonla eslesmedi: {ek_cikar}")
+        print(f"  ABLASYON: {once} -> {len(kolonlar)} kolon  cikarilan {list(ek_cikar)}")
     if dar is egitim:
         kategorik_kodla(egitim, test)
     else:
