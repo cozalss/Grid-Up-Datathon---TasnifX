@@ -292,34 +292,132 @@ görünür, üretimin k=30'unda erir. **Hüküm: REDDEDİLDİ.**
 > olan bu üyenin çeşitli olduğu varsayımıydı. Gerçek çeşitlilik ölçülebilir
 > (ayrışma) ve bir aday ancak ayrışmayı BÜYÜTÜYORSA umut vaat eder.
 
-### Hâlâ açık: A5 ablasyonu
+### A5 ablasyonu ÖLÇÜLDÜ — "bariz hata" aslında doğruymuş
 
 `ayri_gosterge` varsayılanı `False`, yani `SimpleImputer(add_indicator=True)`
-göstergeleri `QuantileTransformer`'dan geçiyor — kuantil dönüşümü ikili
-kolonlarda anlamsız. A1–A5 ablasyonları
-[sinir_agi.py:796-798](../scripts/sinir_agi.py#L796)'de CLI bayrağı olarak
-tanımlı ama `experiments/` altında tek sonuç dosyası yok. A5 önbelleği bu
-loopun sonunda koşuyor; sonucu `scripts/deney_ag_karsilastir.py` §2 verecek.
+göstergeleri `QuantileTransformer`'dan geçiyor. Bir ajan taraması bunu net bir
+kusur olarak işaretledi: "kuantil dönüşümü ikili kolonlarda anlamsız, dosyanın
+kendi yasakladığı şey". Yapısal olarak makul. Ölçüm **tersini** söyledi:
+
+```
+blok    URETIM (w=1,4)   A5 (w=1,4)     fark
+yaz25       0,80608        0,81091    -0,00483
+guz25       0,99674        0,99960    -0,00286
+kis26       0,87742        0,89078    -0,01336
+BLOK TUTARLILIGI: A5 0/3
+```
+
+Göstergeleri kuantil dönüşümünden geçirmek, ham 0/1 bırakmaktan **her blokta**
+daha iyi. Muhtemel mekanizma: ağ ölçeğe duyarlı; ham 0/1'i kuantil-dönüşümlü
+sürekli kolonların yanına koymak ölçek uyumsuzluğu yaratıyor. **Hüküm:
+varsayılan kalıyor.**
 
 ---
 
-## 8. Hedefe dair dürüst muhasebe
+### Kör üye (maske=1,00, sıcak satırlarda) — çeşitlilik testinden geçti, transferden geçemedi
 
-1,00'in altı, MSLE cinsinden −0,0355 demek. Yani sıcak veya soğuk taraflardan
-birinde **%20'nin üzerinde göreli** iyileşme. 21 fikir daha önce elenmiş, bu
-loopta 6 eksen daha kapandı, varyans kanalı 30 tohumda tükeniyor.
+Bugünkü kural sınandı: aday önce **ayrışma** ile elenir, sonra skorla. Bu aday
+ön-elemeden parlak geçti — geçmişi hiç görmeyen bir model, ayrışmayı
+**%308–943** büyütüyor:
 
 ```
-v47 (15 tohum)                          1,01750
-+ 30 tohum                              ~1,0171    garantili (-0,00040)
-+ bayatlık eğitim ağırlığı              REDDEDILDI (§2)
+blok    kor tek   AYR(uretim)   AYR(+kor)   buyume
+yaz25   1,71650      0,03200     0,33391     943%
+guz25   1,30962      0,05190     0,22146     327%
+kis26   1,63151      0,06363     0,25974     308%
 ```
 
-Ağırlıklandırma da çürüyünce **bu loopta uygulanabilir tek kanal tohum
-ölçeklemesi kaldı**. Beklenen sonuç **~1,0158**. Bu birinciliği genişletir;
-1,00'i vermez. Bunu bilerek gönderiyoruz.
+Ve havuzlanmış skorda **günün en büyük kazancını** verdi: w=0,75'te
+0,89718 → 0,88903, genele **−0,00436**. Ama blok kırılımı:
 
-1,00'in altı için gereken, bu loopun bütçesinde olmayan şey §7'deki sinir ağı
-kümesidir: ağ hiç ayarlanmadı, üretim koşusunun %78'i o, ve doğrulaması
-aile bazında tahmin önbelleği olmadan her soru için tam koşuya mal oluyor.
-**Sıradaki oturumun ilk işi o önbellek olmalı.**
+```
+kor w    yaz25     guz25     kis26
+0,00    0,80608   0,99674   0,87742
+0,50    0,79916   0,96575   0,88723
+1,00    0,80667   0,94524   0,90331
+1,50    0,82336   0,93249   0,92283
+```
+
+`guz25` monoton ve muazzam kazanıyor; `kis26` **w=0,25'ten itibaren her adımda
+kaybediyor**. Mekanizma docs/30'da yazılı: `t_gy_*` ailesi yaz25/guz25'te
+**%0 dolu**, kis26 ve testte ~%50. Geçmiş öznitelikleri dejenere olan iki
+blokta geçmişi kullanmayan bir üye doğal olarak parlak görünür — testin
+benzediği blokta zararlıdır. **Hüküm: REDDEDİLDİ.**
+
+> Havuzlanmış CV'ye bakıp bunu göndermek −0,004 kazanç beklerken muhtemelen
+> kayıp getirirdi. Kural keskinleşti: **çeşitlilik gerekli ama yeterli değil**
+> — üye, testin benzediği katta da kazanmalı.
+
+---
+
+## 8. Kapanış: teslimat ve dürüst muhasebe
+
+### Teslim edilen
+
+```
+submissions/tuketim_v50_nihai30.csv
+  30 tohum (100-129), log uzayinda ortalanmis
+  + scripts/son_islem.py  beta=0,60   (LB'de UC KEZ dogrulanmis)
+```
+
+On üretim partisinden ölçülen σ = 0,15671 ile:
+
+```
+ k       RMSLE     v47'ye gore
+15      1,01750     +0,00000     <- v47, LB'de dogrulanmis
+21      1,01727     -0,00023
+30      1,01710     -0,00040     <- v50 NIHAI
+```
+
+Yapısal doğrulama: satır sayısı ve id sırası aynı; v50'nin tam-sıfır kümesi
+v47'ninkinin **öz altkümesi** (546 satır sıfırdan çıkmış, tohum ortalamasının
+beklenen etkisi); RMS log farkı 0,02906. `butunluk_son_islem.py` geçti.
+
+### Bugün kapanan on eksen
+
+| eksen | nasıl elendi |
+|---|---|
+| sıcak harman (ANA kol) | dört ölçütte de üretim en iyi |
+| sıcak harman (ÜRETİM kolu) | 2/3/0 havuzlanmışta önde ama kis26'da kaybediyor |
+| soğuk harman | düzeltilmiş kVA karışımında da cat-only kazanıyor |
+| `son_islem` beta | düzeltilmiş dip 0,50, kazanç 0,00043 |
+| bayatlık son-işlem kaydırması | blok-dışı 0/3, −0,02514 |
+| bayatlık eğitim ağırlığı | üretim riginde −0,00388, kis26 0/3 |
+| sinir ağı ağırlığı | 1,4 platonun içinde, en iyiye 0,00023, 2/3 |
+| A5 ablasyonu | 0/3, kis26'da −0,01336 |
+| 5. üye (`ofset=False`) | ayrışmayı azaltıyor, 1/3 |
+| kör üye (maske=1,00) | ayrışmayı %308-943 büyütüyor ama kis26'da 0/1, 2/3 |
+
+Artı: soğuk tarafta eğitim ağırlıklandırma (dağılım zaten teste yakın),
+`n_ag` düşürüp tohum artırma (k=30→60 yalnızca −0,00026), `tanim` metin
+sinyali (yalnızca sayısal kimlik).
+
+### Hedefe dair dürüst muhasebe
+
+1,00'in altı, MSLE cinsinden −0,0355 demek: sıcak veya soğuk taraflardan
+birinde **%20'nin üzerinde göreli** iyileşme. Bu loopta on eksen ölçüldü ve
+onu da "üretim zaten doğru" dedi; varyans kanalı 30 tohumda tükendi.
+
+**Ulaşılan: 1,01750 → ~1,01710.** Bu birinciliği bir miktar genişletir;
+1,00'i vermez. Bunu bilerek teslim ediyoruz.
+
+Bu bir başarısızlık değil, bir sınır tespitidir: yapılandırma bir yıl önce
+şansla değil ölçümle oturmuş, ve bugünkü katkı o ölçümlerin **doğru ölçütle
+ve doğru rig'le** yeniden yapılmış olması. İki aday (bayatlık ağırlığı, ağ
+ağırlığı 2,2) gönderim yakmadan elendi — geçen gecenin +0,00414'lük dersi
+tekrarlanmadı.
+
+### Sıradaki oturuma bırakılanlar
+
+**Hazır altyapı:** `data/interim/aile_onbellek/` — üretim eşli (ek kökenli)
+aile tahminleri, 3 blok × 3 tohum × 4 aile + A5 kolu. Artık her harman/ağırlık
+sorusu **eğitimsiz**, saniyeler içinde yanıtlanıyor
+(`deney_harman_uretim.py`, `deney_ag_karsilastir.py`).
+
+**Kural (bugün kazanıldı):** bir "çeşitlilik üyesi" adayı ancak **ayrışmayı
+büyütüyorsa** umut vaat eder, ve bu skordan ÖNCE ölçülebilir. Sinir ağı
+ayrışmayı ikiye katlıyor (0,0286 → 0,0636) ve yerini böyle hak ediyor;
+`ofset=False` üyesi azaltıyor ve bu yüzden düştü.
+
+**Kural (bugün üç kez doğrulandı):** havuzlanmış skor kandırır, blok kırılımı
+keser, ve bloklar ayrıştığında **kis26 haklı çıkar**.
