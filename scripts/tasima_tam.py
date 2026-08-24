@@ -35,7 +35,13 @@ ya da hic patlamaz, sessizce eksik satirla devam eder. Bu yuzden her
 dosyanin SHA-256'si manifest'e yazilir ve hedefte tek tek dogrulanir.
 
     python scripts/tasima_tam.py --hedef E:/DATAHON_TASIMA
+    python scripts/tasima_tam.py --hedef E:/DATAHON_TASIMA --tum-gonderimler
     python scripts/tasima_tam.py --dogrula E:/DATAHON_TASIMA   (hedef makinede)
+
+``--tum-gonderimler`` yukaridaki elle secilmis listeyi yok sayar ve
+``submissions/`` altindaki HER CSV'yi tasir. Makineyi tamamen degistirirken
+bunu kullanin: liste sabit oldugu icin BUGUN uretilen bir dosyayi (or.
+``tuketim_v50``) bilmez ve sessizce disarda birakir.
 """
 
 from __future__ import annotations
@@ -119,7 +125,20 @@ def ozet(yol: Path) -> str:
     return h.hexdigest()
 
 
-def paketle(hedef_kok: Path) -> int:
+def gonderim_listesi(*, tumu: bool) -> tuple[str, ...]:
+    """Tasinacak CSV adlari.
+
+    Varsayilan liste ELLE secilmistir ve yeni uretilen bir dosyayi BILMEZ --
+    ``tuketim_v50`` bugun uretilse pakete girmez. Makine degistirirken bu
+    sessiz bir kayiptir, o yuzden ``--tum-gonderimler`` klasordeki her CSV'yi
+    alir: yavas ve buyuk, ama hicbir sey atlanmaz.
+    """
+    if not tumu:
+        return GONDERIMLER
+    return tuple(sorted(p.name for p in (KOK / "submissions").glob("*.csv")))
+
+
+def paketle(hedef_kok: Path, *, tum_gonderimler: bool = False) -> int:
     t0 = time.time()
     hedef_kok.mkdir(parents=True, exist_ok=True)
     kayitlar: list[dict] = []
@@ -152,15 +171,17 @@ def paketle(hedef_kok: Path) -> int:
         print(f"  veri  {d:20} {n:5d} dosya")
 
     # --- 2. GONDERIMLER ---
+    adlar = gonderim_listesi(tumu=tum_gonderimler)
     eksik = []
-    for ad in GONDERIMLER:
+    for ad in adlar:
         p = KOK / "submissions" / ad
         if p.exists():
             ekle(p, f"gonderimler/{ad}", "gonderim")
         else:
             eksik.append(ad)
+    kip = "TUMU" if tum_gonderimler else "secili"
     print(
-        f"  gonderim {len(GONDERIMLER) - len(eksik)}/{len(GONDERIMLER)} dosya"
+        f"  gonderim {len(adlar) - len(eksik)}/{len(adlar)} dosya ({kip})"
         + (f"  EKSIK: {eksik}" if eksik else "")
     )
 
@@ -339,6 +360,11 @@ def main() -> int:
     a = argparse.ArgumentParser(description="tam tasima paketi")
     a.add_argument("--hedef", help="paketin yazilacagi klasor (USB/harici disk)")
     a.add_argument("--dogrula", help="hedef makinede: paketi dogrula")
+    a.add_argument(
+        "--tum-gonderimler",
+        action="store_true",
+        help="submissions/ altindaki HER CSV'yi tasi (varsayilan: elle secilmis liste)",
+    )
     ar = a.parse_args()
     if ar.dogrula:
         return dogrula(Path(ar.dogrula))
@@ -347,7 +373,7 @@ def main() -> int:
     h = Path(ar.hedef)
     if h.exists() and any(h.iterdir()):
         print(f"UYARI: {h} bos degil, icine yazilacak.")
-    return paketle(h)
+    return paketle(h, tum_gonderimler=ar.tum_gonderimler)
 
 
 if __name__ == "__main__":
