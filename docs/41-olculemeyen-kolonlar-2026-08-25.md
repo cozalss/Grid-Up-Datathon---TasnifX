@@ -490,6 +490,87 @@ Aksi halde ölçülen şey mevsim değil kompozisyondur.
 
 ---
 
+## 6f. §6e'nin DÜZELTMESİ: kapsam yanlıştı — kış bloğu bu ekseni GÖREMEZ
+
+§6e "v54 ve v56 düştü" demişti, gerekçesi kis26 soğuk üzerinde dik ayrıştırmayla
+gün ekseni optimumunun 0,645 (üretimin 0,60'ıyla aynı) çıkmasıydı. **Ölçüm
+doğru, kapsam yanlış.** kis26 Aralık-Mart'tır ve orada gerçek gün ekseni std'si
+0,0696 — yani düzeltilecek bir şey yoktur. Sıcak tarafta tam bu yüzden yaz25'e
+bakmıştım; soğuk tarafta bakmamıştım.
+
+35 ajanlık düşmanca sınama (`skor-atagi-25agustos`) v54'ü üç merceğin üçünden
+de geçirdi ve eksik bloğu ölçtü:
+
+```
+blok    tohum   fark      SH       t      tohum   genele
+yaz25     6   +0,01326  0,00018  +72,17   6/6   -0,00496   <- TESTİN mevsimsel ikizi
+guz25     3   +0,00019  0,00007   +2,78   3/3   -0,00007
+kis26     3   +0,00029  0,00001  +25,35   3/3   -0,00011
+```
+
+Üç blok da pozitif; kırpma dayanıklı (yaz25, K=50 → +0,01342, 6/6; en büyük
+trafo %11,3, ilk5 %36,2).
+
+### Ama yaz25 soğuk satırlarında %94-95 EZBER var (docs/35)
+
+O yüzden `+0,01326` olduğu gibi alınmadı. Ezberden **bağımsız**, kendi
+ölçtüğüm kanıt — 2025'in gerçek Nisan→Temmuz rampası, trafo eşleştirilmiş:
+
+```
+2025 GERÇEK rampa, tüm train trafoları          +0,6085   (n=2.002)
+2025 GERÇEK rampa, o yıl YENİ giren trafolar    +0,9694   (n=112)   <- test soğuğunun analoğu
+```
+
+Gönderim dosyalarında öngörülen test rampası:
+
+| dosya | SOĞUK rampa | SICAK rampa |
+|---|---|---|
+| v50 ham (büzmesiz) | +1,0262 | +0,3700 |
+| **v50 ÜRETİM** | **+0,6157** | **+0,3700** |
+| v54 (soğuk gün koruması) | **+0,8954** | +0,3700 |
+| v56 (ikisi birden) | +0,8954 | **+0,5432** |
+| *referans* | *+0,9694* | *+0,6085* |
+
+**Üretim her iki tarafta da çok düz.** Soğukta üretim referansın 0,354 altında,
+v54 ise 0,074 altında; sıcakta üretim 0,239 altında, v56 ise 0,065 altında.
+İki düzeltme de rampayı, kurulurken **hiç kullanılmayan** bir referansa
+neredeyse tam oturtuyor. Bu, ezberden bağımsız ve mekanizma düzeyinde bir
+teyittir.
+
+> **HÜKÜM: v56 GERİ DÖNDÜ.** Kalıcı kural 7: *mevsime bağlı bir eksen tek bir
+> blokta ölçülmez; ölçüm mutlaka test penceresinin mevsimsel ikizini içermelidir.*
+
+---
+
+## 7-NIHAI. GÖNDERİLEN ÜÇLÜ ve ÖN KAYITLI TAHMİNLER
+
+| hak | dosya | sıcak gün | soğuk gün | **ön kayıtlı tahmin** |
+|---|---|---|---|---|
+| 1 | `tuketim_v50_nihai30` | ×1,00 | üretim (×0,60) | **1,01710** |
+| 2 | `tuketim_v55_gunolcek` | **×1,49** | üretim | **1,01450** |
+| 3 | `tuketim_v56_birlesik` | ×1,49 | **korumalı** | **1,01200** |
+
+**İzolasyon kusursuz** (kendim doğruladım): v55 ile v50'nin SOĞUK satırları
+arasındaki azami fark 1,07e-14; v56 ile v55'in SICAK satırları arasındaki fark
+**tam 0**. MSLE satır kümeleri üzerinde toplanabilir olduğu için:
+
+```
+MSLE(v55) - MSLE(v50)  =  SICAK gün ekseni bileşeninin LB hükmü
+MSLE(v56) - MSLE(v55)  =  SOĞUK gün ekseni bileşeninin LB hükmü
+```
+
+Gün ekseni std'si: sıcak 0,1675 → 0,2473 · soğuk 0,1626 → 0,2511.
+
+Elde kalan, gönderilmeyen adaylar: `tuketim_v57_gunolcek175.csv` (sıcak c=1,75,
+parabolün üçüncü noktası) ve 4-kolon ablasyon probu. Yarınki üç hak bunlara ve
+LB'den çözülen optimum `c*`'ye ayrılır.
+
+---
+
+## EK: onceki plan taslaklari (tarihsel)
+
+---
+
 ## 7. GÖNDERIM PLANI -- parabol tasarımı ve ÖN KAYITLI TAHMİNLER
 
 Gün bileşeninin MSLE'ye katkısı `c` cinsinden **tam kuadratiktir**:
