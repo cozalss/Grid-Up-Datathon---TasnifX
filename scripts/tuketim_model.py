@@ -896,10 +896,49 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     # Sogukta egri TEKDUZE: cat agirligi 1->2->3->4->6 boyunca her adimda
     # kotulesiyor. Izgaradan rastgele secim degil, duz bir egilim. Ama
     # (0,1,1) kotu: cat katki veriyor, yalnizca baskin olmamali.
+    # ``ek_kolon`` (2026-08-24 aksami): YALIN_CIKARILAN'in attigi p_/g_/gp_
+    # ailesinden ONU sicak uzmana GERI VERILIYOR.
+    #
+    # NEDEN: yalin set 144->105 karari ``deney_ileri.py:731`` ile alindi ve o
+    # rig uretimden DORT eksende ayriydi -- ek kokensiz (1,04M vs 2,86M),
+    # maske 0,2216 (uretim 0,15), random_strength 1 (uretim 4), depth 5 /
+    # l2 3 (uretim 6/1). Uretim esli rig'de yeniden olculdu
+    # (``deney_pg_maske.py``, 3 blok x 3 tohum, teste agirliklandirilmis):
+    #
+    #     kol      yaz25     guz25     kis26    fark      SH      t    blok
+    #     taban   0,80608   0,99674   0,87742  +0,0000
+    #     +14     0,80122   0,98670   0,87307  +0,0059  0,0032  +1,88  3/3
+    #     +10     0,80180   0,98278   0,86480  +0,0102  0,0028  +3,59  3/3  <- SECILEN
+    #
+    # Genel skora etki -0,00545. Bugun karar kuralini (t>=2 VE uc blok pozitif)
+    # gecen TEK aday.
+    #
+    # NEDEN 14 DEGIL 10: ``p_gun_sayisi``, ``p_ilk_ofset``, ``p_son_ofset``,
+    # ``p_yayilma`` panel penceresine gore HAM GUN. Ana bloklar 121-122 gun ve
+    # TEST 122 gun, ama EK_KOKENLER icinde sub25=59 ve bah26=90 gun var --
+    # o dort kolon ek satirlarin bir kisminda testte HIC gorulmeyen sikistirilmis
+    # bir olcekte geliyor. ``p_doluluk``/``p_pencere_payi`` normalize, ``g_``/
+    # ``gp_`` grup istatistigi; onlarda bu sorun yok. Olcum bunu dogruladi:
+    # dortunu atmak +0,0059'u +0,0102'ye cikariyor.
+    #
+    # Maskeleme etkilenmez: bu kolonlar ``t_`` onekli DEGIL, yani gecmis
+    # maskesinin disindalar -- deneyde de oyle olculdu.
     "sicak": {
         "maske": 0.15,
         "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6},
         "ek_koken": True,
+        "ek_kolon": (
+            "g_guc_kova",
+            "g_ilce_kova_n",
+            "g_ilce_kova_ort",
+            "g_ilce_log_ort",
+            "g_kova_log_ort",
+            "gp_ilce_ay",
+            "gp_ilce_hg",
+            "gp_kova_ay",
+            "p_doluluk",
+            "p_pencere_payi",
+        ),
         "agirlik": {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0, "sinir_agi": 1.4},
     },
     # ``ek_kolon``: bu uzmana YALIN_CIKARILAN'a ragmen geri verilen kolonlar.
