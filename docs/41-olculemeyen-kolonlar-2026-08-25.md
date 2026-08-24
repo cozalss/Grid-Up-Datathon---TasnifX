@@ -370,7 +370,126 @@ belirgin kapanıyor.
 
 ---
 
-## 7. Gönderim planı (25 Ağustos, kota 03:00'te açılıyor)
+## 6d. ASIL BULGU: gün ekseninin GENLİĞİ yanlış — ve düzeltmesi ölçüldü
+
+§6c soğuk tarafta bulmuştu. Aynı soru **sıcak** tarafta hiç sorulmamıştı ve
+orada satırların %78'i, MSE'nin %37'si var. Sorulunca aynı desen çıktı.
+
+### Kuramsal çerçeve
+
+Tahmin ofseti iki yönlü ayrıştırılır: `r = μ + a_trafo + b_gün + e`. Kuadratik
+kayıpta bir bileşeni `c` ile ölçeklemenin optimumu **OLS eğimidir**:
+
+```
+c* = kor(model, gerçek) × (σ_gerçek / σ_model)
+```
+
+**Oran tek başına yanlış seçicidir.** Üç blokta sınandı:
+
+| blok | oran | kor | **kor × oran** | **ölçülen optimum** | kendi c'siyle kazanç |
+|---|---|---|---|---|---|
+| yaz25 | 2,677 | 0,962 | **2,576** | **2,65** | **+0,01703** |
+| guz25 | 1,111 | 0,970 | 1,078 | 0,75 | −0,00068 |
+| kis26 | 1,581 | 0,347 | **0,549** | **0,70** | +0,00006 |
+
+kis26'da yalnız oran "genişlet" derdi (1,581) ama gerçek optimum 0,70 — farkı
+tam olarak korelasyon kapatıyor, çünkü orada modelin gün sinyali gürültü.
+Havuzlanmış: **+0,00547, SH 0,00290, t=+1,88, 2/3 blok, genele −0,00293.**
+
+### Dayanıklılık — bu gece çürüyen her şeyin TERSİ
+
+yaz25, c=1,50, kalıcı kural 1:
+
+```
+TRAFO ekseni   2.213 birim   en büyük %3,4   ilk5 %7,8   pozitif trafo %80
+K=5  trafo atıldı  ->  +0,00829  (3/3)
+K=25 trafo atıldı  ->  +0,00823  (3/3)
+```
+
+Kazanç trafoların dörtte üçüne yayılmış ve kırpmadan **hiç** etkilenmiyor.
+Karşılaştırma: bu gece çürüyen adaylarda ilk-5 payı %72-119 idi ve K=5'te
+hüküm çöküyordu.
+
+### Neden mevsimsel — ve neden doğrulama bunu gösteremez
+
+Gerçek gün ekseni std'si (sabit panel, trafo etkisi çıkarılmış):
+
+```
+2025-04..07     0,2710   <- TESTİN mevsimsel ikizi
+2025-05..08     0,2647
+2025-09..12     0,1302
+2025-12..26-03  0,0696
+```
+
+Yazın günlük salınım kıştan **3,9 kat** büyük (soğutma yükü). Model ise her
+mevsimde kabaca aynı genliği üretiyor. Bu yüzden düzeltme yazın büyük, kışın
+yok — ve tek bir sabit `c` üç blokta 1/3 verir.
+
+### Etiketsiz çapa
+
+Test 2026-04-01..07-31; geçen yılın aynı penceresi 2025-04-01..07-31 ve o
+pencere **tamamen train.csv içinde**. Test etiketi kullanılmıyor.
+
+```
+2025 Nis-Tem GERÇEK gün ekseni std        0,2710   (1.881 tam panel trafosu)
+2026 Nis-Tem v50 TAHMİN gün ekseni std    0,1675
+                                 oran  =  1,618
+gün-of-year hizasında korelasyon         0,922    (122 ortak gün)
+                        c = kor × oran =  1,492
+```
+
+docs/39 §3'ün dersi: *"model-dışı bir nicelikten türetilen kestirim LB'ye
+TAŞINDI, tek bir doğrulama bloğundan türetilen taşınmadı."*
+
+### Üretilen dosyalar
+
+`scripts/son_islem_gunolcek.py` (c formülden otomatik, elle verilmiyor):
+
+| dosya | ne | sıcak gün std | soğuk gün std |
+|---|---|---|---|
+| `tuketim_v50_nihai30` | taban | 0,1675 | 0,1626 |
+| `tuketim_v55_gunolcek` | + sıcak ×1,49 | **0,2473** | 0,1626 |
+| `tuketim_v56_birlesik` | + soğuk gün koruması | **0,2473** | **0,2511** |
+| *hedef (2025 gerçek)* | | *0,2710* | *0,2710* |
+
+Kapılar: genel seviye kayması **tam sıfır**; dokunulmayan rejimde göreli sapma
+3e-16; kırpma yüzünden 3.261 satır sıfırlanıyor ama oradaki v50 tahmini medyan
+**0,011** ve tüm teste yayılmış MSE katkısı **3,4e-06**.
+
+---
+
+## 7. Gönderim planı ve ÖN KAYITLI TAHMİNLER
+
+Kota 03:00'te açılıyor. Üçlü **tam izolasyon** verir: MSLE satır kümeleri
+üzerinde toplanabilir olduğu için sıcak ve soğuk bileşenler LB skorlarından
+tek tek çözülür.
+
+| hak | dosya | ne değişiyor | **ön kayıtlı tahmin** |
+|---|---|---|---|
+| 1 | `tuketim_v50_nihai30` | taban (30 tohum) | **1,01710** |
+| 2 | `tuketim_v55_gunolcek` | + sıcak gün ekseni ×1,49 | **1,01450** |
+| 3 | `tuketim_v56_birlesik` | + soğuk gün koruması | **1,01397** |
+
+Tahminlerin türetimi (optimumda kazanç `(σ_model − kor·σ_gerçek)²`):
+
+```
+SICAK  (0,1675 - 0,922 x 0,2710)^2 = 0,006790  x 0,7784 satir payi = 0,005285
+SOGUK  (0,1626 - 0,865 x 0,2710)^2 = 0,005155, asim duzeltmesi -0,00027
+                                   = 0,004885  x 0,2216 satir payi = 0,001083
+v50 MSLE 1,034493 -> v55 1,029208 -> v56 1,028125
+```
+
+**Bu sayılar gönderimden ÖNCE yazıldı.** LB tutarsa mekanizma anlaşılmış
+demektir ve kalan altı günde aynı çerçeve genişletilebilir; tutmazsa çerçeve
+yanlıştır ve o da bilgidir.
+
+Public LB takımın **en iyi** skorunu gösterdiği için kötü bir gönderim
+sıralamayı düşürmez.
+
+
+---
+
+## 7-ESKI. Onceki gonderim plani (25 Ağustos, kota 03:00'te açılıyor)
 
 | hak | dosya | ne için | beklenti |
 |---|---|---|---|
