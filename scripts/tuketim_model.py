@@ -971,10 +971,58 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     #
     # beta ne olursa olsun siralama ayni: cat tek basina, harmandan iyi.
     # kis26 soguk kazanci -0,0079; d(genel)/d(soguk)=0,377 ile genel -0,0030.
+    # ``ek_kolon`` (2026-08-24 aksami): GRUP SEVIYELERI soguk uzmana verildi.
+    #
+    # NEDEN: soguk uzman maske 1,00'da calisir, butun ``t_*`` NaN'dir ve
+    # elinde trafoyu ayirt eden HICBIR gecmis yoktur. ``g_*``/``gp_*`` ise
+    # ozet penceresinden hesaplanan GRUP istatistikleridir -- ilce x kVA
+    # kovasi ortalamalari. Gecmisi olmayan bir model icin tam olarak eksik
+    # olan sey budur: bir SEVIYE kestirimi. docs/30 bunu bagimsiz olarak
+    # olcmustu: ilce x kova, soguk seviye kestiricileri arasinda EN IYISI
+    # (1,9867; tanim onekleri 2,10-2,13). Modele verilmemesinin tek sebebi
+    # ``YALIN_CIKARILAN``in ``g_`` onekini global silmesiydi.
+    #
+    # OLCULDU (``deney_soguk_grup_kolon.py``, kis26, son islem sonrasi,
+    # testin kVA karisimina agirliklandirilmis, 3 tohum eslenik):
+    #
+    #     kol          HAM kis26   kVA duzeltilmis   fark     SH      t
+    #     taban         1,82605      1,98505        +0,0000
+    #     +grup (8)     1,81837      1,95269        +0,0318  0,0023  +13,71  3/3
+    #     +grup+panel   1,85064      2,01490        -0,0306  0,0027  -11,17  0/3
+    #
+    # Genel skora etki -0,01189. Panel doluluk kolonlari (``p_doluluk``,
+    # ``p_pencere_payi``) AGIR ZARARLI ve DISARIDA birakildi: gecmisi olmayan
+    # bir trafo icin kendi panel dolulugu dejenere bir sayidir.
+    #
+    # SIZINTI ELENDI: ``g_*`` ``ozet`` penceresinden gelir ve ``blok_kur``
+    # icinde sert bir kontrol var (ozet.max() >= etiket.min() ise
+    # RuntimeError). Ortalama BASKA trafolardan, etiket oncesi donemden.
+    # kis26 soguk trafolarinin %0'i baska katlarda mevcut (docs/35).
+    #
+    # IKI UYARI, kayda geciyor:
+    #   1. 2026-08-23'te soguga ``ek_kolon`` (HAFTA GUNU) + harman 3/1/1->1/1/1
+    #      BIRLIKTE gonderildi ve LB'de yandi (v18 1,03370 -> v23 1,04820).
+    #      O paket grup istatistigi DEGILDI, ama "soguga kolon ekle" bir kez
+    #      LB'de yanmis durumda.
+    #   2. ``son_islem_gun.py`` AYNI bilgi kanalini (ilce x kova hucre
+    #      tablosu) SON ISLEMDE kullanip LB'de curudu (+0,00414). Fark: orada
+    #      sabit 0,40 agirlik DAYATILIYORDU; burada kolon modele veriliyor ve
+    #      model ona ne kadar guvenecegini kosullu ogreniyor.
+    # Bu yuzden IZOLE bir LB gonderimiyle sinanmalidir.
     "soguk": {
         "maske": 1.00,
         "cat": {"depth": 7},
         "ek_koken": False,
+        "ek_kolon": (
+            "g_guc_kova",
+            "g_ilce_kova_n",
+            "g_ilce_kova_ort",
+            "g_ilce_log_ort",
+            "g_kova_log_ort",
+            "gp_ilce_ay",
+            "gp_ilce_hg",
+            "gp_kova_ay",
+        ),
         "agirlik": {"cat": 1.0},
     },
 }
