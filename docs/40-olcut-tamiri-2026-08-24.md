@@ -1,11 +1,56 @@
-# Ölçüt tamiri ve bayatlık ekseni — 24 Ağustos 2026 (10 saatlik loop)
+# Ölçüt tamiri ve rig provenansı — 24 Ağustos 2026
 
-**Compact sonrası okunacak ikinci belge.** İlki hâlâ
-[39-loop-sonucu](39-loop-sonucu-2026-08-24.md) — üretim yapılandırması ve
-kalıcı kurallar orada. Bu belge o günün akşamı yapılan ölçüt tamirini,
-kapanan eksenleri ve loop sonrası tek gerçek fırsat kümesini kaydeder.
+**Compact sonrası / yeni makinede okunacak ILK belge.** Üretim yapılandırması ve
+önceki kalıcı kurallar: [39-loop-sonucu](39-loop-sonucu-2026-08-24.md).
 
-Başlangıç durumu: LB **1,01750**, birincilik, fark 0,00548. Hedef 1,00 altı.
+---
+
+## 0. DURUM (24 Ağustos, 21:30)
+
+### Sıralama — fark kritik seviyede daraldı
+
+```
+1. TasnifX (BIZ)      1,01750   (04:30)
+2. Bilalcan Ustabas   1,01793   (15:36)   <- fark 0,00043
+3. Churros y Cay      1,02138
+4. Data4Win           1,02298
+```
+
+Bilalcan bugün 1,02522 → 1,01793 geldi, yani **−0,0073 tek günde**. Sabah fark
+0,00548 idi. Yarışma 1 Eylül.
+
+### Elde hazır olan
+
+```
+submissions/tuketim_v50_nihai30.csv    30 tohum + son_islem beta=0,60
+                                       beklenen ~1,01710  (v47'ye gore -0,00040)
+                                       yapisal dogrulamasi ve butunluk kapisi GECTI
+```
+
+### Gönderim kotası
+
+Bugünün üç hakkı 04:19-04:30 UTC'de kullanıldı. Sıfırlanma **00:00 UTC = yerel
+03:00**. Public LB takımın **en iyi** skorunu gösterir (kanıt: v44 1,03053
+gönderildi, tablo 1,01750 kaldı) — yani kötü gönderim sıralamayı düşürmez,
+yalnızca bir hak harcar.
+
+### Açık olan TEK büyük soru: sıcak kapasite
+
+`iterations` 250 → 500, `depth` 6 → 7 (bkz. §7b). Bloklar **zıt**: kis26 3/3
+kazanıyor (+0,0142 sıcak), guz25 0/3 kaybediyor (−0,0126), havuzlanmış t≈0.
+Doğruysa genele ≈ **−0,0076**, yani ~1,010 bandı. Karar LB'ye bırakıldı.
+
+### Yapılacaklar (sırayla)
+
+1. `deney_pg_maske` sonucunu `kapasite_hukmu.py --kume pg` ile oku (eşlenik SH).
+2. Yapılandırmayı dondur, gece boyu üretim tohumu üret.
+3. 03:00'te gönder: **v50_nihai30** (garantili) + **yeni yapılandırma** (LB sınaması).
+   Üçüncü hak: iki yapılandırmanın log uzayında birleşimi (`birlestir_tohum.py`) --
+   bedava ve farklı kapasiteler kısmen dekorele.
+4. Seyahat öncesi `python scripts/tasima_tam.py --hedef <yol>` ile paketi
+   YENIDEN kur -- sabahki paket eskidi (bkz. §9).
+
+---
 
 ---
 
@@ -502,3 +547,29 @@ ayrışmayı ikiye katlıyor (0,0286 → 0,0636) ve yerini böyle hak ediyor;
 
 **Kural (bugün üç kez doğrulandı):** havuzlanmış skor kandırır, blok kırılımı
 keser, ve bloklar ayrıştığında **kis26 haklı çıkar**.
+
+
+---
+
+## 9. Taşıma paketi — sabahki sürüm ESKİDİ
+
+`C:\DATAHON_TASIMA` 24 Ağustos 08:00'de kuruldu. O günden beri biriken ve
+**yeniden üretilmesi pahalı** olanlar:
+
+```
+data/interim/aile_onbellek     152 MB, 129 dosya   <- 3,5 saatlik hesap
+                               uretim esli aile tahminleri + A5 kolu + kapasite kollari
+data/interim/soguk_kapasite    4,3 MB              <- 18 tahmin
+submissions/tuketim_v48_p1..p5                     <- her biri ~85 dk uretim kosusu
+submissions/tuketim_v50_ham30 / _nihai30           <- gunun teslimati
+```
+
+`tasima_tam.py` `data/` klasörünün **tamamını** kopyaladığı için önbellekler
+otomatik giriyor. Elle yazılan `GONDERIMLER` listesi ise eksikti ve
+güncellendi (v48 partileri + v50).
+
+> Paket, gece üretim koşusu BİTTİKTEN sonra kurulmalı — aksi hâlde gecenin
+> tohumları dışarıda kalır.
+
+Kurulum ve doğrulama: `python scripts/tasima_tam.py --dogrula <yol>`, sonra
+hedef makinede `python scripts/butunluk_son_islem.py`.
