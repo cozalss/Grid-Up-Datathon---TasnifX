@@ -270,7 +270,16 @@ def _kaggle_ciktisi_basarili(sonuc: subprocess.CompletedProcess[str]) -> bool:
 def _kaggle_son_guncelleme(ref: str) -> str | None:
     """Dataset'in Kaggle'daki ``lastUpdated`` degeri; bulunamazsa ``None``."""
     sonuc = subprocess.run(
-        ["kaggle", "datasets", "list", "-m", "-s", ref.rsplit("/", maxsplit=1)[-1]],
+        [
+            sys.executable,
+            "-m",
+            "kaggle",
+            "datasets",
+            "list",
+            "-m",
+            "-s",
+            ref.rsplit("/", maxsplit=1)[-1],
+        ],
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -306,6 +315,8 @@ def _kaggle_yayinla() -> bool:
     if mevcut:
         sonuc = _kos(
             [
+                sys.executable,
+                "-m",
                 "kaggle",
                 "datasets",
                 "version",
@@ -320,7 +331,17 @@ def _kaggle_yayinla() -> bool:
         )
     else:
         sonuc = _kos(
-            ["kaggle", "datasets", "create", "-p", str(CIKTI), "--dir-mode", "zip"],
+            [
+                sys.executable,
+                "-m",
+                "kaggle",
+                "datasets",
+                "create",
+                "-p",
+                str(CIKTI),
+                "--dir-mode",
+                "zip",
+            ],
             aciklama="dataset olusturma",
         )
 

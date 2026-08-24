@@ -176,6 +176,8 @@ def harici_veri_indir(hedef: Path) -> Path | None:
         [
             sys.executable,
             "-m",
+            sys.executable,
+            "-m",
             "kaggle",
             "datasets",
             "download",

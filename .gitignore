@@ -69,6 +69,9 @@ kaggle.json
 secrets.*
 
 # --- Arac artiklari ---
+# tasima_paketi.py --coz, dogrulama kaydini repo kokune birakir; makineye
+# ozgu yerel bir artik, versiyonlanacak bir sey degil.
+TASIMA.json
 # Playwright MCP oturum loglari ve sayfa anlik goruntuleri proje dizinine dusuyor.
 .playwright-mcp/
 

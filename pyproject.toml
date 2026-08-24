@@ -37,6 +37,11 @@ search = ["optuna>=3.5", "shap>=0.44"]
 features = ["holidays>=0.40", "pvlib>=0.10", "hijridate>=2.4"]
 io = ["pyarrow>=14.0", "requests>=2.31", "openpyxl>=3.1"]
 viz = ["matplotlib>=3.7"]
+# Kaggle CLI: tuketim_model.py --gonder bunu ALT SUREC olarak cagirir
+# (subprocess "kaggle competitions submit"), yani kod icinden import edilmez
+# ama gonderim yapan makinede KURULU OLMAK ZORUNDA. Cekirdege konmuyor:
+# Kaggle imajinda notebook calistirirken bu paket gereksiz.
+kaggle = ["kaggle>=1.6"]
 dev = [
     "pytest>=7.4",
     "pytest-cov>=4.1",

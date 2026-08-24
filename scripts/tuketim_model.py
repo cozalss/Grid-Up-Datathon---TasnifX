@@ -1511,6 +1511,8 @@ def main() -> int:
         print("\n  Kaggle'a gonderiliyor...")
         subprocess.run(
             [
+                sys.executable,
+                "-m",
                 "kaggle",
                 "competitions",
                 "submit",
