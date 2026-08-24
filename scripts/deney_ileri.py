@@ -211,6 +211,7 @@ def egit_tahmin(
     tohum: int,
     *,
     agirlik_pay: float | None = None,
+    agirlik: np.ndarray | None = None,
     ofset: bool = True,
     **ustyazim: object,
 ) -> np.ndarray:
@@ -236,6 +237,15 @@ def egit_tahmin(
     w = None
     if agirlik_pay is not None:
         w = tm.soguk_agirliklari(egitim["soguk_mu"], hedef_pay=agirlik_pay)
+    if agirlik is not None:
+        # Dogrudan verilen ornek agirligi. KOVARYAT KAYMA duzeltmesi icin:
+        # egitim bayatlik dagilimi testinkinden 15-16 kat sapiyor
+        # (``deney_bayatlik_agirlik.py``). ``agirlik_pay`` ile birlikte
+        # verilirse ikisi CARPILIR -- farkli eksenler, birbirini ezmezler.
+        a = np.asarray(agirlik, dtype="float64")
+        if a.shape[0] != len(egitim):
+            raise ValueError(f"agirlik {a.shape[0]} satir, egitim {len(egitim)} satir")
+        w = a if w is None else np.asarray(w, dtype="float64") * a
     model = aile_modeli(aile, tohum, **ustyazim)
     x_e, x_h = egitim[kolonlar], hedef[kolonlar]
     if aile == "cat":
