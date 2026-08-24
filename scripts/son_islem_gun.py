@@ -1,4 +1,52 @@
-"""SON ISLEM (gun korumali): soguk tahminlere ZAMAN EKSENI BOZULMADAN buzme.
+"""SON ISLEM (gun korumali) -- !!! LB'DE CURUTULDU, URETIMDE KULLANILMIYOR !!!
+
+=====================================================================
+HUKUM: BU DOSYA KULLANILMAZ. Uretim ``son_islem.py`` (beta=0,60) kullanir.
+=====================================================================
+
+Bu betik 23-24 Agustos gecesi kis26 uzerinde titizlikle olculerek yazildi ve
+o blokta gercekten daha iyiydi: soguk RMSLE 1,83979 -> 1,82133. LB ise tam
+tersini soyledi.
+
+IZOLE OLCUM (24 Agustos, ayni model, tek fark son islem):
+
+    v30 = v27 modeli (3 tohum) + son_islem.py      -> LB 1,02639
+    v44 = v27 modeli (3 tohum) + son_islem_gun.py  -> LB 1,03053   +0,00414
+
+Ve dogrulayan ucuncu nokta:
+
+    v46 = 15 tohum + son_islem_gun.py  -> 1,02448
+    v47 = 15 tohum + son_islem.py      -> 1,01750   BIRINCILIK
+
+Yani buradaki her "iyilestirme" -- gun ekseni korumasi, ilce x kova hucre
+etkisi, hucre/model agirlik ayrimi, seyrek gun kapisi, tablo penceresi --
+kis26'da kazandirip TESTTE kaybettirdi. Toplam maliyet ~0,004.
+
+NEDEN OLCUM YANILTTI
+--------------------
+kis26 soguk dilimi test soguk dilimine benzemiyor:
+  kVA medyani     kis26 400   TEST 630
+  kova 12 payi    kis26 %4,4  TEST %16,6
+Ustelik ayni hucrede soguk-sicak ofset farkinin ISARETI mevsime gore
+degisiyor (yaz25 -0,169 / guz25 +0,332 / kis26 +0,184) ve test yaz
+tarafinda. kis26'da olculen her soguk yapisal duzeltme bu iki kayma
+yuzunden test'e tasinmiyor.
+
+Buna karsilik ayni gece tohum ortalamasi TAHMINCININ KENDI VARYANSINDAN
+etiketsiz olculdu ve ongordugu kadar geldi (bkz. tohum_gurultusu.py).
+Ders: model-disi bir nicelikten turetilen kestirim tasindi, tek bir
+dogrulama blogundan turetilen kestirim tasinmadi.
+
+DOSYA NEDEN SILINMEDI
+---------------------
+Curutulmus ama BELGELENMIS bir denemedir; icindeki olcum altyapisi
+(butunluk_son_islem.py ile birlikte) ve cebir baskalarinin ayni yola
+girmesini onlemek icin duruyor. Yeniden denenecekse once yukaridaki iki
+kaymanin (kVA karisimi, mevsimsel isaret) nasil kapatildigi gosterilmeli.
+
+--- ASAGISI ORIJINAL BELGE, TARIHSEL KAYIT ICIN DURUYOR ---
+
+SON ISLEM (gun korumali): soguk tahminlere ZAMAN EKSENI BOZULMADAN buzme.
 
 ``son_islem.py``nin iki kusurunu birden kapatir. Yeniden egitim YOK.
 

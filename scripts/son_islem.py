@@ -1,5 +1,23 @@
 """SON ISLEM: soguk tahminlere ofset uzayinda BUZME. Yeniden egitim YOK.
 
+=====================================================================
+URETIMDE KULLANILAN SON ISLEM BUDUR. LB'DE UC KEZ DOGRULANDI.
+=====================================================================
+
+    v27 (son islem YOK)                         1,03362
+    v30 = v27 + bu betik (beta=0,60)             1,02639   -0,00723
+    v47 = 15 tohumlu model + bu betik            1,01750   BIRINCILIK
+
+Alternatifi (``son_islem_gun.py``: gun ekseni korumali, ilce x kova hucre
+etkisi, ayrik agirliklar) kis26'da daha iyiydi ama LB'de IZOLE olarak
++0,00414 ZARARLI cikti -- ayni model, tek fark son islem:
+
+    v30 = v27 + son_islem.py       1,02639
+    v44 = v27 + son_islem_gun.py   1,03053
+
+Bu yuzden soguk son isleme kis26'ya bakarak DOKUNULMAZ. Bir degisiklik
+onerilecekse izole bir LB gonderimiyle sinanir.
+
 NEDEN
 -----
 kis26 (ezber orani %0 olan TEK durust kat) soguk uzmani ONEMSIZ bir tabandan
