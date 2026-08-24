@@ -505,7 +505,7 @@ Bu yüzden üç hak, üç farklı `c` değerine ayrılıyor.
 |---|---|---|---|
 | 1 | `tuketim_v50_nihai30` | 1,00 (taban) | **1,01710** |
 | 2 | `tuketim_v55_gunolcek` | **1,49** (formülden) | **1,01450** |
-| 3 | `tuketim_v57_gunolcek20` | 2,00 (üst köşe + yukarı hedge) | **1,01728** |
+| 3 | `tuketim_v57_gunolcek175` | **1,75** | **1,01521** |
 
 Türetim: `sigma_model = 0,1675`, `pay_sicak = 0,7784`, `c* = 1,492`,
 `v50 MSLE = 1,034493`.
@@ -514,9 +514,17 @@ Türetim: `sigma_model = 0,1675`, `pay_sicak = 0,7784`, `c* = 1,492`,
 MSLE(c) = 1,034493 + 0,021839 * [ (c-1,492)^2 - 0,242064 ]
 ```
 
-c=2,00 kasıtlı olarak optimumun **üstünde**: hem parabolü kapatıyor hem de
-`sigma_gercek` tahminim düşükse (2026 yazı 2025'ten oynak olabilir, yaz25'in
-kendi optimumu 2,65 idi) yukarı yönlü riski karşılıyor.
+Üçüncü nokta neden 1,75 (ve 2,00 değil): tek bir gönderimin beklenen kazancı
+`B[(1−μ)² − (c−μ)²]`, yani inancın ORTALAMASINDA maksimum. μ≈1,5 iken c=2,00
+tam **sıfır** beklenen kazanç verir (v50 ile aynı uzaklıkta), c=1,75 ise
+pozitif kalır ve parabolü yine kapatır.
+
+`c`'nin aşağı yönlü belirsizliği ölçüldü: gün ekseni genliği yıllar arasında
+kararlı değil. **Eşleştirilmiş panelde** (iki dönemde de tam olan 1.525 trafo)
+Ocak-Mart gün std'si 2025'te 0,0948, 2026'da 0,0710 — **oran 0,749**. Panel
+etkisi değil (eşleştirilmemiş kontrol 0,752). 2026 yazı da %25 sönük gelirse
+gerçek `c*` ≈ 1,12 olur. Üç-nokta tasarımı tam bu yüzden doğru: bugün `c`'yi
+tutturmak zorunda değilim, üç skor onu **çözüyor**.
 
 **Karar kuralı:** üç skor gelince parabol çözülür, gerçek `c*` bulunur ve
 kalan altı günde tam optimumdan gönderilir. Tahminler tutmazsa çerçeve
