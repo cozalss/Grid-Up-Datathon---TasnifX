@@ -50,6 +50,7 @@ import time
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 KOK = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(KOK / "src"))
@@ -126,7 +127,23 @@ def main() -> int:
     guc_kenar = ol.guc_kenarlari(test)
     te_s = test[test["soguk_mu"] != 1]
 
-    oran, pe = kova_agirliklari(egitim[egitim["soguk_mu"] != 1], te_s)
+    # URETIM EGITIM SETI. Sicak uzman ``ek_koken: True`` ile calisiyor
+    # (REJIM_AYARLARI), yani 1,04M degil 2,86M satir goruyor. Bu tezgahi
+    # ek kokensiz kurmak olctugumuz seyi gonderdigimiz seyden ayirir --
+    # ``butunluk_son_islem.py``yi yazdiran dersin ta kendisi. Ustelik
+    # tam bu eksende onemli: ek kokenler ayni trafoyu FARKLI pencere
+    # sonlariyla gosterdigi icin BAYAT satir URETIYOR (1-6 kovasi
+    # %0,38 -> %0,56; 90+ %0,25 -> %0,46). Yani kayma ek kokenlerle
+    # zaten kismen kapaniyor ve duzeltmenin odulu daha kucuk olabilir.
+    ek = d._ek_kokenler_kur(False)
+    ek = ek[ek["_blok"].isin([a for a, _, _ in tm.EK_KOKENLER])]
+    ortak = [k for k in egitim.columns if k in ek.columns]
+    genis = pd.concat([egitim[ortak], ek[ortak]], ignore_index=True)
+    for k in tm.KATEGORIK:
+        genis[k] = pd.Categorical(genis[k], categories=egitim[k].cat.categories)
+    print(f"  ana {len(egitim):,} satir -> EK KOKENLI {len(genis):,}")
+
+    oran, pe = kova_agirliklari(genis[genis["soguk_mu"] != 1], te_s)
     print(f"\n  {'kova':>8}{'p_egitim %':>12}{'p_test %':>10}{'AGIRLIK':>10}")
     kt = ol._kova(te_s["t_son_kayit_yasi"].to_numpy(dtype="float64"), ol.BAYATLIK_KENARLARI)
     for i, ad in enumerate(ETIKET):
@@ -142,7 +159,10 @@ def main() -> int:
     kova_skor: dict[str, dict] = {k: {} for k in kol_adlari}
 
     for b in tm.BLOKLAR:
-        parca, dogrulama, gercek, soguk = di.blok_parcalari(egitim, b.ad)
+        _, dogrulama, gercek, soguk = di.blok_parcalari(egitim, b.ad)
+        # Hedef blogun etiket penceresiyle KESISEN kokenler atilir; ortusme
+        # dogrulamada sizintidir (``tm.kokenleri_ayikla``).
+        parca = tm.kokenleri_ayikla(genis, b.ad)
         sicak = ~soguk
         dsicak = dogrulama[~soguk]
         y = gercek[sicak]
