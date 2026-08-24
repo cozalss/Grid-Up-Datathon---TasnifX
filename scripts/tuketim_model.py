@@ -896,49 +896,36 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     # Sogukta egri TEKDUZE: cat agirligi 1->2->3->4->6 boyunca her adimda
     # kotulesiyor. Izgaradan rastgele secim degil, duz bir egilim. Ama
     # (0,1,1) kotu: cat katki veriyor, yalnizca baskin olmamali.
-    # ``ek_kolon`` (2026-08-24 aksami): YALIN_CIKARILAN'in attigi p_/g_/gp_
-    # ailesinden ONU sicak uzmana GERI VERILIYOR.
+    # ek_kolon SICAK: DENENDI VE DUSMANCA SINAMADA CURUDU (2026-08-24 gece).
     #
-    # NEDEN: yalin set 144->105 karari ``deney_ileri.py:731`` ile alindi ve o
-    # rig uretimden DORT eksende ayriydi -- ek kokensiz (1,04M vs 2,86M),
-    # maske 0,2216 (uretim 0,15), random_strength 1 (uretim 4), depth 5 /
-    # l2 3 (uretim 6/1). Uretim esli rig'de yeniden olculdu
-    # (``deney_pg_maske.py``, 3 blok x 3 tohum, teste agirliklandirilmis):
+    # p_/g_/gp_ ailesinden 10 kolon geri verilince olcum +0,0102 / t=+3,59 ve
+    # uc blokta da pozitif vermisti (deney_pg_maske.py). Uretim-sadik kurguda
+    # (xgb/lgbm de 115 kolon) +0,0097 / t=+3,16, yine 3/3.
     #
-    #     kol      yaz25     guz25     kis26    fark      SH      t    blok
-    #     taban   0,80608   0,99674   0,87742  +0,0000
-    #     +14     0,80122   0,98670   0,87307  +0,0059  0,0032  +1,88  3/3
-    #     +10     0,80180   0,98278   0,86480  +0,0102  0,0028  +3,59  3/3  <- SECILEN
+    # Sonra iki kolonun YAPISAL OLARAK CARPIK oldugu bulundu:
+    #   gp_ilce_ay, gp_kova_ay -- EGITIMDE yalnizca Ocak-Mart satirlarinda dolu
+    #   ("dolu <=> ay in {1,2,3}" 338.187 satirda ihlalsiz), TESTTE %100 dolu ve
+    #   aylar Nisan-Temmuz. Deger destegi de kopuk: test satirlarinin %26'si
+    #   egitim maksimumunun ustunde, Temmuz'un TAMAMI destek disi.
+    #   Sebep: EGITIM_BASI 2025-01-01, egitim 2026-03-31'de biter; bir ay ancak
+    #   IKI KEZ gecerse profil_kaynak'ta kalir (:672 her blok kendi ayini siler),
+    #   bunu yalnizca Ocak/Subat/Mart yapar. Test hicbir ayi silmez (:766).
     #
-    # Genel skora etki -0,00545. Bugun karar kuralini (t>=2 VE uc blok pozitif)
-    # gecen TEK aday.
+    # O ikisi cikarilip KALAN 8 kolon tek basina olculunce (deney_pg8_dogrula.py):
+    #     fark +0,00256  SH 0,00335  t=+0,76  6/9  uc blok HAYIR
+    #     yaz25 +0,00352   guz25 +0,00939   kis26 -0,00522
+    # Yani +3,59'luk sonucun tamami o iki carpik kolondan geliyormus.
     #
-    # NEDEN 14 DEGIL 10: ``p_gun_sayisi``, ``p_ilk_ofset``, ``p_son_ofset``,
-    # ``p_yayilma`` panel penceresine gore HAM GUN. Ana bloklar 121-122 gun ve
-    # TEST 122 gun, ama EK_KOKENLER icinde sub25=59 ve bah26=90 gun var --
-    # o dort kolon ek satirlarin bir kisminda testte HIC gorulmeyen sikistirilmis
-    # bir olcekte geliyor. ``p_doluluk``/``p_pencere_payi`` normalize, ``g_``/
-    # ``gp_`` grup istatistigi; onlarda bu sorun yok. Olcum bunu dogruladi:
-    # dortunu atmak +0,0059'u +0,0102'ye cikariyor.
+    # Tek-trafo ayristirmasi da destekliyor: yaz25'te kazancin %25,5'i TEK
+    # trafodan, ilk bes trafo %53,6'si; kis26'da toplam NEGATIF.
     #
-    # Maskeleme etkilenmez: bu kolonlar ``t_`` onekli DEGIL, yani gecmis
-    # maskesinin disindalar -- deneyde de oyle olculdu.
+    # HUKUM: sicak uzman ek_kolon ALMAZ. Kalici ders: bir kolonun DOLULUK
+    # DESENI egitim ve test arasinda farkliysa, kolonun kendisi degil o desen
+    # ogreniliyor olabilir -- ve dogrulama bunu goremez.
     "sicak": {
         "maske": 0.15,
         "cat": {"random_strength": 4.0, "l2_leaf_reg": 1.0, "depth": 6},
         "ek_koken": True,
-        "ek_kolon": (
-            "g_guc_kova",
-            "g_ilce_kova_n",
-            "g_ilce_kova_ort",
-            "g_ilce_log_ort",
-            "g_kova_log_ort",
-            "gp_ilce_ay",
-            "gp_ilce_hg",
-            "gp_kova_ay",
-            "p_doluluk",
-            "p_pencere_payi",
-        ),
         "agirlik": {"cat": 3.0, "xgb": 1.0, "lgbm": 1.0, "sinir_agi": 1.4},
     },
     # ``ek_kolon``: bu uzmana YALIN_CIKARILAN'a ragmen geri verilen kolonlar.
@@ -971,58 +958,38 @@ REJIM_AYARLARI: dict[str, dict[str, object]] | None = {
     #
     # beta ne olursa olsun siralama ayni: cat tek basina, harmandan iyi.
     # kis26 soguk kazanci -0,0079; d(genel)/d(soguk)=0,377 ile genel -0,0030.
-    # ``ek_kolon`` (2026-08-24 aksami): GRUP SEVIYELERI soguk uzmana verildi.
+    # SOGUGA GRUP SEVIYELERI: DENENDI VE DUSMANCA SINAMADA CURUDU (2026-08-24 gece).
     #
-    # NEDEN: soguk uzman maske 1,00'da calisir, butun ``t_*`` NaN'dir ve
-    # elinde trafoyu ayirt eden HICBIR gecmis yoktur. ``g_*``/``gp_*`` ise
-    # ozet penceresinden hesaplanan GRUP istatistikleridir -- ilce x kVA
-    # kovasi ortalamalari. Gecmisi olmayan bir model icin tam olarak eksik
-    # olan sey budur: bir SEVIYE kestirimi. docs/30 bunu bagimsiz olarak
-    # olcmustu: ilce x kova, soguk seviye kestiricileri arasinda EN IYISI
-    # (1,9867; tanim onekleri 2,10-2,13). Modele verilmemesinin tek sebebi
-    # ``YALIN_CIKARILAN``in ``g_`` onekini global silmesiydi.
+    # Olcum +0,0318 / t=+13,71 / 3 tohum vermisti (deney_soguk_grup_kolon.py,
+    # kis26, son islem sonrasi, kVA duzeltilmis). Dort mercekli kirma denemesi
+    # bunu UC ayri yerden yikti:
     #
-    # OLCULDU (``deney_soguk_grup_kolon.py``, kis26, son islem sonrasi,
-    # testin kVA karisimina agirliklandirilmis, 3 tohum eslenik):
+    # 1. KAZANC TEK TRAFODAN. Trafo bazinda ayristirinca kVA-agirlikli d(MSE)'nin
+    #    %116,4'u tek bir trafodan geliyor: tanim=78040011, Saruhanli, 1600 kVA,
+    #    97 gunun 97'sinde TAM SIFIR (olu trafo). Taban ona medyan 3012,5 tahmin
+    #    ediyor, grup kolonlari 445,9. O trafo cikarilinca kazanc kayboluyor.
     #
-    #     kol          HAM kis26   kVA duzeltilmis   fark     SH      t
-    #     taban         1,82605      1,98505        +0,0000
-    #     +grup (8)     1,81837      1,95269        +0,0318  0,0023  +13,71  3/3
-    #     +grup+panel   1,85064      2,01490        -0,0306  0,0027  -11,17  0/3
+    # 2. OLCULEN 8 DEGIL 6 KOLONDU. Deneyin uydurma seti yaz25+guz25 ve orada
+    #    gp_ilce_ay/gp_kova_ay %100 NaN, yani CatBoost onlarda hic bolme
+    #    uretemiyor (feature_importance TAM SIFIR; servis aninda NaN'a cevirmek
+    #    tahminleri 0,00000 oynatiyor). Uretimde ise o iki kolon canlaniyor.
     #
-    # Genel skora etki -0,01189. Panel doluluk kolonlari (``p_doluluk``,
-    # ``p_pencere_payi``) AGIR ZARARLI ve DISARIDA birakildi: gecmisi olmayan
-    # bir trafo icin kendi panel dolulugu dejenere bir sayidir.
+    # 3. CANLANDIKLARINDA YAPISAL OLARAK CARPIKLAR -- bkz. sicak ek_kolon
+    #    yorumundaki ay aciklamasi. Egitimde "dolu" = "Ocak-Mart", testte %100 dolu
+    #    ve aylar Nisan-Temmuz.
     #
-    # SIZINTI ELENDI: ``g_*`` ``ozet`` penceresinden gelir ve ``blok_kur``
-    # icinde sert bir kontrol var (ozet.max() >= etiket.min() ise
-    # RuntimeError). Ortalama BASKA trafolardan, etiket oncesi donemden.
-    # kis26 soguk trafolarinin %0'i baska katlarda mevcut (docs/35).
+    # Ve hicbir dogrulama kati bunu goremez: kis26 tutulursa kolonlar etkisiz,
+    # yaz25/guz25 tutulursa dogrulama satirlarinin kendisi %100 NaN. Bu, docs/35
+    # ve tuketim_model.py:828'deki v18 -> v23 yanginiyla AYNI sinif: soguk uzmana,
+    # dogrulamanin OLCEMEDIGI bir kolon eklemek.
     #
-    # IKI UYARI, kayda geciyor:
-    #   1. 2026-08-23'te soguga ``ek_kolon`` (HAFTA GUNU) + harman 3/1/1->1/1/1
-    #      BIRLIKTE gonderildi ve LB'de yandi (v18 1,03370 -> v23 1,04820).
-    #      O paket grup istatistigi DEGILDI, ama "soguga kolon ekle" bir kez
-    #      LB'de yanmis durumda.
-    #   2. ``son_islem_gun.py`` AYNI bilgi kanalini (ilce x kova hucre
-    #      tablosu) SON ISLEMDE kullanip LB'de curudu (+0,00414). Fark: orada
-    #      sabit 0,40 agirlik DAYATILIYORDU; burada kolon modele veriliyor ve
-    #      model ona ne kadar guvenecegini kosullu ogreniyor.
-    # Bu yuzden IZOLE bir LB gonderimiyle sinanmalidir.
+    # HUKUM: soguk uzman ek_kolon ALMAZ. Ayrica kalici bir ders: soguk tarafta bir
+    # kazanc gorulunce TRAFO BAZINDA ayristirilmali -- 1.223 trafolu bir katta tek
+    # bir olu trafo t=13,71 uretebiliyor.
     "soguk": {
         "maske": 1.00,
         "cat": {"depth": 7},
         "ek_koken": False,
-        "ek_kolon": (
-            "g_guc_kova",
-            "g_ilce_kova_n",
-            "g_ilce_kova_ort",
-            "g_ilce_log_ort",
-            "g_kova_log_ort",
-            "gp_ilce_ay",
-            "gp_ilce_hg",
-            "gp_kova_ay",
-        ),
         "agirlik": {"cat": 1.0},
     },
 }
