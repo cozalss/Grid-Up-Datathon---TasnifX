@@ -80,6 +80,33 @@ Blok-dışı protokol (düzeltme diğer iki blokta uydurulur, üçüncüde ölç
 > düzeltmesi taşımıyor. Artık üç bağımsız doğrulaması var: soğuk seviye
 > kaydırması, `son_islem_gun.py` bütünü, bayatlık kaydırması.
 
+### Eğitimde önem ağırlıklandırma: ÜRETİM RIGİNDE ÇÜRÜDÜ
+
+Son işlem çürüyünce ilaç eğitime taşındı: bayat satırları `p_test/p_egitim`
+ile yükselt. Ağırlıklar bir bloğun **seviyesinden** değil **dağılım
+sayımlarından** geldiği için farklı bir sınıftaydı — tohum ortalaması gibi
+model-dışı. Ve ilk ölçüm çok umut vericiydi: bütün kovalar birden iyileşiyor
+(90+ için +0,100), ölçebilen iki blokta 4/4.
+
+**Ama o tezgâh ek_kökensizdi** (§3). Üretime hizalanınca hüküm döndü:
+
+```
+                        yaz25      guz25      kis26      TOPLAM      t
+ek_kokensiz (tezgah)  -0,00836   +0,05719   +0,00709   +0,01864
+URETIM ESLI           -0,00495   +0,02893   -0,03563   -0,00388   -0,27
+yumusatilmis (us=0,5) +0,00091   +0,00543   -0,01707   -0,00358   -0,42
+```
+
+`kis26` **+0,007'den −0,036'ya** döndü — en büyük sıcak örneklemli (382k satır)
+dürüst kat. Mekanizma: **ek_kökenler bayat satır sinyalini zaten sağlıyor**
+(1-6: %0,38→%0,56; 90+: %0,25→%0,46). Zayıf tabanda eksik olan sinyali
+ağırlıkla zorlamak kazandırıyordu; güçlü tabanda aynı zorlama o satırlara
+aşırı uyduruyor.
+
+**Hüküm: REDDEDİLDİ.** Sabahki olumlu sonuç, yetersiz eğitilmiş bir tabanın
+yarattığı yapay bir kazançtı. Gün içinde ikinci kez tezgâh–üretim uyumsuzluğu
+yanlış yöne çekti; ikisinde de gönderim yakılmadan yakalandı.
+
 ---
 
 ## 3. Ölçüm tezgâhında yapısal bir kusur bulundu
@@ -138,6 +165,7 @@ Yani ağı iki kat hızlandırıp 60 tohuma çıkmak **−0,00026** getirir. Kan
 | `son_islem` beta | düzeltilmiş dip 0,50, kazanç 0,00043 |
 | bayatlık son-işlem kaydırması | blok-dışı 0/3, −0,02514 |
 | soğuk tarafta eğitim ağırlıklandırma | eğitim dağılımı zaten teste yakın (1,35x) |
+| **sıcak tarafta eğitim ağırlıklandırma** | üretim riginde −0,00388 (t=−0,27), kis26 0/3 |
 | `n_ag` düşürüp tohum artırma | k=30→60 yalnızca −0,00026 |
 
 `tanim` alanı da kontrol edildi: yalnızca sayısal kimlik (`70122340`),
@@ -192,8 +220,14 @@ loopta 6 eksen daha kapandı, varyans kanalı 30 tohumda tükeniyor.
 ```
 v47 (15 tohum)                          1,01750
 + 30 tohum                              ~1,0158    garantili
-+ bayatlık eğitim ağırlığı (tutarsa)    ~1,011     belirsiz
++ bayatlık eğitim ağırlığı              REDDEDILDI (§2)
 ```
 
-Gerçekçi bant **1,011–1,016**. Bu birinciliği genişletir; 1,00'i vermez.
-Bunu bilerek gönderiyoruz.
+Ağırlıklandırma da çürüyünce **bu loopta uygulanabilir tek kanal tohum
+ölçeklemesi kaldı**. Beklenen sonuç **~1,0158**. Bu birinciliği genişletir;
+1,00'i vermez. Bunu bilerek gönderiyoruz.
+
+1,00'in altı için gereken, bu loopun bütçesinde olmayan şey §7'deki sinir ağı
+kümesidir: ağ hiç ayarlanmadı, üretim koşusunun %78'i o, ve doğrulaması
+aile bazında tahmin önbelleği olmadan her soru için tam koşuya mal oluyor.
+**Sıradaki oturumun ilk işi o önbellek olmalı.**
