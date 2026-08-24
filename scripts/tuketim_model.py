@@ -1273,6 +1273,15 @@ def rejim_tahmini(
         if eksik:
             raise RuntimeError(f"{rejim} uzmaninin ek_kolon'u cercevede yok: {eksik}")
         kol = kolonlar + ek_kolon
+        # Rejime ozel CIKARILAN kolonlar -- ``ek_kolon``un simetrigi.
+        # Bir kolon bir uzman icin mesru, digeri icin RIG KIMLIGI olabilir;
+        # ``YALIN_CIKARILAN`` ise ikisini birden etkiler ve bu ayrimi yapamaz.
+        cikar_kolon = list(ayar.get("cikar_kolon", ()))  # type: ignore[union-attr]
+        if cikar_kolon:
+            yok = [k for k in cikar_kolon if k not in kol]
+            if yok:
+                raise RuntimeError(f"{rejim} uzmaninin cikar_kolon'u zaten yok: {yok}")
+            kol = [k for k in kol if k not in cikar_kolon]
         # Rejime ozel harman agirligi. Iki uzman FARKLI problemler cozuyor:
         # sicakta xgb en iyi aile, sogukta cat EN KOTU aile (bkz. REJIM_AYARLARI).
         agirlik = ayar.get("agirlik", AILE_AGIRLIKLARI)

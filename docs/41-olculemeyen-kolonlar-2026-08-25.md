@@ -247,6 +247,129 @@ Doğrulama bu soruyu tanımı gereği cevaplayamaz. Tek hakem LB'dir. Bu yüzden
 
 ---
 
+## 6b. Soğuk uzmanın `yas` kayması — ölçüldü, 3 tohumda geçti, 6 tohumda ÇÖKTÜ
+
+Soğuk uzman `maske=1,00` ile **yapay** soğutulmuş satırlarda eğitilir. Maske
+geçmişi siler ama `yas`ı silmez: 400 günlük bir trafo maskelenince "geçmişi
+olmayan 400 günlük trafo" olur. Gerçek soğuk trafo ise **yenidir**.
+
+```
+eğitim (maskeli) satırların  %73,0'ü  yas > 121
+DOĞAL soğuk yas maksimumu:   yaz25 115 | guz25 121 | kis26 120 | TEST 121
+dört kümede de yas > 121 payı TAM SIFIR
+```
+
+Üstüne `ozet_pencere_gun` bir **rig kimliği** değişkeni: kis26 eğitiminde
+{90, 212}, doğrulamasında {334}, testte {455} — tamamen ayrık.
+
+Bu, §6'daki dört kolondan **farklı olarak ÖLÇÜLEBİLİR**: doğrulamanın soğuk
+satırları da doğaldır, yani rig üretimdeki kaymanın aynısını üretir.
+
+### Üç tohum "AL" dedi
+
+```
+aday        fark       SH        t      tohum   en büyük trafo   ilk5
+-yas      +0,00974  0,00402   +2,42     3/3        %67,7        %109,4
+-pencere  -0,00300  0,00170   -1,77     1/3       -%448,7      -%1445,3
+-ikisi    +0,01122  0,00287   +3,91     3/3        %40,0         %72,1
+```
+
+`-ikisi` kırpmaya da dayanıyordu: K=5'te t=+3,87 (3/3), K=10'da t=+2,80 (3/3).
+Bu geceki çürüyen adaylardan niteliksel olarak farklı görünüyordu.
+
+### Altı tohum ÇÖKERTTI
+
+```
+-ikisi   fark +0,00838  SH 0,00290  t +2,89  5/6
+         EN BÜYÜK TRAFO %67,0   ilk5 %119,1   (3 tohumda %40,0 / %72,1 idi)
+
+K      fark        t      tohum
+0    +0,00838   +2,89     5/6
+5    +0,00259   +1,14     4/6      <- 3 tohumda +3,87 idi
+10   +0,00020   +0,09     4/6
+25   -0,00393   -1,70     2/6
+50   -0,00896   -4,38     0/6
+```
+
+Tohum sayısı ikiye katlanınca yoğunlaşma **%40 → %67**'ye çıktı ve kırpılmış
+hüküm çöktü. Üç tohumluk sonuç şanslı bir çekilişti.
+
+> **HÜKÜM: REDDET.** Ayrıca kalıcı kural 1'e bir ek: **soğuk tarafta üç tohum
+> yetmez.** 1.223 trafoluk bir katta kVA ağırlıklı `d(MSE)` o kadar ağır
+> kuyrukludur ki üç tohumun eşlenik SH'si yoğunlaşmayı gizleyebiliyor.
+> `ozet_pencere_gun` ayrıca **işe yarıyor** (atmak zararlı, t=-1,77 ve
+> kırpınca -8,36) — destek dışı olması onu değersiz yapmıyor.
+
+---
+
+## 6c. BULUNAN: son işlem, ZIT muamele gerektiren iki ekseni aynı katla eziyor
+
+Üretim son işlemi tüm ofseti tek bir genel ortalamaya büzer:
+`r' = ort(r) + 0,60·(r − ort(r))`. James-Stein savı yalnızca **aşırı yayılmış**
+bir eksen için geçerlidir. İki eksen ayrı ayrı soruldu (kis26 soğuk, etiketli):
+
+| eksen | model std | gerçek std | korelasyon | OLS eğimi | hüküm |
+|---|---|---|---|---|---|
+| **TRAFO** | 0,4027 | 1,7849 | +0,218 | **+0,795** | aşırı yayılmış → büzme DOĞRU |
+| **GÜN** | 0,0470 | 0,1075 | **+0,865** | **+1,828** | az yayılmış → büzme ZARARLI |
+
+Gün ekseninde korelasyon 0,865: model rampanın **yönünü biliyor, genliğini
+bilmiyor** — ve büzme onu daha da düzleştiriyor. Trafo ekseninde ise büzme
+haklı (LB üç kez doğruladı, −0,0295).
+
+### Testte bu eksen çok daha güçlü
+
+```
+gün ekseni std (tahmin edilen ofset)   kis26 0,0470   TEST 0,2738   -> 5,8 kat
+```
+
+Kuadratik kayıpta `c` katsayısının maliyeti: kis26'da `c=0,60` yerine `c=1,00`
+gün ekseni MSE'sini 0,00711 → 0,00503 düşürüyor. Varyans oranıyla ölçeklenince
+testte beklenen etki **soğuk MSE'de ≈ −0,07**, yani genele kabaca −0,003…−0,007.
+
+### `scripts/son_islem_gunsade.py`
+
+v44'te çürüyen **beş** değişiklikten yalnızca birincisi: gün ekseni koruması.
+Hücre etiketi yok, kapı yok, pencere yok, kis26'dan uydurulan parametre yok.
+
+Seyrek gün sorunu (1 Nisan'da 1 satır, 31 Temmuz'da 1.962) uydurma bir eşikle
+değil ampirik-Bayes ile çözüldü:
+
+```
+hedef_d = (n_d·ort_gun_d + M·ort_genel) / (n_d + M)
+M       = σ²_gün_içi / σ²_günler_arası     ETİKETSİZ ölçülür
+```
+
+Ölçülen: σ²_arası 0,07495, σ²_içi 0,23076 → **M = 3,1**. EB ağırlığı medyan
+%99,8, minimum %24,5 (n=1 olan gün üretim davranışına düşüyor).
+
+**Doğrulama (`tuketim_v54_gunsade.csv`):**
+
+```
+satır/id sample_submission ile birebir      TAMAM
+SICAK satırlar DEĞİŞMEDİ (556.319 satır)    azami fark 0,00e+00
+tam sıfır kümesi                            4.517 = 4.517
+gün ekseni std                              0,27377 -> 0,27355  (üretim 0,16426 ederdi)
+soğuk RMS log farkı                         0,10929
+```
+
+**Bağımsız teyit** — dönüşümü kurarken kullanılmayan 2025 aynı-ay referansı:
+
+| ay | v50 | v54 | 2025 gerçek |
+|---|---|---|---|
+| 04 | +0,368 | +0,291 | +0,041 |
+| 05 | +0,294 | +0,163 | +0,006 |
+| 06 | +0,462 | +0,443 | +0,471 |
+| 07 | +0,654 | +0,762 | +0,952 |
+
+Dört ayın üçü referansa **yaklaşıyor**, en büyük iki açık (Mayıs ve Temmuz)
+belirgin kapanıyor.
+
+> Üretim varsayılanı DEĞİŞMEDİ. Hüküm LB'ye bırakıldı.
+
+
+---
+
 ## 7. Gönderim planı (25 Ağustos, kota 03:00'te açılıyor)
 
 | hak | dosya | ne için | beklenti |

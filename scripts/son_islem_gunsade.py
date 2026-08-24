@@ -47,12 +47,33 @@ cikar. Dogru yapisal duzeltmenin imzasi budur, ama ayni imza sahte bir
 duzeltmede de gorunur. Bu yuzden burada hukum LB'ye birakilir ve betik
 uretim varsayilanini DEGISTIRMEZ.
 
+SEYREK GUN SORUNU VE AMPIRIK-BAYES HEDEFI
+-----------------------------------------
+Soguk trafolar test penceresinde SIRAYLA devreye giriyor. Gun basina soguk
+satir 1 Nisan'da **1**, 31 Temmuz'da **1.962**. Yani ham "gun ortalamasi"
+Nisan basinda tek bir satirin kendisidir ve o satira buzme UYGULANMAZ olur.
+
+Cozum uydurma bir esik degil, dogru kestirici: gun hedefi ampirik-Bayes ile
+genel ortalamaya buzulur.
+
+    hedef_d = (n_d * ort_gun_d + M * ort_genel) / (n_d + M)
+    M       = sigma^2_gun_ici / sigma^2_gunler_arasi
+
+``M`` ETIKETSIZ turetilir -- yalnizca tahminlerin kendi varyans ayrismasindan.
+docs/39 §3'un dersi tam buydu: model-disi bir nicelikten turetilen kestirim
+LB'ye TASINDI, tek bir dogrulama blogundan turetilen tasinmadi.
+
+Sonuc kendiliginden dogru davranir: n=1.834 olan bir gun kendi ortalamasinin
+~%99'unu korur, n=1 olan bir gun neredeyse tamamen URETIM davranisina duser.
+Satirlarin %98,7'si n>=300 olan gunlerde, yani duzeltme kutlenin tamamina
+uygulanirken seyrek kuyruk risksizce eski haline birakilir.
+
 GUVENLIK KAPILARI
 -----------------
-  * Gun ortalamasi TAM olarak korunur -- dogrulanir, yazdirilir.
-  * Seyrek gun YOK: test penceresinde her gunun soguk satiri >1.000.
+  * Gun ortalamasi (EB hedefine gore) TAM korunur -- dogrulanir, yazdirilir.
   * Sicak satirlara DOKUNULMAZ -- sapma 0 oldugu dogrulanir.
   * beta ayni (0,60); tek degisen buzmenin HEDEFI.
+  * ``--m`` verilmezse M olculur; elle verilmesi yalnizca duyarlilik icin.
 
     python scripts/son_islem_gunsade.py --giris submissions/X_ham.csv \
         --cikis submissions/Y.csv
@@ -68,7 +89,6 @@ import pandas as pd
 
 KOK = Path(__file__).resolve().parents[1]
 BETA = 0.60
-ASGARI_GUN_SATIRI = 200
 
 
 def main() -> int:
@@ -76,6 +96,7 @@ def main() -> int:
     a.add_argument("--giris", required=True)
     a.add_argument("--cikis", required=True)
     a.add_argument("--beta", type=float, default=BETA)
+    a.add_argument("--m", type=float, default=None, help="EB M; verilmezse olculur")
     ar = a.parse_args()
 
     ornek = pd.read_csv(KOK / "data/raw/sample_submission.csv", encoding="utf-8")
@@ -104,35 +125,61 @@ def main() -> int:
     log_guc = np.log1p(m["guc"].to_numpy(dtype="float64"))
     r = np.log1p(m["tuketim"].to_numpy(dtype="float64")) - log_guc
 
-    # Gun basina soguk ortalama. Seyrek gun kapisi YOK cunku gerek yok --
-    # dogrulanir: her gunun soguk satiri esigin uzerinde.
+    # ---- AMPIRIK-BAYES GUN HEDEFI (etiketsiz) ----
     d = pd.DataFrame({"g": gun[soguk], "r": r[soguk]})
     sayim = d.groupby("g")["r"].size()
-    if int(sayim.min()) < ASGARI_GUN_SATIRI:
-        raise RuntimeError(f"seyrek gun var: en az {int(sayim.min())} satir -- kurgu gecersiz")
     gun_ort = d.groupby("g")["r"].mean()
-    taban = m.loc[soguk, "tarih"].map(gun_ort).to_numpy(dtype="float64")
+    genel = float(r[soguk].mean())
+
+    # Varyans ayrismasi: gunler arasi (satir agirlikli) ve gun ici.
+    agir = sayim.to_numpy(dtype="float64")
+    s2_arasi = float(np.average((gun_ort.to_numpy() - genel) ** 2, weights=agir))
+    s2_ici = float(d.groupby("g")["r"].transform("mean").rsub(d["r"]).pow(2).mean())
+    if s2_arasi <= 0:
+        raise RuntimeError("gunler arasi varyans sifir -- gun ekseni yok, duzeltme anlamsiz")
+    M = float(ar.m) if ar.m is not None else s2_ici / s2_arasi
+
+    agirlik = sayim / (sayim + M)
+    hedef_gun = agirlik * gun_ort + (1.0 - agirlik) * genel
+    taban = m.loc[soguk, "tarih"].map(hedef_gun).to_numpy(dtype="float64")
 
     r_yeni = r.copy()
     r_yeni[soguk] = taban + ar.beta * (r[soguk] - taban)
     yeni = np.clip(np.expm1(r_yeni + log_guc), 0.0, None)
 
     # ---- KAPILAR ----
-    sicak_sapma = float(np.abs(yeni[~soguk] - m.loc[~soguk, "tuketim"].to_numpy()).max())
-    if sicak_sapma > 0:
-        raise RuntimeError(f"sicak satirlar degisti: sapma {sicak_sapma}")
+    # Sicak satirlar HIC dokunulmadan gecer; tek fark expm1(log1p(x)) gidis
+    # donusunun kayan nokta artigidir (olculdu: 1,5e-11 mutlak, ~1e-15 goreli).
+    # Kapi bu yuzden GORELI: gercek bir degisiklik 1e-12'yi kat kat asar.
+    eski_s = m.loc[~soguk, "tuketim"].to_numpy(dtype="float64")
+    sicak_sapma = float((np.abs(yeni[~soguk] - eski_s) / np.maximum(np.abs(eski_s), 1.0)).max())
+    if sicak_sapma > 1e-12:
+        raise RuntimeError(f"sicak satirlar degisti: goreli sapma {sicak_sapma:.3e}")
     yeni_gun_ort = pd.DataFrame({"g": gun[soguk], "r": r_yeni[soguk]}).groupby("g")["r"].mean()
-    gun_sapma = float((yeni_gun_ort - gun_ort).abs().max())
+    beklenen = hedef_gun + ar.beta * (gun_ort - hedef_gun)
+    gun_sapma = float((yeni_gun_ort - beklenen).abs().max())
     if gun_sapma > 1e-10:
-        raise RuntimeError(f"gun ortalamasi korunmadi: sapma {gun_sapma:.3e}")
+        raise RuntimeError(f"gun ekseni beklendigi gibi degil: sapma {gun_sapma:.3e}")
     if np.isnan(yeni).any() or (yeni < 0).any():
         raise RuntimeError("NaN veya negatif tahmin")
 
+    yeni_std = float(np.sqrt(np.average((yeni_gun_ort.to_numpy() - genel) ** 2, weights=agir)))
     print(f"  soguk satir {int(soguk.sum()):,} / {len(m):,}  gun {gun_ort.size}")
-    print(f"  gun basina en az soguk satir {int(sayim.min()):,}  (esik {ASGARI_GUN_SATIRI})")
-    print(f"  GUN ORTALAMASI korundu, azami sapma {gun_sapma:.2e}")
-    print(f"  sicak satir sapmasi {sicak_sapma:.1e}  (0 olmali)")
-    print(f"  gun-ortalamalarinin std'si {float(gun_ort.std()):.5f} (URETIM x{ar.beta:.2f} ederdi)")
+    print(
+        f"  gun basina soguk satir: min {int(sayim.min())} medyan {int(sayim.median())} "
+        f"maks {int(sayim.max())}"
+    )
+    print(f"  varyans: gunler arasi {s2_arasi:.5f}  gun ici {s2_ici:.5f}  ->  M = {M:.1f}")
+    print(
+        f"  EB agirligi: min %{100 * agirlik.min():.1f}  medyan %{100 * agirlik.median():.1f}"
+        f"  maks %{100 * agirlik.max():.1f}"
+    )
+    print(
+        f"  gun ekseni std: {np.sqrt(s2_arasi):.5f} -> {yeni_std:.5f}"
+        f"   (URETIM {ar.beta * np.sqrt(s2_arasi):.5f} ederdi)"
+    )
+    print(f"  gun ekseni kapisi TAMAM, azami sapma {gun_sapma:.2e}")
+    print(f"  sicak satir GORELI sapmasi {sicak_sapma:.1e}  (kayan nokta artigi)")
     ay = (
         pd.Series(gun_ort.values, index=pd.to_datetime(gun_ort.index))
         .groupby(lambda t: t.month)
