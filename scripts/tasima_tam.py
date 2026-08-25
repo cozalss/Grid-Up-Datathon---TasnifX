@@ -65,11 +65,20 @@ VERI_DIZINLERI = ("data",)
 #: submissions/ 1,3 GB; yalniz bunlar tasinir.
 GONDERIMLER = (
     # --- LB'de skoru BILINEN dosyalar (referans noktalari) ---
-    "tuketim_v47_eskison.csv",  # LB 1,01750 -- 15 tohum, gunun basindaki kazanan
+    "tuketim_v55_gunolcek.csv",  # LB 1,01591 -- GECERLI EN IYI, gun ekseni x1,49
+    "tuketim_v50_nihai30.csv",  # LB 1,01686 -- 30 tohum taban (c=1,00 noktasi)
+    "tuketim_v47_eskison.csv",  # LB 1,01750 -- 15 tohum, onceki kazanan
     "tuketim_v30_buzme.csv",  # LB 1,02639 -- eski taban, olcek referansi
-    # --- 30 TOHUMLUK teslimat (2026-08-24 aksami) ---
-    "tuketim_v50_nihai30.csv",  # GONDERILECEK: 30 tohum + son_islem beta=0,60
-    "tuketim_v50_ham30.csv",  # ayni, son islem ONCESI -- beta degistirmek icin
+    # --- 25 AGUSTOS: gun ekseni duzeltmesi, bekleyen adaylar ---
+    # Hepsi v50_nihai30 uzerine SON ISLEM; yeniden egitim gerekmez, ama
+    # uretilmeleri ham dosyayi ve train/test'i gerektirir.
+    "tuketim_v58_soguk_kalibre.csv",  # sicak x1,49 + soguk x1,411 (LB-kalibreli)
+    "tuketim_v56_birlesik.csv",  # sicak x1,49 + soguk tam koruma (v58 yedegi)
+    "tuketim_v59_sicak20.csv",  # sicak x2,00 -- parabolun 3. noktasi
+    "tuketim_v60_lambda.csv",  # v58 + trafo bazinda gun duyarliligi (m=0,13)
+    "tuketim_v53_ablasyon_ham.csv",  # 4 olculemez kolon cikarilmis, 5 tohum
+    # --- 30 TOHUMLUK taban ---
+    "tuketim_v50_ham30.csv",  # v50, son islem ONCESI -- her son islem bundan turer
     # --- TOHUM PARTILERI: her biri ~85 dakikalik uretim kosusu ---
     # Yeniden uretilemez sayilir. Bunlardan herhangi bir k icin
     # birlestir_tohum.py ile yeni bir harman kurulabilir.
