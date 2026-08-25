@@ -792,3 +792,75 @@ c = 2,00 :   (A) c*=1,335, B=0,0218   ->  1,02040
 
 **Gönderimden önce `kaggle competitions submissions` ile liste okunacak**
 (kalıcı kural 8).
+
+---
+
+## 10. ÜÇÜNCÜ EKSEN: etkileşim (λ) — mekanizma doğrulandı, kazanç küçük
+
+Sıcak MSE ayrışımı (fan-out, olcut.py ağırlıkları):
+
+```
+sabit %4,5-7,1 | TRAFO %46,6-69,9 | GUN %0,3-5,3 | ETKILESIM %24,4-43,6
+```
+
+Gün **ana** etkisi kütlenin küçük parçası — düzelttiğim buydu. Asıl kütle
+**etkileşimde**: `r_it = a_i + λ_i·b_t + e_it`, yani her trafonun ortak gün
+faktörüne kendi duyarlılığı.
+
+### Model λ'yı neredeyse hiç bilmiyor
+
+| blok | MODEL λ (ort/std) | GERÇEK λ (ort/std) | kor | R² |
+|---|---|---|---|---|
+| yaz25 | +0,344 / **0,151** | +0,951 / **1,220** | +0,098 | 0,010 |
+| guz25 | +0,805 / 0,576 | +0,924 / 1,396 | +0,264 | 0,070 |
+| kis26 | +0,219 / 0,447 | +0,998 / 1,770 | +0,198 | 0,039 |
+
+Model her trafoya **aynı ve çok küçük** duyarlılık atıyor.
+
+### Doğrudan ölçüm + NULL sınaması (yaz25 sıcak)
+
+`r' = r + [c·(1 + m(λ_i−1)) − 1]·b_t`, λ **doğrulama etiketine hiç
+dokunmadan** başka bir dönemin ham verisinden:
+
+| λ kaynağı | en iyi m | yalnız-gün'e ek | genele |
+|---|---|---|---|
+| Eyl-Ara 2025 (komşu, kor +0,657) — **üst sınır** | 0,35 | **+0,00418** | **−0,00224** |
+| Ara-Mar (kış, kor −0,099) — **null** | — | her m'de kötü (−0,01179) | +0,00632 |
+
+**Null sınaması geçti**: λ gerçekten taşındığında kazandırıyor, taşınmadığında
+düzeltme *monoton* zarar veriyor. Kazanç düzeltmenin biçimsel esnekliğinden
+değil, taşınan bilgiden geliyor.
+
+### λ mevsime özgüdür — pencere genişletmek sinyali yok eder
+
+Hedef 2026 Ocak-Mart λ'sı:
+
+```
+2025 Oca-Mar (dar, AYNI mevsim)    kor +0,400   R^2 0,160
+2025 Oca-Haz (genis)               kor +0,157   R^2 0,025
+2025 tam yil                       kor +0,029   R^2 0,001
+2025 Eki-Ara (komsu, HEMEN ONCE)   kor +0,512   R^2 0,262
+```
+
+Test için komşu dönem Ocak-Mart 2026'dır ve o **kış**; yaz λ'sıyla korelasyonu
+−0,099. Yani testte tek meşru kaynak **2025 Nisan-Temmuz**, beklenen kor ~0,40.
+
+### Dürüst beklenti: küçük
+
+- Üst sınır (kor 0,657) → −0,00224.
+- Kor 0,40 → `(0,40/0,657)² = 0,371` → −0,0008.
+- **Kapsama yalnızca %44,1**: test sıcak trafolarının yarıdan fazlası 2025
+  Nisan-Temmuz'da henüz yoktu (şebeke büyümüş; kapsanmayana λ=1 verilir).
+- Net beklenti ≈ **−0,0004**.
+
+`scripts/son_islem_lambda.py` hazır. Düzeltme **çift merkezlenir** (hem trafo
+hem gün ekseninde), yani saf etkileşimdir — tek yönlü merkezleme yetmiyor ve
+kapı bunu iki kez yakaladı.
+
+`submissions/tuketim_v60_lambda.csv` üretildi (v58 üzerine, m=0,13).
+
+### Sıra
+
+Beklenen kazançlar: `v58` (soğuk) ~−0,0006 · `v59` (ayrım) bilgi ·
+`v60` (λ) ~−0,0004. Büyük kazanç (gün ana etkisi) bugün bankaya yazıldı;
+kalanlar rötuş.
