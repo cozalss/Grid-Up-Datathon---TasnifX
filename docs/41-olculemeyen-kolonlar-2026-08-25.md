@@ -694,11 +694,16 @@ kanalın ilk somut hedefini buldu.
 ## 8. SONUÇ: LB gün ekseni düzeltmesini DOĞRULADI
 
 ```
-1. TasnifX            1.01591   <- BIZ   (dun 1,01750)
-2. Bilalcan Ustabas   1.01793           fark 0,00043 -> 0,00202
-3. Churros y Cay      1.02138
-4. Data4Win           1.02298
+1. Grid Grinders      1.00635   <- 00:18 UTC, onceki ilk-4'te YOKTU
+2. TasnifX            1.01591   <- BIZ   (dun 1,01750)
+3. Bilalcan Ustabas   1.01793           fark 0,00043 -> 0,00202
+4. Churros y Cay      1.02138
+5. Data4Win           1.02298
 ```
+
+> **UYARI (25 Agustos 07:20'de eklendi):** gonderimimizden 17 dakika sonra
+> Grid Grinders 1,00635 ile birinci oldu. Asagidaki analiz gecerli, ama
+> "birincilik guvende" cikarimi ARTIK GECERLI DEGIL -- bkz. docs/42 §0.
 
 | gönderim | c (sıcak gün) | **ön kayıtlı tahmin** | **LB** | sapma |
 |---|---|---|---|---|

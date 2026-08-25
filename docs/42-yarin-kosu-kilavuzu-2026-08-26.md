@@ -5,17 +5,42 @@
 
 ---
 
-## 0. Durum (25 Ağustos 05:15)
+## 0. Durum (25 Ağustos 07:20)
 
 ```
-1. TasnifX            1.01591   <- BIZ
-2. Bilalcan Ustabas   1.01793      fark 0,00202
-3. Churros y Cay      1.02138
+1. Grid Grinders      1.00635   <- 25 Agustos 00:18 UTC, onceki ilk-4'te YOKTU
+2. TasnifX            1.01591   <- BIZ
+3. Bilalcan Ustabas   1.01793
+4. Churros y Cay      1.02138
+5. Data4Win           1.02298
 Yarisma 1 Eylul'de bitiyor. Gunde 3 hak, sifirlanma 00:00 UTC = yerel 03:00.
 ```
 
+> **DURUM DEGISTI.** Gonderimimizden 17 dakika sonra Grid Grinders 1,00635 ile
+> birinci oldu. Fark **0,0096**. Bugunku kazancimiz (-0,00159) Bilalcan'a karsi
+> yeterliydi ama bu sicramanin yanina yaklasmiyor.
+
 Bugün doğrulanan: **gün ekseni genlik düzeltmesi gerçek** (v50 1,01686 →
 v55 1,01591, −0,00095).
+
+### Stratejik sonuç — rötuşlar bu farkı KAPATMAZ
+
+Elde hazır duran adayların toplam beklentisi ≈ **−0,0015** (soğuk gün ekseni
+−0,0006 · λ −0,0004 · 50 tohum −0,00016 · sıcak c optimumu −0,00026). Bu bizi
+~1,0144'e getirir; Grid Grinders 1,00635'te. **Rötuşlarla yetişilmiyor.**
+
+Ölçümler kalan bütün *ölçülebilir* eksenlerin kapalı olduğunu söylüyor (§5).
+Öyleyse iki iş birbirinden ayrılır:
+
+- **Savunma (hazır, mekanik):** aşağıdaki zinciri koş, 2.'liği sağlamlaştır ve
+  farkı biraz kapat. Risk yok, kod hazır.
+- **Atak (yeni bilgi gerekir):** 0,0096'yı kapatmak için rötuş değil, **yeni
+  bilgi kaynağı** lazım. Ölçülen duvar: toplam MSE'nin %46'sı soğuk sıfırlarda
+  ve statik özniteliklerle öğrenilemiyor (AUC 0,565); soğuk trafo seviyesinde
+  ofset std 1,9357 ve en iyi kestirici %1,6'sını açıklıyor. Bu duvarı ancak
+  trafo düzeyinde YENI bir veri kaynağı ya da yarışmanın gözden kaçmış bir
+  yapısal özelliği yıkar. Grid Grinders'ın 1,006'sı böyle bir şeyi bulmuş
+  olduklarını gösteriyor.
 
 ---
 
