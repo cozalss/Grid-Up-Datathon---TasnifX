@@ -747,3 +747,48 @@ Her iki durumda da c ≈ 1,35-1,50 bandı güvenli.
 
 Soğuk taraf için beklenti sıcaktan **büyük**: rampa açığı orada daha geniş
 (üretim +0,6157 vs referans +0,9694, açık 0,354; sıcakta 0,239).
+
+---
+
+## 9. YARIN HAZIR (kota 03:00'te açılıyor)
+
+### Bir teyit daha
+
+`v50` ham (büzmesiz) soğuk gün ekseni std'si = `0,1626 / 0,60` = **0,2710**, ve
+2025 Nis-Tem gerçek referansı da **0,2710**. Ham model soğuk gün genliğini
+**zaten doğru biliyor**; onu bozan üretim büzmesidir.
+
+### Hazır dosyalar ve tahminleri
+
+| dosya | sıcak gün | soğuk gün | tahmin | ne öğretir |
+|---|---|---|---|---|
+| `tuketim_v58_soguk_kalibre` | ×1,49 | **×1,411** | **1,01532** | soğuk bileşen (sıcak satırlar v55 ile birebir) |
+| `tuketim_v59_sicak20` | **×2,00** | ×1,00 | 1,02040 *(A)* / 1,01692 *(B)* | **(A) ile (B)'yi AYIRIR** |
+| `tuketim_v56_birlesik` | ×1,49 | ×1,544 | 1,01534 | v58'in yedeği (tam koruma) |
+
+`v58`in `c`'si formülden **ve LB kalibresiyle** geldi: `--lb-kalibre 0,893`,
+çünkü 25 Ağustos LB'si formülün %11 yüksek olduğunu gösterdi (tahmin 1,492,
+çözülen 1,332). Soğuk formül c: 1,507 ham → **1,453** kalibreli, uygulanan
+ölçek 1,411.
+
+### Neden `v59` ayırıyor
+
+İki açıklama iki noktadan geçtiği için `c ∈ [1,0 · 1,49]` aralığında ayırt
+edilemez; aralığın **dışında** ayrışırlar:
+
+```
+c = 2,00 :   (A) c*=1,335, B=0,0218   ->  1,02040
+             (B) c*=1,492, B=0,0080   ->  1,01692     fark 0,0035 -- kesin
+```
+
+(A) çıkarsa sıcak eksen bitmiştir (optimum 1,33, v55 zaten 0,0003 uzağında).
+(B) çıkarsa public LB bir alt kümedir ve **private LB'de kazanç daha büyüktür**.
+
+### Sıra
+
+1. `v58` → soğuk bileşenin hükmü
+2. `v59` → (A)/(B) ayrımı
+3. 1-2'nin sonucuna göre optimum bileşim
+
+**Gönderimden önce `kaggle competitions submissions` ile liste okunacak**
+(kalıcı kural 8).

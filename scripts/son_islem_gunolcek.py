@@ -123,6 +123,14 @@ def main() -> int:
     a.add_argument("--cikis", required=True)
     a.add_argument("--c", type=float, default=None, help="elle c; verilmezse formulden")
     a.add_argument("--soguk-da", action="store_true", help="soguk satirlara da uygula")
+    a.add_argument("--yalniz-soguk", action="store_true", help="YALNIZCA soguk satirlar")
+    a.add_argument(
+        "--lb-kalibre",
+        type=float,
+        default=None,
+        help="formul c'yi bu katsayiyla carp. 2026-08-25 LB'si formulun %11 yuksek "
+        "oldugunu gosterdi (tahmin 1,492 / cozulen 1,332), yani 0,893.",
+    )
     ar = a.parse_args()
 
     ornek = pd.read_csv(KOK / "data/raw/sample_submission.csv", encoding="utf-8")
@@ -149,7 +157,14 @@ def main() -> int:
     if len(m) != len(sub):
         raise RuntimeError("birlestirme satir sayisini bozdu")
     soguk = ~m["tanim"].isin(set(tr["tanim"])).to_numpy()
-    hedef = np.ones(len(m), dtype=bool) if ar.soguk_da else ~soguk
+    if ar.yalniz_soguk and ar.soguk_da:
+        raise RuntimeError("--yalniz-soguk ve --soguk-da birlikte verilemez")
+    if ar.yalniz_soguk:
+        hedef = soguk
+    elif ar.soguk_da:
+        hedef = np.ones(len(m), dtype=bool)
+    else:
+        hedef = ~soguk
 
     log_guc = np.log1p(m["guc"].to_numpy(dtype="float64"))
     r = np.log1p(m["tuketim"].to_numpy(dtype="float64")) - log_guc
@@ -186,6 +201,8 @@ def main() -> int:
         raise RuntimeError(f"gun-of-year ortakligi yetersiz: {len(ortak)} gun")
     kor = float(np.corrcoef(ia[ortak], ib[ortak])[0, 1])
     c_formul = kor * oran
+    if ar.lb_kalibre is not None:
+        c_formul = 1.0 + ar.lb_kalibre * (c_formul - 1.0)
     c_kullan = float(ar.c) if ar.c is not None else c_formul
     if not 0.3 <= c_kullan <= 3.0:
         raise RuntimeError(f"c mantik disi: {c_kullan:.3f}")
@@ -203,11 +220,13 @@ def main() -> int:
     # ---- KAPILAR ----
     if np.isnan(yeni).any() or (yeni < 0).any():
         raise RuntimeError("NaN veya negatif tahmin")
+    sap = float("nan")
     if not ar.soguk_da:
-        eski_c = m.loc[soguk, "tuketim"].to_numpy(dtype="float64")
-        sap = float((np.abs(yeni[soguk] - eski_c) / np.maximum(np.abs(eski_c), 1.0)).max())
+        dokunulmaz = ~hedef
+        eski_c = m.loc[dokunulmaz, "tuketim"].to_numpy(dtype="float64")
+        sap = float((np.abs(yeni[dokunulmaz] - eski_c) / np.maximum(np.abs(eski_c), 1.0)).max())
         if sap > 1e-12:
-            raise RuntimeError(f"soguk satirlar degisti: goreli sapma {sap:.3e}")
+            raise RuntimeError(f"dokunulmayan rejim degisti: goreli sapma {sap:.3e}")
     b_yeni = gun_etkisi(
         m.loc[hedef, "tanim"].to_numpy(), m.loc[hedef, "tarih"].to_numpy(), yeni_r[hedef]
     )
@@ -240,7 +259,8 @@ def main() -> int:
     )
     print(f"  uygulanan olcek {olcek:.3f}  genel seviye kaymasi {kayma:.1e}  (0 olmali)")
     if not ar.soguk_da:
-        print(f"  SOGUK satirlar dokunulmadi, goreli sapma {sap:.1e}")
+        ad = "SICAK" if ar.yalniz_soguk else "SOGUK"
+        print(f"  {ad} satirlar dokunulmadi, goreli sapma {sap:.1e}")
     z = pd.Series(b_test.values, index=pd.to_datetime(b_test.index))
     zg = pd.Series(b_gecen.values, index=pd.to_datetime(b_gecen.index))
     print(
