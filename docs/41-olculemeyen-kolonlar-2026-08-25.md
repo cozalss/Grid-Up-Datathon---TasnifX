@@ -688,3 +688,62 @@ sıfırlarda. §4 kalibrasyonun, §5 takvimin, §1 kapasitenin kapandığını g
 Bu geceye kadar ölçülen eksen sayısı yirmiyi geçti ve **hepsi** "üretim zaten
 doğru" dedi. Geriye tek meşru kanal kaldı: **rig'in göremediği yerler.** §6 o
 kanalın ilk somut hedefini buldu.
+
+---
+
+## 8. SONUÇ: LB gün ekseni düzeltmesini DOĞRULADI
+
+```
+1. TasnifX            1.01591   <- BIZ   (dun 1,01750)
+2. Bilalcan Ustabas   1.01793           fark 0,00043 -> 0,00202
+3. Churros y Cay      1.02138
+4. Data4Win           1.02298
+```
+
+| gönderim | c (sıcak gün) | **ön kayıtlı tahmin** | **LB** | sapma |
+|---|---|---|---|---|
+| `tuketim_v50_nihai30` | 1,00 | 1,01710 | **1,01686** | −0,00024 |
+| `tuketim_v55_gunolcek` | 1,49 | 1,01426 | **1,01591** | +0,00165 |
+
+**Gün ekseni düzeltmesi gerçek: v55 − v50 = −0,00095.** Yön doğrulandı,
+mekanizma çalışıyor. Ama kazanç tahminin **%37'si**.
+
+### Üçüncü hak MÜKERRER gitti — süreç hatası
+
+`gonder.sh` 10 dakikalık araç zaman aşımına takıldı, ama takılmadan önce v50
+**ve v55'i** göndermişti. Liste kontrol edilmeden v55 elle tekrar gönderildi
+(00:01:53 ve 00:01:55). **Soğuk bileşen (v56) bugün sınanamadı.**
+
+> Kalıcı kural 8: **gönderimden önce `kaggle competitions submissions` ile liste
+> okunur.** Bir betik zaman aşımına uğradıysa "hiçbir şey olmadı" varsayılmaz.
+
+### İki açıklama, ayrılamıyor (üçüncü nokta gerekiyordu)
+
+`MSLE(c) = A + B(c−c*)²`, `B = pay_sıcak × σ_gün² = 0,7784 × 0,1675² = 0,021839`.
+
+```
+v50 MSLE 1,034004    v55 MSLE 1,032073    fark -0,001931
+```
+
+| açıklama | sonuç |
+|---|---|
+| **A)** B doğru, optimum daha düşük | **c\* = 1,335** ; c\*'da RMSLE 1,01565 (v55'e göre −0,00026) |
+| **B)** c\*=1,492 doğru, public LB **alt küme** | B' = 0,007978 (B'nin %37'si) → etkin σ_gün 0,1012 |
+
+(B) mantıklı: Nisan-Mayıs gün ekseni std'si (0,029 / 0,025) Haziran-Temmuz'un
+(0,112 / 0,069) yarısından az. Public LB erken tarihlere ağırlıklıysa ölçülen B
+küçülür. **Ve (B) doğruysa private LB'de kazanç daha büyüktür** — nihai sıralama
+private ile belirlendiği için bu bizim lehimize.
+
+Her iki durumda da c ≈ 1,35-1,50 bandı güvenli.
+
+### Yarının planı (kota 03:00'te açılıyor)
+
+| hak | dosya | ne öğretir |
+|---|---|---|
+| 1 | `tuketim_v56_birlesik.csv` | **soğuk gün bileşeni** (v56−v55, sıcak satırlar birebir aynı) |
+| 2 | `tuketim_v57_gunolcek175.csv` | parabolün 3. noktası → (A) ile (B) AYRILIR |
+| 3 | 1-2'nin sonucuna göre optimum bileşim | |
+
+Soğuk taraf için beklenti sıcaktan **büyük**: rampa açığı orada daha geniş
+(üretim +0,6157 vs referans +0,9694, açık 0,354; sıcakta 0,239).
