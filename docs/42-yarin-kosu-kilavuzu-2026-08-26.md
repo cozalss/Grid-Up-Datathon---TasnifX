@@ -123,6 +123,22 @@ Bugün bu yapılmadığı için bir hak mükerrer gönderime gitti.
 | takvim / tatil | günlük etki std'si 0,0525 log birimi |
 | harman (power mean, NNLS) | üretim zaten optimumda |
 | λ pencere genişletme | 2025 tam yıl kor +0,029 (dar aynı mevsim +0,400) |
+| **ulusal yük endeksiyle gün faktörü kurulumu** | blok İÇİNDE R² 0,926→0,950, ama katsayılar taşınmıyor: çapraz uydurmada yaz25 −0,0152, guz25 −0,0333, kis26 −0,0021 — **3/3 zarar** |
+
+---
+
+### Not: modelin gün faktörünün ŞEKLİ zaten iyi
+
+```
+gercek gun faktorunu aciklama gucu (R^2)
+blok     MODEL   ulusal_gunluk   ulusal_tepe   MODEL+ULUSAL (ORNEKLEM ICI)
+yaz25    0,926      0,666           0,684          0,950
+guz25    0,942      0,814           0,798          0,950
+kis26    0,120      0,187           0,289          0,451
+```
+
+Yaz ve güzde model şekli %93-94 biliyor; **eksik olan yalnızca genlikti** ve
+onu `son_islem_gunolcek.py` düzeltiyor. Kışta model kötü (0,120) ama test yaz.
 
 ---
 
