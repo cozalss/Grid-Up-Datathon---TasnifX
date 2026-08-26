@@ -1,0 +1,10 @@
+{
+  "S_yildiz_ulasilan_sicak_gun_sigma": 0.22038023379062602,
+  "kor_taban_bagimsiz": 0.9215857436145106,
+  "sigma_gercek_2025": 0.27104332699881034,
+  "sigma_gercek_2026_ima": 0.23913155701202848,
+  "lb_kalibre_carpimsal": 0.8822632147408598,
+  "soguk_c_onerilen": 1.334993471933349,
+  "soguk_B": 0.0053663579683341945,
+  "soguk_beklenen_dMSE": -0.0006022160518235271
+}

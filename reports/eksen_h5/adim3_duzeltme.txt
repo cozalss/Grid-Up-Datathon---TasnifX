@@ -1,0 +1,14 @@
+
+=== ilce ===  olay 1,019
+  TUMU           n= 1019  R2(devir)=0.0001  R2(as-of pay*on_top)=0.4938  R2(ikisi)=0.4954  EK=+0.0015  b_devir=+0.0008
+  TEKIL          n=  708  R2(devir)=0.0010  R2(as-of pay*on_top)=0.3984  R2(ikisi)=0.3984  EK=+0.0000  b_devir=+0.0000
+  yaz25          n=  264  R2(devir)=0.0000  R2(as-of pay*on_top)=0.5159  R2(ikisi)=0.5169  EK=+0.0010  b_devir=-0.0007
+  yaz25 TEKIL    n=  169  R2(devir)=0.0001  R2(as-of pay*on_top)=0.3296  R2(ikisi)=0.3321  EK=+0.0024  b_devir=-0.0006
+  guz25          n=  380  R2(devir)=0.0135  R2(as-of pay*on_top)=0.4963  R2(ikisi)=0.5103  EK=+0.0140  b_devir=+0.0056
+
+=== bolge ===  olay 586
+  TUMU           n=  586  R2(devir)=0.0338  R2(as-of pay*on_top)=0.6925  R2(ikisi)=0.7022  EK=+0.0097  b_devir=-0.0030
+  TEKIL          n=  481  R2(devir)=0.0076  R2(as-of pay*on_top)=0.5641  R2(ikisi)=0.5646  EK=+0.0005  b_devir=-0.0003
+  yaz25          n=  142  R2(devir)=0.0583  R2(as-of pay*on_top)=0.7408  R2(ikisi)=0.7669  EK=+0.0262  b_devir=-0.0052
+  yaz25 TEKIL    n=  120  R2(devir)=0.0385  R2(as-of pay*on_top)=0.5217  R2(ikisi)=0.5247  EK=+0.0030  b_devir=-0.0005
+  guz25          n=  219  R2(devir)=0.0154  R2(as-of pay*on_top)=0.6784  R2(ikisi)=0.6785  EK=+0.0001  b_devir=-0.0004

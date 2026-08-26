@@ -1,0 +1,30 @@
+
+==============================================================================
+BLOK yaz25  taban MSE 2.93730
+  alfa=0.0   kayma +0.3702  MERKEZLI en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  ~ toplam +0.000000
+  alfa=0.5   kayma +0.2556  MERKEZLI en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  ~ toplam +0.000000
+  alfa=0.75  kayma +0.1905  MERKEZLI en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  ~ toplam +0.000000
+
+==============================================================================
+BLOK guz25  taban MSE 2.66168
+  alfa=0.0   kayma +0.8554  MERKEZLI en iyi w=0.25  dMSE_soguk -0.01856 (sh 0.00402)  ~ toplam -0.004113
+      K=0   dMSE_soguk -0.01495
+      K=1   dMSE_soguk +0.01096
+      K=5   dMSE_soguk +0.04126
+      K=10  dMSE_soguk +0.05818
+      K=25  dMSE_soguk +0.07682
+      K=50  dMSE_soguk +0.08874
+  alfa=0.5   kayma +0.6350  MERKEZLI en iyi w=0.25  dMSE_soguk -0.03178 (sh 0.00419)  ~ toplam -0.007043
+      K=0   dMSE_soguk -0.02817
+      K=1   dMSE_soguk -0.00014
+      K=5   dMSE_soguk +0.03512
+      K=10  dMSE_soguk +0.05506
+      K=25  dMSE_soguk +0.07840
+      K=50  dMSE_soguk +0.09493
+  alfa=0.75  kayma +0.4825  MERKEZLI en iyi w=0.25  dMSE_soguk -0.03821 (sh 0.00431)  ~ toplam -0.008467
+      K=0   dMSE_soguk -0.03460
+      K=1   dMSE_soguk -0.00508
+      K=5   dMSE_soguk +0.03365
+      K=10  dMSE_soguk +0.05708
+      K=25  dMSE_soguk +0.08865
+      K=50  dMSE_soguk +0.10800

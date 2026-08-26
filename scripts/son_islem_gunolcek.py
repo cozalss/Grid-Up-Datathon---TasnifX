@@ -202,7 +202,14 @@ def main() -> int:
     kor = float(np.corrcoef(ia[ortak], ib[ortak])[0, 1])
     c_formul = kor * oran
     if ar.lb_kalibre is not None:
-        c_formul = 1.0 + ar.lb_kalibre * (c_formul - 1.0)
+        # BUG 2 DUZELTMESI (2026-08-26). Eskiden AFFIN idi: 1 + k*(c-1).
+        # YANLIS. c* = kor * sigma_gercek / sigma_model, yani sigma_gercek ile
+        # ORANTILI; bir olcek hatasi CARPARAK duzeltilir, kaydirarak degil.
+        # LB'nin cozdugu sicak optimuma (1,332) karsi sinandi:
+        #     carpimsal k*c  -> 1,3324  (hata ~0)
+        #     affin 1+k(c-1) -> 1,4394  (hata +0,107, dMSE +0,000277)
+        # Tasinabilir sabit c* DEGIL, ULASILACAK GENLIK S* = kor*sigma_gercek.
+        c_formul = ar.lb_kalibre * c_formul
     c_kullan = float(ar.c) if ar.c is not None else c_formul
     if not 0.3 <= c_kullan <= 3.0:
         raise RuntimeError(f"c mantik disi: {c_kullan:.3f}")
@@ -234,8 +241,20 @@ def main() -> int:
     # Kapi GORELI: uygulanan olcek, kirpilan satirlar (log1p(tahmin) sifira
     # dayanmis olanlar) yuzunden istenenden birkac binde sapar ve sapma c ile
     # buyur. Mutlak esik bu yuzden yanlisti; %3 goreli dogru sinirdir.
-    if abs(olcek - c_kullan) / max(c_kullan, 1e-9) > 0.03:
-        raise RuntimeError(f"olcek beklendigi gibi degil: {olcek:.3f} yerine {c_kullan:.3f}")
+    # BUG 1 DUZELTMESI (2026-08-26): ISTENEN != ULASILAN.
+    # np.clip(...,0,None) sifira dayanmis tahminleri kirpiyor, uygulanan genlik
+    # istenenden kucuk kaliyor:  v55 1,492 -> 1,4777   v66 1,335 -> 1,3266
+    # Eski %3 kapisi bunu SESSIZ geciriyordu ve belgelere ISTENEN yaziliyordu;
+    # sonraki her tureme yanlis normalizasyonla ilerliyordu. Kapi %1'e cekildi,
+    # ulasilan olcek her kosuda ACIKCA raporlaniyor (asagida).
+    sapma = abs(olcek - c_kullan) / max(c_kullan, 1e-9)
+    if sapma > 0.01:
+        oneri = c_kullan * c_kullan / max(olcek, 1e-9)
+        raise RuntimeError(
+            f"olcek sapmasi %{100 * sapma:.2f} -- istenen {c_kullan:.4f}, "
+            f"ULASILAN {olcek:.4f}. Kirpma kaybi buyuk. "
+            f"Hedefe varmak icin --c {oneri:.4f} deneyin."
+        )
     kayma = float(abs(yeni_r[hedef].mean() - r[hedef].mean()))
     if kayma > 1e-9:
         raise RuntimeError(f"genel seviye kaydi: {kayma:.3e}")
@@ -257,7 +276,12 @@ def main() -> int:
         f"   KULLANILAN c = {c_kullan:.3f}"
         f"{'  (elle verildi)' if ar.c is not None else '  (formulden)'}"
     )
-    print(f"  uygulanan olcek {olcek:.3f}  genel seviye kaymasi {kayma:.1e}  (0 olmali)")
+    print(
+        f"  ISTENEN olcek {c_kullan:.4f}   ULASILAN {olcek:.4f}"
+        f"   fark %{100 * (olcek / max(c_kullan, 1e-9) - 1):+.2f}"
+        f"   (kirpma kaybi -- tureme yapilacaksa ULASILAN kullan)"
+    )
+    print(f"  genel seviye kaymasi {kayma:.1e}  (0 olmali)")
     if not ar.soguk_da:
         ad = "SICAK" if ar.yalniz_soguk else "SOGUK"
         print(f"  {ad} satirlar dokunulmadi, goreli sapma {sap:.1e}")

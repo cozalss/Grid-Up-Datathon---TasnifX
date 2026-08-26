@@ -1,0 +1,75 @@
+
+==============================================================================
+BLOK yaz25  kesme 2025-04-01  satir 20,633  trafo 678
+  olcut tani: ESS %56.3  kirpilan %0.00  kapsanmayan %0.00  guvenilir=True
+  taban MSE (agirlikli, tohum ort) 2.93730
+
+  --- pencere W=90  lokasyon kapsami %100.0  yeni_pay ort 0.2202 (max 0.630) ---
+      capa ort 6.887 | gercek ort 6.643 | taban ort 6.583
+      SAF capa MSE (kapsanan satirlarda) 3.84668  | taban ayni satirlarda 2.93730
+      alfa=0.0   en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.03429
+      alfa=0.25  en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.03302
+      alfa=0.5   en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.03172
+      alfa=0.75  en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.03039
+      alfa=1.0   en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.02903
+      >> EN IYI alfa=0.0 w=0.00 dMSE_soguk +0.00000 (sh 0.00000)  ~ toplam dMSE +0.000000
+
+  --- pencere W=9999  lokasyon kapsami %100.0  yeni_pay ort 0.2202 (max 0.630) ---
+      capa ort 6.887 | gercek ort 6.643 | taban ort 6.583
+      SAF capa MSE (kapsanan satirlarda) 3.84668  | taban ayni satirlarda 2.93730
+      alfa=0.0   en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.03429
+      alfa=0.25  en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.03302
+      alfa=0.5   en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.03172
+      alfa=0.75  en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.03039
+      alfa=1.0   en iyi w=0.00  dMSE_soguk +0.00000 (sh 0.00000)  | w=0.10 +0.02903
+      >> EN IYI alfa=0.0 w=0.00 dMSE_soguk +0.00000 (sh 0.00000)  ~ toplam dMSE +0.000000
+
+==============================================================================
+BLOK guz25  kesme 2025-08-01  satir 39,405  trafo 1173
+  olcut tani: ESS %49.6  kirpilan %0.00  kapsanmayan %0.00  guvenilir=True
+  taban MSE (agirlikli, tohum ort) 2.66168
+
+  --- pencere W=90  lokasyon kapsami %100.0  yeni_pay ort 0.4232 (max 0.868) ---
+      capa ort 6.917 | gercek ort 6.153 | taban ort 6.106
+      SAF capa MSE (kapsanan satirlarda) 3.36950  | taban ayni satirlarda 2.66168
+      alfa=0.0   en iyi w=0.20  dMSE_soguk -0.03565 (sh 0.00356)  | w=0.10 -0.02880
+      alfa=0.25  en iyi w=0.20  dMSE_soguk -0.04211 (sh 0.00358)  | w=0.10 -0.03069
+      alfa=0.5   en iyi w=0.25  dMSE_soguk -0.04965 (sh 0.00434)  | w=0.10 -0.03258
+      alfa=0.75  en iyi w=0.25  dMSE_soguk -0.05638 (sh 0.00441)  | w=0.10 -0.03428
+      alfa=1.0   en iyi w=0.25  dMSE_soguk -0.05351 (sh 0.00457)  | w=0.10 -0.03478
+      >> EN IYI alfa=0.75 w=0.25 dMSE_soguk -0.05638 (sh 0.00441)  ~ toplam dMSE -0.012494
+      KIRPMA TABLOSU (blok guz25, W=90, alfa=0.75, w=0.25)
+        K=0   dMSE_soguk -0.05277  (kalan trafo 1173)
+        K=1   dMSE_soguk -0.01821  (kalan trafo 1172)
+        K=5   dMSE_soguk +0.03163  (kalan trafo 1168)
+        K=10  dMSE_soguk +0.05264  (kalan trafo 1163)
+        K=25  dMSE_soguk +0.07690  (kalan trafo 1148)
+        K=50  dMSE_soguk +0.09704  (kalan trafo 1123)
+        en cok kazandiran 3: ['70120494', '70121793', '700539944']
+        en cok kaybettiren 3: ['700777572', '700750655', '77940051']
+
+  --- pencere W=9999  lokasyon kapsami %100.0  yeni_pay ort 0.4207 (max 0.868) ---
+      capa ort 6.805 | gercek ort 6.153 | taban ort 6.106
+      SAF capa MSE (kapsanan satirlarda) 3.21606  | taban ayni satirlarda 2.66168
+      alfa=0.0   en iyi w=0.20  dMSE_soguk -0.02759 (sh 0.00308)  | w=0.10 -0.02235
+      alfa=0.25  en iyi w=0.20  dMSE_soguk -0.03307 (sh 0.00310)  | w=0.10 -0.02400
+      alfa=0.5   en iyi w=0.25  dMSE_soguk -0.03922 (sh 0.00379)  | w=0.10 -0.02560
+      alfa=0.75  en iyi w=0.25  dMSE_soguk -0.04360 (sh 0.00386)  | w=0.10 -0.02693
+      alfa=1.0   en iyi w=0.20  dMSE_soguk -0.03771 (sh 0.00333)  | w=0.10 -0.02686
+      >> EN IYI alfa=0.75 w=0.25 dMSE_soguk -0.04360 (sh 0.00386)  ~ toplam dMSE -0.009661
+      KIRPMA TABLOSU (blok guz25, W=9999, alfa=0.75, w=0.25)
+        K=0   dMSE_soguk -0.03998  (kalan trafo 1173)
+        K=1   dMSE_soguk -0.00969  (kalan trafo 1172)
+        K=5   dMSE_soguk +0.03270  (kalan trafo 1168)
+        K=10  dMSE_soguk +0.05066  (kalan trafo 1163)
+        K=25  dMSE_soguk +0.07472  (kalan trafo 1148)
+        K=50  dMSE_soguk +0.09626  (kalan trafo 1123)
+        en cok kazandiran 3: ['70120494', '70121793', '700539944']
+        en cok kaybettiren 3: ['700777572', '700750655', '77940051']
+
+==============================================================================
+ISARET TUTARLILIGI
+  ('yaz25', 90)  alfa=0.0 w=0.00  dMSE_soguk +0.00000
+  ('yaz25', 9999)  alfa=0.0 w=0.00  dMSE_soguk +0.00000
+  ('guz25', 90)  alfa=0.75 w=0.25  dMSE_soguk -0.05638
+  ('guz25', 9999)  alfa=0.75 w=0.25  dMSE_soguk -0.04360

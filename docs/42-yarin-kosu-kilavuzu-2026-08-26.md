@@ -81,8 +81,42 @@ uv run python scripts/son_islem_gunolcek.py --giris $B \
     --cikis submissions/A_sicak.csv
 
 # (b) + SOGUK gun ekseni, LB-kalibreli
-uv run python scripts/son_islem_gunolcek.py --giris submissions/A_sicak.csv \
-    --cikis submissions/B_sicak_soguk.csv --yalniz-soguk --lb-kalibre 0.893
+#
+# !!! DIKKAT -- 2026-08-25 gecesi (docs/45 tik 2) uc kusur bulundu !!!
+# GUNCELLEME 2026-08-26 09:00: kusur 1 ve 2 KODDA DUZELTILDI
+# (scripts/son_islem_gunolcek.py). Kusur 3 (yanlis capa nufusu) DURUYOR --
+# bu adim hala SOGUK icin yanlis nufusa capaliyor. Yerine
+# scripts/son_islem_soguk_gunolcek.py kullanin.
+# Ayrica LB artik c*'i TAM cozdu (1,3301, docs/46) -- capa tahminine
+# gerek kalmadi.
+#
+# 1. CALISMIYOR. Aynen kosuldugunda cokuyor:
+#      RuntimeError: olcek beklendigi gibi degil: 1.414 yerine 1.458
+#    (BUG 1: kirpma yuzunden ISTENEN olcek ULASILMIYOR; betigin kendi kapisi
+#     ateşliyor. Ayni kusur v55'te 1,492->1,4760, v66'da 1,335->1,3241.)
+#
+# 2. --lb-kalibre YANLIS BICIM (BUG 2). Kalibreyi AFFIN uyguluyor
+#    (1+k(c-1)) ama c* sigma_gercek ile ORANTILI oldugu icin dogru bicim
+#    CARPIMSAL (k*c). LB'nin cozdugu optimuma karsi: carpimsal 1,3325
+#    (hata ~0), affin 1,4395 (hata +0,109, dMSE +0,000277).
+#    Tasinabilir sabit c* DEGIL, HEDEF GENLIK S* = 0,2204.
+#
+# 3. YANLIS CAPA NUFUSU -- en buyugu. Betigin capasi pencerenin >=%90'inda
+#    VAR OLAN (YERLESIK) trafolardan geliyor: sigma = 0,2710. Ama SOGUK
+#    satirlar pencerede YENI DOGMUS trafolar ve onlarin gercek gun ekseni
+#    genligi 0,4255 -- 1,570 KAT buyuk. Bu yuzden bu adim c=1,411 seciyor,
+#    dogrusu ~2,2-3,0.
+#    docs/41'in "v50 ham soguk gun std = 0,1626/0,60 = 0,2710, gercek referans
+#    da 0,2710 -> ham model genligi ZATEN DOGRU biliyor" cumlesi DONGUSEL bir
+#    dogrulamaydi: 0,2710 bir olcum degil, buzme katsayisina bolunerek elde
+#    edilmis bir CIKARIM ve tesadufen YANLIS referansa oturmus.
+#
+# YERINE: scripts/son_islem_soguk_gunolcek.py --c 2.20
+#   (dogru nufustan capali, seviye-notr, ulasilan olcek dogrulanir)
+#   Ayni panelde: bu adim -0,00657 test dMSE, yerine gelen -0,01486.
+#
+# uv run python scripts/son_islem_gunolcek.py --giris submissions/A_sicak.csv \
+#     --cikis submissions/B_sicak_soguk.csv --yalniz-soguk --lb-kalibre 0.893
 
 # (c) + etkilesim (lambda)
 uv run python scripts/son_islem_lambda.py --giris submissions/B_sicak_soguk.csv \

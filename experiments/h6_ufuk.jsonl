@@ -1,0 +1,7 @@
+{"olcum": "sicak_ufuk_egimi", "yaz25": 0.006264, "yaz25_t": 26.55, "guz25": 0.000139, "guz25_t": 1.37, "kis26": -0.001183, "kis26_t": -7.71}
+{"olcum": "gunFE_saf_ufuk_egimi", "b": 0.00033, "se": 0.000226, "t": 1.46, "not": "9 ortusen kesme, gun+trafo sabit etkisi"}
+{"olcum": "gunFE_yaz_hedefleri", "b": -0.001072, "se": 7.3e-05, "t": -14.73, "not": "ISARET TERS -- yaz rampasi mevsim"}
+{"olcum": "kesme_bazli_egim", "2025-03-31": 0.006799, "2025-04-30": 0.006566, "2025-05-31": -9.8e-05, "2025-06-30": -0.006054, "2025-07-31": -0.004836, "2025-08-31": 9.6e-05, "2025-09-30": 0.002881, "2025-10-31": 0.001181, "2025-11-30": -0.000926}
+{"olcum": "dMSE_saf_egim_agirlikli", "yaz25": -0.005389, "guz25": -0.000411, "kis26": 0.000597, "yaz25_haric_ort": 9.3e-05, "genel": -0.00135}
+{"olcum": "mevsim_teyidi", "panel_nisan_temmuz_yukselis": 0.6152, "yaz25_ufuk_rampasi_dm": 0.5348, "oran": 0.869}
+{"hukum": "CURUDU", "gerekce": "ufuk egimi mevsim; gun sabit etkisiyle t=+1.46 (null); kis26 isaret ters; yaz25 kazanci tutulan-disarida-yaz artifakti"}

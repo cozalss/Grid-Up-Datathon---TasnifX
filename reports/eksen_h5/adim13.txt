@@ -1,0 +1,77 @@
+panel (5344, 455)  dolu %50.43
+lokasyonu DEGISEN trafo: 0
+trafo 5,344 | ilce 47 | bolge 4
+
+train icinde dogan trafo 3,285  TOPLU 1,626 / TEKIL 1,659
+
+==============================================================================
+LOKASYON SEVIYESI: ilce  (47 birim, ort 113.7 trafo)
+kontrol paneli: 2,059 'her zaman vardi' trafo
+olay sayisi 1,166  (lok x dogum-gunu)
+
+--- (2) YERLESIK YUK DEGISIMI (DiD, log oran) ---
+  TUMU (global kontrol)        n= 1166  ort -0.0200  sh 0.0116  t  -1.72  medyan -0.0025
+  TUMU (bolge kontrol)         n= 1166  ort +0.0089  sh 0.0093  t  +0.96  medyan +0.0182
+  TEKIL (global kontrol)       n=  839  ort -0.0174  sh 0.0132  t  -1.32  medyan +0.0138
+  TEKIL (bolge kontrol)        n=  839  ort +0.0078  sh 0.0105  t  +0.74  medyan +0.0245
+  TOPLU (global kontrol)       n=  327  ort -0.0268  sh 0.0240  t  -1.11  medyan -0.0481
+  TOPLU (bolge kontrol)        n=  327  ort +0.0119  sh 0.0196  t  +0.61  medyan +0.0062
+  yaz25 (global kontrol)       n=  342  ort -0.0839  sh 0.0263  t  -3.19  medyan +0.0004
+  yaz25 (bolge kontrol)        n=  342  ort -0.0273  sh 0.0231  t  -1.18  medyan +0.0059
+  yaz25 TEKIL (global kontrol) n=  242  ort -0.0287  sh 0.0273  t  -1.05  medyan +0.0336
+  yaz25 TEKIL (bolge kontrol)  n=  242  ort -0.0110  sh 0.0241  t  -0.46  medyan +0.0175
+  guz25 (global kontrol)       n=  413  ort +0.0748  sh 0.0155  t  +4.83  medyan +0.0843
+  guz25 (bolge kontrol)        n=  413  ort +0.0391  sh 0.0107  t  +3.66  medyan +0.0174
+  guz25 TEKIL (global kontrol) n=  270  ort +0.0282  sh 0.0187  t  +1.51  medyan +0.0417
+  guz25 TEKIL (bolge kontrol)  n=  270  ort +0.0203  sh 0.0125  t  +1.63  medyan +0.0169
+
+--- PLASEBO: dogum olmayan (lok, gun) ciftleri ---
+  PLASEBO n=72  ort -0.0091  sh 0.0330  t  -0.27
+
+--- (3) REGRESYON: yeni_yuk ~ devir ---
+  TUMU           n= 1019  R2=0.0001  r=+0.007  egim=+0.0002  | log-log n=512 R2=0.0609
+                   referans 'kapasite payi x lok toplam': R2=0.5855
+  TEKIL          n=  708  R2=0.0010  r=+0.032  egim=+0.0004  | log-log n=338 R2=0.0493
+                   referans 'kapasite payi x lok toplam': R2=0.4313
+  yaz25          n=  264  R2=0.0000  r=+0.004  egim=+0.0001  | log-log n=141 R2=0.0729
+                   referans 'kapasite payi x lok toplam': R2=0.5877
+  yaz25 TEKIL    n=  169  R2=0.0001  r=+0.011  egim=+0.0001  | log-log n=82 R2=0.0299
+                   referans 'kapasite payi x lok toplam': R2=0.3496
+  guz25          n=  380  R2=0.0135  r=-0.116  egim=-0.0052  | log-log n=158 R2=0.0298
+                   referans 'kapasite payi x lok toplam': R2=0.6455
+
+==============================================================================
+LOKASYON SEVIYESI: bolge  (4 birim, ort 1336.0 trafo)
+kontrol paneli: 2,059 'her zaman vardi' trafo
+olay sayisi 647  (lok x dogum-gunu)
+
+--- (2) YERLESIK YUK DEGISIMI (DiD, log oran) ---
+  TUMU (global kontrol)        n=  647  ort -0.0078  sh 0.0102  t  -0.77  medyan +0.0100
+  TUMU (bolge kontrol)         n=  647  ort +0.0192  sh 0.0021  t  +8.94  medyan +0.0056
+  TEKIL (global kontrol)       n=  539  ort -0.0061  sh 0.0108  t  -0.57  medyan +0.0111
+  TEKIL (bolge kontrol)        n=  539  ort +0.0178  sh 0.0023  t  +7.69  medyan +0.0054
+  TOPLU (global kontrol)       n=  108  ort -0.0162  sh 0.0290  t  -0.56  medyan -0.0461
+  TOPLU (bolge kontrol)        n=  108  ort +0.0264  sh 0.0057  t  +4.64  medyan +0.0078
+  yaz25 (global kontrol)       n=  170  ort -0.0456  sh 0.0204  t  -2.23  medyan +0.0135
+  yaz25 (bolge kontrol)        n=  170  ort +0.0058  sh 0.0007  t  +8.54  medyan +0.0054
+  yaz25 TEKIL (global kontrol) n=  148  ort -0.0152  sh 0.0191  t  -0.79  medyan +0.0204
+  yaz25 TEKIL (bolge kontrol)  n=  148  ort +0.0062  sh 0.0007  t  +8.68  medyan +0.0054
+  guz25 (global kontrol)       n=  229  ort +0.0509  sh 0.0174  t  +2.92  medyan +0.0208
+  guz25 (bolge kontrol)        n=  229  ort +0.0323  sh 0.0051  t  +6.34  medyan +0.0144
+  guz25 TEKIL (global kontrol) n=  179  ort +0.0258  sh 0.0192  t  +1.34  medyan +0.0161
+  guz25 TEKIL (bolge kontrol)  n=  179  ort +0.0324  sh 0.0059  t  +5.52  medyan +0.0144
+
+--- PLASEBO: dogum olmayan (lok, gun) ciftleri ---
+  plasebo yetersiz
+
+--- (3) REGRESYON: yeni_yuk ~ devir ---
+  TUMU           n=  586  R2=0.0338  r=-0.184  egim=-0.0055  | log-log n=274 R2=0.0192
+                   referans 'kapasite payi x lok toplam': R2=0.7035
+  TEKIL          n=  481  R2=0.0076  r=-0.087  egim=-0.0011  | log-log n=217 R2=0.0204
+                   referans 'kapasite payi x lok toplam': R2=0.5694
+  yaz25          n=  142  R2=0.0583  r=-0.241  egim=-0.0077  | log-log n=67 R2=0.0003
+                   referans 'kapasite payi x lok toplam': R2=0.7452
+  yaz25 TEKIL    n=  120  R2=0.0385  r=-0.196  egim=-0.0018  | log-log n=53 R2=0.0017
+                   referans 'kapasite payi x lok toplam': R2=0.5285
+  guz25          n=  219  R2=0.0154  r=-0.124  egim=-0.0052  | log-log n=95 R2=0.0020
+                   referans 'kapasite payi x lok toplam': R2=0.7122
