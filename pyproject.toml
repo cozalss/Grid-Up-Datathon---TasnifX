@@ -132,6 +132,23 @@ ignore = [
 # Betikler paketi src/ uzerinden bulmak icin import'tan ONCE sys.path'i ayarlar.
 # Bu, kurulum yapmadan calisabilmeleri icin bilincli bir tercihtir.
 "scripts/*" = ["E402", "PLR0912", "PLR0915"]
+# TEK SORULUK TESHIS BETIKLERI. eksen*/curut_*/h<N>*/coz_* ailesi bir gecede
+# yazilip bir soruyu cevaplamak icin kosulur ve KANIT KAYDI olarak saklanir:
+# hicbiri import edilmez, hicbiri surdurulmez, ciktilarina docs/ ve reports/
+# altindan atif yapilir. Uretim betikleri (tuketim_model, son_islem*,
+# butunluk_*, birlestir_*, tasima_*) bu listeye GIRMEZ -- onlar tam kapiya tabi.
+#
+# Neden susturuluyor, duzeltilmiyor: kalan 155 ihlalin cogu --unsafe-fixes
+# gerektiriyor ve o duzeltmeler KOD SILER (F841 kullanilmayan atama, F401
+# kullanilmayan import). Bir teshis betiginde silinen atama, o betigin NE
+# OLCTUGUNU degistirebilir; kayit olarak degeri de tam olarak orada. Ayni
+# gerekce scripts/kapi_oncesi.py'de yaziyor: "lint hatasi insana bildirilir,
+# otomatik duzeltilmez". Guvenli olan 86 duzeltme UYGULANDI; kalanlar bilerek
+# oldugu gibi birakildi.
+"scripts/eksen*.py" = ["E501", "F841", "B007", "B905", "UP031", "N816", "RET504", "PLW1510", "F601", "B023", "PTH123", "PLW2901", "N812", "E741", "E731"]
+"scripts/curut_*.py" = ["E501", "F841", "B007", "B905", "UP031", "N816", "RET504", "PLW1510", "F601", "B023", "PTH123", "PLW2901", "N812", "E741", "E731"]
+"scripts/h[0-9]*.py" = ["E501", "F841", "B007", "B905", "UP031", "N816", "RET504", "PLW1510", "F601", "B023", "PTH123", "PLW2901", "N812", "E741", "E731"]
+"scripts/coz_*.py" = ["E501", "F841", "B007", "B905", "UP031", "N816", "RET504", "PLW1510", "F601", "B023", "PTH123", "PLW2901", "N812", "E741", "E731"]
 "scripts/day_one.py" = ["E402", "PLR0911", "PLR0912", "PLR0915"]
 # Dogrulama ve submission kontrolleri dogasi geregi cok dalli: her dal ayri bir
 # hata sinifini yakalar. Bolmek okunabilirligi artirmaz, dagitir.
