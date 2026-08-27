@@ -1,4 +1,4 @@
-﻿# Grid Up Datathon — TasnifX
+# Grid Up Datathon — TasnifX
 
 **Coderspace × GDZ Elektrik × ADM Elektrik** · 21 Ağustos – 1 Eylül 2026 · Kaggle In-Class
 
@@ -11,16 +11,16 @@ dersler var.
 
 ---
 
-## Durum
+## Durum (2026-08-27)
 
 | | |
 |---|---|
-| Kod | **18.358 satır** · 44 modül · test tarafı 16.506 satır |
-| Test | **1455 test** toplanıyor · ruff check + format, mypy temiz |
-| Uçtan uca kanıt | `full_pipeline.py` 21/21 · `smoke_test.py` · `day_one.py` submission üretiyor |
-| Harici veri | 96 ilçe hava (günlük + saatlik türev: basınç, eşik-üstü rüzgâr) · güneş · deprem (AFAD) · yangın (FIRMS) · turizm gecelemesi (KTB, yıllık ilçe + aylık il) · Türkiye tüketim+üretim · 96 ilçe referans |
-| Kaggle offline | [`cemzal/gridup-offline-paket`](https://www.kaggle.com/datasets/cemzal/gridup-offline-paket) — internet kapalı notebook için |
-| İstihbarat | 2023 birincisinin çözümü, 558 satır forum dökümü, **2024 birincisi Pikachow'un final sunumu** (29 slayt) + 2024–26 Kaggle meta taraması ([docs/08](docs/08-gdz-2024-birincisi-ve-2026-meta.md)) |
+| **Liderlik Tablosu** | **4. Sıra (TasnifX)**: `1.01318` (v83) · **1. Hedef (Grid Grinders)**: `0.99403` · **2. Hedef (Alperen Aydın)**: `1.01064` |
+| **Yarınki Gönderim Paketi** | **1. Tercih (Zirve Garanti)**: `submissions/tuketim_sota_v5_zirve_garanti.csv` (Beklenen: `1.006–1.008`)<br>**2. Tercih (Saf SOTA)**: `submissions/tuketim_sota_v1.csv` (Beklenen: `0.995–1.003`) |
+| **Boru Hattı & Modeller** | `scripts/sota_tuketim_pipeline.py` & `scripts/sota_fast_pipeline.py` (CatBoost + LightGBM + XGBoost 3'lü mimari harmanı, takvim sin/cos, bayram kayması, ölü trafo sıfırlama) |
+| **Doğrulama (CV)** | Sızıntısız (`kokenleri_ayikla`) 3-blok zaman serisi doğrulama: `yaz25` (0.8122), `guz25` (0.8343), `kis26` (0.7782) |
+| **Test Paketi** | **1455 test** + 12/12 `test_gonderim_kusursuzluk.py` testi **%100 geçti** |
+| **Kapı Denetimi** | `scripts/kapi_denetim.py` 4/4 GECTI (714.688 satır, 0 NaN, 0 negatif, birebir ID sıralaması) |
 
 ---
 
