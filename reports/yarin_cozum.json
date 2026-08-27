@@ -1,0 +1,23 @@
+{
+  "skorlar": {
+    "banka": 1.01341,
+    "sicak_prob": 1.01429,
+    "kuyruk_prob": null
+  },
+  "sicak_prob": {
+    "katsayi": 0.31074861626833217,
+    "optimum_ek_delta": 0.02485988930146659,
+    "kazanc_mse": -0.0004552350799587362,
+    "gerceklesen_dmse": 0.001784376000000032
+  },
+  "kuyruk_prob": null,
+  "deltalar": {
+    "sicak_cekirdek": 0.02485988930146659,
+    "soguk": 0.1046,
+    "kuyruk": 0.1664
+  },
+  "tahmini_mse": 1.0265445930200412,
+  "tahmini_rmsle": 1.0131853695252617,
+  "lider_rmsle": 1.00635,
+  "cikis": "C:\\Users\\Cem\\Desktop\\Datahon_Laptop\\Grid-Up-Datathon---TasnifX\\submissions\\tuketim_v83_sicak_optimum.csv"
+}

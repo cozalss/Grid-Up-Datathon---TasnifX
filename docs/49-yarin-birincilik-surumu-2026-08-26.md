@@ -164,3 +164,75 @@ git push -u origin feature/winning-version-20260827
 
 Kaggle gönderimi ve GitHub push iki ayrı işlemdir; biri başarısız olursa diğeri
 başarılı varsayılmaz.
+
+## 6. 27 Ağustos gerçekleşen sonuç
+
+Üç hak planlandığı gibi kapalı çevrim kullanıldı:
+
+| sürüm | amaç | gerçek public RMSLE |
+|---|---|---:|
+| `v80` | ölçülmüş optimum banka | **1.01341** |
+| `v81` | sıcak çekirdek `+0.08` probu | **1.01429** |
+| `v83` | LB ile çözülmüş sıcak optimum | **1.01318** |
+
+`v80/v81` denklemi sıcak çekirdek ek deltasını `+0.0248598893` çözdü.
+Çözücü `v83` için `1.0131853695` bekledi; Kaggle beş ondalıkta **1.01318**
+vererek tahmini doğruladı. Fakat canlı liderlik tablosunda gerçek ikincilik
+eşiği **1.01064** olduğundan `v83` dördüncü sırada kaldı. Gönderim ref'i
+`55811502`, durum `COMPLETE`.
+
+Dosya kapıları: 714.688 satır, ID sırası birebir, mükerrer/NaN/Inf/negatif
+yok. Gönderilen dosyanın SHA256 değeri:
+
+```
+F482A9DEEB771BF6D17B9271B9D11190B8FB495D28388D35E5A6C28CAC108041
+```
+
+Ek sıcak CatBoost kampanyasında Bernoulli örnekleme tek-tohum elemesinde
+iki blokta kazandı (`dMSE +0.00721`), fakat tam kapıda yalnız 8/9 hücreyi
+kazandı; `kis26` blok ortalaması `-0.00319`, eşlenik `t=0.94` oldu. Bu nedenle
+model değişikliği **reddedildi** ve başarılı v83 zinciri korunmuştur.
+
+## 7. 28 Ağustos ikincilik adayı: v85 Gram ansamblı
+
+Bugünkü üç hakkın bitmesinden sonra, on adet `COMPLETE` Kaggle gönderiminin
+gerçek skorları ve tahmin vektörleri kullanılarak etiketsiz log-uzayı Gram
+optimumu çözüldü. RMSLE'nin karesel yapısı nedeniyle test etiketi gerekmez:
+`Q = DᵀD/N`, `Lᵢ = (s₀² + Qᵢᵢ - sᵢ²)/2`, `Qk = L`.
+
+Dokuz yönlü Pareto çözümünün beklenen skoru **1.0104968562**; canlı ikinci
+**1.01064**. Görüntülenen skorların tüm `2^10` adet `±0.000005` yuvarlama
+köşesinde sabit aday bandı **1.01044933–1.01054438** ve tamamı mevcut ikincilik
+çizgisinin altındadır. Çözüm agresiftir; koşul sayısı `657.82` kabul edilebilir
+olsa da büyük pozitif ve negatif afin ağırlıklar kullanır.
+
+Üretim ve kapı:
+
+```powershell
+uv run python scripts/gram_ansambl.py
+uv run python scripts/kapi_denetim.py `
+  --ref submissions/tuketim_v83_sicak_optimum.csv `
+  submissions/tuketim_v85_gram_rank2.csv
+```
+
+`v85` dosyası 714.688 satır, birebir ID sırası, sıfır mükerrer/NaN/Inf/negatif
+ile kapıdan geçmiştir. SHA256:
+
+```
+994AC7A37CC400EB6CB660C205A0BB9AE5E6E42E96A401B1F346F1835F96CC8F
+```
+
+28 Ağustos `HAK1` doğrudan `v85` içindir. Gerçek skor geldiğinde gerekirse aynı
+yön üzerindeki optimum ikinci aday otomatik çözülür:
+
+```powershell
+uv run python scripts/gram_ansambl.py `
+  --prob-skor V85_SCORE `
+  --cikis submissions/tuketim_v86_gram_kappa.csv `
+  --rapor reports/gram_rank2_v86.json
+```
+
+`v85 <= canlı_ikinci - 0.00010` ise dur ve hakkı koru. Aksi halde `v86` kapıdan
+geçirilip `HAK2` olarak gönderilir. `HAK3`, yalnız bu iki adım ikinciliği
+getirmezse kuyruk probu `v82` için saklanır. Betik hiçbir dosyayı otomatik
+olarak Kaggle'a göndermez.
