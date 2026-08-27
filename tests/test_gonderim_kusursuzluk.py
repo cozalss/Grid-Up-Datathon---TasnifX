@@ -29,9 +29,10 @@ def test_meta():
 @pytest.mark.parametrize(
     "dosya_adi",
     [
-        "tuketim_sota_v7_gram_nihai.csv",
-        "tuketim_sota_v6_dogal_garanti.csv",
-        "tuketim_sota_v5_zirve_garanti.csv",
+        "tuketim_v89_genis_taban.csv",
+        "tuketim_v87_tabanli.csv",
+        "tuketim_v87_olu_izole.csv",
+        "tuketim_v85_gram_rank2.csv",
         "tuketim_sota_v1.csv",
     ],
 )
@@ -51,9 +52,10 @@ def test_gonderim_satir_ve_id_sirasi(dosya_adi, ss_df):
 @pytest.mark.parametrize(
     "dosya_adi",
     [
-        "tuketim_sota_v7_gram_nihai.csv",
-        "tuketim_sota_v6_dogal_garanti.csv",
-        "tuketim_sota_v5_zirve_garanti.csv",
+        "tuketim_v89_genis_taban.csv",
+        "tuketim_v87_tabanli.csv",
+        "tuketim_v87_olu_izole.csv",
+        "tuketim_v85_gram_rank2.csv",
         "tuketim_sota_v1.csv",
     ],
 )
@@ -71,9 +73,10 @@ def test_gonderim_sayisal_gecerlilik(dosya_adi):
 @pytest.mark.parametrize(
     "dosya_adi",
     [
-        "tuketim_sota_v7_gram_nihai.csv",
-        "tuketim_sota_v6_dogal_garanti.csv",
-        "tuketim_sota_v5_zirve_garanti.csv",
+        "tuketim_v89_genis_taban.csv",
+        "tuketim_v87_tabanli.csv",
+        "tuketim_v87_olu_izole.csv",
+        "tuketim_v85_gram_rank2.csv",
         "tuketim_sota_v1.csv",
     ],
 )
@@ -98,9 +101,10 @@ def test_gonderim_zaman_serisi_butunlugu(dosya_adi, test_meta):
 @pytest.mark.parametrize(
     "dosya_adi",
     [
-        "tuketim_sota_v7_gram_nihai.csv",
-        "tuketim_sota_v6_dogal_garanti.csv",
-        "tuketim_sota_v5_zirve_garanti.csv",
+        "tuketim_v89_genis_taban.csv",
+        "tuketim_v87_tabanli.csv",
+        "tuketim_v87_olu_izole.csv",
+        "tuketim_v85_gram_rank2.csv",
         "tuketim_sota_v1.csv",
     ],
 )
