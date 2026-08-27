@@ -1,4 +1,4 @@
-"""315 olu trafonun derin cografi, fiziksel ve altyapi istihbarati."""
+"""Testte etkili 251 olu trafonun cografi ve kapasite istihbarati."""
 
 from __future__ import annotations
 
@@ -18,7 +18,11 @@ v89 = pd.read_csv(G / "tuketim_v89_genis_taban.csv")
 v83 = pd.read_csv(G / "tuketim_v83_sicak_optimum.csv")
 
 # v89'da degisen 19,839 satiri bul
-fark_mask = (v89["tuketim"] != v83["tuketim"]).to_numpy()
+# TAM esitsizlik KULLANILAMAZ: CSV float gidis-donusu ~9.100 satirda son biti
+# degistiriyor; bunlar maske sanilirsa rapora canli trafolar karisir.
+_a = v83["tuketim"].to_numpy()
+_b = v89["tuketim"].to_numpy()
+fark_mask = (np.abs(_b - _a) / np.maximum(np.abs(_a), 1e-9)) >= 1e-9
 degisen_te = te[fark_mask]
 olu_trafolar = set(degisen_te["tanim"].unique())
 

@@ -1,4 +1,4 @@
-"""315 olu trafonun tam odakli istihbarati."""
+"""Testte etkili 251 olu trafonun tam odakli istihbarati (egitim tarafi 315)."""
 
 from __future__ import annotations
 
@@ -20,9 +20,14 @@ hic_tuketmeyen = set(tr.groupby("tanim")["tuketim"].max().pipe(lambda s: s[s == 
 sota_maske = sota["tuketim"].to_numpy() == 0.0
 mevcut = set(te.loc[sota_maske, "tanim"].unique())
 ek = hic_tuketmeyen - mevcut
-tum_olu_trafolar = mevcut | ek
+# DIKKAT: ek grubun bir kismi test setinde hic yok -> maskeye giremez.
+# Egitim tarafi 315, TESTTE ETKILI olan 251. Paydayi karistirma.
+test_trafolari = set(te["tanim"].unique())
+tum_olu_trafolar = (mevcut | ek) & test_trafolari
 
-print(f"Tam Odakli OLU Trafo Sayisi: {len(tum_olu_trafolar):,}")
+print(f"Egitim tarafinda aday OLU trafo : {len(mevcut | ek):,}")
+print(f"  bunlardan TESTTE olan (etkili) : {len(tum_olu_trafolar):,}")
+print(f"  testte olmayan (maskeye giremez): {len((mevcut | ek) - test_trafolari):,}")
 
 te_olu = te[te["tanim"].isin(tum_olu_trafolar)].copy()
 p = te_olu["lokasyon"].str.split(">")
@@ -33,7 +38,7 @@ te_olu["ilce"] = p.str[-1].str.strip()
 trafo_meta = te_olu.drop_duplicates("tanim").copy()
 
 print("\n" + "=" * 80)
-print("1. 315 OLU TRAFONUN IL VE BOLGE DAGILIMI:")
+print("1. TESTTE ETKILI 251 OLU TRAFONUN IL VE BOLGE DAGILIMI:")
 print("=" * 80)
 print(trafo_meta["il"].value_counts())
 print("\nBolge:")

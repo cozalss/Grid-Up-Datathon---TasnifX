@@ -13,7 +13,12 @@ LB_v83 = 1.01318
 MSE_toplam = LB_v83**2
 SSE_toplam = N * MSE_toplam
 
-fark_mask = (v89["tuketim"] != v83["tuketim"]).to_numpy()
+# TAM esitsizlik KULLANILAMAZ: CSV yazimindaki float gidis-donusu ~9.100 satirda
+# son biti degistiriyor (bagil fark ~3e-16) ve bunlar maske sanilirsa ceza payi
+# 0.318 yerine 0.916 cikiyor. Bagil tolerans sart.
+_a = v83["tuketim"].to_numpy()
+_b = v89["tuketim"].to_numpy()
+fark_mask = (np.abs(_b - _a) / np.maximum(np.abs(_a), 1e-9)) >= 1e-9
 degisen_sayisi = int(fark_mask.sum())
 
 log_v83_degisen = np.log1p(v83.loc[fark_mask, "tuketim"].to_numpy())
@@ -36,7 +41,7 @@ print(
 )
 print("-" * 80)
 print(
-    f"v83'un Bu 19.839 Satirda Yedigi Ceza : {MSE_ceza_payi:.5f} MSE (Toplam hatanin %{MSE_ceza_payi / MSE_toplam * 100:.1f}'i!)"  # noqa: E501
+    f"v83'un maskeli {degisen_sayisi:,} satirda yedigi ceza: {MSE_ceza_payi:.5f} MSE (toplam hatanin %{MSE_ceza_payi / MSE_toplam * 100:.1f}'i)"  # noqa: E501
 )  # noqa: E501
-print(f"Geriye Kalan Canli Trafolardaki Skor : {RMSLE_canli:.5f} RMSLE (Gercek model kalitemiz)")
+print(f"Geriye Kalan Canli Trafolardaki Skor : {RMSLE_canli:.5f} RMSLE (maske disi satirlar)")
 print("=" * 80)

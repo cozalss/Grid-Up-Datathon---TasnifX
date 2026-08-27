@@ -60,15 +60,27 @@ tamamı sıfırlamada.
 ```
 v83 toplam MSE                        1.02653
   maskeli 19.839 satirdaki pay        0.31794  (%31.0)  [HIPOTETIK ust sinir]
-  geri kalan 694.849 satir            0.70860  -> RMSLE 0.8418
+  geri kalan 694.849 satir            RMSLE 0.85372
 ```
 
-0.8418, sızıntısız CV'nin sıcak trafo skoruyla (0.81224) uyuşuyor.
+0.85372, sızıntısız CV'nin sıcak trafo skoruyla (0.81224) uyuşuyor.
 
-> **Düzeltme.** Harici bir analizde bu pay 0.91640 (%89.3) ve canlı şebeke
-> RMSLE'si 0.3319 olarak verilmişti. Ölçüm bunu doğrulamıyor; 0.3319 CV ile
-> çelişir. Doğrusu 0.31794 / 0.8418'dir. Ayrıca 0.31794 bir üst sınırdır,
-> yalnız o satırların tamamı gerçekten 0 ise gerçekleşir.
+> **Düzeltme 1 — maske sayımı.** İlk analizlerde bu pay 0.91640 (%89.3) ve canlı
+> şebeke RMSLE'si 0.3319 çıkmıştı. Sebebi bulundu: maske
+> `v89["tuketim"] != v83["tuketim"]` ile, yani **tam eşitsizlikle** hesaplanıyordu.
+> CSV yazımındaki `float → metin → float` gidiş dönüşü ~9.100 satırda son biti
+> değiştiriyor (bağıl fark ~3e-16); bunlar maske sanılınca sıradan canlı trafolar
+> cezaya ekleniyor ve pay 0.318 yerine 0.916 çıkıyor. Maske **bağıl toleransla**
+> hesaplanmalıdır:
+> `(|v89 − v83| / max(|v83|, 1e-9)) >= 1e-9`.
+> `hesapla_ceza_bilancosu.py` ve `derin_trafo_istihbarati.py` düzeltildi.
+>
+> **Düzeltme 2 — normalizasyon.** Alt küme RMSLE'si `sqrt(SSE_altküme / n_altküme)`
+> ile hesaplanır. Tam N ile normalize edilirse 0.8418 çıkar; doğrusu **0.85372**.
+> Sonucu değiştirmiyor, ikisi de CV ile tutarlı.
+>
+> Ayrıca 0.31794 bir **üst sınırdır**; yalnız o satırların tamamı gerçekten 0 ise
+> gerçekleşir.
 
 ## 4. Kuralın doğruluğu — etiketli veriyle ölçüm
 
@@ -170,9 +182,22 @@ Lidere göre başa baş `p ~= %50`. Ölçülen aralık %79–97.
 ## 7. Coğrafi doğrulama
 
 251 trafonun dağılımı (veriden, doğrulandı): 192 İzmir, 59 Manisa. İlçe
-yoğunlaşması Urla 38, Bayındır 20, Menderes 13, Konak 11, Aliağa / Bergama /
-Tire / Ödemiş 10'ar. Tarımsal ilçelerdeki yoğunlaşma, Temmuz'da ölçülen
-%72.3'lük reaktivasyonla tutarlı — v89'un 6.67 kWh Temmuz tabanı bu riske karşı.
+yoğunlaşması Urla 38, Bayındır 20, Menderes 13, **Akhisar 12**, Konak 11,
+Aliağa / Bergama / Tire / Ödemiş 10'ar, Salihli 9. Güç grupları: 26 trafo
+≤100 kVA, 136 trafo 100–400, 65 trafo 400–1000, 22 trafo 1000–5000 kVA.
+
+Tarımsal ilçelerdeki yoğunlaşma, Temmuz'da ölçülen %72.3'lük reaktivasyonla
+tutarlı — v89'un 6.67 kWh Temmuz tabanı bu riske karşı.
+
+> **Not.** `lokasyon` alanı sabit biçimli değildir: İzmir kayıtları üç parçalı
+> (`İZMİR>GÜNEY BÖLGE>TORBALI`), Manisa kayıtları iki parçalı
+> (`MANİSA>AKHİSAR`). İlçeyi ">" ile bölüp körü körüne üçüncü parçayı almak
+> **tüm Manisa ilçelerini düşürür** — 59 trafo, Akhisar ve Salihli dahil.
+> Parça sayısına göre dallanmak gerekir.
+
+**Trafo sayıları:** eğitim tarafında aday 315, bunların **64'ü test setinde
+yok** ve maskeye giremez. Testte etkili olan **251**. İki sayıyı payda olarak
+karıştırmamak gerekir; `derin_315_odak.py` bu yüzden düzeltildi.
 
 > **Düzeltme.** Bu trafoların medyan gücü 400 kVA'dır, ancak tüm test setinin
 > medyanı da 400 kVA'dır; kapasite bakımından ayırt edilebilir değiller.
