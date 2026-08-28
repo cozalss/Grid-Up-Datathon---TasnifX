@@ -1,0 +1,29 @@
+================================================================================================
+1) KAT GEOMETRISI -- her hedef blok icin hangi kokenler egitime giriyor
+================================================================================================
+hedef   etiket penceresi          egitim kokenleri (ozet penceresi sonu)
+------------------------------------------------------------------------------------------------
+yaz25   2025-04-01 .. 2025-07-31   sub25[gecmis,ozet<=01/31,-] guz25[ILERI,ozet<=07/31,KAPSAR] guz25b[ILERI,ozet<=08/31,KAPSAR] kis26b[ILERI,ozet<=10/31,KAPSAR] kis26[ILERI,ozet<=11/30,KAPSAR] bah26[ILERI,ozet<=12/31,KAPSAR]
+guz25   2025-08-01 .. 2025-11-30   sub25[gecmis,ozet<=01/31,-] yaz25[gecmis,ozet<=03/31,-] kis26[ILERI,ozet<=11/30,KAPSAR] bah26[ILERI,ozet<=12/31,KAPSAR]
+kis26   2025-12-01 .. 2026-03-31   sub25[gecmis,ozet<=01/31,-] yaz25[gecmis,ozet<=03/31,-] bah25[gecmis,ozet<=04/30,-] yaz25b[gecmis,ozet<=06/30,-] guz25[gecmis,ozet<=07/31,-]
+TEST    2026-04-01 .. 2026-07-31   sub25[gecmis,ozet<=01/31,-] yaz25[gecmis,ozet<=03/31,-] bah25[gecmis,ozet<=04/30,-] yaz25b[gecmis,ozet<=06/30,-] guz25[gecmis,ozet<=07/31,-] guz25b[gecmis,ozet<=08/31,-] kis26b[gecmis,ozet<=10/31,-] kis26[gecmis,ozet<=11/30,-] bah26[gecmis,ozet<=12/31,-]
+
+================================================================================================
+2) KIRLILIK OLCULERI (SICAK satirlar, satir agirlikli)
+================================================================================================
+hedef      egitim satiri  koken    ILERI KAT PAYI    OZET-KAPSAMA
+------------------------------------------------------------------------------------------------
+yaz25          1,682,885      6             92.8%           92.8%
+guz25          1,069,596      4             64.9%           64.9%
+kis26          1,193,208      5              0.0%            0.0%
+TEST           2,474,104      9              0.0%            0.0%
+
+================================================================================================
+3) GEOMETRIK MESAFE -- TEST'e benzerlik
+================================================================================================
+hedef     ozet gun  ufuk gun  bosluk  ileri kat  ozet kaps.
+------------------------------------------------------------------------------------------------
+yaz25           90       122       0      92.8%       92.8%
+guz25          212       122       0      64.9%       64.9%
+kis26          334       121       0       0.0%        0.0%
+TEST           455       122       0       0.0%        0.0%

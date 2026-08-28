@@ -1,0 +1,104 @@
+
+======================================================================================================================
+Y1_sicak  --  varyantlar ('trafo_sicak', 'sicak', 'kirp030_sicak')
+======================================================================================================================
+yon                                   k_yaz    k_guz    k_kis  k_havuz    q_perp    q_yeni  maks kos
+G1_ham_hedef|trafo_sicak             +0.020   -0.059   +0.147   +0.028   0.06689   0.05879  P2 +0.21
+G1_ham_hedef|sicak                   -0.098   -0.053   +0.158   +0.021   0.08757   0.08000  P2 +0.17
+G1_ham_hedef|kirp030_sicak           -0.225   -0.073   +0.291   +0.032   0.02478   0.02329  P2 +0.16
+G2_kuantil40|trafo_sicak             -0.068   -0.007   +0.228   +0.081   0.04974   0.03742  P1 -0.30
+G2_kuantil40|sicak                   -0.208   -0.003   +0.237   +0.056   0.05824   0.04623  P1 -0.28
+G2_kuantil40|kirp030_sicak           -0.224   -0.048   +0.202   -0.001   0.01833   0.01422  P1 -0.35
+H1_hurdle_sifir|trafo_sicak          -0.134   -0.050   +0.195   +0.030   0.04591   0.03901  P1 -0.24
+H1_hurdle_sifir|sicak                -0.298   -0.049   +0.205   +0.007   0.05663   0.04982  P1 -0.22
+H1_hurdle_sifir|kirp030_sicak        -0.463   -0.127   +0.332   -0.027   0.01836   0.01628  P1 -0.26
+K1_mevsimsel_naif|trafo_sicak        +0.017   +0.081   +0.055   +0.060   0.47090   0.23547  P3 +0.64
+K1_mevsimsel_naif|sicak              -0.033   +0.079   +0.067   +0.056   0.59972   0.36368  P3 +0.56
+K1_mevsimsel_naif|kirp030_sicak      -0.662   +0.334   +0.813   +0.284   0.02826   0.02444  v99 -0.23
+K2_ets_theta|trafo_sicak             +0.047   -0.126   +0.325   +0.120   0.30361   0.09399  P3 +0.76
+K2_ets_theta|sicak                   -0.064   -0.101   +0.339   +0.097   0.31075   0.10524  P3 +0.75
+K2_ets_theta|kirp030_sicak           -0.174   +0.048   +0.720   +0.282   0.02385   0.01705  P1 -0.32
+K3_hiyerarsi|trafo_sicak             +0.059   +0.188   -0.177   -0.029   0.34634   0.24694  P3 +0.45
+K3_hiyerarsi|sicak                   -0.034   +0.187   -0.166   -0.037   0.35687   0.25533  P3 +0.45
+K3_hiyerarsi|kirp030_sicak           -0.082   +0.622   -0.318   +0.014   0.02415   0.02102  P2 +0.27
+K4_knn_komsu|trafo_sicak             +0.057   +0.175   -0.144   -0.019   0.37907   0.27335  P3 +0.38
+K4_knn_komsu|sicak                   +0.001   +0.175   -0.127   -0.023   0.43353   0.32084  P3 +0.36
+K4_knn_komsu|kirp030_sicak           -0.003   +0.509   -0.197   +0.053   0.03622   0.03235  P2 +0.27
+R1_kohort_gecmis|trafo_sicak         -0.063   +0.134   +0.089   +0.070   0.09801   0.09420  P1 -0.14
+R1_kohort_gecmis|sicak               -0.199   +0.112   +0.104   +0.037   0.11851   0.11444  P1 -0.13
+R1_kohort_gecmis|kirp030_sicak       -0.278   +0.103   +0.118   +0.013   0.02604   0.02435  P1 -0.21
+
+LAMBDA SINAVI (agirlik iki bloktan, dMSE ucuncu blokta):
+   lam=0.0001  ort -0.067186  [-0.04585, -0.07741, -0.07830]
+   lam=0.001   ort -0.066592  [-0.04521, -0.07740, -0.07716]
+   lam=0.01    ort -0.063409  [-0.04078, -0.07720, -0.07225]
+   lam=0.03    ort -0.059844  [-0.03523, -0.07586, -0.06845]
+   lam=0.1     ort -0.052313  [-0.02687, -0.06893, -0.06114]
+   lam=0.3     ort -0.041621  [-0.01917, -0.05501, -0.05069]
+   lam=1       ort -0.028239  [-0.01198, -0.03659, -0.03615]
+   lam=3       ort -0.017057  [-0.00676, -0.02171, -0.02270]
+   lam=10      ort -0.007881  [-0.00278, -0.00995, -0.01092]
+
+   secim: TEK yon K1_mevsimsel_naif|trafo_sicak (bilesik blok-disi sinavda kaldi; kappa isareti uc blokta da ayni)   blok-disi kazanc -0.007881
+   olcek: Q 0.618344 -> 0.0200  (carpan 0.1798)
+   Q 0.020000  q_perp 0.015231  q_yeni 0.007616  span payi 0.238
+   kosinusler: {'P1': np.float64(0.225), 'P3': np.float64(0.637), 'v96': np.float64(-0.133), 'v90': np.float64(0.058), 'P2': np.float64(-0.004), 'yas': np.float64(0.008), 'v99': np.float64(-0.149), 'P4': np.float64(0.013), 'P5': np.float64(-0.014)}
+
+======================================================================================================================
+Y2_soguk  --  varyantlar ('trafo_soguk', 'soguk', 'kirp030_soguk')
+======================================================================================================================
+yon                                   k_yaz    k_guz    k_kis  k_havuz    q_perp    q_yeni  maks kos
+G1_ham_hedef|trafo_soguk             -0.222   -0.086   -0.058   -0.079   0.06786   0.05132  v90 +0.33
+G1_ham_hedef|soguk                   -0.211   -0.081   -0.041   -0.065   0.07902   0.06057  v90 +0.32
+G1_ham_hedef|kirp030_soguk           -0.505   +0.240   -0.219   -0.111   0.01136   0.00880  v99 -0.32
+G2_kuantil40|trafo_soguk             -0.221   -0.043   -0.050   -0.066   0.07705   0.07391  v90 +0.19
+G2_kuantil40|soguk                   -0.201   -0.041   -0.018   -0.041   0.08006   0.07546  v90 +0.20
+G2_kuantil40|kirp030_soguk           -0.267   +0.308   -0.114   -0.002   0.01292   0.01242  v90 +0.16
+H1_hurdle_sifir|trafo_soguk          -0.537   +0.038   -0.054   -0.064   0.03378   0.02220  v99 -0.45
+H1_hurdle_sifir|soguk                -0.520   +0.039   -0.028   -0.044   0.03836   0.02576  v99 -0.41
+H1_hurdle_sifir|kirp030_soguk        -1.243   +0.693   -0.018   +0.074   0.00903   0.00631  v99 -0.42
+K1_mevsimsel_naif|trafo_soguk        -0.101   -0.260   +0.280   -0.070   0.01583   0.01447  P3 -0.19
+K1_mevsimsel_naif|soguk              -0.116   -0.250   +0.342   -0.048   0.01706   0.01502  P3 -0.27
+K1_mevsimsel_naif|kirp030_soguk      -0.358   -0.802   +0.704   +0.010   0.00583   0.00540  P3 -0.20
+K2_ets_theta|trafo_soguk             -0.101   -0.260   +0.280   -0.070   0.01583   0.01447  P3 -0.19
+K2_ets_theta|soguk                   -0.116   -0.250   +0.342   -0.048   0.01706   0.01502  P3 -0.27
+K2_ets_theta|kirp030_soguk           -0.358   -0.802   +0.704   +0.010   0.00583   0.00540  P3 -0.20
+K3_hiyerarsi|trafo_soguk             -0.101   -0.260   +0.280   -0.070   0.01583   0.01447  P3 -0.19
+K3_hiyerarsi|soguk                   -0.116   -0.250   +0.342   -0.048   0.01706   0.01502  P3 -0.27
+K3_hiyerarsi|kirp030_soguk           -0.358   -0.802   +0.704   +0.010   0.00583   0.00540  P3 -0.20
+K4_knn_komsu|trafo_soguk             -0.121   -0.400   +0.184   -0.088   0.04711   0.04007  P5 -0.32
+K4_knn_komsu|soguk                   -0.136   -0.377   +0.230   -0.061   0.05516   0.04850  P5 -0.24
+K4_knn_komsu|kirp030_soguk           -0.472   -0.834   +0.533   -0.063   0.00971   0.00863  P5 -0.22
+R1_kohort_gecmis|trafo_soguk         -0.167   +0.008   -0.023   -0.025   0.07065   0.06669  v90 +0.22
+R1_kohort_gecmis|soguk               -0.175   +0.006   -0.016   -0.020   0.08627   0.08080  v90 +0.22
+R1_kohort_gecmis|kirp030_soguk       -0.483   +0.423   -0.144   -0.017   0.01273   0.01225  v90 +0.16
+
+LAMBDA SINAVI (agirlik iki bloktan, dMSE ucuncu blokta):
+   lam=0.0001  ort -0.022276  [-0.00991, -0.02519, -0.03172]
+   lam=0.001   ort -0.021491  [-0.00936, -0.02434, -0.03077]
+   lam=0.01    ort -0.016758  [-0.00609, -0.01916, -0.02503]
+   lam=0.03    ort -0.012339  [-0.00340, -0.01426, -0.01936]
+   lam=0.1     ort -0.007835  [-0.00107, -0.00926, -0.01318]
+   lam=0.3     ort -0.005243  [+0.00008, -0.00652, -0.00929]
+   lam=1       ort -0.003542  [+0.00060, -0.00466, -0.00657]
+   lam=3       ort -0.002464  [+0.00068, -0.00292, -0.00515]
+   lam=10      ort -0.001303  [+0.00051, -0.00123, -0.00319]
+
+   secim: TEK yon G2_kuantil40|soguk (bilesik blok-disi sinavda kaldi; kappa isareti uc blokta da ayni)   blok-disi kazanc -0.001303
+   olcek: Q 0.105120 -> 0.0200  (carpan 0.4362)
+   Q 0.020000  q_perp 0.015231  q_yeni 0.014356  span payi 0.238
+   kosinusler: {'P1': np.float64(0.044), 'P3': np.float64(-0.098), 'v96': np.float64(0.01), 'v90': np.float64(0.196), 'P2': np.float64(-0.019), 'yas': np.float64(-0.0), 'v99': np.float64(0.059), 'P4': np.float64(-0.006), 'P5': np.float64(0.059)}
+
+Y1 ile Y2 kosinusu: 0.000000   (ayrik rejim -> tam dik beklenir)
+YAZILDI C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\submissions\tuketim_y1_sicak_klasik.csv
+   kirpilan 226 | degisen 556319 | maxabs 1.3797 | ort 0.04861
+YAZILDI C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\submissions\tuketim_y2_soguk_hedef.csv
+   kirpilan 0 | degisen 158369 | maxabs 1.8184 | ort 0.05027
+Y1: span+envanter disi YENI enerji 0.007616
+Y2: span+envanter disi YENI enerji 0.014347
+TOPLAM YENI enerji (2 boyut) = 0.021963
+  f=0.4115 -> kazanc 0.003719  = acigin %18.4'i
+  f=0.1000 -> kazanc 0.000220  = acigin %1.1'i
+  f=0.2000 -> kazanc 0.000879  = acigin %4.3'i
+  f=0.3000 -> kazanc 0.001977  = acigin %9.8'i
+  f=0.4115 -> kazanc 0.003719  = acigin %18.4'i

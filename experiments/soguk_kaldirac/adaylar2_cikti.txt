@@ -1,0 +1,40 @@
+
+============================================================================================
+C10 -- GENEL 1-B KALIBRASYON g(r0)  (blok-disi)
+============================================================================================
+aday                                                yaz25      guz25      kis26      GENEL  KAPI
+C10 1-B kalibrasyon g(r0), 5 kova (blok-disi)    -0.18194   -0.14334   -0.22851   -0.04091  RED (uc blokta da ZARARLI)
+C10 kalibrasyon 5 kova, harman w=0.25            -0.03035   -0.00863   -0.01982   -0.00434  RED (uc blokta da ZARARLI)
+C10 kalibrasyon 5 kova, harman w=0.50            -0.07079   -0.03540   -0.06451   -0.01261  RED (uc blokta da ZARARLI)
+C10 1-B kalibrasyon g(r0), 10 kova (blok-disi)   -0.12225   -0.11448   -0.24468   -0.03556  RED (uc blokta da ZARARLI)
+C10 kalibrasyon 10 kova, harman w=0.25           -0.01942   -0.00018   -0.01929   -0.00287  RED (uc blokta da ZARARLI)
+C10 kalibrasyon 10 kova, harman w=0.50           -0.04627   -0.01933   -0.06650   -0.00976  RED (uc blokta da ZARARLI)
+C10 1-B kalibrasyon g(r0), 20 kova (blok-disi)   -0.10556   -0.10180   -0.26948   -0.03522  RED (uc blokta da ZARARLI)
+C10 kalibrasyon 20 kova, harman w=0.25           -0.01692   +0.00280   -0.02381   -0.00280  RED (isaret ters)
+C10 kalibrasyon 20 kova, harman w=0.50           -0.04016   -0.01323   -0.07666   -0.00961  RED (uc blokta da ZARARLI)
+
+============================================================================================
+C11 -- VARLIK DESENI (gun sayisi)
+============================================================================================
+aday                                                yaz25      guz25      kis26      GENEL  KAPI
+C11 gun sayisi kovasi (buzme k=50)               +0.00888   -0.02302   -0.03613   -0.00371  RED (isaret ters)
+C11 gun sayisi kovasi (buzme k=300)              +0.00590   -0.01106   -0.03042   -0.00263  RED (isaret ters)
+
+============================================================================================
+C12 -- OLU (tamamen sifir) RISK SKORU
+============================================================================================
+aday                                                yaz25      guz25      kis26      GENEL  KAPI
+C12 olu-risk kaydirma kuvvet=0.5                 +0.00001   -0.00214   +0.00029   -0.00014  RED (isaret ters)
+C12 olu-risk kaydirma kuvvet=1.0                 -0.00021   -0.00465   -0.00036   -0.00039  RED (uc blokta da ZARARLI)
+C12 olu-risk kaydirma kuvvet=2.0                 -0.00135   -0.01076   -0.00447   -0.00122  RED (uc blokta da ZARARLI)
+
+============================================================================================
+C13 -- SIFIR KUTLESI HEDGE
+============================================================================================
+aday                                                yaz25      guz25      kis26      GENEL  KAPI
+C13 sifir kutlesi hedge p=0.02                   +0.00097   +0.00191   -0.00680   -0.00029  RED (isaret ters)
+C13 sifir kutlesi hedge p=0.05                   +0.00087   +0.00327   -0.01885   -0.00109  RED (isaret ters)
+C13 sifir kutlesi hedge p=0.10                   -0.00388   +0.00105   -0.04438   -0.00349  RED (isaret ters)
+C13 sifir kutlesi hedge p=0.20                   -0.03436   -0.02390   -0.12011   -0.01318  RED (uc blokta da ZARARLI)
+
+yazildi: C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\experiments\soguk_kaldirac\adaylar2.jsonl

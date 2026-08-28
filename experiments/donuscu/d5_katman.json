@@ -1,0 +1,238 @@
+{
+  "kontrol_kaymasi": {
+    "2025-06-30": 0.10653352600825072,
+    "2025-07-31": -0.02393980905594084,
+    "2025-08-31": -0.09314968608280011,
+    "2025-09-30": -0.07346933600411748,
+    "2025-10-31": -0.026116789224632897,
+    "2025-11-30": -0.0083079460059452,
+    "2025-12-31": -0.019182142815859504,
+    "2026-01-31": -0.04543973911345944,
+    "2026-02-28": -0.052357125051813114
+  },
+  "katmanlar": {
+    "T1_cekirdek": {
+      "test_trafo": 64,
+      "test_satir": 5127,
+      "Q_delta1": 0.007173759738515268,
+      "v102_ort_ofs": -0.04488070127263132,
+      "v102_ort_lp": 6.134372700147857,
+      "grupB_pay_trafo": 60,
+      "grupA_kirlilik_trafo": 0,
+      "kesmeler": {
+        "2025-06-30": {
+          "aday_trafo": 3,
+          "donen_trafo": 0,
+          "satir": 0,
+          "not": "yetersiz (<25 satir)"
+        },
+        "2025-07-31": {
+          "aday_trafo": 3,
+          "donen_trafo": 0,
+          "satir": 0,
+          "not": "yetersiz (<25 satir)"
+        },
+        "2025-08-31": {
+          "aday_trafo": 5,
+          "donen_trafo": 0,
+          "satir": 0,
+          "not": "yetersiz (<25 satir)"
+        },
+        "2025-09-30": {
+          "aday_trafo": 101,
+          "donen_trafo": 4,
+          "donus_orani": 0.04,
+          "satir": 174,
+          "sifir_orani": 0.0,
+          "W_ort_ofs": 0.8959,
+          "W_ort_lp": 7.0996,
+          "delta": 1.0142,
+          "trafo_bazli_poz_oran": 1.0
+        },
+        "2025-10-31": {
+          "aday_trafo": 103,
+          "donen_trafo": 5,
+          "donus_orani": 0.049,
+          "satir": 349,
+          "sifir_orani": 0.0,
+          "W_ort_ofs": 1.2961,
+          "W_ort_lp": 7.5414,
+          "delta": 1.3671,
+          "trafo_bazli_poz_oran": 1.0
+        },
+        "2025-11-30": {
+          "aday_trafo": 104,
+          "donen_trafo": 6,
+          "donus_orani": 0.058,
+          "satir": 330,
+          "sifir_orani": 0.0,
+          "W_ort_ofs": 1.7914,
+          "W_ort_lp": 8.1212,
+          "delta": 1.8446,
+          "trafo_bazli_poz_oran": 0.667
+        },
+        "2025-12-31": {
+          "aday_trafo": 106,
+          "donen_trafo": 3,
+          "donus_orani": 0.028,
+          "satir": 89,
+          "sifir_orani": 0.0,
+          "W_ort_ofs": 1.4853,
+          "W_ort_lp": 7.8454,
+          "delta": 1.5493,
+          "trafo_bazli_poz_oran": 0.333
+        },
+        "2026-01-31": {
+          "aday_trafo": 106,
+          "donen_trafo": 2,
+          "satir": 4,
+          "not": "yetersiz (<25 satir)"
+        },
+        "2026-02-28": {
+          "aday_trafo": 108,
+          "donen_trafo": 3,
+          "satir": 6,
+          "not": "yetersiz (<25 satir)"
+        }
+      },
+      "delta_ort": 1.4438,
+      "delta_min": 1.0142,
+      "delta_medyan": 1.4582,
+      "SE_kesmeler": 0.17373589631007944,
+      "SE_trafo_kumeli": 0.3005369381420289,
+      "kullanilan_kesme": 4,
+      "isaret_ayni": true,
+      "pencere_trafo_gozlem": 18,
+      "kazanc_delta_ort": 0.014954121409454195,
+      "kazanc_delta_min": 0.007378941032002775,
+      "kazanc_muhafazakar_1SE": 0.011571725167483685
+    },
+    "T2_genis": {
+      "test_trafo": 80,
+      "test_satir": 6232,
+      "Q_delta1": 0.008719888958538551,
+      "v102_ort_ofs": -0.22365258065232763,
+      "v102_ort_lp": 5.859195296260865,
+      "grupB_pay_trafo": 19,
+      "grupA_kirlilik_trafo": 0,
+      "kesmeler": {
+        "2025-06-30": {
+          "aday_trafo": 0,
+          "donen_trafo": 0,
+          "satir": 0,
+          "not": "yetersiz (<25 satir)"
+        },
+        "2025-07-31": {
+          "aday_trafo": 20,
+          "donen_trafo": 5,
+          "donus_orani": 0.25,
+          "satir": 321,
+          "sifir_orani": 0.0,
+          "W_ort_ofs": 0.5318,
+          "W_ort_lp": 6.5042,
+          "delta": 0.7794,
+          "trafo_bazli_poz_oran": 0.8
+        },
+        "2025-08-31": {
+          "aday_trafo": 21,
+          "donen_trafo": 4,
+          "donus_orani": 0.19,
+          "satir": 263,
+          "sifir_orani": 0.0,
+          "W_ort_ofs": 0.5626,
+          "W_ort_lp": 5.8443,
+          "delta": 0.8794,
+          "trafo_bazli_poz_oran": 0.75
+        },
+        "2025-09-30": {
+          "aday_trafo": 19,
+          "donen_trafo": 1,
+          "satir": 2,
+          "not": "yetersiz (<25 satir)"
+        },
+        "2025-10-31": {
+          "aday_trafo": 22,
+          "donen_trafo": 2,
+          "donus_orani": 0.091,
+          "satir": 51,
+          "sifir_orani": 0.0,
+          "W_ort_ofs": 0.3924,
+          "W_ort_lp": 7.2652,
+          "delta": 0.6421,
+          "trafo_bazli_poz_oran": 1.0
+        },
+        "2025-11-30": {
+          "aday_trafo": 34,
+          "donen_trafo": 6,
+          "donus_orani": 0.176,
+          "satir": 130,
+          "sifir_orani": 0.0,
+          "W_ort_ofs": 0.474,
+          "W_ort_lp": 7.3508,
+          "delta": 0.706,
+          "trafo_bazli_poz_oran": 1.0
+        },
+        "2025-12-31": {
+          "aday_trafo": 51,
+          "donen_trafo": 10,
+          "donus_orani": 0.196,
+          "satir": 173,
+          "sifir_orani": 0.0058,
+          "W_ort_ofs": -0.0606,
+          "W_ort_lp": 6.6777,
+          "delta": 0.1822,
+          "trafo_bazli_poz_oran": 0.7
+        },
+        "2026-01-31": {
+          "aday_trafo": 56,
+          "donen_trafo": 8,
+          "satir": 16,
+          "not": "yetersiz (<25 satir)"
+        },
+        "2026-02-28": {
+          "aday_trafo": 99,
+          "donen_trafo": 9,
+          "satir": 18,
+          "not": "yetersiz (<25 satir)"
+        }
+      },
+      "delta_ort": 0.6378199999999999,
+      "delta_min": 0.1822,
+      "delta_medyan": 0.706,
+      "SE_kesmeler": 0.12055335084517557,
+      "SE_trafo_kumeli": 0.14440251383733224,
+      "kullanilan_kesme": 5,
+      "isaret_ayni": true,
+      "pencere_trafo_gozlem": 27,
+      "kazanc_delta_ort": 0.0035473759796677703,
+      "kazanc_delta_min": 0.0002894727585743709,
+      "kazanc_muhafazakar_1SE": 0.0023331352259940343
+    }
+  },
+  "SADECE_T1": {
+    "Q_toplam": 0.007173759738515268,
+    "satir": 5127,
+    "kazanc_ort": 0.014954121409454195,
+    "kazanc_muh": 0.011571725167483685,
+    "kazanc_min": 0.007378941032002775,
+    "MSE_ort": 0.9961368785905458,
+    "RMSLE_ort": 0.9980665702199156,
+    "MSE_muh": 0.9995192748325162,
+    "RMSLE_muh": 0.9997596085222268,
+    "MSE_min": 1.003712058967997,
+    "RMSLE_min": 1.0018543102507456
+  },
+  "T1+T2": {
+    "Q_toplam": 0.01589364869705382,
+    "satir": 11359,
+    "kazanc_ort": 0.018501497389121966,
+    "kazanc_muh": 0.013904860393477719,
+    "kazanc_min": 0.007668413790577146,
+    "MSE_ort": 0.992589502610878,
+    "RMSLE_ort": 0.9962878613186442,
+    "MSE_muh": 0.9971861396065222,
+    "RMSLE_muh": 0.9985920786820424,
+    "MSE_min": 1.0034225862094228,
+    "RMSLE_min": 1.0017098313431005
+  }
+}

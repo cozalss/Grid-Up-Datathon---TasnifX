@@ -11,16 +11,20 @@ dersler var.
 
 ---
 
-## Durum (2026-08-27)
+## Durum (2026-08-28)
 
 | | |
 |---|---|
-| **Liderlik Tablosu** | **4. Sıra (TasnifX)**: `1.01318` (v83) · **1. Hedef (Grid Grinders)**: `0.99403` · **2. Hedef (Alperen Aydın)**: `1.01064` |
-| **Yarınki Gönderim Paketi** | **1. Tercih (Zirve Garanti)**: `submissions/tuketim_sota_v5_zirve_garanti.csv` (Beklenen: `1.006–1.008`)<br>**2. Tercih (Saf SOTA)**: `submissions/tuketim_sota_v1.csv` (Beklenen: `0.995–1.003`) |
-| **Boru Hattı & Modeller** | `scripts/sota_tuketim_pipeline.py` & `scripts/sota_fast_pipeline.py` (CatBoost + LightGBM + XGBoost 3'lü mimari harmanı, takvim sin/cos, bayram kayması, ölü trafo sıfırlama) |
-| **Doğrulama (CV)** | Sızıntısız (`kokenleri_ayikla`) 3-blok zaman serisi doğrulama: `yaz25` (0.8122), `guz25` (0.8343), `kis26` (0.7782) |
-| **Test Paketi** | **1455 test** + 12/12 `test_gonderim_kusursuzluk.py` testi **%100 geçti** |
-| **Kapı Denetimi** | `scripts/kapi_denetim.py` 4/4 GECTI (714.688 satır, 0 NaN, 0 negatif, birebir ID sıralaması) |
+| **Liderlik Tablosu** | **3. Sıra (TasnifX)**: `1.00553` (v102) · **1.** Grid Grinders `0.99138` · **2.** Atakan Aldemir `1.00078` — 435 takım, 2026-08-28 gün sonu |
+| **28 Ağustos** | `v101` → `1.01614` (ıskaladı, `L`yi çözdü) · `v102 = v83 + 0.459·(v101−v83)` → **`1.00553`**, ön kayıtla 5 hanede birebir, 9.→2. sıra · `v109` → `1.01818` (CV türevli yönler `κ≈0`). Kota 3/3 kullanıldı |
+| **29 Ağustos planı** | **HAK 1**: `submissions/tuketim_v112_donuscu_yarim.csv` (ön kayıt `0.99861`, başa baş δ<0.361)<br>**HAK 2**: `κ*` optimumu — HAK 1'in skorundan çözülür, δ ölçülendeyse `0.99629`<br>Ayrıntı: [`docs/52`](docs/52-olu-trafo-curudu-ve-prob-kampanyasi-2026-08-28.md) §14.5 |
+| **1. sıra** | **ULAŞILAMIYOR** — gereken `Q·δ*² = 0.028257`, ölçülen en iyi `0.018500`. Nüfus büyütmek kapatmıyor (δ, Q'dan hızlı çürüyor). Varılabilecek yer `0.996–0.999` ile sağlam 2. sıra: [`docs/52`](docs/52-olu-trafo-curudu-ve-prob-kampanyasi-2026-08-28.md) §14.6 |
+| **⚠ GÖNDERME** | `tuketim_v89_genis_taban.csv`, `v88`, `v87`, `sota_v1` — dördü de **diri** 93 trafoyu sıfırlıyor, beklenen skor `~1.13`. Ölü trafo tezi çürüdü: [`docs/52`](docs/52-olu-trafo-curudu-ve-prob-kampanyasi-2026-08-28.md) §1 |
+| **Boru Hattı & Modeller** | `scripts/sota_tuketim_pipeline.py` (CatBoost + LightGBM + XGBoost 3'lü mimari harmanı, takvim sin/cos, bayram kayması). Skoru düşüren asıl yöntem artık **LB-çözülmüş Gram optimumu** — 19 ölçülmüş skordan cebirsel çözüm, yeni model değil |
+| **Doğrulama (CV)** | Sızıntısız 3-blok. **Sıcak**: `yaz25` 0.8122 · `guz25` 0.8343 · `kis26` 0.7782. **Soğuk** (ilk kez kayda geçti): `yaz25` 1.4359 · `guz25` 1.6082 · `kis26` 1.9061 |
+| **⚠ Ölçüm Uyarısı** | `tanim_num` kimlik-ezberi: soğuk satırların çözülebilirliği `yaz25` %97.2 · `guz25` %97.7 · `kis26` %0 · **TEST %0**. Soğuk hükümler **yalnız `kis26`** ile verilir |
+| **Gönderim Yetkisi** | **GERİ ALINDI** (2026-08-27). Kullanıcının açık onayı olmadan hiçbir dosya gönderilmez |
+| **Kapı Denetimi** | `scripts/kapi_denetim.py` GECTI (714.688 satır, 0 NaN, 0 negatif, birebir ID sıralaması) |
 
 ---
 

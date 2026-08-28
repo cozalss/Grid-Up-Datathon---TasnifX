@@ -1,0 +1,127 @@
+{
+  "olu_donusler": [
+    {
+      "tanim": "700232627",
+      "donus": "2025-11-07",
+      "parti_n": 1,
+      "kalan_gun": 145,
+      "onceki_kayit": 168,
+      "n": 122,
+      "sifir_orani": 0.0,
+      "ort_lp": 6.185630942468226
+    },
+    {
+      "tanim": "700330264",
+      "donus": "2026-03-26",
+      "parti_n": 113,
+      "kalan_gun": 6,
+      "onceki_kayit": 356,
+      "n": 2,
+      "sifir_orani": 0.0,
+      "ort_lp": 5.125641717004379
+    },
+    {
+      "tanim": "70141254",
+      "donus": "2025-09-11",
+      "parti_n": 1,
+      "kalan_gun": 202,
+      "onceki_kayit": 125,
+      "n": 122,
+      "sifir_orani": 0.0,
+      "ort_lp": 8.01532855381053
+    },
+    {
+      "tanim": "70342188",
+      "donus": "2025-12-23",
+      "parti_n": 2,
+      "kalan_gun": 99,
+      "onceki_kayit": 168,
+      "n": 99,
+      "sifir_orani": 0.0,
+      "ort_lp": 7.998815516208589
+    },
+    {
+      "tanim": "70441025",
+      "donus": "2026-01-06",
+      "parti_n": 1,
+      "kalan_gun": 85,
+      "onceki_kayit": 168,
+      "n": 85,
+      "sifir_orani": 0.0,
+      "ort_lp": 8.057005473144132
+    },
+    {
+      "tanim": "71640158",
+      "donus": "2026-03-26",
+      "parti_n": 113,
+      "kalan_gun": 6,
+      "onceki_kayit": 126,
+      "n": 2,
+      "sifir_orani": 0.0,
+      "ort_lp": 2.8894864066104793
+    },
+    {
+      "tanim": "72440265",
+      "donus": "2025-09-17",
+      "parti_n": 1,
+      "kalan_gun": 196,
+      "onceki_kayit": 168,
+      "n": 122,
+      "sifir_orani": 0.0,
+      "ort_lp": 4.357826682853277
+    },
+    {
+      "tanim": "72930145",
+      "donus": "2026-03-26",
+      "parti_n": 113,
+      "kalan_gun": 6,
+      "onceki_kayit": 157,
+      "n": 2,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    {
+      "tanim": "77230014",
+      "donus": "2025-12-11",
+      "parti_n": 1,
+      "kalan_gun": 111,
+      "onceki_kayit": 168,
+      "n": 30,
+      "sifir_orani": 0.0,
+      "ort_lp": 7.622167380969951
+    }
+  ],
+  "ozet_TOPLU parti>=20": {
+    "trafo": 3,
+    "satir": 6,
+    "sifir_orani": 0.3333333333333333,
+    "ort_lp": 2.671709374538286
+  },
+  "ozet_TEKIL parti<20": {
+    "trafo": 6,
+    "satir": 580,
+    "sifir_orani": 0.0,
+    "ort_lp": 6.844077821732944
+  },
+  "olay_20260326_olu": {
+    "trafo": 5,
+    "satir": 10,
+    "sifir_orani": 0.2,
+    "ort_lp": 3.7771074173421226
+  },
+  "olay_20260326_canli": {
+    "trafo": 113,
+    "satir": 230,
+    "sifir_orani": 0.008695652173913044,
+    "ort_lp": 5.955529589238367
+  },
+  "rotus6_tohum": {
+    "var(lp30-lp5)": 0.004615630174314377,
+    "sigma2_tohum": 0.019781272175633045,
+    "sigma": 0.14064591062534681,
+    "mevcut_tohum": 30,
+    "kullanilabilir_ek_parti": 1,
+    "dMSE_30_to_35": -9.419653416968118e-05,
+    "dMSE_30_to_50_HIPOTETIK": -0.00026375029567510727
+  }
+}

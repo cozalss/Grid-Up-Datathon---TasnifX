@@ -1,0 +1,25 @@
+--- K1_mevsimsel_naif
+  K1/yaz25: lag-364 kapsami 87.3%
+  K1/guz25: lag-364 kapsami 68.9%
+  K1/kis26: lag-364 kapsami 47.2%
+  K1/TEST: lag-364 kapsami 34.4%
+    bitti 23s
+--- K3_hiyerarsi
+    bitti 10s
+--- K2_ets_theta
+    bitti 12s
+--- K4_knn_komsu
+Traceback (most recent call last):
+  File "C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\experiments\yeni_yon\b_klasik.py", line 490, in <module>
+    main()
+  File "C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\experiments\yeni_yon\b_klasik.py", line 485, in main
+    fn(ad)
+  File "C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\experiments\yeni_yon\b_klasik.py", line 404, in k4_knn
+    for a in np.unique(ilce_all[var]):
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\.venv\Lib\site-packages\numpy\lib\_arraysetops_impl.py", line 296, in unique
+    ret = _unique1d(ar, return_index, return_inverse, return_counts,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\.venv\Lib\site-packages\numpy\lib\_arraysetops_impl.py", line 385, in _unique1d
+    ar.sort()
+TypeError: '<' not supported between instances of 'str' and 'float'

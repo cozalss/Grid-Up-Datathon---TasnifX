@@ -1,0 +1,54 @@
+{
+  "A_kirlilik": {
+    "kimlik_kolonlari": {
+      "tanim_num": {"trafo_ici_sabit": 1.0, "ayirt_gucu": 0.9985, "tekil": 5300},
+      "tanim_on5": {"ayirt_gucu": 0.0418}, "tanim_on4": {"ayirt_gucu": 0.0226},
+      "tanim_on3": {"ayirt_gucu": 0.0104}, "tanim_on2": {"ayirt_gucu": 0.0024},
+      "tanim_uzunluk": {"ayirt_gucu": 0.0015}
+    },
+    "kimlik_disi_trafo_sabit_kolon": 26,
+    "kimlik_disi_ortak_profil_ayirt_gucu": 0.0795,
+    "ezberlenebilirlik_satir": {"yaz25": 0.972, "guz25": 0.977, "kis26": 0.0, "TEST": 0.0},
+    "onarim_sonrasi_ezber": {"yaz25": 0.0, "guz25": 0.0, "kis26": 0.0},
+    "onarimin_attigi_satir_orani": {"yaz25": 0.103, "guz25": 0.175, "kis26": 0.0},
+    "kolon_cerrahisinin_kestigi_sizinti_orani": {"yaz25": 0.27, "guz25": 0.34},
+    "kolon_cerrahisinin_temiz_bloga_maliyeti_kis26_dMSE": 0.06068
+  },
+  "A3_isaret_sinavi": {
+    "rho_yaz25_kis26": {"kirli": -0.8322, "onarilmis": 0.7630},
+    "rho_guz25_kis26": {"kirli": -0.8444, "onarilmis": 0.8741},
+    "uc_blok_ayni_isaret": {"kirli": "0/13", "onarilmis": "7/13"},
+    "yanlislama_rastgele_dusurme": {
+      "aciklama": "ayni satir sayisi soguk OLMAYAN trafolardan atildi",
+      "lgbm_eksi_cat_yaz25": {"kirli": -0.43995, "rastgele": -0.45736, "onarilmis": 0.09305},
+      "lgbm_eksi_cat_guz25": {"kirli": -0.32896, "rastgele": -0.43840, "onarilmis": 0.08219},
+      "kis26_temiz_referans": 0.25110
+    }
+  },
+  "B_kapi": {
+    "yontem": "trafo-kumeli bootstrap, B=1000",
+    "kosul_1": "dMSE %95 CI sifiri icermez",
+    "kosul_2": "kazanan trafo orani >= 0.60"
+  },
+  "C_sonuc": "HICBIR ADAY GECMEDI (20 model/ayar + ek_koken + son islem sabitleri)",
+  "C_en_guclu_aday": {
+    "ad": "cat depth=7 lr=0.03 iterations=400 random_strength=4.0",
+    "uc_blok_dMSE_soguk": -0.01392,
+    "CI": [-0.02626, -0.00100],
+    "kazanan_trafo": 0.511,
+    "kis26_kirpma": {"K0": -0.01678, "K10": -0.00235, "K25": 0.00816},
+    "red_sebebi": "kazanan trafo orani %51,1 < %60; kis26 kazancinin %86'si 10 trafodan; guz25 duz"
+  },
+  "D_butce": {
+    "dosya": "submissions/tuketim_v107_soguk_onarim.csv",
+    "taban": "tuketim_v102_kappa_optimum.csv",
+    "Q_v102": 0.00108805,
+    "Q_LB_span_dik": 0.0009163,
+    "Q_span_ve_envantere_dik": 0.0008680,
+    "envanter_oncesi": 0.0452529,
+    "envanter_sonrasi": 0.0461209,
+    "tavan_L2_over_Q": 0.0035488,
+    "on_kayit_kappa1": {"f_0.4115": 1.00527, "f_1.00": 1.00412},
+    "birincilik_icin_gereken_f": {"once": 0.7847, "sonra": 0.7772}
+  }
+}

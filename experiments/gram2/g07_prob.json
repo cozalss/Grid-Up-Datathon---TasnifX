@@ -1,0 +1,58 @@
+{
+  "adaylar": [
+    "tuketim_p1_sicak_ilce.csv",
+    "tuketim_p3_soguk_seviye.csv",
+    "tuketim_v96_grupb_optimum.csv",
+    "tuketim_v95_gram_grupb.csv",
+    "tuketim_v90_temiz_sota.csv",
+    "tuketim_v99_mimari_sekil.csv"
+  ],
+  "perp_ozdegerler": [
+    0.03437932488200717,
+    0.01391057644196996,
+    0.011223808313502247,
+    0.0011799774686627686,
+    9.078913666525854e-05,
+    1.0400642805619869e-08
+  ],
+  "ana_bilesen": {
+    "tuketim_p1_sicak_ilce.csv": -0.07868234686629265,
+    "tuketim_p3_soguk_seviye.csv": 0.03323418085630464,
+    "tuketim_v96_grupb_optimum.csv": 0.04515382273098968,
+    "tuketim_v95_gram_grupb.csv": 0.022577420779510374,
+    "tuketim_v90_temiz_sota.csv": 0.7420397295143337,
+    "tuketim_v99_mimari_sekil.csv": 0.6629728574387039
+  },
+  "m103": 1.0106959279993375,
+  "varyantlar": [
+    {
+      "Q_ek": 0.002,
+      "en_kotu": 1.0063279425710774,
+      "umut": 1.0028680722980063,
+      "yari": 1.004599496922544
+    },
+    {
+      "Q_ek": 0.004,
+      "en_kotu": 1.007321164276487,
+      "umut": 1.0024295192240886,
+      "yari": 1.0048783182582792
+    },
+    {
+      "Q_ek": 0.006,
+      "en_kotu": 1.0083134076264866,
+      "umut": 1.0023250356574354,
+      "yari": 1.0053236804892782
+    },
+    {
+      "Q_ek": 0.01,
+      "en_kotu": 1.0102949707879068,
+      "umut": 1.002572577290716,
+      "yari": 1.0064411807787592
+    }
+  ],
+  "secilen": {
+    "Q_ek": 0.004,
+    "dosya": "tuketim_v106_prob.csv",
+    "kirpilan": 224
+  }
+}

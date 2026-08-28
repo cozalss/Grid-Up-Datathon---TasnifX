@@ -1,0 +1,17 @@
+matris: egitim (1038737, 69), test (714688, 69)
+  G1_ham_hedef/yaz25: 88s
+  G1_ham_hedef/guz25: 96s
+  G1_ham_hedef/kis26: 88s
+  G1_ham_hedef/TEST: 149s
+  G2_kuantil40/yaz25: 104s
+  G2_kuantil40/guz25: 124s
+  G2_kuantil40/kis26: 108s
+  G2_kuantil40/TEST: 174s
+  R1_kohort_gecmis/yaz25: 48s
+  R1_kohort_gecmis/guz25: 41s
+  R1_kohort_gecmis/kis26: 27s
+  R1_kohort_gecmis/TEST: 40s
+  H1_hurdle_sifir/yaz25: 86s
+  H1_hurdle_sifir/guz25: 139s
+  H1_hurdle_sifir/kis26: 117s
+  H1_hurdle_sifir/TEST: 182s

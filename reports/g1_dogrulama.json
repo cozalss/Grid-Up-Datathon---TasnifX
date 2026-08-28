@@ -1,0 +1,79 @@
+{
+  "grup_b_trafo": 93,
+  "grup_b_satir": 7149,
+  "grup_a_trafo": 158,
+  "grup_a_satir": 18063,
+  "maske_satir": 19839,
+  "maske_trafo": 251,
+  "v90_mevcut_esles": {
+    "maxabs": 3.637978807091713e-12,
+    "maxbagil": 3.147039780536267e-16,
+    "farkli_satir": 0
+  },
+  "olcumler": {
+    "v90-v83": {
+      "ad": "v90-v83",
+      "degisen_satir": 707539,
+      "norm2": 22619.390657438442,
+      "Q": 0.03164932202225089,
+      "ort_fark": 0.022485472936785027,
+      "maxabs": 2.209958237394364
+    },
+    "sota_v1-v83": {
+      "ad": "sota_v1-v83",
+      "degisen_satir": 714688,
+      "norm2": 200343.62693899876,
+      "Q": 0.2803231996885337,
+      "ort_fark": -0.019431822316473706,
+      "maxabs": 7.487748804071292
+    },
+    "v89-v83": {
+      "ad": "v89-v83",
+      "degisen_satir": 19839,
+      "norm2": 174563.59914928547,
+      "Q": 0.24425147637750386,
+      "ort_fark": -0.045443125389268,
+      "maxabs": 7.330913769368009
+    }
+  },
+  "grup_detay": {
+    "grupA": {
+      "n": 18063,
+      "sota_ort_log1p": 0.20113291725566357,
+      "v83_ort_log1p": 0.24336614955237196,
+      "v89_ort_log1p": 0.30356153471757047,
+      "sota_sifir_orani": 0.5053424126667774,
+      "v83_sifir_orani": 0.0,
+      "d_ort": -0.04223323229670838,
+      "sse_toplam_paydada": 0.0008566108991432664,
+      "pay_sifir_varsayimi_sota": 0.004885604496556405,
+      "pay_sifir_varsayimi_v83": 0.00519919418996944,
+      "pay_sifir_varsayimi_v89": 0.005897821519180905
+    },
+    "grupB": {
+      "n": 7149,
+      "sota_ort_log1p": 1.2882008399886962,
+      "v83_ort_log1p": 5.478687329002682,
+      "v89_ort_log1p": 0.7836298887391271,
+      "sota_sifir_orani": 0.7491956917051336,
+      "v83_sifir_orani": 0.0,
+      "d_ort": -4.190486489013985,
+      "sse_toplam_paydada": 0.2486738776662828,
+      "pay_sifir_varsayimi_sota": 0.06807827413489598,
+      "pay_sifir_varsayimi_v83": 0.3138828475525615,
+      "pay_sifir_varsayimi_v89": 0.012082798003929748
+    }
+  },
+  "mimari_harmani_maske_disi": {
+    "n": 689476,
+    "degisen_satir": 689476,
+    "degisen_oran": 1.0,
+    "ort_mutlak_fark_log1p": 0.11859384579466546,
+    "ort_fark_log1p": 0.02441412979889142,
+    "Q_tam_paydada": 0.03079271112310762,
+    "p50_abs": 0.07869129491042837,
+    "p90_abs": 0.2734875775562089,
+    "p99_abs": 0.6013986116402945,
+    "maxabs": 2.209958237394364
+  }
+}

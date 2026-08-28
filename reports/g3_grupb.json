@@ -1,0 +1,50 @@
+{
+  "kesmeler": {
+    "2025-06-30": {
+      "trafo": 0,
+      "not": "W bos"
+    },
+    "2025-08-31": {
+      "trafo": 0,
+      "not": "W bos"
+    },
+    "2025-11-30": {
+      "trafo": 0,
+      "not": "W bos"
+    }
+  },
+  "gercek_grup_b": {
+    "trafo": 93,
+    "satir": 7149,
+    "capasi_olan_trafo": 0,
+    "capasi_olan_satir": 0,
+    "v83_ort_ofs": -0.550792392268397,
+    "capa_ort_ofs": NaN,
+    "capa_eksi_v83_ort": NaN,
+    "capa_eksi_v83_medyan": NaN,
+    "pozitif_satir_orani": NaN
+  },
+  "mevsimsel_ikiz_2025": {
+    "satir": 4381,
+    "trafo": 80,
+    "sifir_orani": 1.0,
+    "gercek_ort_lp": 0.0,
+    "gercek_ort_ofs": -6.040790443011433,
+    "v83_ort_lp": 5.478687329002682,
+    "v83_ort_ofs": -0.550792392268397
+  },
+  "grup_b_son_kayit_dagilimi": {
+    "2025-06-17": 57,
+    "2025-08-20": 5,
+    "2025-06-14": 2,
+    "2025-09-10": 2,
+    "2025-05-22": 2,
+    "2026-02-25": 1,
+    "2026-03-06": 1,
+    "2025-09-12": 1,
+    "2025-06-15": 1,
+    "2025-02-13": 1,
+    "2025-11-11": 1,
+    "2025-11-20": 1
+  }
+}

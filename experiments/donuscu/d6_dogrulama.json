@@ -1,0 +1,410 @@
+{
+  "T1_test_giris": {
+    "2026-05-03": 33,
+    "2026-05-11": 21,
+    "2026-05-04": 2,
+    "2026-05-01": 2,
+    "2026-05-13": 2,
+    "2026-07-01": 1,
+    "2026-05-25": 1,
+    "2026-04-30": 1
+  },
+  "T1_toplu_0511_pay": 0.328125,
+  "T2_test_giris": {
+    "2026-05-11": 65,
+    "2026-05-13": 5,
+    "2026-05-05": 2,
+    "2026-05-12": 1,
+    "2026-05-14": 1,
+    "2026-06-29": 1,
+    "2026-05-07": 1,
+    "2026-07-08": 1
+  },
+  "T2_toplu_0511_pay": 0.8125,
+  "toplu_donus_gunleri": {
+    "2026-03-26": 85,
+    "2025-05-20": 19,
+    "2025-06-17": 16,
+    "2026-02-02": 9,
+    "2025-09-10": 4,
+    "2025-05-16": 4,
+    "2026-03-25": 3,
+    "2025-05-21": 3,
+    "2025-09-06": 3,
+    "2025-09-29": 3
+  },
+  "donus_tekil": {
+    "trafo": 159,
+    "satir": 11645,
+    "sifir_orani": 0.026449119793902964,
+    "ort_ofs": 0.73887141342511,
+    "ort_gun_kontrolu": 0.6214421623828074,
+    "ort_FAZLA(ofs-kontrol)": 0.11742925104230245
+  },
+  "donus_toplu": {
+    "trafo": 83,
+    "satir": 170,
+    "sifir_orani": 0.011764705882352941,
+    "ort_ofs": -0.228763851492479,
+    "ort_gun_kontrolu": 0.39540800791914504,
+    "ort_FAZLA(ofs-kontrol)": -0.624171859411624
+  },
+  "olu_donus_tekil": {
+    "trafo": 7,
+    "satir": 647,
+    "sifir_orani": 0.00463678516228748,
+    "ort_ofs": 0.3385840937696973,
+    "ort_FAZLA": -0.2094888699945857
+  },
+  "olu_donus_toplu": {
+    "trafo": 4,
+    "satir": 8,
+    "sifir_orani": 0.0,
+    "ort_ofs": -2.195432037617391,
+    "ort_FAZLA": -2.588827421269862
+  },
+  "ileri_pencere_orneklemi": {
+    "2025-09-30|T1": [
+      {
+        "tanim": "700232627",
+        "satir": 84,
+        "ort_ofs": 0.158,
+        "donus_gunu": "2025-11-07",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "70342188",
+        "satir": 38,
+        "ort_ofs": 2.073,
+        "donus_gunu": "2025-12-23",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "70441025",
+        "satir": 24,
+        "ort_ofs": 1.769,
+        "donus_gunu": "2026-01-06",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77230014",
+        "satir": 28,
+        "ort_ofs": 0.764,
+        "donus_gunu": "2025-12-11",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-09-30|T2": [
+      {
+        "tanim": "77830147",
+        "satir": 2,
+        "ort_ofs": -0.004,
+        "donus_gunu": "2025-11-27",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-10-31|T1": [
+      {
+        "tanim": "700232627",
+        "satir": 115,
+        "ort_ofs": 0.187,
+        "donus_gunu": "2025-11-07",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "70342188",
+        "satir": 69,
+        "ort_ofs": 2.046,
+        "donus_gunu": "2025-12-23",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "70441025",
+        "satir": 55,
+        "ort_ofs": 1.67,
+        "donus_gunu": "2026-01-06",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "71630035",
+        "satir": 82,
+        "ort_ofs": 2.152,
+        "donus_gunu": "2025-12-10",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77230014",
+        "satir": 28,
+        "ort_ofs": 0.764,
+        "donus_gunu": "2025-12-11",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-10-31|T2": [
+      {
+        "tanim": "71740299",
+        "satir": 49,
+        "ort_ofs": 0.409,
+        "donus_gunu": "2026-01-12",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77830147",
+        "satir": 2,
+        "ort_ofs": -0.004,
+        "donus_gunu": "2025-11-27",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-11-30|T1": [
+      {
+        "tanim": "70342188",
+        "satir": 99,
+        "ort_ofs": 2.005,
+        "donus_gunu": "2025-12-23",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "70441025",
+        "satir": 85,
+        "ort_ofs": 1.61,
+        "donus_gunu": "2026-01-06",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "71630035",
+        "satir": 112,
+        "ort_ofs": 2.135,
+        "donus_gunu": "2025-12-10",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "71640158",
+        "satir": 2,
+        "ort_ofs": -1.042,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77230014",
+        "satir": 30,
+        "ort_ofs": 0.713,
+        "donus_gunu": "2025-12-11",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77240192",
+        "satir": 2,
+        "ort_ofs": -1.275,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-11-30|T2": [
+      {
+        "tanim": "700330123",
+        "satir": 43,
+        "ort_ofs": 0.762,
+        "donus_gunu": "2026-01-22",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "71640081",
+        "satir": 2,
+        "ort_ofs": 0.498,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "71740299",
+        "satir": 79,
+        "ort_ofs": 0.319,
+        "donus_gunu": "2026-01-12",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "72641363",
+        "satir": 2,
+        "ort_ofs": 0.417,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77340883",
+        "satir": 2,
+        "ort_ofs": 0.63,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "78340085",
+        "satir": 2,
+        "ort_ofs": 0.277,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-12-31|T1": [
+      {
+        "tanim": "70441025",
+        "satir": 85,
+        "ort_ofs": 1.61,
+        "donus_gunu": "2026-01-06",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "71640158",
+        "satir": 2,
+        "ort_ofs": -1.042,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77240192",
+        "satir": 2,
+        "ort_ofs": -1.275,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-12-31|T2": [
+      {
+        "tanim": "700291952",
+        "satir": 37,
+        "ort_ofs": -1.887,
+        "donus_gunu": "2026-01-24",
+        "sifir_orani": 0.027
+      },
+      {
+        "tanim": "700330123",
+        "satir": 43,
+        "ort_ofs": 0.762,
+        "donus_gunu": "2026-01-22",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "700425184",
+        "satir": 2,
+        "ort_ofs": -0.482,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "700426105",
+        "satir": 2,
+        "ort_ofs": -0.567,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "700469048",
+        "satir": 2,
+        "ort_ofs": -0.099,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "71640081",
+        "satir": 2,
+        "ort_ofs": 0.498,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "71740299",
+        "satir": 79,
+        "ort_ofs": 0.319,
+        "donus_gunu": "2026-01-12",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "72641363",
+        "satir": 2,
+        "ort_ofs": 0.417,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77340883",
+        "satir": 2,
+        "ort_ofs": 0.63,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "78340085",
+        "satir": 2,
+        "ort_ofs": 0.277,
+        "donus_gunu": "2026-03-26",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-07-31|T2": [
+      {
+        "tanim": "700330090",
+        "satir": 121,
+        "ort_ofs": 0.555,
+        "donus_gunu": "2025-08-01",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "700469013",
+        "satir": 85,
+        "ort_ofs": -0.521,
+        "donus_gunu": "2025-09-06",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77140130",
+        "satir": 84,
+        "ort_ofs": 1.842,
+        "donus_gunu": "2025-09-07",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77830147",
+        "satir": 1,
+        "ort_ofs": 0.297,
+        "donus_gunu": "2025-11-27",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "78340089",
+        "satir": 30,
+        "ort_ofs": -0.239,
+        "donus_gunu": "2025-09-06",
+        "sifir_orani": 0.0
+      }
+    ],
+    "2025-08-31|T2": [
+      {
+        "tanim": "700469013",
+        "satir": 116,
+        "ort_ofs": -0.648,
+        "donus_gunu": "2025-09-06",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77140130",
+        "satir": 115,
+        "ort_ofs": 2.003,
+        "donus_gunu": "2025-09-07",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "77830147",
+        "satir": 2,
+        "ort_ofs": -0.004,
+        "donus_gunu": "2025-11-27",
+        "sifir_orani": 0.0
+      },
+      {
+        "tanim": "78340089",
+        "satir": 30,
+        "ort_ofs": -0.239,
+        "donus_gunu": "2025-09-06",
+        "sifir_orani": 0.0
+      }
+    ]
+  }
+}

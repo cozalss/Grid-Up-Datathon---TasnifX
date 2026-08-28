@@ -1,0 +1,97 @@
+{
+  "train_tarih": [
+    "2025-01-01",
+    "2026-03-31"
+  ],
+  "test_tarih": [
+    "2026-04-01",
+    "2026-07-31"
+  ],
+  "train_satir": 1226237,
+  "test_satir": 714688,
+  "train_trafo": 5344,
+  "test_trafo": 7036,
+  "gorulmemis_test_trafo": 2024,
+  "test_giris_dagilimi": {
+    "2026-04-01": 3928,
+    "2026-05-11": 2222,
+    "2026-05-03": 141,
+    "2026-04-30": 119,
+    "2026-05-07": 102,
+    "2026-05-13": 54,
+    "2026-05-30": 30,
+    "2026-05-05": 20,
+    "2026-07-01": 20,
+    "2026-06-29": 16
+  },
+  "testte_trafo_train_gecmisli": 5012,
+  "bosluk>=0g": {
+    "trafo": 5012,
+    "test_satir": 556319,
+    "Q_delta1": 0.7784082005014775,
+    "hic_pozitif_yok": 234
+  },
+  "bosluk>=30g": {
+    "trafo": 1061,
+    "test_satir": 84362,
+    "Q_delta1": 0.11804031969194949,
+    "hic_pozitif_yok": 101
+  },
+  "bosluk>=60g": {
+    "trafo": 535,
+    "test_satir": 41728,
+    "Q_delta1": 0.058386316826363395,
+    "hic_pozitif_yok": 91
+  },
+  "bosluk>=90g": {
+    "trafo": 500,
+    "test_satir": 39160,
+    "Q_delta1": 0.054793140503268556,
+    "hic_pozitif_yok": 86
+  },
+  "bosluk>=120g": {
+    "trafo": 479,
+    "test_satir": 37481,
+    "Q_delta1": 0.052443863616011464,
+    "hic_pozitif_yok": 86
+  },
+  "bosluk>=150g": {
+    "trafo": 452,
+    "test_satir": 35512,
+    "Q_delta1": 0.04968881525924599,
+    "hic_pozitif_yok": 83
+  },
+  "bosluk>=200g": {
+    "trafo": 433,
+    "test_satir": 34155,
+    "Q_delta1": 0.04779008462433957,
+    "hic_pozitif_yok": 78
+  },
+  "bosluk>=250g": {
+    "trafo": 277,
+    "test_satir": 21752,
+    "Q_delta1": 0.03043565863705561,
+    "hic_pozitif_yok": 76
+  },
+  "bosluk>=300g": {
+    "trafo": 98,
+    "test_satir": 7561,
+    "Q_delta1": 0.010579441658457957,
+    "hic_pozitif_yok": 68
+  },
+  "bosluk>=350g": {
+    "trafo": 22,
+    "test_satir": 1502,
+    "Q_delta1": 0.002101616369660607,
+    "hic_pozitif_yok": 7
+  },
+  "v102_vs_v83": {
+    "grupB_satir": 7149,
+    "grupB_ort_fark_lp": 0.37708550057158585,
+    "grupB_disi_ort_mutlak_fark": 0.07596337664810171,
+    "grupB_disi_degisen_satir": 707539,
+    "v83_grupB_ort_ofs": -0.550792392268397,
+    "v102_grupB_ort_ofs": -0.1737068916968112,
+    "Q_v102_vs_v83": 0.01544272554105111
+  }
+}

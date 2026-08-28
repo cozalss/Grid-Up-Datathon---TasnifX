@@ -1,0 +1,146 @@
+{
+  "grup_B": {
+    "trafo": 93,
+    "train_satir": 9713,
+    "train_sifir_orani": 1.0,
+    "hic_pozitif_kaydi_olmayan_trafo": 93,
+    "pozitif_kayit_medyani": 0.0,
+    "pozitif_kayit_p90": 0.0,
+    "toplam_tuketimi_sifir_trafo": 93,
+    "ilk_kayit_min": "2025-01-01",
+    "son_kayit_max": "2026-03-14"
+  },
+  "grup_A": {
+    "trafo": 158,
+    "train_satir": 27139,
+    "train_sifir_orani": 0.9320903496812705,
+    "hic_pozitif_kaydi_olmayan_trafo": 141,
+    "pozitif_kayit_medyani": 0.0,
+    "pozitif_kayit_p90": 1.900000000000034,
+    "toplam_tuketimi_sifir_trafo": 141,
+    "ilk_kayit_min": "2025-01-01",
+    "son_kayit_max": "2026-03-31"
+  },
+  "grup_B_aylik": {
+    "2025-01": {
+      "satir": 1586,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-02": {
+      "satir": 1494,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-03": {
+      "satir": 1693,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-04": {
+      "satir": 1649,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-05": {
+      "satir": 1702,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-06": {
+      "satir": 949,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-07": {
+      "satir": 81,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-08": {
+      "satir": 198,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-09": {
+      "satir": 69,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-10": {
+      "satir": 68,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-11": {
+      "satir": 64,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2025-12": {
+      "satir": 37,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2026-01": {
+      "satir": 60,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2026-02": {
+      "satir": 57,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    },
+    "2026-03": {
+      "satir": 6,
+      "sifir_orani": 1.0,
+      "ort_lp": 0.0
+    }
+  },
+  "B_test_ilk_gun": {
+    "2026-05-11": 37,
+    "2026-05-03": 33,
+    "2026-05-13": 3,
+    "2026-05-04": 2,
+    "2026-05-07": 2,
+    "2026-05-01": 2,
+    "2026-07-01": 1,
+    "2026-05-12": 1
+  },
+  "yazilan_B": {
+    "satir": 7149,
+    "v83_ort_kwh": 402.50803438094147,
+    "v83_medyan_kwh": 293.9327020562665,
+    "v83_ort_lp": 5.478687329002682,
+    "v89_ort_kwh": 2.0745998085014197,
+    "v89_ort_lp": 0.7836298887391271
+  },
+  "yazilan_A": {
+    "satir": 18063,
+    "v83_ort_kwh": 0.4542766028950306,
+    "v83_medyan_kwh": 0.0948520037118455,
+    "v83_ort_lp": 0.24336614955237196,
+    "v89_ort_kwh": 0.5176062122979268,
+    "v89_ort_lp": 0.30356153471757047
+  },
+  "docs43_grupB": {
+    "trafo": 59,
+    "satir": 4727,
+    "v89_maskesiyle_kesisim": 58,
+    "maske_disinda_kalan": 1
+  },
+  "docs43_grupB_ikiz": {
+    "satir": 4408,
+    "sifir_orani": 0.9893375680580763,
+    "ort_lp": 0.03414568283388281
+  },
+  "docs43_B_maske_disi": {
+    "trafo": 1,
+    "test_satir": 113,
+    "v83_ort_lp": 2.6814268735452544,
+    "ikiz_satir": 108,
+    "ikiz_sifir_orani": 0.5648148148148148,
+    "ikiz_ort_lp": 1.3936497215903276
+  }
+}

@@ -1,0 +1,110 @@
+[
+  {
+    "rejim": "sicak",
+    "yon": "ilce",
+    "trafo_ayrik_kazanc_rejim": -0.012956446888365279,
+    "trafo_ayrik_kazanc_toplam": -0.010085404507265385,
+    "kappa_A": 0.72087644238371,
+    "kappa_B": 0.5825111677596018,
+    "zaman_ayrik_kazanc_rejim": -0.04110893561660322,
+    "zaman_ayrik_kazanc_toplam": -0.03199953259785121,
+    "zaman_kappa": 2.409120447762863,
+    "n": 254296
+  },
+  {
+    "rejim": "sicak",
+    "yon": "seviye_desili10",
+    "trafo_ayrik_kazanc_rejim": -0.008304470468187263,
+    "trafo_ayrik_kazanc_toplam": -0.006464267913259309,
+    "kappa_A": 0.9589464734666231,
+    "kappa_B": 0.7555512622921137,
+    "zaman_ayrik_kazanc_rejim": -0.008201336818047827,
+    "zaman_ayrik_kazanc_toplam": -0.006383987834243123,
+    "zaman_kappa": 3.0945390035362528,
+    "n": 254296
+  },
+  {
+    "rejim": "sicak",
+    "yon": "kva_kovasi",
+    "trafo_ayrik_kazanc_rejim": -0.005393844796956643,
+    "trafo_ayrik_kazanc_toplam": -0.004198613022183278,
+    "kappa_A": 0.900661245873448,
+    "kappa_B": 0.8693640869622142,
+    "zaman_ayrik_kazanc_rejim": -0.011856831426341611,
+    "zaman_ayrik_kazanc_toplam": -0.00922945481422794,
+    "zaman_kappa": 2.6992090806319453,
+    "n": 254296
+  },
+  {
+    "rejim": "sicak",
+    "yon": "ilce_x_kova",
+    "trafo_ayrik_kazanc_rejim": -0.005936590191788812,
+    "trafo_ayrik_kazanc_toplam": -0.0046210904883050505,
+    "kappa_A": 0.24863929218933153,
+    "kappa_B": 0.2745681891078396,
+    "zaman_ayrik_kazanc_rejim": -0.07936034443860539,
+    "zaman_ayrik_kazanc_toplam": -0.06177474290563226,
+    "zaman_kappa": 1.722088769646944,
+    "n": 254296
+  },
+  {
+    "rejim": "sicak",
+    "yon": "ay",
+    "trafo_ayrik_kazanc_rejim": -0.01071726006778001,
+    "trafo_ayrik_kazanc_toplam": -0.008342403123666981,
+    "kappa_A": 0.9151676898404659,
+    "kappa_B": 1.0918386119144372,
+    "zaman_ayrik_kazanc_rejim": 0.0,
+    "zaman_ayrik_kazanc_toplam": 0.0,
+    "zaman_kappa": 0.0,
+    "n": 254296
+  },
+  {
+    "rejim": "soguk",
+    "yon": "ilce",
+    "trafo_ayrik_kazanc_rejim": -0.003945667252047673,
+    "trafo_ayrik_kazanc_toplam": -0.0008743275066036338,
+    "kappa_A": -0.1395244417488236,
+    "kappa_B": 0.023740017200452157,
+    "zaman_ayrik_kazanc_rejim": -0.030545195495345685,
+    "zaman_ayrik_kazanc_toplam": -0.0067685648358478115,
+    "zaman_kappa": 0.12608390035568107,
+    "n": 20633
+  },
+  {
+    "rejim": "soguk",
+    "yon": "seviye_desili10",
+    "trafo_ayrik_kazanc_rejim": -0.09349403312954775,
+    "trafo_ayrik_kazanc_toplam": -0.02071751104355096,
+    "kappa_A": 0.5405905766742988,
+    "kappa_B": 1.2930882990592276,
+    "zaman_ayrik_kazanc_rejim": -0.01609720457745774,
+    "zaman_ayrik_kazanc_toplam": -0.0035670085292147133,
+    "zaman_kappa": 0.18009099048455762,
+    "n": 20633
+  },
+  {
+    "rejim": "soguk",
+    "yon": "kva_kovasi",
+    "trafo_ayrik_kazanc_rejim": -0.0027657839599008146,
+    "trafo_ayrik_kazanc_toplam": -0.0006128750446985707,
+    "kappa_A": 0.09217936929801619,
+    "kappa_B": 0.5132347675981213,
+    "zaman_ayrik_kazanc_rejim": -0.002427297208579229,
+    "zaman_ayrik_kazanc_toplam": -0.0005378691563668117,
+    "zaman_kappa": 0.06731540230079325,
+    "n": 20633
+  },
+  {
+    "rejim": "soguk",
+    "yon": "ay",
+    "trafo_ayrik_kazanc_rejim": -0.1526092680263447,
+    "trafo_ayrik_kazanc_toplam": -0.033816962322110046,
+    "kappa_A": 1.0716838464462328,
+    "kappa_B": 0.9256423014756376,
+    "zaman_ayrik_kazanc_rejim": 0.0,
+    "zaman_ayrik_kazanc_toplam": 0.0,
+    "zaman_kappa": 0.0,
+    "n": 20633
+  }
+]

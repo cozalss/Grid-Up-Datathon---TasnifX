@@ -1,0 +1,25 @@
+TABAN sicak MSE: {'yaz25': 0.59261, 'guz25': 0.54091, 'kis26': 0.52357}
+yigin oznitelikleri (26): ['guc', 't_log_ort', 't_log_std', 't_log_medyan', 't_log_p10', 't_log_p90', 't_sifir_orani', 't_yuk_faktoru', 't_trend', 't_yayilma', 't_kayma', 't_hg_genligi', 't_log_son7', 't_log_son30', 't_log_son90', 't_kuyruk_sifir', 'gecmis_gun', 't_doluluk', 'p_doluluk', 'hg', 'sicaklik_ort', 'cdd22_ort7', 'tarim_orani', 'yerlesim_orani', 'guc_yuzdelik', 't_hg_sapma']
+
+aday                                        yaz25      guz25      kis26      GENEL   testdMSE  karar
+--------------------------------------------------------------------------------------------------------
+A1 hafta gunu ofseti                     +0.00042   -0.00048   -0.00057   -0.00027   -0.00021  RED(ters isaret)
+A2 kVA kovasi ofseti                     +0.00703   +0.00282   +0.00626   +0.00542   +0.00422  RED(zararli)
+A3 ilce ofseti                           +0.02681   +0.01005   +0.00569   +0.01288   +0.01003  RED(zararli)
+A4 seviye desili (20) ofseti             +0.03415   +0.01085   +0.02390   +0.02275   +0.01771  RED(zararli)
+A5 sifir orani kovasi ofseti             +0.00769   +0.00482   +0.01342   +0.00920   +0.00716  RED(zararli)
+A6 gecmis uzunlugu ofseti                +0.00011   +0.00506   +0.00242   +0.00259   +0.00201  RED(zararli)
+A7 r-desili sekil kalibrasyonu           +0.03491   +0.00712   +0.02949   +0.02415   +0.01880  RED(zararli)
+A8 kuresel olcek lam=0.94                -0.00155   +0.00361   +0.03522   +0.01536   +0.01195  RED(ters isaret)
+A8 kuresel olcek lam=0.97                -0.00400   +0.00054   +0.01545   +0.00550   +0.00428  RED(ters isaret)
+A8 kuresel olcek lam=1.03                +0.00996   +0.00166   -0.01119   -0.00139   -0.00109  RED(ters isaret)
+A8 kuresel olcek lam=1.06                +0.02439   +0.00474   -0.01894   +0.00032   +0.00025  RED(ters isaret)
+A9 trafo-arasi buzme b=0.9               +0.00780   +0.01538   +0.06893   +0.03560   +0.02771  RED(zararli)
+A9 trafo-arasi buzme b=0.95              -0.00502   +0.00342   +0.02850   +0.01153   +0.00898  RED(ters isaret)
+A9 trafo-arasi buzme b=1.05              +0.02105   +0.00216   -0.01714   -0.00064   -0.00050  RED(ters isaret)
+A10 ridge yigin a=30                     +0.06081   +0.05014   +0.05204   +0.05389   +0.04195  RED(zararli)
+A10 ridge yigin a=300                    +0.06065   +0.05017   +0.05207   +0.05387   +0.04193  RED(zararli)
+A11 lgbm yigin yaprak=15                 +0.08909   +0.13131   +0.15297   +0.12863   +0.10013  RED(zararli)
+A11 lgbm yigin yaprak=63                 +0.11582   +0.15532   +0.21044   +0.16734   +0.13026  RED(zararli)
+
+yazildi: C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\experiments\sicak_kaldirac\adaylar.jsonl

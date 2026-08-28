@@ -1,0 +1,107 @@
+====================================================================================================
+SOGUK UZMAN AYAR KOSUSU -- uretim rig'i
+  aday=['TABAN_d7', 'random_4', 'lr003_random4', 'depth_5', 'depth_6']  blok=['kis26', 'yaz25', 'guz25']  tohum=[1000, 1001, 1002, 1003, 1004]  fit=75
+====================================================================================================
+  onbellekten okunuyor: C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\data\interim\deney
+  egitim=1,038,737 kolon=105 (uretim yalin seti)
+  kis26 t=1000 TABAN_d7        RMSLE=1.839294
+  kis26 t=1000 random_4        RMSLE=1.832139
+  kis26 t=1000 lr003_random4   RMSLE=1.831763
+  kis26 t=1000 depth_5         RMSLE=1.830967
+  kis26 t=1000 depth_6         RMSLE=1.835108
+    cift suresi 230 sn
+  kis26 t=1001 TABAN_d7        RMSLE=1.844919
+  kis26 t=1001 random_4        RMSLE=1.828461
+  kis26 t=1001 lr003_random4   RMSLE=1.826145
+  kis26 t=1001 depth_5         RMSLE=1.835930
+  kis26 t=1001 depth_6         RMSLE=1.834710
+    cift suresi 233 sn
+  kis26 t=1002 TABAN_d7        RMSLE=1.838972
+  kis26 t=1002 random_4        RMSLE=1.835849
+  kis26 t=1002 lr003_random4   RMSLE=1.827399
+  kis26 t=1002 depth_5         RMSLE=1.829362
+  kis26 t=1002 depth_6         RMSLE=1.835818
+    cift suresi 223 sn
+  kis26 t=1003 TABAN_d7        RMSLE=1.837842
+  kis26 t=1003 random_4        RMSLE=1.833956
+  kis26 t=1003 lr003_random4   RMSLE=1.829476
+  kis26 t=1003 depth_5         RMSLE=1.832703
+  kis26 t=1003 depth_6         RMSLE=1.844465
+    cift suresi 226 sn
+  kis26 t=1004 TABAN_d7        RMSLE=1.839849
+  kis26 t=1004 random_4        RMSLE=1.828726
+  kis26 t=1004 lr003_random4   RMSLE=1.828071
+  kis26 t=1004 depth_5         RMSLE=1.821351
+  kis26 t=1004 depth_6         RMSLE=1.831890
+    cift suresi 232 sn
+  yaz25 t=1000 TABAN_d7        RMSLE=1.581683
+  yaz25 t=1000 random_4        RMSLE=1.578883
+  yaz25 t=1000 lr003_random4   RMSLE=1.579047
+  yaz25 t=1000 depth_5         RMSLE=1.636368
+  yaz25 t=1000 depth_6         RMSLE=1.612332
+    cift suresi 271 sn
+  yaz25 t=1001 TABAN_d7        RMSLE=1.572541
+  yaz25 t=1001 random_4        RMSLE=1.574744
+  yaz25 t=1001 lr003_random4   RMSLE=1.575954
+  yaz25 t=1001 depth_5         RMSLE=1.621385
+  yaz25 t=1001 depth_6         RMSLE=1.607818
+    cift suresi 283 sn
+  yaz25 t=1002 TABAN_d7        RMSLE=1.574459
+  yaz25 t=1002 random_4        RMSLE=1.588803
+  yaz25 t=1002 lr003_random4   RMSLE=1.580063
+  yaz25 t=1002 depth_5         RMSLE=1.626123
+  yaz25 t=1002 depth_6         RMSLE=1.610820
+    cift suresi 256 sn
+  yaz25 t=1003 TABAN_d7        RMSLE=1.575996
+  yaz25 t=1003 random_4        RMSLE=1.590888
+  yaz25 t=1003 lr003_random4   RMSLE=1.575625
+  yaz25 t=1003 depth_5         RMSLE=1.628950
+  yaz25 t=1003 depth_6         RMSLE=1.603875
+    cift suresi 272 sn
+  yaz25 t=1004 TABAN_d7        RMSLE=1.585134
+  yaz25 t=1004 random_4        RMSLE=1.581695
+  yaz25 t=1004 lr003_random4   RMSLE=1.576324
+  yaz25 t=1004 depth_5         RMSLE=1.625972
+  yaz25 t=1004 depth_6         RMSLE=1.607027
+    cift suresi 277 sn
+  guz25 t=1000 TABAN_d7        RMSLE=1.696359
+  guz25 t=1000 random_4        RMSLE=1.711154
+  guz25 t=1000 lr003_random4   RMSLE=1.717214
+  guz25 t=1000 depth_5         RMSLE=1.719532
+  guz25 t=1000 depth_6         RMSLE=1.707319
+    cift suresi 255 sn
+  guz25 t=1001 TABAN_d7        RMSLE=1.703106
+  guz25 t=1001 random_4        RMSLE=1.714964
+  guz25 t=1001 lr003_random4   RMSLE=1.710668
+  guz25 t=1001 depth_5         RMSLE=1.718843
+  guz25 t=1001 depth_6         RMSLE=1.718445
+    cift suresi 265 sn
+  guz25 t=1002 TABAN_d7        RMSLE=1.697675
+  guz25 t=1002 random_4        RMSLE=1.712290
+  guz25 t=1002 lr003_random4   RMSLE=1.714797
+  guz25 t=1002 depth_5         RMSLE=1.730936
+  guz25 t=1002 depth_6         RMSLE=1.703003
+    cift suresi 268 sn
+  guz25 t=1003 TABAN_d7        RMSLE=1.707876
+  guz25 t=1003 random_4        RMSLE=1.714468
+  guz25 t=1003 lr003_random4   RMSLE=1.717651
+  guz25 t=1003 depth_5         RMSLE=1.721557
+  guz25 t=1003 depth_6         RMSLE=1.702732
+    cift suresi 260 sn
+  guz25 t=1004 TABAN_d7        RMSLE=1.701036
+  guz25 t=1004 random_4        RMSLE=1.714665
+  guz25 t=1004 lr003_random4   RMSLE=1.715338
+  guz25 t=1004 depth_5         RMSLE=1.720149
+  guz25 t=1004 depth_6         RMSLE=1.705541
+    cift suresi 243 sn
+
+====================================================================================================
+SONUC -- dMSE NEGATIF = KAZANC (taban_MSE'den dusus)
+====================================================================================================
+aday                kis26 dMSE    yaz25 dMSE    guz25 dMSE  test dMSE(kis26)  ayni_yon  t(kis26)
+random_4             -0.030655     +0.015945     +0.041979         -0.006793     False     +3.38
+lr003_random4        -0.042576     -0.001786     +0.047557         -0.009434     False     +5.85
+depth_5              -0.037098     +0.159637     +0.071871         -0.008220     False     +4.54
+depth_6              -0.013875     +0.096888     +0.021141         -0.003075     False     +1.30
+
+TAMAM 63.3 dakika | C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\experiments\egitim_soguk\ayar_kosusu.jsonl

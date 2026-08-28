@@ -1,0 +1,23 @@
+{"aday":"B1 saf cat","yaz25":0.0378966258,"guz25":0.027145741,"kis26":0.0283866317,"GENEL":0.0306450754,"testMSE":0.023854378,"ayni_isaret":true}
+{"aday":"B1 saf xgb","yaz25":0.0139673941,"guz25":0.0382169571,"kis26":0.0097146748,"GENEL":0.019609523,"testMSE":0.0152642135,"ayni_isaret":true}
+{"aday":"B1 saf lgbm","yaz25":0.0308967356,"guz25":0.0391128301,"kis26":0.0198177148,"GENEL":0.0287907328,"testMSE":0.0224109425,"ayni_isaret":true}
+{"aday":"B1 saf sinir_agi","yaz25":0.0143402747,"guz25":0.1386867899,"kis26":0.2160047235,"GENEL":0.1364254488,"testMSE":0.1061946881,"ayni_isaret":true}
+{"aday":"B2 ag YOK (3\/1\/1\/0)","yaz25":0.0163758324,"guz25":0.0079967837,"kis26":-0.0052721661,"GENEL":0.0047898272,"testMSE":0.0037284408,"ayni_isaret":false}
+{"aday":"B2 ag 0,7 (3\/1\/1\/0,7)","yaz25":0.0060911523,"guz25":0.0010342439,"kis26":-0.0052859206,"GENEL":-0.0001976205,"testMSE":-0.0001538294,"ayni_isaret":false}
+{"aday":"B2 ag 2,1 (3\/1\/1\/2,1)","yaz25":-0.0036552734,"guz25":0.0020751379,"kis26":0.0076060892,"GENEL":0.0027912049,"testMSE":0.0021726968,"ayni_isaret":false}
+{"aday":"B2 ag 3,0 (3\/1\/1\/3)","yaz25":-0.0062684773,"guz25":0.0069069877,"kis26":0.0185537635,"GENEL":0.0081073185,"testMSE":0.0063108032,"ayni_isaret":false}
+{"aday":"B3 esit (1\/1\/1\/1)","yaz25":-0.003922802,"guz25":0.0045718653,"kis26":0.0008299741,"GENEL":0.0006558225,"testMSE":0.0005104976,"ayni_isaret":false}
+{"aday":"B3 xgb agir (2\/3\/1\/1,4)","yaz25":-0.0030630005,"guz25":0.0031414054,"kis26":-0.0058595385,"GENEL":-0.0023315901,"testMSE":-0.0018149289,"ayni_isaret":false}
+{"aday":"B3 cat agir (5\/1\/1\/1,4)","yaz25":0.0060895193,"guz25":0.0010830117,"kis26":0.0007583322,"GENEL":0.002336371,"testMSE":0.0018186503,"ayni_isaret":true}
+{"aday":"B3 (2\/2\/1\/1,4)","yaz25":-0.0036079933,"guz25":0.0016950123,"kis26":-0.00344607,"GENEL":-0.0019189793,"testMSE":-0.0014937492,"ayni_isaret":false}
+{"aday":"B3 (3\/2\/2\/1,4)","yaz25":0.0005586778,"guz25":0.0015021702,"kis26":-0.0062838912,"GENEL":-0.0020051363,"testMSE":-0.0015608146,"ayni_isaret":false}
+{"aday":"B4 ham uzayda harman","yaz25":0.0062624382,"guz25":0.0016255677,"kis26":0.0365302032,"GENEL":0.0174616543,"testMSE":0.0135922949,"ayni_isaret":true}
+{"aday":"B5 kirpma tabani 0.5 kWh","yaz25":0.0039516006,"guz25":-0.0037285475,"kis26":0.0012352851,"GENEL":0.0004709279,"testMSE":0.0003665741,"ayni_isaret":false}
+{"aday":"B5 kirpma tabani 1.0 kWh","yaz25":0.0146038538,"guz25":-0.004529934,"kis26":0.0072526274,"GENEL":0.0056889141,"testMSE":0.0044282974,"ayni_isaret":false}
+{"aday":"B5 kirpma tabani 2.0 kWh","yaz25":0.041379251,"guz25":0.0001263487,"kis26":0.0284954837,"GENEL":0.0233946537,"testMSE":0.0182105903,"ayni_isaret":true}
+{"aday":"B5 kirpma tabani 5.0 kWh","yaz25":0.127363738,"guz25":0.0261994987,"kis26":0.0988904083,"GENEL":0.0845613911,"testMSE":0.0658232802,"ayni_isaret":true}
+{"aday":"B6 kirpma tavani 24x guc","yaz25":0.0000422101,"guz25":0.0,"kis26":0.0000000528,"GENEL":0.0000117302,"testMSE":0.0000091309,"ayni_isaret":false}
+{"aday":"B6 kirpma tavani 18x guc","yaz25":0.0002792468,"guz25":0.0000254441,"kis26":0.0001181495,"GENEL":0.0001344877,"testMSE":0.0001046863,"ayni_isaret":true}
+{"aday":"B6 kirpma tavani 12x guc","yaz25":0.001072338,"guz25":0.0004231569,"kis26":0.0010525094,"GENEL":0.0008655704,"testMSE":0.0006737671,"ayni_isaret":true}
+{"aday":"B7 tohum sayisi 1 (taban 3)","yaz25":0.0265285387,"guz25":0.0172916721,"kis26":0.0092102153,"GENEL":0.0164850507,"testMSE":0.0128320987,"ayni_isaret":true}
+{"aday":"B7 tohum sayisi 2 (taban 3)","yaz25":0.0090673097,"guz25":0.0016937628,"kis26":0.0096309017,"GENEL":0.0070476091,"testMSE":0.0054859168,"ayni_isaret":true}

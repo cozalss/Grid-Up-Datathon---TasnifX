@@ -1,0 +1,38 @@
+{
+  "v61_ham35_kimlik": {
+    "maxbagil": 5.407863139074802e-13,
+    "farkli": 0
+  },
+  "v66_v50n_gun_yapisi": {
+    "degisen": 552008,
+    "soguk_degisen": 0,
+    "gun_ici_std_ort": 0.003686454890322441,
+    "gunler_arasi_std": 0.05566070503759174
+  },
+  "rotus2_panelsinir": {
+    "panelsinir_vs_v55_satir": 1935,
+    "olay_vs_v55_satir": 4063,
+    "kesisim": 1252,
+    "yalniz_panelsinir": 683,
+    "yalniz_olay": 2811,
+    "yalniz_panelsinir_ort_delta": -0.48381802757947157,
+    "yalniz_panelsinir_Q_tam": 0.00022582598781304997
+  },
+  "olay_maske_karsilastirma": {
+    "v67_uzerinde": 4066,
+    "v56_uzerinde": 4063,
+    "kesisim": 4063,
+    "v67_ort_delta": -0.14199926377305788,
+    "v56_ort_delta": -0.14210160391790141
+  },
+  "rotus4_soguk_genlik": {
+    "son_islem_buzme_soguk_degisen": 158369,
+    "son_islem_buzme_sicak_degisen": 0,
+    "soguk_ofset_std_orani_nihai_ham": 0.6,
+    "soguk_gun_olcegi_c": 1.3301,
+    "v80a_soguk_degisen": 158369,
+    "v83_soguk_sabit_delta": 0.1046,
+    "soguk_ofset_std_v50ham": 0.5529133313819129,
+    "soguk_ofset_std_v83": 0.35914682062151204
+  }
+}

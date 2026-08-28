@@ -1,0 +1,50 @@
+C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\.venv\Lib\site-packages\numpy\lib\_function_base_impl.py:3023: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\.venv\Lib\site-packages\numpy\lib\_function_base_impl.py:3024: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\.venv\Lib\site-packages\numpy\lib\_function_base_impl.py:3023: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\.venv\Lib\site-packages\numpy\lib\_function_base_impl.py:3024: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\.venv\Lib\site-packages\numpy\lib\_function_base_impl.py:3023: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\.venv\Lib\site-packages\numpy\lib\_function_base_impl.py:3024: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+TABAN sicak MSE: {'yaz25': 0.59261, 'guz25': 0.54091, 'kis26': 0.52357}
+
+================================================================================================
+GUN DUZEYI ARTIK -- takvim kirilimlari (trafo etkisi cikarilmis)
+================================================================================================
+
+-- yaz25  gun sayisi 122  std 0.1072 --
+   hafta gunu: 0:-0.0082 1:-0.0083 2:-0.0031 3:+0.0098 4:-0.0087 5:+0.0111 6:+0.0077
+   tatil  n=  9 ort -0.0019 | tatil disi n=113 ort +0.0002
+
+-- guz25  gun sayisi 122  std 0.0667 --
+   hafta gunu: 0:+0.0025 1:-0.0102 2:-0.0220 3:-0.0201 4:-0.0146 5:+0.0177 6:+0.0439
+   tatil  n=  2 ort +0.0272 | tatil disi n=120 ort -0.0005
+
+-- kis26  gun sayisi 121  std 0.0740 --
+   hafta gunu: 0:+0.0017 1:-0.0211 2:-0.0208 3:-0.0199 4:-0.0191 5:+0.0244 6:+0.0558
+   tatil  n=  4 ort +0.0145 | tatil disi n=117 ort -0.0005
+   ramazan n= 30 ort -0.0502
+
+================================================================================================
+GUN ARTIGININ HAVA ILE KORELASYONU (blok basi)
+================================================================================================
+  yaz25: {'sicaklik_ort': 0.836, 'sicaklik_max': 0.809, 'cdd22': 0.924, 'cdd22_ort7': 0.943, 'cdd18': 0.913, 'gun_uzunlugu_saat': 0.593, 'yagis_toplam': -0.293, 'nem_ort': -0.648, 'ulusal_gunluk': 0.677, 'ulusal_tepe_orani': 0.035, 'hg': 0.054, 'hafta_sonu': 0.055, 'pazar': 0.029, 'tatil': -0.005, 'tatil_ag': 0.001, 'tatil_mes': 0.196, 'ramazan': nan}
+  guz25: {'sicaklik_ort': -0.446, 'sicaklik_max': -0.428, 'cdd22': -0.548, 'cdd22_ort7': -0.505, 'cdd18': -0.506, 'gun_uzunlugu_saat': -0.358, 'yagis_toplam': 0.015, 'nem_ort': 0.371, 'ulusal_gunluk': -0.651, 'ulusal_tepe_orani': 0.278, 'hg': 0.206, 'hafta_sonu': 0.3, 'pazar': 0.275, 'tatil': 0.053, 'tatil_ag': 0.065, 'tatil_mes': 0.081, 'ramazan': nan}
+  kis26: {'sicaklik_ort': -0.454, 'sicaklik_max': -0.473, 'cdd22': nan, 'cdd22_ort7': nan, 'cdd18': 0.001, 'gun_uzunlugu_saat': -0.71, 'yagis_toplam': -0.169, 'nem_ort': -0.044, 'ulusal_gunluk': -0.1, 'ulusal_tepe_orani': 0.637, 'hg': 0.244, 'hafta_sonu': 0.34, 'pazar': 0.306, 'tatil': 0.036, 'tatil_ag': 0.04, 'tatil_mes': -0.122, 'ramazan': -0.391}
+
+aday                                        yaz25      guz25      kis26      GENEL   testdMSE  karar
+--------------------------------------------------------------------------------------------------------
+C1 hafta gunu (gun duzeyi)               +0.00028   -0.00042   -0.00050   -0.00026   -0.00020  RED(ters isaret)
+C1b hafta gunu x0,5                      +0.00002   -0.00026   -0.00029   -0.00019   -0.00015  RED(ters isaret)
+C2 hafta sonu ikili                      +0.00019   -0.00038   -0.00047   -0.00026   -0.00020  RED(ters isaret)
+C3 resmi tatil ofseti                    +0.00002   -0.00000   -0.00000   +0.00000   +0.00000  RED(ters isaret)
+C4 gun-hava regresyonu a=5               +0.00101   +0.00858   -0.00193   +0.00210   +0.00163  RED(ters isaret)
+C4 gun-hava regresyonu a=50              +0.00180   +0.00590   -0.00156   +0.00165   +0.00129  RED(ters isaret)
+C5 gun-hava+takvim a=10                  +0.00153   +0.00784   -0.00220   +0.00190   +0.00148  RED(ters isaret)
+C5 gun-hava+takvim a=100                 +0.00219   +0.00421   -0.00169   +0.00119   +0.00093  RED(ters isaret)
+
+yazildi: C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\experiments\sicak_kaldirac\adaylar3.jsonl

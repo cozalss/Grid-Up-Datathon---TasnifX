@@ -1,0 +1,58 @@
+{"aday": "C1 seviye d=-0.20", "yaz25": -0.0258345480664941, "guz25": -0.01676365540473368, "kis26": -0.10343574170938341, "genel_dmse": -0.010786641566813403, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C1 seviye d=-0.15", "yaz25": -0.01187591104987007, "guz25": -0.005072741553549864, "kis26": -0.07007680628203738, "genel_dmse": -0.006428042678871055, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C1 seviye d=-0.10", "yaz25": -0.0029172740332468194, "guz25": 0.0016181722976331692, "kis26": -0.04171787085469125, "genel_dmse": -0.003177402788421426, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye d=-0.06", "yaz25": 0.0006496355800518216, "guz25": 0.003370903378579815, "kis26": -0.022630722512815282, "genel_dmse": -0.001374621354256454, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye d=-0.03", "yaz25": 0.0012248177900260337, "guz25": 0.0025854516892902524, "kis26": -0.010415361256407074, "genel_dmse": -0.0004878780575794804, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye d=+0.03", "yaz25": -0.0030248177900253914, "guz25": -0.004385451689290054, "kis26": 0.00861536125640816, "genel_dmse": 8.901281848228232e-05, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye d=+0.06", "yaz25": -0.007849635580051473, "guz25": -0.010570903378579466, "kis26": 0.015430722512815631, "genel_dmse": -0.0002208396021328302, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye d=+0.10", "yaz25": -0.0170827259667532, "guz25": -0.021618172297633187, "kis26": 0.021717870854692567, "genel_dmse": -0.0012544332015489276, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye d=+0.15", "yaz25": -0.033124088950129416, "guz25": -0.03992725844644962, "kis26": 0.025076806282038344, "genel_dmse": -0.0035435882985623075, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye d=+0.20", "yaz25": -0.05416545193350597, "guz25": -0.0632363445952655, "kis26": 0.023435741709384228, "genel_dmse": -0.006940702393068275, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye d=+0.30", "yaz25": -0.11124817790025876, "guz25": -0.12485451689289917, "kis26": 0.005153612564076315, "genel_dmse": -0.01705880757455814, "kapi": "RED (isaret ters)"}
+{"aday": "C1 seviye (blok-disi optimum d)", "yaz25": -0.006084003185378606, "yaz25_d": 0.0502, "guz25": -0.010948448719941606, "guz25_d": 0.0616, "kis26": -0.017014589374756195, "kis26_d": -0.0468, "genel_dmse": -0.002514848381617536, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C2 genlik beta=0.20", "yaz25": -0.34446869914233336, "guz25": -0.16192382661963434, "kis26": -0.00873424400674594, "genel_dmse": -0.038049289294303436, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C2 genlik beta=0.30", "yaz25": -0.24245162139085963, "guz25": -0.11383090074618041, "kis26": -0.0014057805718445948, "genel_dmse": -0.02642026488561132, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C2 genlik beta=0.40", "yaz25": -0.1510344789499798, "guz25": -0.07081262101842345, "kis26": 0.0024927479075804726, "genel_dmse": -0.016202375200330046, "kapi": "RED (isaret ters)"}
+{"aday": "C2 genlik beta=0.50", "yaz25": -0.07021727181969295, "guz25": -0.03286898743636346, "kis26": 0.002961341431528819, "genel_dmse": -0.007395620238459585, "kapi": "RED (isaret ters)"}
+{"aday": "C2 genlik beta=0.70", "yaz25": 0.05961733650909995, "guz25": 0.027794341290666935, "kis26": -0.006391276387004208, "genel_dmse": 0.005984485515048904, "kapi": "RED (isaret ters)"}
+{"aday": "C2 genlik beta=0.80", "yaz25": 0.1086347377076069, "guz25": 0.050514036435637344, "kis26": -0.01621248772948558, "genel_dmse": 0.010557836306686995, "kapi": "RED (isaret ters)"}
+{"aday": "C2 genlik beta=0.90", "yaz25": 0.1470522035955204, "guz25": 0.06815908543491034, "kis26": -0.02946363402744323, "genel_dmse": 0.013720052374914242, "kapi": "RED (isaret ters)"}
+{"aday": "C2 genlik beta=1.00", "yaz25": 0.17486973417284046, "guz25": 0.0807294882884868, "kis26": -0.04614471528087716, "genel_dmse": 0.015471133719730709, "kapi": "RED (isaret ters)"}
+{"aday": "C2 genlik beta=1.20", "yaz25": 0.1987049893957007, "guz25": 0.09064635555854927, "kis26": -0.08979668265417562, "genel_dmse": 0.014739892239131143, "kapi": "RED (isaret ters)"}
+{"aday": "C2 genlik beta=1.50", "yaz25": 0.15495835740054176, "guz25": 0.0674618103709177, "kis26": -0.18099914588019628, "genel_dmse": 0.0030595195926508994, "kapi": "RED (isaret ters)"}
+{"aday": "C3a kVA ince (11 kova)", "yaz25": -0.02338826849461384, "guz25": -0.01317307634453968, "kis26": -0.053198696352120045, "genel_dmse": -0.006630029683545269, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C3b kVA kaba (3 kova)", "yaz25": -0.007367903645235874, "guz25": -0.007684511396359284, "kis26": -0.040528785052134975, "genel_dmse": -0.004105446049019034, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C3c kVA ham deger", "yaz25": -0.12488431757283847, "guz25": -0.011401435336023003, "kis26": -0.055128091246781974, "genel_dmse": -0.01413857939179292, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C4a haftagunu (7)", "yaz25": 0.00011226359850491363, "guz25": -6.466470526733659e-05, "kis26": 6.052255416921781e-05, "genel_dmse": 7.986275365085508e-06, "kapi": "RED (isaret ters)"}
+{"aday": "C4b hafta sonu / ic gun", "yaz25": 0.00018598410954240308, "guz25": -1.856731419369595e-05, "kis26": 0.00016361349147020476, "genel_dmse": 2.4451198981571563e-05, "kapi": "RED (isaret ters)"}
+{"aday": "C4c ay (blok-disi -- mevsim kaymasi RISKLI)", "yaz25": 0.0, "guz25": 0.0, "kis26": 0.0, "genel_dmse": 0.0, "kapi": "RED (isaret ters)"}
+{"aday": "C5a il (2)", "yaz25": -0.0360313075817027, "guz25": -0.00718596677338601, "kis26": -0.007879781369542815, "genel_dmse": -0.0037742295090324586, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C5b ilce", "yaz25": -0.07282791765257013, "guz25": -0.04245249372825066, "kis26": -0.09023873115850689, "genel_dmse": -0.015180452208894317, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C5c tam lokasyon", "yaz25": -0.07282791765257013, "guz25": -0.04245249372825066, "kis26": -0.09023873115850689, "genel_dmse": -0.015180452208894317, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C5d ilce x kVA kaba", "yaz25": -0.06557021357274762, "guz25": -0.0727818062763963, "kis26": -0.12585230430180205, "genel_dmse": -0.019515170541299684, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C6a panele giris yasi (7 kova)", "yaz25": 0.010307299065176245, "guz25": -0.0063139511593077735, "kis26": 0.0010424221147138368, "genel_dmse": 0.000371961780240515, "kapi": "RED (isaret ters)"}
+{"aday": "C6b yalnizca ILK GUN", "yaz25": 0.015347675964623164, "guz25": -0.002698819237177741, "kis26": 0.005738231687728135, "genel_dmse": 0.0013581426698189144, "kapi": "RED (isaret ters)"}
+{"aday": "C6c ilk hafta", "yaz25": 0.010516846557907744, "guz25": -0.0018124060425468436, "kis26": 0.0024847765041453584, "genel_dmse": 0.0008264795781106286, "kapi": "RED (isaret ters)"}
+{"aday": "C7 kVA kovasi ampirik harman w=0.15", "yaz25": -0.05851596349922117, "guz25": -0.03361617650599236, "kis26": -0.006286341359466263, "genel_dmse": -0.007269576129837063, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C7 kVA kovasi ampirik harman w=0.30", "yaz25": -0.12760192018181815, "guz25": -0.0745862365002985, "kis26": -0.016665196713251174, "genel_dmse": -0.01616536946838854, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C7 kVA kovasi ampirik harman w=0.50", "yaz25": -0.23615874071053122, "guz25": -0.14065235747452753, "kis26": -0.03686980339834722, "genel_dmse": -0.03055609846667936, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C7 kVA kovasi ampirik harman w=0.70", "yaz25": -0.363506660231911, "guz25": -0.2197920490946479, "kis26": -0.06434999051778556, "genel_dmse": -0.047837880280462236, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C7 kVA kovasi ampirik harman w=1.00", "yaz25": -0.5897618501252326, "guz25": -0.3630145314858719, "kis26": -0.11921198451133463, "genel_dmse": -0.07918127703018406, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C8 arasi=0.60 ici=0.00", "yaz25": -0.2155972643009294, "guz25": -0.09731949254660677, "kis26": -0.0018036455562122633, "genel_dmse": -0.023246486769181906, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C8 arasi=0.60 ici=0.50", "yaz25": -0.19075735655455883, "guz25": -0.0887200650030664, "kis26": 0.0009881529347635087, "genel_dmse": -0.020570312725055776, "kapi": "RED (isaret ters)"}
+{"aday": "C8 arasi=0.60 ici=1.00", "yaz25": -0.1704171878396572, "guz25": -0.08354393644022773, "kis26": 0.002100085404982188, "genel_dmse": -0.018603446942619003, "kapi": "RED (isaret ters)"}
+{"aday": "C8 arasi=1.00 ici=0.00", "yaz25": -0.0451800764612722, "guz25": -0.013775556106379039, "kis26": -0.0039037309611935633, "genel_dmse": -0.004643039826562837, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C8 arasi=1.00 ici=0.50", "yaz25": -0.020340168714901186, "guz25": -0.005176128562838667, "kis26": -0.0011119324702182354, "genel_dmse": -0.001966865782436706, "kapi": "RED (uc blokta da ZARARLI)"}
+{"aday": "C8 arasi=1.00 ici=1.00", "yaz25": 0.0, "guz25": 0.0, "kis26": 0.0, "genel_dmse": 0.0, "kapi": "RED (isaret ters)"}
+{"aday": "C8 arasi=1.40 ici=0.00", "yaz25": 0.06706131696950779, "guz25": 0.04272932988228417, "kis26": -0.024685127456435474, "genel_dmse": 0.006286228396691149, "kapi": "RED (isaret ters)"}
+{"aday": "C8 arasi=1.40 ici=0.50", "yaz25": 0.0919012247158788, "guz25": 0.0513287574258241, "kis26": -0.021893328965460146, "genel_dmse": 0.008962402440817247, "kapi": "RED (isaret ters)"}
+{"aday": "C8 arasi=1.40 ici=1.00", "yaz25": 0.11224139343077999, "guz25": 0.05650488598866321, "kis26": -0.020781396495241466, "genel_dmse": 0.010929268223254018, "kapi": "RED (isaret ters)"}
+{"aday": "C8 arasi=2.00 ici=0.00", "yaz25": 0.12634379259903428, "guz25": 0.07678843926859402, "kis26": -0.0908846804935366, "genel_dmse": 0.008291045632762608, "kapi": "RED (isaret ters)"}
+{"aday": "C8 arasi=2.00 ici=0.50", "yaz25": 0.1511837003454044, "guz25": 0.08538786681213395, "kis26": -0.08809288200256127, "genel_dmse": 0.01096721967688864, "kapi": "RED (isaret ters)"}
+{"aday": "C8 arasi=2.00 ici=1.00", "yaz25": 0.17152386906030648, "guz25": 0.0905639953749735, "kis26": -0.08698094953234259, "genel_dmse": 0.01293408545932551, "kapi": "RED (isaret ters)"}
+{"aday": "C9 aile yalniz cat (URETIM)", "yaz25": 0.0, "guz25": 0.0, "kis26": 0.0, "genel_dmse": 0.0, "kapi": "RED (isaret ters)"}
+{"aday": "C9 aile yalniz xgb", "yaz25": 0.36249427324875816, "guz25": 0.2887150534158427, "kis26": -0.19136258803775386, "genel_dmse": 0.03396608876861658, "kapi": "RED (isaret ters)"}
+{"aday": "C9 aile yalniz lgbm", "yaz25": 0.4321840764805116, "guz25": 0.3286067249765905, "kis26": -0.24091003207514294, "genel_dmse": 0.03840043840400822, "kapi": "RED (isaret ters)"}
+{"aday": "C9 aile 1/1/1", "yaz25": 0.313601507741728, "guz25": 0.24322638173685407, "kis26": -0.09411662464124015, "genel_dmse": 0.034177673941181326, "kapi": "RED (isaret ters)"}
+{"aday": "C9 aile 3/1/1", "yaz25": 0.20750822218252551, "guz25": 0.1598535165378312, "kis26": -0.03933039234183067, "genel_dmse": 0.024229685445313568, "kapi": "RED (isaret ters)"}
+{"aday": "C9 aile 1/2/2", "yaz25": 0.35697449175258456, "guz25": 0.2779539705885061, "kis26": -0.13007953201240152, "genel_dmse": 0.0372901276488128, "kapi": "RED (isaret ters)"}

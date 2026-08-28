@@ -1,0 +1,104 @@
+{
+  "bosluk>=30g": {
+    "olu_donen": {
+      "trafo": 56,
+      "satir": 3401,
+      "sifir_orani": 0.10849750073507791,
+      "ort_lp": 5.4347529963683705,
+      "trafo_cogunlukla_sifir": 0.2857142857142857
+    },
+    "canli_donen": {
+      "trafo": 471,
+      "satir": 27026,
+      "sifir_orani": 0.016280618663509213,
+      "ort_lp": 6.802340160574532,
+      "trafo_cogunlukla_sifir": 0.01910828025477707
+    }
+  },
+  "bosluk>=60g": {
+    "olu_donen": {
+      "trafo": 39,
+      "satir": 2318,
+      "sifir_orani": 0.08628127696289906,
+      "ort_lp": 5.947657546605208,
+      "trafo_cogunlukla_sifir": 0.2564102564102564
+    },
+    "canli_donen": {
+      "trafo": 311,
+      "satir": 15900,
+      "sifir_orani": 0.010440251572327044,
+      "ort_lp": 6.946979032262251,
+      "trafo_cogunlukla_sifir": 0.00964630225080386
+    }
+  },
+  "bosluk>=120g": {
+    "olu_donen": {
+      "trafo": 22,
+      "satir": 1411,
+      "sifir_orani": 0.13040396881644223,
+      "ort_lp": 5.480455673409562,
+      "trafo_cogunlukla_sifir": 0.18181818181818182
+    },
+    "canli_donen": {
+      "trafo": 163,
+      "satir": 7235,
+      "sifir_orani": 0.01520387007601935,
+      "ort_lp": 6.694776300899679,
+      "trafo_cogunlukla_sifir": 0.018404907975460124
+    }
+  },
+  "bosluk>=200g": {
+    "olu_donen": {
+      "trafo": 7,
+      "satir": 237,
+      "sifir_orani": 0.004219409282700422,
+      "ort_lp": 6.740073111575861,
+      "trafo_cogunlukla_sifir": 0.0
+    },
+    "canli_donen": {
+      "trafo": 31,
+      "satir": 1123,
+      "sifir_orani": 0.0017809439002671415,
+      "ort_lp": 7.574580238761319,
+      "trafo_cogunlukla_sifir": 0.03225806451612903
+    }
+  },
+  "toplu_donus_gunleri": {
+    "2026-03-26": 113,
+    "2025-06-17": 24,
+    "2025-05-20": 19,
+    "2026-02-02": 9,
+    "2025-11-18": 6,
+    "2026-02-03": 5,
+    "2025-10-20": 5,
+    "2025-05-16": 4,
+    "2025-09-10": 4,
+    "2025-11-25": 4
+  },
+  "toplu_vs_tekil": {
+    "olu_donen | TOPLU (parti>=20)": {
+      "trafo": 7,
+      "satir": 254,
+      "sifir_orani": 0.7125984251968503,
+      "ort_lp": 1.6200856879280308
+    },
+    "olu_donen | TEKIL (parti<20)": {
+      "trafo": 32,
+      "satir": 2064,
+      "sifir_orani": 0.009205426356589148,
+      "ort_lp": 6.480217261771878
+    },
+    "canli_donen | TOPLU (parti>=20)": {
+      "trafo": 130,
+      "satir": 2545,
+      "sifir_orani": 0.0007858546168958742,
+      "ort_lp": 7.394860390897853
+    },
+    "canli_donen | TEKIL (parti<20)": {
+      "trafo": 179,
+      "satir": 13350,
+      "sifir_orani": 0.012284644194756554,
+      "ort_lp": 6.8614577795020715
+    }
+  }
+}

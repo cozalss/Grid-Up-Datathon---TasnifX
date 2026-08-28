@@ -22,6 +22,8 @@ BEKLENEN_TRAFO = 7036
 
 #: Kapidan gecmesi gereken aday dosyalar. Yoksa o parametre atlanir.
 ADAYLAR = (
+    "tuketim_v91_grupb_kaldirma.csv",
+    "tuketim_v90_temiz_sota.csv",
     "tuketim_v89_genis_taban.csv",
     "tuketim_v88_olu_taban.csv",
     "tuketim_v87_tabanli.csv",

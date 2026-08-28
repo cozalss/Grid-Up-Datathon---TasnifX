@@ -1,0 +1,18 @@
+{"aday":"A1 hafta gunu ofseti","yaz25":0.0004221944,"guz25":-0.0004790287,"kis26":-0.000574837,"GENEL":-0.0002689856,"testMSE":-0.0002093806,"ayni_isaret":false}
+{"aday":"A2 kVA kovasi ofseti","yaz25":0.0070284092,"guz25":0.002819296,"kis26":0.0062594312,"GENEL":0.0054208288,"testMSE":0.0042196176,"ayni_isaret":true}
+{"aday":"A3 ilce ofseti","yaz25":0.0268109449,"guz25":0.0100518381,"kis26":0.0056905918,"GENEL":0.0128824909,"testMSE":0.0100278365,"ayni_isaret":true}
+{"aday":"A4 seviye desili (20) ofseti","yaz25":0.0341479654,"guz25":0.0108504474,"kis26":0.0238966724,"GENEL":0.0227509829,"testMSE":0.0177095517,"ayni_isaret":true}
+{"aday":"A5 sifir orani kovasi ofseti","yaz25":0.0076944519,"guz25":0.0048172578,"kis26":0.0134206222,"GENEL":0.0092016238,"testMSE":0.0071626194,"ayni_isaret":true}
+{"aday":"A6 gecmis uzunlugu ofseti","yaz25":0.0001111458,"guz25":0.005063965,"kis26":0.0024160333,"GENEL":0.0025863718,"testMSE":0.002013253,"ayni_isaret":true}
+{"aday":"A7 r-desili sekil kalibrasyonu","yaz25":0.0349148772,"guz25":0.0071229045,"kis26":0.0294858985,"GENEL":0.0241537816,"testMSE":0.0188015017,"ayni_isaret":true}
+{"aday":"A8 kuresel olcek lam=0.94","yaz25":-0.0015501203,"guz25":0.0036136978,"kis26":0.0352218995,"GENEL":0.0153571664,"testMSE":0.0119541442,"ayni_isaret":false}
+{"aday":"A8 kuresel olcek lam=0.97","yaz25":-0.0040044422,"guz25":0.0005415833,"kis26":0.0154542333,"GENEL":0.0054969133,"testMSE":0.0042788424,"ayni_isaret":false}
+{"aday":"A8 kuresel olcek lam=1.03","yaz25":0.0099602852,"guz25":0.0016572348,"kis26":-0.0111885961,"GENEL":-0.0013944259,"testMSE":-0.0010854325,"ayni_isaret":false}
+{"aday":"A8 kuresel olcek lam=1.06","yaz25":0.0243905953,"guz25":0.0047424163,"kis26":-0.0189413168,"GENEL":0.0003199046,"testMSE":0.0002490163,"ayni_isaret":false}
+{"aday":"A9 trafo-arasi buzme b=0.9","yaz25":0.0078038278,"guz25":0.0153766539,"kis26":0.0689337473,"GENEL":0.0356012575,"testMSE":0.0277123108,"ayni_isaret":true}
+{"aday":"A9 trafo-arasi buzme b=0.95","yaz25":-0.0050216378,"guz25":0.0034174792,"kis26":0.0285048853,"GENEL":0.0115342696,"testMSE":0.0089783701,"ayni_isaret":false}
+{"aday":"A9 trafo-arasi buzme b=1.05","yaz25":0.0210515787,"guz25":0.0021644686,"kis26":-0.0171409656,"GENEL":-0.0006440643,"testMSE":-0.0005013449,"ayni_isaret":false}
+{"aday":"A10 ridge yigin a=30","yaz25":0.0608137596,"guz25":0.0501389884,"kis26":0.0520440078,"GENEL":0.053894051,"testMSE":0.0419515713,"ayni_isaret":true}
+{"aday":"A10 ridge yigin a=300","yaz25":0.0606480214,"guz25":0.0501697011,"kis26":0.0520667091,"GENEL":0.0538669327,"testMSE":0.0419304622,"ayni_isaret":true}
+{"aday":"A11 lgbm yigin yaprak=15","yaz25":0.0890916296,"guz25":0.1313126181,"kis26":0.1529727579,"GENEL":0.1286303715,"testMSE":0.100126936,"ayni_isaret":true}
+{"aday":"A11 lgbm yigin yaprak=63","yaz25":0.1158203984,"guz25":0.1553197378,"kis26":0.2104351003,"GENEL":0.1673381508,"testMSE":0.1302573889,"ayni_isaret":true}

@@ -1,0 +1,59 @@
+{
+  "boyut": {
+    "train": [
+      1226237,
+      5
+    ],
+    "test": [
+      714688,
+      5
+    ],
+    "ss": [
+      714688,
+      2
+    ],
+    "ss_kolon": [
+      "id",
+      "tuketim"
+    ]
+  },
+  "gonderim": {
+    "ss_id_mukerrer": 0,
+    "te_id_mukerrer": 0,
+    "sira_ayni": true,
+    "id_format_dogru": true,
+    "te_cift_mukerrer": 0,
+    "tr_cift_mukerrer": 0
+  },
+  "metadata": {
+    "tr_cok_guc": 0,
+    "te_cok_guc": 0,
+    "tr_cok_lok": 0,
+    "te_cok_lok": 0,
+    "guc_degisen": 0,
+    "lok_degisen": 0,
+    "yeni_trafo": 2024,
+    "yeni_trafo_satir": 158369,
+    "te_trafo": 7036,
+    "tr_trafo": 5344
+  },
+  "train_hedef": {
+    "min": 0.0,
+    "max": 50403051.0,
+    "q999": 163685.82959999863,
+    "q9999": 275254.40807995247,
+    "sifir": 57536,
+    "negatif": 0,
+    "alt1": 62014,
+    "nis_tem_max": 45631701.0
+  },
+  "test_pencere": {
+    "gun": 122,
+    "trafo": 7036,
+    "doluluk": 0.8325893065173021,
+    "tam122": 3544,
+    "gun_say_med": 122.0,
+    "gunluk_trafo_min": 3897,
+    "gunluk_trafo_max": 6821
+  }
+}

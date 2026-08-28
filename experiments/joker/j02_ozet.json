@@ -1,0 +1,14 @@
+{
+  "kapasite": {
+    "oran_q9999": 2.825880711110412,
+    "oran_max": 58.662768854748606,
+    "asiri_2x_satir": 444,
+    "asiri_2x_trafo": 23,
+    "asiri_test_satir": 2711
+  },
+  "kohort": {
+    "yeni_trafo": 2024,
+    "g82": 2132,
+    "yeni_ve_82": 1280
+  }
+}

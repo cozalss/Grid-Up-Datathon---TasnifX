@@ -1,0 +1,8 @@
+{"aday":"C1 hafta gunu (gun duzeyi)","yaz25":0.0002755472,"guz25":-0.0004177316,"kis26":-0.0005041714,"GENEL":-0.0002614627,"testMSE":-0.0002035247,"ayni_isaret":false}
+{"aday":"C1b hafta gunu x0,5","yaz25":0.0000226893,"guz25":-0.0002608031,"kis26":-0.0002873173,"GENEL":-0.0001932206,"testMSE":-0.0001504045,"ayni_isaret":false}
+{"aday":"C2 hafta sonu ikili","yaz25":0.0001907527,"guz25":-0.0003805739,"kis26":-0.0004702391,"GENEL":-0.0002594765,"testMSE":-0.0002019786,"ayni_isaret":false}
+{"aday":"C3 resmi tatil ofseti","yaz25":0.0000159427,"guz25":-0.0000026969,"kis26":-0.0000023755,"GENEL":0.0000026073,"testMSE":0.0000020296,"ayni_isaret":false}
+{"aday":"C4 gun-hava regresyonu a=5","yaz25":0.0010088902,"guz25":0.0085775613,"kis26":-0.0019296716,"GENEL":0.0020982539,"testMSE":0.001633298,"ayni_isaret":false}
+{"aday":"C4 gun-hava regresyonu a=50","yaz25":0.0017955724,"guz25":0.0059008384,"kis26":-0.0015602945,"GENEL":0.0016519672,"testMSE":0.0012859048,"ayni_isaret":false}
+{"aday":"C5 gun-hava+takvim a=10","yaz25":0.0015344453,"guz25":0.0078407766,"kis26":-0.0022034931,"GENEL":0.0019046012,"testMSE":0.0014825572,"ayni_isaret":false}
+{"aday":"C5 gun-hava+takvim a=100","yaz25":0.0021938896,"guz25":0.0042119307,"kis26":-0.0016876801,"GENEL":0.0011929292,"testMSE":0.0009285859,"ayni_isaret":false}

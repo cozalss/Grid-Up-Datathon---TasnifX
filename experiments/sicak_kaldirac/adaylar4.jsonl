@@ -1,0 +1,14 @@
+{"aday":"D1 trafo-ICI buzme b=0.9","yaz25":0.0040493877,"guz25":-0.0017822251,"kis26":-0.0006444755,"GENEL":0.0003096114,"testMSE":0.000241004,"ayni_isaret":false}
+{"aday":"D1 trafo-ICI buzme b=0.95","yaz25":0.0019314252,"guz25":-0.0010951835,"kis26":-0.000351399,"GENEL":0.0000543797,"testMSE":0.0000423296,"ayni_isaret":false}
+{"aday":"D1 trafo-ICI buzme b=1.05","yaz25":-0.0017448753,"guz25":0.0015034223,"kis26":0.0004097165,"GENEL":0.0001465033,"testMSE":0.0001140394,"ayni_isaret":false}
+{"aday":"D1 trafo-ICI buzme b=1.1","yaz25":-0.003303158,"guz25":0.0034144152,"kis26":0.0008777069,"GENEL":0.0004936791,"testMSE":0.0003842839,"ayni_isaret":false}
+{"aday":"D2 sifir hedge k=0.25 s>=0.5 q>=7","yaz25":0.0032960313,"guz25":0.0019207091,"kis26":-0.0035462536,"GENEL":0.0000233044,"testMSE":0.0000181403,"ayni_isaret":false}
+{"aday":"D2 sifir hedge k=0.25 s>=0.9 q>=14","yaz25":0.0033237693,"guz25":0.0024819385,"kis26":-0.000878208,"GENEL":0.0013147757,"testMSE":0.0010234322,"ayni_isaret":false}
+{"aday":"D2 sifir hedge k=0.5 s>=0.5 q>=7","yaz25":0.0079079521,"guz25":0.0038186543,"kis26":-0.0048264548,"GENEL":0.0013492472,"testMSE":0.001050265,"ayni_isaret":false}
+{"aday":"D2 sifir hedge k=0.5 s>=0.9 q>=14","yaz25":0.0079393526,"guz25":0.0048451621,"kis26":-0.0005304221,"GENEL":0.0034626267,"testMSE":0.002695337,"ayni_isaret":false}
+{"aday":"D2 sifir hedge k=1.0 s>=0.5 q>=7","yaz25":0.0145065694,"guz25":0.006895196,"kis26":-0.0033393522,"GENEL":0.0047401855,"testMSE":0.0036897993,"ayni_isaret":false}
+{"aday":"D2 sifir hedge k=1.0 s>=0.9 q>=14","yaz25":0.014533143,"guz25":0.0088520628,"kis26":0.0022072503,"GENEL":0.007658002,"testMSE":0.0059610515,"ayni_isaret":true}
+{"aday":"D3 dusuk hedge k=0.15 <=5kWh","yaz25":0.0009367068,"guz25":0.0022133999,"kis26":-0.0050800727,"GENEL":-0.0011809951,"testMSE":-0.0009192963,"ayni_isaret":false}
+{"aday":"D3 dusuk hedge k=0.15 <=20kWh","yaz25":0.0053004318,"guz25":0.0029985911,"kis26":-0.0083877286,"GENEL":-0.0011092867,"testMSE":-0.0008634778,"ayni_isaret":false}
+{"aday":"D3 dusuk hedge k=0.3 <=5kWh","yaz25":0.0032630476,"guz25":0.0042441357,"kis26":-0.0087065484,"GENEL":-0.0014264599,"testMSE":-0.0011103681,"ayni_isaret":false}
+{"aday":"D3 dusuk hedge k=0.3 <=20kWh","yaz25":0.0130280091,"guz25":0.0065261335,"kis26":-0.0147127274,"GENEL":-0.0005237504,"testMSE":-0.0004076916,"ayni_isaret":false}

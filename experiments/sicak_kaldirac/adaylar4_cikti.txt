@@ -1,0 +1,31 @@
+TABAN sicak MSE: {'yaz25': 0.59261, 'guz25': 0.54091, 'kis26': 0.52357}
+
+SIFIR HEDGE MASKESININ BUYUKLUGU ve GERCEK SIFIR ORANI
+  sifir>=0.5 kuyruk>=7  yaz25  n= 12,830 gercek sifir orani % 94.9  medyan y      0.0
+  sifir>=0.5 kuyruk>=7  guz25  n=  5,492 gercek sifir orani % 86.8  medyan y      0.0
+  sifir>=0.5 kuyruk>=7  kis26  n= 11,865 gercek sifir orani % 94.9  medyan y      0.0
+  sifir>=0.7 kuyruk>=7  yaz25  n= 12,830 gercek sifir orani % 94.9  medyan y      0.0
+  sifir>=0.7 kuyruk>=7  guz25  n=  5,004 gercek sifir orani % 87.3  medyan y      0.0
+  sifir>=0.7 kuyruk>=7  kis26  n= 11,429 gercek sifir orani % 94.7  medyan y      0.0
+  sifir>=0.9 kuyruk>=14  yaz25  n= 12,576 gercek sifir orani % 95.2  medyan y      0.0
+  sifir>=0.9 kuyruk>=14  guz25  n=  4,638 gercek sifir orani % 88.5  medyan y      0.0
+  sifir>=0.9 kuyruk>=14  kis26  n=  8,568 gercek sifir orani % 94.7  medyan y      0.0
+
+aday                                        yaz25      guz25      kis26      GENEL   testdMSE  karar
+--------------------------------------------------------------------------------------------------------
+D1 trafo-ICI buzme b=0.9                 +0.00405   -0.00178   -0.00064   +0.00031   +0.00024  RED(ters isaret)
+D1 trafo-ICI buzme b=0.95                +0.00193   -0.00110   -0.00035   +0.00005   +0.00004  RED(ters isaret)
+D1 trafo-ICI buzme b=1.05                -0.00174   +0.00150   +0.00041   +0.00015   +0.00011  RED(ters isaret)
+D1 trafo-ICI buzme b=1.1                 -0.00330   +0.00341   +0.00088   +0.00049   +0.00038  RED(ters isaret)
+D2 sifir hedge k=0.25 s>=0.5 q>=7        +0.00330   +0.00192   -0.00355   +0.00002   +0.00002  RED(ters isaret)
+D2 sifir hedge k=0.25 s>=0.9 q>=14       +0.00332   +0.00248   -0.00088   +0.00131   +0.00102  RED(ters isaret)
+D2 sifir hedge k=0.5 s>=0.5 q>=7         +0.00791   +0.00382   -0.00483   +0.00135   +0.00105  RED(ters isaret)
+D2 sifir hedge k=0.5 s>=0.9 q>=14        +0.00794   +0.00485   -0.00053   +0.00346   +0.00270  RED(ters isaret)
+D2 sifir hedge k=1.0 s>=0.5 q>=7         +0.01451   +0.00690   -0.00334   +0.00474   +0.00369  RED(ters isaret)
+D2 sifir hedge k=1.0 s>=0.9 q>=14        +0.01453   +0.00885   +0.00221   +0.00766   +0.00596  RED(zararli)
+D3 dusuk hedge k=0.15 <=5kWh             +0.00094   +0.00221   -0.00508   -0.00118   -0.00092  RED(ters isaret)
+D3 dusuk hedge k=0.15 <=20kWh            +0.00530   +0.00300   -0.00839   -0.00111   -0.00086  RED(ters isaret)
+D3 dusuk hedge k=0.3 <=5kWh              +0.00326   +0.00424   -0.00871   -0.00143   -0.00111  RED(ters isaret)
+D3 dusuk hedge k=0.3 <=20kWh             +0.01303   +0.00653   -0.01471   -0.00052   -0.00041  RED(ters isaret)
+
+yazildi: C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\experiments\sicak_kaldirac\adaylar4.jsonl

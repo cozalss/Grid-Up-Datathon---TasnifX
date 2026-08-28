@@ -1,0 +1,83 @@
+{
+  "bosluk>=90": {
+    "toplu_gunler": {
+      "2026-03-26": 85,
+      "2025-05-20": 19,
+      "2025-06-17": 16,
+      "2026-02-02": 9
+    },
+    "bloklar": {
+      "hepsi | TEKIL": {
+        "trafo": 79,
+        "satir": 6511,
+        "sifir_orani": 0.0112,
+        "ort_ofs": 1.0643,
+        "ort_FAZLA": 0.4798,
+        "trafo_bazli_FAZLA_medyan": 0.4277
+      },
+      "hepsi | TOPLU": {
+        "trafo": 35,
+        "satir": 3280,
+        "sifir_orani": 0.064,
+        "ort_ofs": 0.2946,
+        "ort_FAZLA": -0.4663,
+        "trafo_bazli_FAZLA_medyan": 0.1856
+      },
+      "OLU son60_ofs<=-2 | TEKIL": {
+        "trafo": 5,
+        "satir": 485,
+        "sifir_orani": 0.0,
+        "ort_ofs": 0.9299,
+        "ort_FAZLA": 0.4226,
+        "trafo_bazli_FAZLA_medyan": 0.1509
+      },
+      "OLU son60_ofs<=-2 | TOPLU": {
+        "trafo": 1,
+        "satir": 77,
+        "sifir_orani": 0.039,
+        "ort_ofs": -4.7888,
+        "ort_FAZLA": -5.6243,
+        "trafo_bazli_FAZLA_medyan": -5.6243
+      },
+      "CANLI son60_ofs>-2 | TEKIL": {
+        "trafo": 25,
+        "satir": 2322,
+        "sifir_orani": 0.0,
+        "ort_ofs": 1.1621,
+        "ort_FAZLA": 0.6436,
+        "trafo_bazli_FAZLA_medyan": 0.8586
+      }
+    }
+  },
+  "bosluk>=180": {
+    "toplu_gunler": {
+      "2026-03-26": 32
+    },
+    "bloklar": {
+      "hepsi | TEKIL": {
+        "trafo": 15,
+        "satir": 1439,
+        "sifir_orani": 0.0,
+        "ort_ofs": 1.2287,
+        "ort_FAZLA": 0.7328,
+        "trafo_bazli_FAZLA_medyan": 1.105
+      },
+      "OLU son60_ofs<=-2 | TEKIL": {
+        "trafo": 1,
+        "satir": 99,
+        "sifir_orani": 0.0,
+        "ort_ofs": 2.0049,
+        "ort_FAZLA": 1.4719,
+        "trafo_bazli_FAZLA_medyan": 1.4719
+      },
+      "CANLI son60_ofs>-2 | TEKIL": {
+        "trafo": 2,
+        "satir": 235,
+        "sifir_orani": 0.0,
+        "ort_ofs": 1.1483,
+        "ort_FAZLA": 0.6342,
+        "trafo_bazli_FAZLA_medyan": 0.6743
+      }
+    }
+  }
+}
