@@ -1076,3 +1076,96 @@ Başa baş her dosyada gerçek κ = 0,50.
 
 ZEHİRLİ dosyalarda tez **ölçümle çürütüldü** (§1, §17.1-17.2); gerçek
 beklenti "tez yanlış" ucudur.
+
+---
+
+## 18. Sistematik blok taraması — 12 haklık program
+
+Plan artık tek bir hipoteze değil, **ölçülmüş bir sıralamaya** dayanıyor.
+
+### 18.1 Bütün eksenler tarandı
+
+Her aday bölümleme için, 2025'in aynı penceresi (04-01→07-31) `v102`nin 2026
+tahminiyle karşılaştırıldı; ortak kayma çıkarıldıktan sonra kalan hücre-içi
+sapmalardan `Σ pay·sapma²` hesaplandı:
+
+```
+eksen                blok  kapsam   TAHMINI KAZANC   maks sapma
+AY x BOLGE             63  40.14%        0.025887       0.8605
+BOLGE                  20  40.97%        0.015579       0.7906   <- en iyi TEK eksen
+AY x GUC               28  40.97%        0.013006       0.4767
+2-HAFTALIK              9  40.97%        0.008997       0.2724
+AY                      4  40.97%        0.007623       0.1972
+GUC BANDI               7  40.97%        0.004974       0.3165
+IL                      2  40.97%        0.001074       0.0796
+HAFTA GUNU              7  40.97%        0.000245       0.0405
+
+2. sira icin gereken 0.010271   1. sira icin 0.028257
+```
+
+Ay ekseni monoton: Nisan −0,054 · Mayıs −0,067 · Haziran +0,031 · **Temmuz
++0,090** — ufuk büyüdükçe kayma, yapısal olarak beklenen desen.
+
+### 18.2 CV tuzağına DÜŞMEYEN kullanım
+
+Bu tahminler CV cinsi kanıt; sicilimizde CV türevli **yönler** LB'de κ≈0 verdi
+(`v108`, `y1`). O yüzden **desen uygulanmıyor.** Tahmin yalnız **gruplamayı
+seçmek** için kullanılır; her prob saf **gösterge**dir (blok içinde sabit
+adım), dolayısıyla blokun **gerçek** ortalama artığını ölçer. Desen yanlışsa
+verim düşer, ölçüm yine geçerlidir.
+
+### 18.3 Hazır prob seti — hepsi dik, kırpmasız, kapıdan geçti
+
+```
+dosya                      satir      pay     Q         L=0 skoru   2025 tahmini tutarsa
+p24_poz                   49.286    6.90%  0.011034     1.01100     kazanc 0.011717
+p21_metropol             184.752   25.85%  0.005816     1.00842            0.004916
+p23_neg                   39.367    5.51%  0.004957     1.00799            0.004742
+p22_guney                264.051   36.95%  0.003695     1.00737            0.001878
+                     ------------------------------------------------
+                     kapsam %75.20   toplam 0.023253  ->  RMSLE 0.99390
+
+p15_ana_blok             455.463   63.73%  0.014339     1.01264     2. sira icin |d|>=0.127
+p11_dalga_soguk          108.253   15.15%  0.013632     1.01229     2. sira icin |d|>=0.260
+p14_dalga_gecmisli        72.632   10.16%  0.009146     1.01007
+```
+
+`p24_poz` **tek başına** 0,011717 vaat ediyor — 2. sıra için gereken
+0,010271'in üstünde.
+
+### 18.4 12 haklık program
+
+```
+29 Agu  HAK1  p24_poz          en yuksek tahminli, tek basina 2. sirayi alabilir
+        HAK2  p21_metropol     testin %25.85'i
+        HAK3  d12_coz.py ile ikisinin optimumu   -> ANINDA iyilesme
+
+30 Agu  HAK1  p23_neg
+        HAK2  p22_guney
+        HAK3  dordunun optimumu
+
+31 Agu  HAK1  p15_ana_blok     panel ekseni (bolge ile dik DEGIL -> d15 kullan)
+        HAK2  p11_dalga_soguk
+        HAK3  d15 tam Gram birlesimi
+
+ 1 Eyl  HAK1  p14_dalga_gecmisli
+        HAK2  nihai birlesim
+        HAK3  yedek
+```
+
+Her günün son hakkı o ana kadarki **en iyi birleşimi** gönderir; yani hiçbir
+zaman ölçüm elde tutulup beklenmez.
+
+### 18.5 Karar kartları
+
+Her prob için `L=0 skoru` yazılı: gelen skor o değere eşitse blok ölüdür,
+aşağıdaysa sinyal var. `experiments/donuscu/d16_ana_blok.json` ve
+`d17_bolge_problari.json` her blok için skor→δ→kazanç kartını taşıyor.
+Yarın hesap yapılmayacak, karttan okunacak.
+
+### 18.6 Kalıcı kural 29
+
+> **Desen tahmin etme, blok seç.** CV'den gelen bir desen doğrudan yön olarak
+> gönderilmez (κ≈0, iki kez ölçüldü). CV yalnız hangi blokların ayrı ölçüleceğini
+> seçer; büyüklüğü her zaman LB ölçer. Böylece yanlış desen verim kaybettirir,
+> geçerlilik kaybettirmez.

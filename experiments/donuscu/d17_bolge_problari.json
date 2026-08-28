@@ -1,0 +1,246 @@
+{
+  "taban": "tuketim_v102_kappa_optimum.csv",
+  "m0": 1.011091,
+  "bloklar": {
+    "tuketim_p21_metropol.csv": {
+      "bolgeler": [
+        "METROPOL"
+      ],
+      "adim": -0.15,
+      "tahmini_sapma_2025": -0.1379,
+      "satir": 184752,
+      "dislanan_satir": 1016,
+      "pay": 0.25850720874003763,
+      "Q": 0.0058164121966509585,
+      "L_sifir_skoru": 1.0084182724428643,
+      "guvenli_kappa": 3.0026367758324097,
+      "tahmin_tutarsa_kazanc": 0.004915879069356139,
+      "ikinci_icin_tek_basina_delta": 0.19932716113321897,
+      "karar_karti": {
+        "-0.00": {
+          "beklenen_skor": 1.00842,
+          "kazanc": 0.0,
+          "SNR": 0.0
+        },
+        "-0.05": {
+          "beklenen_skor": 1.00649,
+          "kazanc": 0.000646,
+          "SNR": 272.0
+        },
+        "-0.10": {
+          "beklenen_skor": 1.00457,
+          "kazanc": 0.002585,
+          "SNR": 543.0
+        },
+        "-0.15": {
+          "beklenen_skor": 1.00263,
+          "kazanc": 0.005816,
+          "SNR": 815.0
+        },
+        "-0.20": {
+          "beklenen_skor": 1.0007,
+          "kazanc": 0.01034,
+          "SNR": 1086.0
+        },
+        "-0.30": {
+          "beklenen_skor": 0.99682,
+          "kazanc": 0.023266,
+          "SNR": 1629.0
+        },
+        "-0.40": {
+          "beklenen_skor": 0.99292,
+          "kazanc": 0.041361,
+          "SNR": 2172.0
+        },
+        "-0.50": {
+          "beklenen_skor": 0.98901,
+          "kazanc": 0.064627,
+          "SNR": 2715.0
+        }
+      }
+    },
+    "tuketim_p22_guney.csv": {
+      "bolgeler": [
+        "GUNEY BOLGE"
+      ],
+      "adim": 0.1,
+      "tahmini_sapma_2025": 0.0713,
+      "satir": 264051,
+      "dislanan_satir": 6740,
+      "pay": 0.36946331825915646,
+      "Q": 0.0036946331825914993,
+      "L_sifir_skoru": 1.007365689897463,
+      "guvenli_kappa": 3.0004520701672748,
+      "tahmin_tutarsa_kazanc": 0.001878236976400891,
+      "ikinci_icin_tek_basina_delta": 0.1667313042450635,
+      "karar_karti": {
+        "+0.00": {
+          "beklenen_skor": 1.00737,
+          "kazanc": 0.0,
+          "SNR": 0.0
+        },
+        "+0.05": {
+          "beklenen_skor": 1.00553,
+          "kazanc": 0.000924,
+          "SNR": 259.0
+        },
+        "+0.10": {
+          "beklenen_skor": 1.00369,
+          "kazanc": 0.003695,
+          "SNR": 517.0
+        },
+        "+0.15": {
+          "beklenen_skor": 1.00185,
+          "kazanc": 0.008313,
+          "SNR": 776.0
+        },
+        "+0.20": {
+          "beklenen_skor": 1.0,
+          "kazanc": 0.014779,
+          "SNR": 1035.0
+        },
+        "+0.30": {
+          "beklenen_skor": 0.9963,
+          "kazanc": 0.033252,
+          "SNR": 1552.0
+        },
+        "+0.40": {
+          "beklenen_skor": 0.99259,
+          "kazanc": 0.059114,
+          "SNR": 2070.0
+        },
+        "+0.50": {
+          "beklenen_skor": 0.98886,
+          "kazanc": 0.092366,
+          "SNR": 2587.0
+        }
+      }
+    },
+    "tuketim_p23_neg.csv": {
+      "bolgeler": [
+        "SARUHANLI",
+        "AKHISAR",
+        "ALASEHIR"
+      ],
+      "adim": -0.3,
+      "tahmini_sapma_2025": -0.2934,
+      "satir": 39367,
+      "dislanan_satir": 395,
+      "pay": 0.05508277737977971,
+      "Q": 0.004957449964180166,
+      "L_sifir_skoru": 1.0079922866590698,
+      "guvenli_kappa": 3.005408373768864,
+      "tahmin_tutarsa_kazanc": 0.004741721571538909,
+      "ikinci_icin_tek_basina_delta": 0.43181218736540333,
+      "karar_karti": {
+        "-0.00": {
+          "beklenen_skor": 1.00799,
+          "kazanc": 0.0,
+          "SNR": 0.0
+        },
+        "-0.05": {
+          "beklenen_skor": 1.00717,
+          "kazanc": 0.000138,
+          "SNR": 116.0
+        },
+        "-0.10": {
+          "beklenen_skor": 1.00635,
+          "kazanc": 0.000551,
+          "SNR": 231.0
+        },
+        "-0.15": {
+          "beklenen_skor": 1.00553,
+          "kazanc": 0.001239,
+          "SNR": 347.0
+        },
+        "-0.20": {
+          "beklenen_skor": 1.00471,
+          "kazanc": 0.002203,
+          "SNR": 463.0
+        },
+        "-0.30": {
+          "beklenen_skor": 1.00306,
+          "kazanc": 0.004957,
+          "SNR": 694.0
+        },
+        "-0.40": {
+          "beklenen_skor": 1.00141,
+          "kazanc": 0.008813,
+          "SNR": 926.0
+        },
+        "-0.50": {
+          "beklenen_skor": 0.99976,
+          "kazanc": 0.013771,
+          "SNR": 1157.0
+        }
+      }
+    },
+    "tuketim_p24_poz.csv": {
+      "bolgeler": [
+        "KULA",
+        "TURGUTLU",
+        "SARIGOL",
+        "SELENDI",
+        "GOLMARMARA",
+        "GORDES"
+      ],
+      "adim": 0.4,
+      "tahmini_sapma_2025": 0.4122,
+      "satir": 49286,
+      "dislanan_satir": 1332,
+      "pay": 0.06896156084892988,
+      "Q": 0.011033849735828813,
+      "L_sifir_skoru": 1.0110019039229494,
+      "guvenli_kappa": 3.0020160316499753,
+      "tahmin_tutarsa_kazanc": 0.011717178808431091,
+      "ikinci_icin_tek_basina_delta": 0.3859217623324561,
+      "karar_karti": {
+        "+0.00": {
+          "beklenen_skor": 1.011,
+          "kazanc": 0.0,
+          "SNR": 0.0
+        },
+        "+0.05": {
+          "beklenen_skor": 1.00964,
+          "kazanc": 0.000172,
+          "SNR": 193.0
+        },
+        "+0.10": {
+          "beklenen_skor": 1.00827,
+          "kazanc": 0.00069,
+          "SNR": 386.0
+        },
+        "+0.15": {
+          "beklenen_skor": 1.0069,
+          "kazanc": 0.001552,
+          "SNR": 580.0
+        },
+        "+0.20": {
+          "beklenen_skor": 1.00553,
+          "kazanc": 0.002758,
+          "SNR": 773.0
+        },
+        "+0.30": {
+          "beklenen_skor": 1.00278,
+          "kazanc": 0.006207,
+          "SNR": 1159.0
+        },
+        "+0.40": {
+          "beklenen_skor": 1.00003,
+          "kazanc": 0.011034,
+          "SNR": 1545.0
+        },
+        "+0.50": {
+          "beklenen_skor": 0.99727,
+          "kazanc": 0.01724,
+          "SNR": 1932.0
+        }
+      }
+    }
+  },
+  "ozet": {
+    "kapsam": 0.7520148652279037,
+    "tahmin_tutarsa_kazanc": 0.02325301642572703,
+    "tahmin_tutarsa_RMSLE": 0.9939003891609425
+  }
+}
