@@ -299,3 +299,24 @@ Q(m4, v102) = 0,121581      BASABAS 1,06427
 | **1** | `tuketim_m4_hava_capali.csv` → `S` ölçülür |
 | **2** | `python experiments/model29/m50_harman_coz.py tuketim_m4_hava_capali.csv <S>` |
 | **3** | yedek üçüncü yön: `tuketim_m3_hl1_capali.csv` (`Q(m4,m3)=0,0193`, korelasyon 0,997) |
+
+### 7.6 KAPATILAN BOSLUK — hava ozellikleri YAZ penceresinde de dogrulandi
+
+§7.3'un iki dogrulama kesimi (11-30 -> Ara-Mar, 09-30 -> Eki-Oca) **soğutma
+derece-günü sıfır** olan pencereler. Yani oradaki hava kazancı neredeyse tamamen
+ISITMA'dan geliyordu; test penceresi (Nis-Tem) ise SOĞUTMA hakimiyetinde.
+Bu, ölçülmemiş bir varsayımdı. Ölçüldü:
+
+```
+kesim         hedef      ort CDD22   egitim satir   HAVASIZ   HAVALI   KAZANC
+2025-05-31    Haz-Eyl       5,487        198.572    1,1727    1,1617   +0,0110
+2025-06-30    Tem-Eki       4,326        402.500    1,1251    1,1002   +0,0249
+2025-11-30    Ara-Mar       0,000      1.978.830    1,0416    1,0359   +0,0057
+```
+
+**Hava kazancı soğutma pencerelerinde 2-4 kat DAHA BÜYÜK**, üstelik oralarda
+eğitim verisi 5-10 kat daha az. Endişe ters yöndeydi ve ölçüm `m4`'un lehine çıktı.
+
+**Kalıcı kural 35.** *Bir özellik ailesinin kazancını, o ailenin mekanizmasının
+AKTİF olduğu bir pencerede doğrula.* Hava özelliklerini CDD=0 olan kış
+pencerelerinde ölçüp yaz testine genellemek, ölçüm değil varsayımdı.
