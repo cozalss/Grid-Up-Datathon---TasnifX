@@ -1011,3 +1011,68 @@ sıralamayı da etkilemez. Ama **bu yarışma için doğrulanmadı.**
 > **YAPILACAK:** Submissions sayfasında "Use for Final Score" / "Select for
 > final" denetimi var mı, kaç tane seçilebiliyor — tarayıcıdan bakılıp buraya
 > yazılacak. Seçim varsa `v102` (veya en iyi dosya) elle seçilmeli.
+
+### 17.12 Tam optimum (`d15`) — güçlü ama tahmini belirsiz, HAK 3'e KOYULMADI
+
+`d12` yalnız iki dalga yönünü kullanır; onlar birbirine dik olduğu için
+optimum ayrışır ve ön kayıt **saf cebirdir** (belirsizlik yalnız 5 hane
+yuvarlaması, ~1e-5).
+
+`d15` ise 21 ölçülmüş yönü de katıp tam Gram'ı çözer. Yönler birbirine dik
+olmadığı için çapraz terimler devreye girer ve kazanç dik-toplamdan büyük
+çıkar. Sağlamlık denetimleri:
+
+```
+delta=0     -> kazanc 0.000458   (span'in kendisi 0.000443)   UYDURMUYOR
+delta=-0.10 -> kazanc 0.006595
+delta=-0.20 -> kazanc 0.028305   (dik-toplam 0.010567; 2.7 kat)
+```
+
+Kazanç `δ²` ile büyüyor (2 kat δ → 4,3 kat kazanç) — davranış doğru.
+Ve `--prob` verilmeden koşunca §16'nın 0.000443'ünü **birebir** yeniden
+üretiyor.
+
+**Dışarıda-bırak (LOO) doğrulaması** — bir ölçülmüş yön çıkarılıp kalanlarla
+onun skoru tahmin edildi, 21 yönün her biri için:
+
+```
+SNR>= 3.0 : ortanca 0.00012   ort 0.00031   maks 0.00188
+SNR>=10.0 : ortanca 0.00008   ort 0.00027   maks 0.00155
+SNR>=30.0 : ortanca 0.00011   ort 0.00029   maks 0.00152
+```
+
+Yani yöntem genelliyor, ama tahmin hatası **1e-4 – 2e-3** mertebesinde;
+`d12`nin 1e-5'ine karşı **100 kat** belirsiz.
+
+**Karar:** HAK 3 = `d12` (kesin cebir, mütevazı). `d15` 30 Ağustos'a bırakılır;
+`d12`nin gerçek skoru ön kaydını tutturursa aparat bir kez daha doğrulanmış
+olur ve `d15` bir hakla denenir. En iyi public skor korunduğu için `d15`
+tutmazsa da bir şey kaybetmeyiz.
+
+> `d15`te kırpma denetimi zorunlu: δ=0 senaryosunda 11 satır, saf span
+> çözümünde 8 satır `log1p(v102)+adım < 0` veriyor. Betik o hâlde dosya
+> **yazmıyor**.
+
+### 17.13 Gönderim envanteri — hangi dosya kaç puan alır
+
+Taban `v102`, m0 = 1.011091 (RMSLE 1.00553). `TEZ DOĞRU` = yönün gerçek
+hizalanması uygulanan adıma eşitse; `TEZ YANLIŞ` = hiç hizalı değilse.
+Başa baş her dosyada gerçek κ = 0,50.
+
+| dosya | sınıf | Q | tez doğru | tez yanlış |
+|---|---|---|---|---|
+| `p11_dalga_soguk` | PROB | 0,013632 | 0.99873 | 1.01229 |
+| `p14_dalga_gecmisli` | PROB | 0,009146 | 1.00097 | 1.01007 |
+| `v103_gram2` | GÜVENLİ | 0,000395 | 1.00533 | 1.00573 |
+| `v110_grupb_optimum` | RİSKLİ | 0,008951 | 1.00107 | 1.00997 |
+| `v113_toplu_prob` | YEDEK | 0,016309 | 0.99739 | 1.01361 |
+| `v114_organik_prob` | YEDEK | 0,002192 | 1.00444 | 1.00662 |
+| `v111_donuscu` | **ZEHİRLİ** | 0,018501 | 0.99629 | 1.01469 |
+| `v112_donuscu_yarim` | **ZEHİRLİ** | 0,004625 | 1.00323 | 1.00783 |
+| `v89_genis_taban` | **ZEHİRLİ** | 0,295141 | 0.84614 | **1.14290** |
+| `v88_olu_taban` | **ZEHİRLİ** | 0,239053 | 0.87866 | **1.11810** |
+| `v87_olu_izole` | **ZEHİRLİ** | 0,295299 | 0.84604 | **1.14297** |
+| `sota_v1` | **ZEHİRLİ** | 0,328476 | 0.82621 | **1.15740** |
+
+ZEHİRLİ dosyalarda tez **ölçümle çürütüldü** (§1, §17.1-17.2); gerçek
+beklenti "tez yanlış" ucudur.

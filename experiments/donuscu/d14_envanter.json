@@ -1,0 +1,278 @@
+{
+  "taban": "tuketim_v102_kappa_optimum.csv",
+  "m0": 1.011091,
+  "ikinci": 1.00041,
+  "lider": 0.99138,
+  "adaylar": {
+    "tuketim_p11_dalga_soguk.csv": {
+      "sinif": "PROB",
+      "aciklama": "05-11 dalgasi, train gecmisi YOK",
+      "Q": 0.013632200344765928,
+      "degisen_satir": 108253,
+      "tez_dogruysa_RMSLE": 0.9987285915879419,
+      "tez_dogruysa_konum": "2.",
+      "tez_yanlissa_RMSLE": 1.0122861257296605,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_p14_dalga_gecmisli.csv": {
+      "sinif": "PROB",
+      "aciklama": "05-11 dalgasi, train gecmisi VAR",
+      "Q": 0.009146480702068586,
+      "degisen_satir": 72632,
+      "tez_dogruysa_RMSLE": 1.0009717874635284,
+      "tez_dogruysa_konum": "3.+",
+      "tez_yanlissa_RMSLE": 1.01006805746052,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v103_gram2.csv": {
+      "sinif": "GUVENLI",
+      "aciklama": "rank-17 Gram optimumu",
+      "Q": 0.0003949777847473728,
+      "degisen_satir": 714688,
+      "tez_dogruysa_RMSLE": 1.00533378646858,
+      "tez_dogruysa_konum": "3.+",
+      "tez_yanlissa_RMSLE": 1.005726591964609,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v110_grupb_optimum.csv": {
+      "sinif": "RISKLI",
+      "aciklama": "grup B kappa 0.459->1.405",
+      "Q": 0.008951398256979439,
+      "degisen_satir": 7149,
+      "tez_dogruysa_RMSLE": 1.00106922924592,
+      "tez_dogruysa_konum": "3.+",
+      "tez_yanlissa_RMSLE": 1.0099714838830745,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v111_donuscu.csv": {
+      "sinif": "ZEHIRLI",
+      "aciklama": "organik delta, %85 toplu kohort",
+      "Q": 0.018501274923826895,
+      "degisen_satir": 11359,
+      "tez_dogruysa_RMSLE": 0.996287972965735,
+      "tez_dogruysa_konum": "2.",
+      "tez_yanlissa_RMSLE": 1.0146882648990412,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v112_donuscu_yarim.csv": {
+      "sinif": "ZEHIRLI",
+      "aciklama": "ayni hata, yarim genlik",
+      "Q": 0.004625318730956724,
+      "degisen_satir": 11359,
+      "tez_dogruysa_RMSLE": 1.0032276318309037,
+      "tez_dogruysa_konum": "3.+",
+      "tez_yanlissa_RMSLE": 1.0078275242971668,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v113_toplu_prob.csv": {
+      "sinif": "YEDEK",
+      "aciklama": "dar toplu kohort (dalga probu daha iyi)",
+      "Q": 0.01630882087988045,
+      "degisen_satir": 9825,
+      "tez_dogruysa_RMSLE": 0.9973876774454954,
+      "tez_dogruysa_konum": "2.",
+      "tez_yanlissa_RMSLE": 1.013607330715342,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v114_organik_prob.csv": {
+      "sinif": "YEDEK",
+      "aciklama": "dar organik kohort",
+      "Q": 0.00219245404394645,
+      "degisen_satir": 1534,
+      "tez_dogruysa_RMSLE": 1.00443941875857,
+      "tez_dogruysa_konum": "3.+",
+      "tez_yanlissa_RMSLE": 1.006619816039773,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v89_genis_taban.csv": {
+      "sinif": "ZEHIRLI",
+      "aciklama": "olu trafo tezi curudu (s1)",
+      "Q": 0.29514081415360377,
+      "degisen_satir": 714688,
+      "tez_dogruysa_RMSLE": 0.8461383963905645,
+      "tez_dogruysa_konum": "1.",
+      "tez_yanlissa_RMSLE": 1.1429049891192198,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v88_olu_taban.csv": {
+      "sinif": "ZEHIRLI",
+      "aciklama": "olu trafo tezi curudu",
+      "Q": 0.23905313630364872,
+      "degisen_satir": 714688,
+      "tez_dogruysa_RMSLE": 0.8786568520738635,
+      "tez_dogruysa_konum": "1.",
+      "tez_yanlissa_RMSLE": 1.118098446606402,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_v87_olu_izole.csv": {
+      "sinif": "ZEHIRLI",
+      "aciklama": "olu trafo tezi curudu",
+      "Q": 0.2952992006085731,
+      "degisen_satir": 714688,
+      "tez_dogruysa_RMSLE": 0.8460447975086348,
+      "tez_dogruysa_konum": "1.",
+      "tez_yanlissa_RMSLE": 1.1429742781920218,
+      "basa_bas_gercek_kappa": 0.5
+    },
+    "tuketim_sota_v1.csv": {
+      "sinif": "ZEHIRLI",
+      "aciklama": "olu trafo tezi curudu",
+      "Q": 0.3284761364229424,
+      "degisen_satir": 714688,
+      "tez_dogruysa_RMSLE": 0.8262050977675323,
+      "tez_dogruysa_konum": "1.",
+      "tez_yanlissa_RMSLE": 1.1573967065889477,
+      "basa_bas_gercek_kappa": 0.5
+    }
+  },
+  "HAK3_senaryolari": {
+    "0.00/0.00": {
+      "kazanc": 0.0,
+      "RMSLE": 1.00553020839754,
+      "konum": "3."
+    },
+    "0.00/0.10": {
+      "kazanc": 0.0010162756335631773,
+      "RMSLE": 1.005024738186298,
+      "konum": "3.+"
+    },
+    "0.00/0.20": {
+      "kazanc": 0.004065102534252709,
+      "RMSLE": 1.003506799910069,
+      "konum": "3.+"
+    },
+    "0.00/0.30": {
+      "kazanc": 0.009146480702068594,
+      "RMSLE": 1.0009717874635284,
+      "konum": "3.+"
+    },
+    "0.10/0.00": {
+      "kazanc": 0.0015146889271962032,
+      "RMSLE": 1.0047767468810191,
+      "konum": "3.+"
+    },
+    "0.10/0.10": {
+      "kazanc": 0.0025309645607593805,
+      "RMSLE": 1.0042708974371608,
+      "konum": "3.+"
+    },
+    "0.10/0.20": {
+      "kazanc": 0.005579791461448913,
+      "RMSLE": 1.0027518180180732,
+      "konum": "3.+"
+    },
+    "0.10/0.30": {
+      "kazanc": 0.010661169629264798,
+      "RMSLE": 1.000214892096061,
+      "konum": "2."
+    },
+    "0.15/0.00": {
+      "kazanc": 0.0034080500861914565,
+      "RMSLE": 1.0038341247007936,
+      "konum": "3.+"
+    },
+    "0.15/0.10": {
+      "kazanc": 0.004424325719754634,
+      "RMSLE": 1.0033278000136572,
+      "konum": "3.+"
+    },
+    "0.15/0.20": {
+      "kazanc": 0.007473152620444165,
+      "RMSLE": 1.0018072905402295,
+      "konum": "3.+"
+    },
+    "0.15/0.30": {
+      "kazanc": 0.01255453078826005,
+      "RMSLE": 0.9992679666694715,
+      "konum": "2."
+    },
+    "0.20/0.00": {
+      "kazanc": 0.006058755708784813,
+      "RMSLE": 1.0025129646499418,
+      "konum": "3.+"
+    },
+    "0.20/0.10": {
+      "kazanc": 0.00707503134234799,
+      "RMSLE": 1.0020059723662589,
+      "konum": "3.+"
+    },
+    "0.20/0.20": {
+      "kazanc": 0.010123858243037522,
+      "RMSLE": 1.000483454014589,
+      "konum": "3.+"
+    },
+    "0.20/0.30": {
+      "kazanc": 0.015205236410853407,
+      "RMSLE": 0.9979407615631033,
+      "konum": "2."
+    },
+    "0.25/0.00": {
+      "kazanc": 0.009466805794976269,
+      "RMSLE": 1.0008117676191781,
+      "konum": "3.+"
+    },
+    "0.25/0.10": {
+      "kazanc": 0.010483081428539445,
+      "RMSLE": 1.000303913104143,
+      "konum": "2."
+    },
+    "0.25/0.20": {
+      "kazanc": 0.013531908329228978,
+      "RMSLE": 0.9987788001708742,
+      "konum": "2."
+    },
+    "0.25/0.30": {
+      "kazanc": 0.018613286497044863,
+      "RMSLE": 0.9962317569235359,
+      "konum": "2."
+    },
+    "0.30/0.00": {
+      "kazanc": 0.013632200344765826,
+      "RMSLE": 0.9987285915879419,
+      "konum": "2."
+    },
+    "0.30/0.10": {
+      "kazanc": 0.014648475978329002,
+      "RMSLE": 0.9982196772362639,
+      "konum": "2."
+    },
+    "0.30/0.20": {
+      "kazanc": 0.017697302879018537,
+      "RMSLE": 0.9966913750609973,
+      "konum": "2."
+    },
+    "0.30/0.30": {
+      "kazanc": 0.02277868104683442,
+      "RMSLE": 0.9941389837206694,
+      "konum": "2."
+    }
+  },
+  "esikler": {
+    "ikinci_icin_ortak_delta": 0.20144652430114035,
+    "lider_icin_ortak_delta": 0.3341316801548056
+  },
+  "olculmus": {
+    "tuketim_v2.csv": 1.16143,
+    "tuketim_v7.csv": 1.16922,
+    "tuketim_v15.csv": 1.0391,
+    "tuketim_v16.csv": 1.06605,
+    "tuketim_v18.csv": 1.0337,
+    "tuketim_v25_hedge.csv": 1.0482,
+    "tuketim_v27_v18hedge.csv": 1.03362,
+    "tuketim_v30_buzme.csv": 1.02639,
+    "tuketim_v44_v27yeni.csv": 1.03053,
+    "tuketim_v46_gun.csv": 1.02448,
+    "tuketim_v47_eskison.csv": 1.0175,
+    "tuketim_v50_nihai30.csv": 1.01686,
+    "tuketim_v55_gunolcek.csv": 1.01591,
+    "tuketim_v67_c1335_olay.csv": 1.01548,
+    "tuketim_v73_soguk_gun160.csv": 1.01538,
+    "tuketim_v79_S3.csv": 1.01556,
+    "tuketim_v80_optimum.csv": 1.01341,
+    "tuketim_v81_sicak08.csv": 1.01429,
+    "tuketim_v83_sicak_optimum.csv": 1.01318,
+    "tuketim_v101_hepsi.csv": 1.01614,
+    "tuketim_v102_kappa_optimum.csv": 1.00553,
+    "tuketim_v109_birlesik.csv": 1.01818
+  }
+}
