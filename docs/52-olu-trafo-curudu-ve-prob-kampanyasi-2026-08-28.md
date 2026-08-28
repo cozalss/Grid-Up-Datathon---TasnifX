@@ -1169,3 +1169,102 @@ Yarın hesap yapılmayacak, karttan okunacak.
 > gönderilmez (κ≈0, iki kez ölçüldü). CV yalnız hangi blokların ayrı ölçüleceğini
 > seçer; büyüklüğü her zaman LB ölçer. Böylece yanlış desen verim kaybettirir,
 > geçerlilik kaybettirmez.
+
+---
+
+## 19. §18'in ÖNSELİ ÇÜRÜDÜ — Q1 tuzağı
+
+§18'in bütün eksen sıralaması **yanlış bir karşılaştırmaya** dayanıyordu.
+
+### 19.1 Kusur
+
+"2025'in aynı penceresi vs `v102`'nin 2026 tahmini" farkı iki şeyi karıştırır:
+1. modelin hatası (aradığımız),
+2. o bölgenin 2025→2026 **gerçek** değişimi.
+
+İkincisi model hatası değildir — model Ocak–Mart 2026'yı görüyor ve yıl farkını
+tahminine katmıştır. Sömürülecek bir şey yoktur.
+
+### 19.2 Test: Q1 değişimi sapmayı açıklıyor mu
+
+Bölge bazında, kullandığım sapma ile modelin **zaten gördüğü** Q1 2026 − Q1 2025
+değişimi karşılaştırıldı:
+
+```
+KORELASYON = +0.876
+```
+
+```
+bolge          kullandigim sapma   Q1 degisimi   ARTIK (aciklanamayan)
+GORDES                   +0.7472      +0.9660         -0.2188
+SARIGOL                  +0.6859      +0.8756         -0.1897
+GOLMARMARA               +0.6967      +0.4902         +0.2064
+AKHISAR                  -0.3947      -0.7116         +0.3169
+METROPOL                 -0.1476      -0.1794         +0.0318
+GUNEY BOLGE              +0.0885      +0.1157         -0.0272
+```
+
+### 19.3 Sonuç: iki eksen de çöktü
+
+```
+eksen     HAM tahmin   Q1 DUZELTILMIS
+BOLGE       0.015579        0.002228     7 kat
+AY          0.007623        0.000043     tamamen
+```
+
+`p21`–`p24` bu yüzden **iptal**. Dahası `p24_poz` kovasının içi düzeltmeden
+sonra karışık işaretli (−0,036 / −0,168 / −0,190 / +0,031 / +0,206 / −0,219) —
+birbirini götürürler, κ*≈0. `p21_metropol`in artığı +0,032, kazancı 0,00026.
+
+> Trafo bazlı artığın işaretine göre kova yapmak da YAPILMADI: artık dağılımının
+> std'si 0,7432, yani tahminler gürültülü; işarete göre ayırmak gürültü seçmektir
+> (sahte 0,036 verir).
+
+### 19.4 Ayakta kalan: modelin bilgi durumu
+
+Doğru soru "hangi eksende sapma var" değil, **"model nerede bilgisiz"**:
+
+```
+blok                                satir      pay    modelin bilgisi
+SOGUK-dalga (gecmis YOK, 05-11)   108.253   15.15%   HICBIR SEY -- Q1 tuzagi YOK
+SOGUK-diger (gecmis YOK)           50.116    7.01%   HICBIR SEY -- Q1 tuzagi YOK
+KESIK (rapor 03-27 oncesi)         43.956    6.15%   BAYAT
+AKTIF (03-27'ye kadar raporluyor) 512.363   71.69%   TAM -- hata beklenmez
+```
+
+Testin %71,69'unda model tam bilgili; Q1 analizi orada hata olmadığını gösterdi.
+Soğuk %22,2'de model **hiçbir şey** bilmiyor ve tek bir LB sabiti (+0,104600)
+hepsine uygulanıyor — dalga/diğer ayrımı hiç ölçülmedi. Kazanç iki alt bloğun
+**farkından** gelir.
+
+### 19.5 Düzeltilmiş plan (29 Ağustos)
+
+```
+HAK1  tuketim_p11_dalga_soguk.csv   108.253 satir  %15.15  Q=0.013632  L=0 -> 1.01229
+HAK2  tuketim_p25_soguk_diger.csv    50.116 satir   %7.01  Q=0.006311  L=0 -> 1.00866
+HAK3  d12_coz.py --prob p11=<skor> --prob p25=<skor>
+```
+
+İkisi dik (ortak satır 0), kırpmasız, kapıdan geçti.
+
+```
+iki blokta da |delta|  0.10 -> 1.00443
+                       0.15 -> 1.00305
+                       0.20 -> 1.00111
+                       0.21 -> 2. SIRA esigi
+                       0.30 -> 0.99556
+```
+
+### 19.6 Dürüst beklenti
+
+2. sıra için soğuğun **iki alt bloğunda da ~0,21** sapma gerekiyor. Bunun için
+iki alt blok gerçek seviyede birbirinden ~0,4 ayrılmalı. Mümkün ama önselimiz
+yok — zaten ölçmemizin sebebi bu. **2. sıra garanti değil; bu, elimizdeki en
+iyi ölçülmemiş şans.**
+
+### 19.7 Kalıcı kural 30
+
+> **Yıl farkını model zaten biliyor.** "Geçen yılın aynı penceresi vs bu yılın
+> tahmini" karşılaştırması model hatası ölçmez; modelin gördüğü son pencereyle
+> (burada Q1) düzeltilmeden hiçbir eksen sıralamasına girmez. Düzeltilmemiş hâli
+> §18'de 7 kat şişirdi.
