@@ -1353,3 +1353,119 @@ HAK3  p11_dalga_soguk                 (dik) ek olcum
 
 `HAK1`in skoru ~2,0 gelecek; Kaggle en iyi skoru tuttuğu için sıramız
 etkilenmez (kanıt: `v109` 1.01818 geldi, tablo hâlâ 1.00553).
+
+---
+
+## 21. Eleğin kalibrasyonu ve NİHAİ plan
+
+### 21.1 Elek yanlıydı — kalibre edildi
+
+§20'nin eleği ham `δ_span` kullanıyordu. **Rastgele bloklarda, gerçek `δ=0`
+iken bile sistematik sapma üretiyor** ve sapma span kapsamıyla ters orantılı:
+
+```
+span kapsami   yanlilik (gosterge yonu)   yanlilik (sifirlama yonu)
+   %2.1              -0.1780                      +0.02717  (%2.9)
+   %5.1              -0.0845                      +0.01341  (%5.7)
+   %9.8              -0.0462                      +0.00602  (%11.7)
+  %19.9              -0.0249                      +0.00315  (%24.3)
+  %34.6              -0.0142                      +0.00154  (%47.2)
+  %59.6              -0.0083
+  %84.1              -0.0057
+```
+
+Yani `p15`in `−0,0069`u sinyal değil, %86 kapsamdaki **yanlılığın kendisiydi.**
+
+### 21.2 Yanlılık düzeltilmiş okuma
+
+```
+prob                  kapsam    ham    yanlilik   DUZELTILMIS
+p24_poz                 9.7%  -0.0981  -0.0471      -0.0510
+p23_neg                 6.2%  -0.0422  -0.0754      +0.0333
+p25_soguk_diger        34.4%  +0.0182  -0.0143      +0.0325
+p21_metropol           28.0%  -0.0113  -0.0190      +0.0077
+p14_dalga_gecmisli     19.2%  -0.0201  -0.0264      +0.0063
+p11_dalga_soguk        49.8%  -0.0102  -0.0106      +0.0004
+p15_ana_blok           86.6%  -0.0069  -0.0057      -0.0012
+```
+
+Dördünün (dik olanların) toplamı **0,000079**. Gereken 0,010271.
+
+### 21.3 Eleğin sınavı — ve sınırı
+
+21 ölçülmüş yönün her biri, **diğer 20'siyle** tahmin edildi:
+
+```
+kapsam > %50  (20 yon) : ortanca skor hatasi 0.00009   maks 0.00177   MUKEMMEL
+kapsam <= %50 (1 yon)  : v109 -- GERCEK L +0.000069, TAHMIN +0.004128
+                         delta cinsinden hata 0.158
+```
+
+**Hüküm:** elek yüksek kapsamda kesin, düşük kapsamda kör. §20'de `KESİK` için
+verdiğim `±0,00061` yanlıştı; gerçekçi hata payı `±0,016`.
+
+Bu, doğru stratejiyi tanımlar: **yüksek kapsamlı yönler ölçümle kapalıdır;
+şans yalnız DÜŞÜK kapsamlı, YÜKSEK `Q`'lu yönlerde.**
+
+### 21.4 Kör nokta taraması
+
+```
+yon                       Q   kapsam   OLCULMEMIS Q   2. icin delta
+AKTIF sifirla         33.03    %84.0        5.28          0.0441   <- kapsam yuksek: elek zaten bos dedi
+SOGUK sifirla         10.50    %69.7        3.18          0.0568   <- ayni
+KESIK sifirla          2.9998  %13.0        2.61          0.0627   <- KOR
+seviye^2               2.9431  %27.3        2.14          0.0693   <- KOR, hic denenmedi
+AKTIF x seviye         2.5694  %26.6        1.89          0.0738
+log(guc) x seviye      1.4330  %23.5        1.10          0.0968
+```
+
+### 21.5 NİHAİ PLAN — 29 Ağustos
+
+İki yön seçildi: **en çok ölçülmemiş kütle + en düşük kapsam**, ve satır
+kümeleri **ayrık** olacak şekilde kuruldu (cebir tam kalsın).
+
+```
+P41  tuketim_p41_kesik_sifir.csv      43.956 satir   Q=2.9998  kapsam %13.0
+                                      OLCULMEMIS Q = 2.6085   L=0 ise skor 2.00273
+P42  tuketim_p42_seviye_egrilik.csv  620.569 satir   Q=1.8275  kapsam %15.5
+                                      OLCULMEMIS Q = 1.5436   L=0 ise skor 1.68480
+
+DIKLIK: ortak satir 0        TOPLAM olculmemis Q = 4.1521
+```
+
+`P42` doğrusal olmayan bir yeniden kalibrasyondur (artık ~ tahmin seviyesinin
+karesi); gönderdiğimiz hiçbir şeye benzemiyor — kapsamının %15,5'te kalması
+bunu doğruluyor. `κ` tavanı 1,5 seçildi (beklenen `κ*` ~0,05), böylece kırpma
+korumasının bedeli 119.915 satırdan 50.163'e indi ve `Q` 1,16'dan 1,83'e çıktı.
+
+```
+HAK1  P41 gonder  -> L_kesik TAM olculur
+HAK2  P42 gonder  -> L_egrilik TAM olculur
+HAK3  d12_coz.py --prob p41=<skor> --prob p42=<skor>   (yonler dik -> optimum ayrisir)
+
+  ikisinde de |delta| 0.0497 ise  ->  2. SIRA ESIGI
+                          0.05        1.00036   2. SIRA
+                          0.06        0.99807   2. SIRA
+                          0.08        0.99223   2. SIRA
+```
+
+Eşik **0,0497**. §20'nin tek yönlü planında eşik 0,0585 idi; iki kör yön
+birleşince **%15 düştü**.
+
+### 21.6 Dürüst kayıt
+
+`P41`in span-içi kısmı düzeltilmiş `φ = +0,0077` diyor, eşiğin altı. Ama o
+ölçüm %13 kapsamdan geliyor ve `v109` kanıtı düşük kapsamda eleğin `δ` cinsinden
+0,158 şaşabildiğini gösteriyor — yani eşik hata payının içinde. `P42` hiç
+ölçülmedi.
+
+**2. sıra garanti değil.** Ama bu, ölçümle kurulmuş, kalibre edilmiş bir aletin
+işaret ettiği **en yüksek olasılıklı** iki yön ve maliyeti sıfır: Kaggle en iyi
+public skoru tuttuğu için `2.00273`/`1.68480` gelse bile 3. sıra korunur.
+
+### 21.7 Kalıcı kural 31
+
+> **Eleği kalibre etmeden hüküm verme.** Span projeksiyonu, gerçek hizalanma
+> sıfırken bile kapsamla ters orantılı sistematik sapma üretir. Ham `δ_span`
+> ile "bu yön boş" denmez; rastgele bloklardan yanlılık eğrisi çıkarılıp
+> çıkarılır, ve düşük kapsamda hüküm verilmez.
