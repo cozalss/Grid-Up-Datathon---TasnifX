@@ -1,0 +1,28 @@
+  huber (44s)
+  l1 (88s)
+  catboost MAE (405s)
+### 2025-11-30  (capali=seviye yanliligi giderilmis, test-karisimi)
+   huber      capali 1.0499   ham 1.0637
+   l1         capali 1.0411   ham 1.0486
+   cb_mae     capali 1.1350   ham 1.2153
+   h+l1       capali 1.0416   ham 1.0480
+   h+cb       capali 1.0695   ham 1.1068
+   h+l1+cb    capali 1.0518   ham 1.0670
+  huber (35s)
+  l1 (83s)
+  catboost MAE (415s)
+### 2025-09-30  (capali=seviye yanliligi giderilmis, test-karisimi)
+   huber      capali 1.2308   ham 1.2440
+   l1         capali 1.2345   ham 1.2722
+   cb_mae     capali 1.2509   ham 1.2656
+   h+l1       capali 1.2283   ham 1.2515
+   h+cb       capali 1.2272   ham 1.2406
+   h+l1+cb    capali 1.2251   ham 1.2453
+
+=== IKI KESIM ORTALAMASI (capali) ===
+  h+l1       1.1349   2025-11-30:1.0416  2025-09-30:1.2283
+  l1         1.1378   2025-11-30:1.0411  2025-09-30:1.2345
+  h+l1+cb    1.1384   2025-11-30:1.0518  2025-09-30:1.2251
+  huber      1.1404   2025-11-30:1.0499  2025-09-30:1.2308
+  h+cb       1.1483   2025-11-30:1.0695  2025-09-30:1.2272
+  cb_mae     1.1930   2025-11-30:1.1350  2025-09-30:1.2509
