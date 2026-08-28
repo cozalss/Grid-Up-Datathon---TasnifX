@@ -1,0 +1,22 @@
+{
+  "cikti": "tuketim_p14_dalga_gecmisli.csv",
+  "adim": -0.3,
+  "trafo": 896,
+  "aktif": 502,
+  "kesik": 394,
+  "satir": 72785,
+  "pay": 0.10184164278678248,
+  "Q": 0.009163264860021367,
+  "p11_pay": 0.1514688927196203,
+  "p11_Q": 0.013632200344765928,
+  "denetim": {
+    "p12_arti_p13_sapma": 8.881784197001252e-16,
+    "p11_ortak_satir": 0
+  },
+  "birlestirme_maliyeti_MSE": 0.000556,
+  "plan": {
+    "HAK1": "tuketim_p11_dalga_soguk.csv",
+    "HAK2": "tuketim_p14_dalga_gecmisli.csv",
+    "HAK3": "d12_coz.py --soguk <skor> --gecmisli <skor>"
+  }
+}

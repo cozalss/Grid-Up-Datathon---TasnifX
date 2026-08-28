@@ -884,14 +884,42 @@ kendi skorunu etkiler.
 > bu dalga; yani o sabit zaten büyük ölçüde dalga-soğuğa göre ayarlı. Artık
 > sinyal küçük olabilir.
 
-### 17.5 Plan (29-30 Ağustos)
+### 17.5 Plan — 3 HAK, TEK GÜN (29 Ağustos)
+
+İlk taslak 4 hak / 2 gün idi. Birleştirme maliyeti hesaplanınca 3 hak / 1 güne
+indi (`d13_iki_prob.py`):
 
 ```
-29 Agu HAK1  tuketim_p11_dalga_soguk.csv    Q=0.013632   SNR >= 240
-       HAK2  tuketim_p12_dalga_aktif.csv    Q=0.005134   SNR >= 120
-       HAK3  tuketim_p13_dalga_kesik.csv    Q=0.004031   SNR >=  94
-30 Agu HAK1  d12_coz.py --soguk .. --aktif .. --kesik ..
-             -> tuketim_v120_dalga_optimum.csv,  kazanc = sum L_i^2/Q_i >= 0
+AKTIF + KESIK birlesirse   kayip 0.000556 MSE (RMSLE 0.00028)  IHMAL EDILEBILIR
+                           ikisinin de onseli NEGATIF (-0.1238 / -0.2727)
+SOGUK da katilsaydi        isareti TERS cikarsa kayip 0.009785
+                           yani kazancin NEREDEYSE TAMAMI; soguk icin onsel YOK
+```
+
+Karar: soğuk ayrı kalır, aktif+kesik birleşir. İki yön dik olduğu için
+**üçüncü hak aynı gün ikisinin optimumunu birden uygular.**
+
+```
+HAK1  tuketim_p11_dalga_soguk.csv      1326 trafo  108.253 satir  Q=0.013632
+HAK2  tuketim_p14_dalga_gecmisli.csv    896 trafo   72.785 satir  Q=0.009163
+HAK3  d12_coz.py --prob p11=<skor> --prob p14=<skor>
+      -> tuketim_v120_dalga_optimum.csv,  kazanc = sum L_i^2/Q_i >= 0
+```
+
+Denetimler: `adim(p12)+adim(p13) == adim(p14)` sapma 8,9e-16 · `p11` ile ortak
+satır 0 · dördü de kapıdan geçti.
+
+**Çözücü gidiş-dönüş testinden geçti:** δ = −0,20 / −0,25 varsayımından skor
+üretildi (1.00327 / 1.00249), skorlar çözücüye geri verildi, δ = −0,2000 /
+−0,2499 kurtarıldı; ön kayıt 0.999337 vs analitik 0.999333, fark 4e-6 = 5 hane
+yuvarlamasının payı. `Q` denetimi 1,1e-16.
+
+Örnek sonuçlar (`|δ_soğuk|`, `|δ_geçmişli|`):
+```
+0.10 / 0.30 -> 1.000205   2.yi gecer
+0.20 / 0.20 -> 1.000479
+0.25 / 0.20 -> 0.998775   2.yi gecer
+0.30 / 0.30 -> 0.994129   2.yi gecer
 ```
 
 Üç prob da kapı denetiminden geçti (714.688 satır, id sırası birebir,

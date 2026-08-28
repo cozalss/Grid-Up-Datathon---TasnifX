@@ -1,13 +1,16 @@
-"""D12 -- uc prob skoru olculdukten SONRA optimum birlesimi kurar.
+"""D12 -- prob skorlari olculdukten SONRA optimum birlesimi kurar.
 
 Kullanim (skorlar Kaggle'dan OKUNUR, gonderim YAPILMAZ):
-    python d12_coz.py --soguk 1.01234 --aktif 1.00789 --kesik 1.00612
+    python d12_coz.py --prob tuketim_p11_dalga_soguk.csv=1.01234 \
+                      --prob tuketim_p14_dalga_gecmisli.csv=1.00789
 
 Her prob i icin d_i = lp(prob_i) - lp(v102), Q_i = ||d_i||^2/n (dosyadan KESIN),
 ve olculmus skordan
     L_i = (m0 + Q_i - m_i) / 2
-Yonler DIK (satir kumeleri kesismiyor), bu yuzden birlesik optimum ayrisir:
+Yonler DIK olmali (satir kumeleri kesismemeli; betik DENETLER). O zaman
+birlesik optimum ayrisir:
     kappa*_i = L_i / Q_i        kazanc = sum L_i^2 / Q_i  >= 0 HER ZAMAN
+
 Cikti: submissions/tuketim_v120_dalga_optimum.csv + on kayitli skor.
 """
 
@@ -22,64 +25,81 @@ from ortak import CIK, KOK, N_TEST, SUB, hizala, lp, test
 
 TABAN = "tuketim_v102_kappa_optimum.csv"
 V102_MSE = 1.011091
+IKINCI, LIDER = 1.00041, 0.99138
 CIKTI = "tuketim_v120_dalga_optimum.csv"
-PROBLAR = {
-    "soguk": "tuketim_p11_dalga_soguk.csv",
-    "aktif": "tuketim_p12_dalga_aktif.csv",
-    "kesik": "tuketim_p13_dalga_kesik.csv",
-}
+SD_L = 7.14e-6
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    for k in PROBLAR:
-        ap.add_argument(f"--{k}", type=float, required=True, help=f"{k} probunun LB skoru")
+    ap.add_argument(
+        "--prob",
+        action="append",
+        required=True,
+        metavar="DOSYA=SKOR",
+        help="prob dosyasi ve olculmus LB skoru; birden fazla kez verilebilir",
+    )
     ap.add_argument("--kirp", type=float, default=None, help="kappa* icin mutlak ust sinir")
     a = ap.parse_args()
 
     te = test()
-    v102 = hizala(TABAN)
-    taban_lp = lp(v102)
+    taban_lp = lp(hizala(TABAN))
     toplam_adim = np.zeros(N_TEST)
     rap: dict = {"taban": TABAN, "m0": V102_MSE, "problar": {}}
     kazanc = 0.0
+    yonler = []
 
-    for k, dosya in PROBLAR.items():
-        skor = float(getattr(a, k))
+    for girdi in a.prob:
+        dosya, _, skor_s = girdi.partition("=")
+        if not skor_s:
+            raise SystemExit(f"bicim hatasi: {girdi!r} -- DOSYA=SKOR bekleniyor")
+        skor = float(skor_s)
         d = lp(hizala(dosya)) - taban_lp
         Q = float(d @ d / N_TEST)
-        m_i = skor**2
-        L = (V102_MSE + Q - m_i) / 2.0
+        if Q <= 0:
+            raise SystemExit(f"{dosya}: Q=0, taban ile ayni dosya")
+        L = (V102_MSE + Q - skor**2) / 2.0
         kap = L / Q
         if a.kirp is not None:
             kap = float(np.clip(kap, -a.kirp, a.kirp))
-        pay = float((np.abs(d) > 1e-12).sum()) / N_TEST
-        # d = s*1_blok oldugundan gercek ofset = kappa* * s
-        s = float(d[np.abs(d) > 1e-12][0])
+        nz = np.abs(d) > 1e-12
+        s = float(d[nz][0])
         katki = L * L / Q
         kazanc += katki
         toplam_adim += kap * d
-        rap["problar"][k] = {
-            "dosya": dosya,
+        yonler.append((dosya, nz))
+        rap["problar"][dosya] = {
             "LB_skoru": skor,
             "Q": Q,
-            "pay": round(pay, 5),
+            "pay": round(float(nz.sum()) / N_TEST, 5),
             "adim_s": round(s, 4),
             "L": L,
+            "L_SNR": round(abs(L) / SD_L, 1),
             "kappa*": kap,
             "cozulen_gercek_ofset": round(kap * s, 4),
             "kazanc_L2_bolu_Q": katki,
         }
         print(
-            f"{k:6s} skor {skor:.5f}  Q={Q:.6f}  L={L:+.6f}  kappa*={kap:+.4f}  "
-            f"gercek ofset={kap * s:+.4f}  kazanc={katki:.6f}"
+            f"{dosya:34s} skor {skor:.5f}  Q={Q:.6f}  L={L:+.6f} (SNR {abs(L) / SD_L:.0f})  "
+            f"kappa*={kap:+.4f}  gercek ofset={kap * s:+.4f}  kazanc={katki:.6f}"
         )
+
+    print("\n=== DIKLIK DENETIMI ===")
+    for i in range(len(yonler)):
+        for j in range(i + 1, len(yonler)):
+            ortak = int((yonler[i][1] & yonler[j][1]).sum())
+            print(f"  {yonler[i][0]} & {yonler[j][0]}: ortak satir {ortak}")
+            if ortak:
+                raise SystemExit("yonler DIK DEGIL -- ayrisik optimum gecersiz")
 
     mse = V102_MSE - kazanc
     rmsle = float(np.sqrt(max(mse, 1e-9)))
-    print(f"\nTOPLAM kazanc {kazanc:.6f}   ON KAYITLI MSE {mse:.6f}   RMSLE {rmsle:.6f}")
+    nerede = "LIDERI GECER" if rmsle < LIDER else ("2.yi gecer" if rmsle < IKINCI else "3. sira")
+    print(
+        f"\nTOPLAM kazanc {kazanc:.6f}   ON KAYITLI MSE {mse:.6f}   RMSLE {rmsle:.6f}  -> {nerede}"
+    )
     if kazanc < 0:
-        raise RuntimeError("kazanc negatif olamaz -- girdi skorlarini kontrol et")
+        raise SystemExit("kazanc negatif olamaz -- girdi skorlarini kontrol et")
 
     yeni = np.clip(np.expm1(taban_lp + toplam_adim), 0.0, None)
     ss = pd.read_csv(KOK / "data/raw/sample_submission.csv", usecols=["id"])
@@ -88,21 +108,24 @@ def main() -> int:
     assert not cik["tuketim"].isna().any() and len(cik) == N_TEST
     (SUB / CIKTI).write_text(cik.to_csv(index=False, lineterminator="\n"), encoding="utf-8")
 
-    # dogrulama: kurulan dosyanin Q'su beklenenle tutuyor mu
     dd = lp(yeni) - taban_lp
+    Q_kur = float(dd @ dd / N_TEST)
+    Q_bek = float(sum(r["kappa*"] ** 2 * r["Q"] for r in rap["problar"].values()))
+    print(f"Q denetimi: kurulan {Q_kur:.6f}  beklenen {Q_bek:.6f}  fark {abs(Q_kur - Q_bek):.3e}")
+    if abs(Q_kur - Q_bek) > 1e-9:
+        raise SystemExit("Q tutmadi -- kirpma veya dosya uyusmazligi")
     rap["cikti"] = {
         "dosya": CIKTI,
-        "Q_kurulan": float(dd @ dd / N_TEST),
-        "Q_beklenen": float(sum(r["kappa*"] ** 2 * r["Q"] for r in rap["problar"].values())),
+        "Q_kurulan": Q_kur,
+        "Q_beklenen": Q_bek,
         "ON_KAYITLI_MSE": mse,
         "ON_KAYITLI_RMSLE": rmsle,
         "toplam_kazanc": kazanc,
+        "konum": nerede,
     }
-    print(
-        f"Q denetimi: kurulan {rap['cikti']['Q_kurulan']:.6f} "
-        f"beklenen {rap['cikti']['Q_beklenen']:.6f}"
+    (CIK / "d12_coz.json").write_text(
+        json.dumps(rap, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    (CIK / "d12_coz.json").write_text(json.dumps(rap, indent=2, ensure_ascii=False), "utf-8")
     print(f"\nyazildi: submissions/{CIKTI}")
     print("KAGGLE'A HICBIR SEY GONDERILMEDI -- gonderim icin kullanicidan onay al.")
     return 0
