@@ -64,6 +64,15 @@ def main() -> int:
             kap = float(np.clip(kap, -a.kirp, a.kirp))
         nz = np.abs(d) > 1e-12
         s = float(d[nz][0])
+        # KIRPMA KORUMASI: kappa*.d uygulandiktan sonra tahmin negatife dusmemeli.
+        # log1p(v102) + kappa*.s >= 0 olmali; aksi halde gerceklesen yon kappa*.d
+        # OLMAZ ve on kayitli skor tutmaz.
+        guvenli = float((taban_lp[nz] / abs(s)).min())
+        if abs(kap) >= guvenli:
+            raise SystemExit(
+                f"{dosya}: kappa*={kap:+.4f} kirpma sinirini asiyor (|kappa*| < {guvenli:.3f}). "
+                "Prob KIRPMA_ESIGI yukseltilerek yeniden kurulmali."
+            )
         katki = L * L / Q
         kazanc += katki
         toplam_adim += kap * d

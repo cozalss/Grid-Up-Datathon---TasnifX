@@ -4,14 +4,18 @@
   "trafo": 896,
   "aktif": 502,
   "kesik": 394,
-  "satir": 72785,
-  "pay": 0.10184164278678248,
-  "Q": 0.009163264860021367,
+  "satir": 72632,
+  "pay": 0.10162756335631772,
+  "Q": 0.009146480702068586,
   "p11_pay": 0.1514688927196203,
   "p11_Q": 0.013632200344765928,
   "denetim": {
-    "p12_arti_p13_sapma": 8.881784197001252e-16,
-    "p11_ortak_satir": 0
+    "p12_arti_p13_sapma": 4.440892098500626e-16,
+    "p11_ortak_satir": 0,
+    "kirpma_esigi": 0.9,
+    "dislanan_satir": 153,
+    "kirpilan_satir": 0,
+    "guvenli_kappa_siniri": 3.007331602003022
   },
   "birlestirme_maliyeti_MSE": 0.000556,
   "plan": {

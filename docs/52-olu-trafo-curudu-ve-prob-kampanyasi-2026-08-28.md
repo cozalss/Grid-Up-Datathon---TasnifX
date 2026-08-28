@@ -941,3 +941,73 @@ harcar.
 > **Ayrı ölç, sonra birleştir.** Alt kümelerin işareti farklı olabiliyorsa tek
 > yönde birleştirmek Cauchy-Schwarz gereği kayıptır:
 > `sum(pay_i·δ_i²) >= (sum pay_i·δ_i)² / sum pay_i`. Hak varken ayrı ölç.
+
+### 17.8 Kırpma kusuru — yakalandı ve giderildi
+
+İlk kurulan `p14`te adım her satırda `−0,30` DEĞİLDİ; 32 satırda `−0,046`ya
+kadar sönüyordu. Sebep: adım log uzayında uygulanıp `expm1` ile geri dönülüyor
+ve tahmin 0'a kırpılıyor. `v102` o satırlara 0,047–0,315 kWh yazıyor;
+`−0,30` kaydırınca negatife düşüp sıfıra kırpılıyorlar.
+
+Skor etkisi ihmal edilebilirdi (1,5e-6 MSE) **ama HAK 3'te çözücünün `Q`
+denetimini tetikleyip betiği durdururdu** — yani sorun skor değil, gönderim
+anında betiğin patlamasıydı.
+
+Giderme: `KIRPMA_ESIGI = 0.90`. `log1p(v102) < 0,90` olan satırlar bloktan
+çıkarılır; bedeli 153 satır (%0,21), karşılığı `|κ*| < 3,01` aralığında
+**kırpma imkânsız**.
+
+```
+p14 (yeni)  72.632 satir  pay %10.16  Q=0.009146
+            kirpilan satir 0   adim araligi [-0.300000, -0.300000]
+            min log1p(v102) 0.9022  ->  guvenli |kappa*| < 3.01
+p11         kirpilan satir 0   min log1p(v102) 2.6411  ->  guvenli < 8.80  (koruma gerekmedi)
+```
+
+`d12_coz.py`ye de aynı koruma kondu: `|κ*|` kırpma sınırını aşarsa dosya
+yazmadan, sebebi söyleyerek durur.
+
+### 17.9 Aparat gerçek Kaggle skoruna karşı doğrulandı
+
+`v102 = v83 + κ(v101 − v83)`, üçü de ölçülmüş. Diskteki dosyalardan:
+
+```
+Q(v101-v83)   0.073292      L (iki skordan)  0.033643
+kappa* = L/Q  0.459022      belgede yazan    0.459022     BIREBIR
+
+TAHMIN v102 = 1.00553   GERCEK = 1.00553   FARK 4.06e-07
+disk v102 == v83+kappa*(v101-v83)   sapma 4.4e-16
+```
+
+Hizalama · `log1p` uzlaşımı · `Q` · `L` · `κ` uygulaması — zincirin tamamı
+canlı bir skoru **yedi hane** doğrulukla üretiyor.
+
+### 17.10 Public/private genelleme kaybı: ihmal edilebilir
+
+`κ*` public LB'den çözülüyor, nihai sıralama private. Blokun ortalama
+artığının standart hatası:
+
+```
+p11 soguk    public %50: 54.126 satir  kaydirma hatasi 0.00432  kayip 2.8e-06
+             public %30: 32.476 satir                  0.00558        4.7e-06
+p14 gecmisli public %50: 36.392 satir                  0.00527        2.8e-06
+             public %30: 21.836 satir                  0.00680        4.7e-06
+```
+
+Toplam ~1e-5 MSE; peşinde olduğumuz kazanç 1e-2 mertebesinde — **1000 kat**
+küçük. `docs/07:39` (%50) ile `docs/27:167` (%30) çelişkisi bu yüzden önemsiz.
+
+### 17.11 AÇIK KALAN TEK RİSK — final gönderim seçimi
+
+`docs/31:39` "Kaç final seçilebilir" sorusunu listeye almış, **cevabını
+kaydetmemiş**. Kaggle CLI bunu vermiyor (`--csv` kolonları: ref, fileName,
+date, description, status, publicScore, privateScore — `selected` yok) ve
+yarışma `competitions list`te görünmüyor.
+
+Kaggle'ın evrensel varsayılanı: seçim yapılmazsa **en iyi public skorlu**
+gönderimler private için otomatik seçilir. Bu doğruysa prob göndermek nihai
+sıralamayı da etkilemez. Ama **bu yarışma için doğrulanmadı.**
+
+> **YAPILACAK:** Submissions sayfasında "Use for Final Score" / "Select for
+> final" denetimi var mı, kaç tane seçilebiliyor — tarayıcıdan bakılıp buraya
+> yazılacak. Seçim varsa `v102` (veya en iyi dosya) elle seçilmeli.

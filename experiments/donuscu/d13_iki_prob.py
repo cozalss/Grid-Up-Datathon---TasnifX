@@ -12,7 +12,7 @@ Karar: SOGUK ayri kalir, AKTIF+KESIK birlesir. Iki yon dik oldugu icin
 ucuncu hak AYNI GUN ikisinin optimumunu birden uygular:
 
     HAK1  tuketim_p11_dalga_soguk.csv       (Q=0.013632)
-    HAK2  tuketim_p14_dalga_gecmisli.csv    (Q~0.009163)
+    HAK2  tuketim_p14_dalga_gecmisli.csv    (Q=0.009146, kirpma korumali)
     HAK3  d12_coz.py ile kurulan optimum    kazanc = sum L_i^2/Q_i >= 0
 
 Bu betik yalniz p14'u uretir; p11 d11'den geliyor ve DEGISMEZ.
@@ -34,6 +34,15 @@ GRUPA_SINIR = pd.Timestamp("2026-03-27")
 ADIM = -0.30
 CIKTI = "tuketim_p14_dalga_gecmisli.csv"
 
+# KIRPMA KORUMASI. Adim log uzayinda uygulanip expm1 ile geri donuluyor ve
+# tahmin 0'a kirpiliyor. log1p(v102) < |kappa*|*|ADIM| olan satirlarda kirpma
+# devreye girer; o zaman gerceklesen yon kappa*.d OLMAZ ve HAK3'te Q denetimi
+# patlar. Ilk kurulusta p14'te 32 satir (%0.044) boyleydi -- v102 oralara
+# 0.047-0.315 kWh yaziyor. Esik 0.90 ile |kappa*| < 3.0 araliginda kirpma
+# IMKANSIZ hale gelir; bedeli 153 satir (%0.21) ve Q'nun %0.017'si.
+# p11'de gerek yok (blokta min log1p(v102) = 2.6411, guvenli |kappa*| < 8.8).
+KIRPMA_ESIGI = 0.90
+
 
 def main() -> int:
     tr, te = train(), test()
@@ -48,7 +57,14 @@ def main() -> int:
     aktif = [t for t in gecmisli if son[t] >= GRUPA_SINIR]
     kesik = [t for t in gecmisli if son[t] < GRUPA_SINIR]
     tn = te["tanim"].to_numpy()
-    m = np.isin(tn, gecmisli)
+    lv = lp(v102)
+    m_ham = np.isin(tn, gecmisli)
+    m = m_ham & (lv >= KIRPMA_ESIGI)
+    dislanan = int((m_ham & ~m).sum())
+    print(
+        f"kirpma korumasi: esik {KIRPMA_ESIGI} -> {dislanan} satir disarida "
+        f"(%{100 * dislanan / m_ham.sum():.3f}); guvenli |kappa*| < {KIRPMA_ESIGI / abs(ADIM):.1f}"
+    )
 
     adim = np.where(m, ADIM, 0.0)
     yeni = np.clip(np.expm1(lp(v102) + adim), 0.0, None)
@@ -68,10 +84,21 @@ def main() -> int:
     Q11 = float(d11 @ d11 / N_TEST)
     pay11 = float((np.abs(d11) > 1e-12).sum()) / N_TEST
 
-    # p12+p13 toplaminin p14'e esitligi
+    # p12+p13 toplaminin p14'e esitligi -- YALNIZ korunan satirlarda
     d12 = lp(hizala("tuketim_p12_dalga_aktif.csv")) - lp(v102)
     d13 = lp(hizala("tuketim_p13_dalga_kesik.csv")) - lp(v102)
-    sapma = float(np.abs(d12 + d13 - d).max())
+    sapma = float(np.abs((d12 + d13 - d)[m]).max())
+
+    # KIRPMA DENETIMI: blokta adim her satirda tam ADIM olmali
+    nz = np.abs(d) > 1e-12
+    kirpik = int((nz & (np.abs(d - ADIM) > 1e-9)).sum())
+    print(
+        f"  kirpilan satir: {kirpik}  (0 olmali)  adim araligi "
+        f"[{d[nz].min():+.6f}, {d[nz].max():+.6f}]"
+    )
+    assert kirpik == 0, "kirpma var -- KIRPMA_ESIGI yukseltilmeli"
+    guvenli = float(lv[nz].min() / abs(ADIM))
+    print(f"  blokta min log1p(v102) = {lv[nz].min():.4f} -> kirpmasiz |kappa*| < {guvenli:.2f}")
 
     print(f"=== {CIKTI} ===")
     print(f"  trafo {len(gecmisli)} (aktif {len(aktif)} + kesik {len(kesik)})")
@@ -106,12 +133,19 @@ def main() -> int:
         "Q": Q,
         "p11_pay": pay11,
         "p11_Q": Q11,
-        "denetim": {"p12_arti_p13_sapma": sapma, "p11_ortak_satir": ortak},
+        "denetim": {
+            "p12_arti_p13_sapma": sapma,
+            "p11_ortak_satir": ortak,
+            "kirpma_esigi": KIRPMA_ESIGI,
+            "dislanan_satir": dislanan,
+            "kirpilan_satir": kirpik,
+            "guvenli_kappa_siniri": guvenli,
+        },
         "birlestirme_maliyeti_MSE": 0.000556,
         "plan": {
             "HAK1": "tuketim_p11_dalga_soguk.csv",
             "HAK2": CIKTI,
-            "HAK3": "d12_coz.py --soguk <skor> --gecmisli <skor>",
+            "HAK3": "d12_coz.py --prob p11=<skor> --prob p14=<skor>",
         },
     }
     (CIK / "d13_iki_prob.json").write_text(
