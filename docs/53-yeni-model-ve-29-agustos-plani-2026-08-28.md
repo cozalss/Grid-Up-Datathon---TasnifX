@@ -320,3 +320,21 @@ eğitim verisi 5-10 kat daha az. Endişe ters yöndeydi ve ölçüm `m4`'un lehi
 **Kalıcı kural 35.** *Bir özellik ailesinin kazancını, o ailenin mekanizmasının
 AKTİF olduğu bir pencerede doğrula.* Hava özelliklerini CDD=0 olan kış
 pencerelerinde ölçüp yaz testine genellemek, ölçüm değil varsayımdı.
+
+### 7.7 `m4` uzerine iki eksen daha denendi — IKISI DE REDDEDILDI
+
+```
+aday                    11-30      09-30    hukum
+m4 (aylik havuz)       taban      taban       --
+rejim uzmani          +0,0073    -0,0018   KARISIK -> RED
+havuz + rejim ort     +0,0006    -0,0044   KARISIK -> RED
+SIK kesim (2 hafta)   -0,0009    +0,0058   KARISIK -> RED
+```
+
+- **Rejim uzmanı** (ayrı soğuk/sıcak model) hava GIRMEDEN once iki kesimde de
+  kazanıyordu (§7.2: −0,0029 / −0,0050). Hava eklenince kazanç kayboldu →
+  taşıdığı bilgi zaten hava ailelerinde varmış.
+- **Sık kesim** eğitim verisini ikiye katlıyor (1,98M → 4,10M satır) ama bir
+  kesimde kazanıp diğerinde kaybediyor.
+
+**`m4` olduğu gibi kalır.** Elimdeki fikirlerle plato noktasındayız.
