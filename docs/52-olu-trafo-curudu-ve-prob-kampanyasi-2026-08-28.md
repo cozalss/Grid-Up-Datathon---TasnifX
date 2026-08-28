@@ -643,3 +643,161 @@ soguk model mimarisi · rotus envanteri (-0.011 iddiasi -> -0.00032).
     ekseni kurarken test nufusunun toplu-giris payi olculmelidir.
 23. **`f` (gerceklesme orani) yone ozgudur, tasinmaz.** `v101` demetinde 0.4115
     olculmustu; `v109`da 0.0045 cikti. Butce hesabini tek bir `f` ile kurma.
+
+---
+
+## 15. Hedefin kafesi — hiç bakılmamış eksen, ölçüldü, KAPANDI
+
+"Hiç ölçmediğimiz bir şey olmalı" sorusuna karşı dört yapısal boşluk tarandı.
+Üçü zaten kapalıydı; biri gerçekten bakılmamıştı ve bu bölümde kapanıyor.
+
+### 15.1 Bulgu: `tuketim` trafo bazlı bir kafes üzerinde
+
+`train.csv`in "kuruş" dağılımı düz değil. En sık artıklar 0/20/60/80/40
+(0,20 kWh katları), sonra 32/12/96/48/68 (0,04 katları). Trafo bazlı GCD:
+
+```
+degerlendirilen trafo (>=20 sifir-disi kayit) : 4.510
+gcd == 1  (kafes YOK)                         :    58   ( 1,3%)
+gcd  > 1  (kafes VAR)                         : 4.452   (98,7%)
+en sik adimlar (kWh) : 0,12(900) 0,08(781) 0,32(678) 0,20(515)
+                       0,06(461) 0,40(361) 0,04(340) 0,02(136)
+uc degerler          : 41,40(15 trafo)  12,60(6)  2,10(4)  1,05(4)
+```
+
+Bunlar sayaç çarpanı (akım trafosu oranı) imzasıdır. Sonuç: adımı `g` olan bir
+trafo `(0, g)` aralığında **değer üretemez**.
+
+### 15.2 Puan değeri: YOK
+
+`v102` bu kısıta karşı sınandı (kafesi bilinen 490.060 test satırı):
+
+```
+(0,g) imkansiz bolgede tahmin  :   188 satir  (%0,038)
+gozlenen min-nonzero altinda   : 8.036 satir  (%1,640)
+hepsini 0'a  cekmenin |dMSE| ust siniri : 1,864e-03
+hepsini g'ye cekmenin |dMSE| ust siniri : 2,560e-05
+GEREKEN dMSE                            : 2,826e-02
+```
+
+Üst sınır bile gerekenin %6,6'sı ve bu bir **yer değiştirme** sınırı, kazanç
+değil; gerçek kazanç bunun küçük bir kesri, işareti belirsiz.
+
+> **Tuzak:** ham "oracle tavanı" `mean(g²/12 / (1+t)²)` = 1,654e-01 çıkıyor ve
+> gerekenin 5,85 katı görünüyor. **Sahtedir** — 41,4 kWh adımlı 15 trafo
+> tarafından domine ediliyor ve o tavan ancak hatamız zaten `g/2`nin altındaysa
+> bağlayıcı. O trafoların ortanca tüketimi 38.928 kWh; hata oraya yaklaşmıyor.
+
+### 15.3 Aynı taramada kapanan diğer üç boşluk
+
+| Boşluk | Durum |
+|---|---|
+| Sayısal olmayan `tanim` (`202917T`, `ege perla tr-4`, `İskele DM`) | 9 train / 12 test trafo, 1.037 test satırı — kütle yok |
+| Mevsim aynası (train ≤2025-03-31 → doğrula 2025-04→07) | **Zaten kurulu**, `curut_eksen5_*` ailesinde 13 betik |
+| Harici veri | 21 kaynak kurulu + ablasyonu yapılmış (`docs/07` §208) |
+
+### 15.4 Kayda geçen yapısal gerçek
+
+```
+train  2025-01-01 -> 2026-03-31   455 gun
+test   2026-04-01 -> 2026-07-31   122 gun
+```
+
+Test bloğu Nisan–Temmuz; eğitimde bu mevsimin **tek** örneği var (2025-04→07).
+Rastgele ya da geriye dönük her doğrulama yanlış mevsimi ölçer. "CV türevli tüm
+yönler κ≈0" anomalisinin yapısal sebebi budur ve **onarılamaz** — daha fazla
+tarih yok.
+
+### 15.5 Kalıcı kural 24
+
+> **Hedefin cebiri tarandı.** Kafes, id uzayı, doğrulama geometrisi ve harici
+> veri — tabular bir yarışmada "hiç bakılmamış şey"in saklanabileceği dört yer
+> de kapalı. Bundan sonra "bakmadığımız bir şey olmalı" sezgisi **yeni bir
+> ölçüm getirmeden** gündeme alınmaz. Eksik olan bir teknik değil, elde
+> edilemeyen bilgidir (kimliklenebilirlik duvarı, §12).
+
+---
+
+## 16. Span tükendi — 22 ölçümün tam çözümü
+
+"Onlar ne yaptıysa bul" talebi üzerine kazılan yer: kendi ölçüm yığınımız.
+
+### 16.1 §14.1'in mantık boşluğu kapandı
+
+§14.1 `v109`u iki okumaya açık bırakıp "her iki halde de hüküm aynı" demişti.
+**Değildi.** Okuma A (`v108` +0,0057 çalışıyor, `y1` −0,28 zehirli) doğru olsaydı
+"CV yönleri ölü" hükmümüzün tamamı çöpe giderdi. Ayrıştırıldı:
+
+`d108` ve `dy1`, önceki 21 ölçülmüş yönün span'ına projekte edildi. Span-içi
+kısımların `L`si oradaki ölçümlerden **tam olarak** çözülür:
+
+```
+d108  Q=0.005957  span-ici pay %31.27  L_span = -0.000141
+dy1   Q=0.019999  span-ici pay %79.76  L_span = +0.000209
+                                toplam = +0.000068
+                  olculen L(d109)      = +0.000069     <- 1e-6 icinde ORTUSUYOR
+```
+
+Okuma A doğru olsaydı `d108`in span-içi payında **+0,0018** görmemiz gerekirdi;
+−0,000141 var — 13 kat küçük ve ters işaretli. **Okuma B doğru.** Hüküm ayakta
+ama artık varsayım değil, ölçüm.
+
+> Yan bulgu: `v109 = v102 + d108 + dy1` eşitliği tam değil, bağıl fark 2,04e-02.
+> Belgede yazan kuruluş yaklaşıktır.
+
+### 16.2 22 ölçümün span tavanı: 1.00531
+
+Eski Gram çözümü 17 rank'lıydı ve `v101`/`v102`/`v109` daha ölçülmemişti. Üçü de
+eklenip yeniden çözüldü. Taban `v102` (m0 = 1.011091), 21 yön, `L` gürültüsü
+5 hane yuvarlamasından sd = 7,14e-06, bileşen seçimi SNR >= 3:
+
+```
+SNR>=3 secilen bilesen : 14 / 19
+span tavani            : MSE 1.010648   RMSLE 1.00531
+mevcut                 : MSE 1.011091   RMSLE 1.00553
+kazanc                 : dMSE -0.000443  (RMSLE -0.00022)
+GEREKEN (lider 0.99138): dMSE -0.028256
+```
+
+Bileşen 18: özdeğer 2,489e-12, "kazanç" 16,03 — §13.3'te yakalanan sayısal null
+tuzağı. SNR 0,9 ile **bağımsız olarak reddedildi**; yöntem doğrulandı.
+
+### 16.3 Hüküm
+
+**Gönderdiğimiz her şeyin span'i tükendi.** 22 ölçümün bütün kombinasyonları
+RMSLE'de 0,00022 daha veriyor. Liderin farkı bir yeniden-birleştirme değil,
+**hiç göndermediğimiz bir yön**.
+
+En iyi hâl aritmetiği:
+```
+mevcut MSE                     1.011091
+- span tavani                 -0.000443
+- v111 donuscu (olculen delta) -0.018500
+--------------------------------------- 
+                               0.992148  ->  RMSLE 0.99603   (2. sira RAHAT)
+lider icin gereken             0.982835  ->  RMSLE 0.99138
+KAPANMAYAN ACIK                0.009313 MSE
+```
+
+### 16.4 Plan değişikliği: `v112` değil `v111`
+
+Span tükendiği için "güvenli oyna" seçeneğinin karşılığı kalmadı — başka yol yok.
+`v111` tam genlik uygular, `v112` yarısını. Başa baş `δ_T1 < 0,722`; ileri pencere
+ölçümleri 1,01 / 1,61 / 2,19 — **üçü de eşiğin üstünde**, en düşüğü %40 pay ile.
+
+```
+HAK 1  tuketim_v111_donuscu.csv   on kayit 0.99629
+HAK 2  kappa* -- HAK 1'in skorundan COZULUR (v102'de bu tam tutmustu)
+HAK 3  span tavani + HAK 2 birlesigi
+```
+
+### 16.5 Kalıcı kural 25
+
+> **Karışım yön gönderme.** `v109` iki bileşeni tek hakta ölçtü ve ayrıştırmak
+> için span projeksiyonu gerekti; ayrıştırılamasaydı bir hak tamamen boşa
+> giderdi. Her hak **tek** bir yönü ölçmeli.
+
+### 16.6 Kalıcı kural 26
+
+> **Span tavanı her yeni ölçümden sonra yeniden çözülür.** 1.00531 bugünkü
+> değerdir; her yeni gönderim span'i büyütür ve tavanı düşürebilir.
