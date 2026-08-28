@@ -211,3 +211,91 @@ Ayrı bir kolda ölçüldü (`experiments/model29/m10_sicak_seviye.json`), GBM z
 - **Hata kütlesi aşırı yoğun:** en kötü %1 satır kütlenin %67'si; 2.809 trafodan
   en kötüsü 15'i %43'ü. Neredeyse hepsi tek kalıp: geçmişi tam sıfır olan trafo
   hedefte uyanıyor. Bu grupta **mükemmel sabit bile 2,14 RMSLE** — indirgenemez.
+
+---
+
+## 7. GECE EKI — hava verisi (28 Ağustos 18:00–21:00)
+
+LB listesi yenilendi, **4. sıraya düştük**: `1. Grid Grinders 0.99064 · 2. Atakan Aldemir
+1.00041 · 3. Şaban Özdoğan 1.00543 · 4. TasnifX 1.00553 · 5. Ahmet Çelik 1.00559`.
+3.–5. sıra 0,00016 içinde; gerçek eşikler 2. için `−0,0051`, 1. için `−0,0149`.
+
+### 7.1 Grup A denetimi — kapalı
+Geçmişi baştan sona sıfır olan sıcak trafolar (test'te 25.566 satır). Geri-testte
+modelin yanlılığı yalnız `+0,33` (2025-11-30: gerçek 0,2668 / model 0,5997) ve
+**sabitle değiştirmek KAYBETTIRIYOR** (−0,014 … −0,024 her sabitte). Model bu
+kohortu zaten doğru ele alıyor. Eksen kapalı.
+
+### 7.2 Model çeşitliliği
+İki kesimde de kazananlar: yakınlık ağırlığı `1,15^i` (−0,0053 / −0,0006),
+havuz+rejim-uzmanı ortalaması (−0,0029 / −0,0050), `lr=0,02` (−0,0013 / −0,0015).
+
+### 7.3 HAVA VE DIŞ VERİ — büyük kazanç
+`ilce_key` eşleme **%100** (train ve test), test döneminin **47 ilçe × 122 gün**
+tamamı kapsanıyor, NaN yok. Aile bazında (huber tek başına, taban 1,0637 / 1,2440):
+
+```
+aile                                 11-30      09-30    hukum
+A  sicaklik CDD/HDD + 3/7/14g ort   +0,0183   +0,0290   ALINDI
+C  nem / toprak / yagis             +0,0109   +0,0261   ALINDI
+G  trafo x sicaklik duyarliligi     +0,0066   +0,0210   ALINDI
+E  turizm / su                      +0,0018   +0,0098   ALINDI
+B  gunes / gun uzunlugu             +0,0001   +0,0156   (A ile ortusuyor)
+D  statik ilce (arazi/OSM)          -0,0007   -0,0034   ELENDI
+```
+
+`huber+l1` harmanında, test-karışımı (çapalı):
+
+| konfig | 2025-11-30 | 2025-09-30 | ort |
+|---|---|---|---|
+| havasız düz (`m3`) | 1,0415 | 1,2285 | 1,1350 |
+| havasız + yakınlık | 1,0364 | 1,2281 | 1,1323 |
+| **havalı düz (`m4`)** | **1,0359** | **1,1995** | **1,1177** |
+| havalı + yakınlık | 1,0323 | 1,2016 | 1,1169 |
+
+Hava İKİ kesimde de kesin kazanıyor. **Yakınlık ağırlığı hava girince KARIŞIK**
+(−0,0036 / +0,0021) → kural 33 gereği alınmadı. Üretim: **havalı düz**.
+
+Üretim hattının `kis26` kaydına göre: **1,1063 → 1,0359 = −%6,4.**
+
+### 7.4 Neden hava bu kadar önemli — 2026 yazı DAHA SERİN
+```
+ay   2025 sic  2026 sic    fark   CDD22 orani (2026/2025)
+ 5     19,79     17,92    -1,87        0,17
+ 6     26,52     24,77    -1,74        0,65
+ 7     29,85     27,59    -2,26        0,72
+```
+Test penceresi klima sezonu ve 2026'nın soğutma yükü 2025'in %65–72'si.
+Bunun modele yansıması ölçüldü — son-7-gün seviyesine göre ay kayması:
+```
+ay     v102       m3    m4 HAVA   2025 GERCEK
+ 4   -0,0810  -0,0915   -0,0324     +0,0073
+ 5   -0,0625  -0,0314   -0,0162     -0,0229
+ 6   +0,2045  +0,1781   +0,1328     +0,2948
+ 7   +0,4610  +0,3339   +0,3161     +0,6161
+```
+`m4`'ün Haziran/Temmuz'da daha ılımlı kalması **kusur değil**, gerçekleşmiş havanın
+sonucu. Ayrıca `m4`'ün seviyesi `v102`'ninkine doğal olarak çok daha yakın çıktı
+(çekirdek çapası `−0,0833` yerine yalnız `+0,0167`) — bağımsız bir tutarlılık işareti.
+
+### 7.5 GÜNCEL PLAN — `m4` birincil aday
+
+Dosya: `submissions/tuketim_m4_hava_capali.csv` (714.688 satır, ID birebir,
+0 NaN, 0 negatif, maks 142.376, 133 öznitelik).
+
+```
+Q(m4, v102) = 0,121581      BASABAS 1,06427
+      S      kappa*   optimum RMSLE
+  0,95000   +0,9466     0,94982
+  0,97000   +0,7887     0,96720
+  0,99000   +0,6274     0,98144      <- 1. SIRA
+  1,00553   +0,5000     0,99030      <- 2. SIRA
+  1,02000   +0,3795     0,99679      <- 2. SIRA
+  1,04000   +0,2100     1,00286
+```
+
+| HAK | ne |
+|---|---|
+| **1** | `tuketim_m4_hava_capali.csv` → `S` ölçülür |
+| **2** | `python experiments/model29/m50_harman_coz.py tuketim_m4_hava_capali.csv <S>` |
+| **3** | yedek üçüncü yön: `tuketim_m3_hl1_capali.csv` (`Q(m4,m3)=0,0193`, korelasyon 0,997) |

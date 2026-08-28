@@ -1,0 +1,32 @@
+
+===== 2025-11-30  toplam RMSLE 0.9278 =====
+GRUP A (gecmis tamamen sifir, sicak): 14,007 satir (%3.18), 135 trafo
+  GERCEK log-ort 0.2668   MODEL log-ort 0.5997   yanlilik +0.3329
+  bu dilimde RMSLE 0.9764, toplam kutlenin %3.5'i
+  hedefte uyanan (y>1) satir orani %3.9
+   sabit c  toplam RMSLE   kazanc
+     0.500        0.9428  -0.0149
+     0.750        0.9458  -0.0179
+     1.000        0.9509  -0.0231
+     1.500        0.9672  -0.0394
+     2.000        0.9913  -0.0635
+     0.267        0.9418  -0.0140
+  kaydirma -0.5      0.9264  +0.0014
+  kaydirma -1.0      0.9335  -0.0057
+  kaydirma -1.5      0.9490  -0.0212
+
+===== 2025-09-30  toplam RMSLE 1.2595 =====
+GRUP A (gecmis tamamen sifir, sicak): 6,814 satir (%1.79), 73 trafo
+  GERCEK log-ort 0.9235   MODEL log-ort 1.2729   yanlilik +0.3493
+  bu dilimde RMSLE 1.9021, toplam kutlenin %4.1'i
+  hedefte uyanan (y>1) satir orani %13.3
+   sabit c  toplam RMSLE   kazanc
+     0.500        1.2774  -0.0179
+     0.750        1.2764  -0.0169
+     1.000        1.2762  -0.0167
+     1.500        1.2785  -0.0190
+     2.000        1.2842  -0.0248
+     0.924        1.2761  -0.0167
+  kaydirma -0.5      1.2588  +0.0007
+  kaydirma -1.0      1.2616  -0.0021
+  kaydirma -1.5      1.2680  -0.0085

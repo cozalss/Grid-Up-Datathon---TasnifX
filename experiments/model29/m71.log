@@ -1,0 +1,29 @@
+  kesim 2025-03-31: 274,929 (15s)
+  kesim 2025-04-30: 288,083 (18s)
+  kesim 2025-05-31: 296,798 (22s)
+  kesim 2025-06-30: 305,529 (25s)
+  kesim 2025-07-31: 319,732 (29s)
+  kesim 2025-08-31: 345,941 (34s)
+  kesim 2025-09-30: 381,282 (39s)
+  kesim 2025-10-31: 410,464 (44s)
+  kesim 2025-11-30: 440,147 (50s)
+  kesim 2025-12-31: 338,187 (55s)
+  TEST 714,688 satir, 133 ozellik, soguk %22.2 (64s)
+  huber tohum 7 (128s)
+  huber tohum 17 (195s)
+  huber tohum 27 (256s)
+  l1 tohum 7 (372s)
+  l1 tohum 17 (483s)
+  l1 tohum 27 (597s)
+  capa soguk: -0.2881
+  capa kuyruk: -0.0340
+  capa cekirdek: +0.0167
+KAPI: {"satir": 714688, "id_birebir": true, "nan": 0, "negatif": 0, "maks": 142376.26509744272, "log_ort": 6.601986680197205}
+Q(vs v102)=0.121581  basabas 1.06427
+   S=0.95000 kappa*=+0.9466 optimum 0.94982
+   S=0.97000 kappa*=+0.7887 optimum 0.96720
+   S=0.99000 kappa*=+0.6274 optimum 0.98144
+   S=1.00553 kappa*=+0.5000 optimum 0.99030
+   S=1.02000 kappa*=+0.3795 optimum 0.99679
+   S=1.04000 kappa*=+0.2100 optimum 1.00286
+YAZILDI C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\submissions\tuketim_m4_hava_capali.csv (599s)
