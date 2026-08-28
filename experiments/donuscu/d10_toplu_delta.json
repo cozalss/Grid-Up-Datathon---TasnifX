@@ -1,0 +1,104 @@
+{
+  "bosluk>=90": {
+    "toplu_gunler_tam_pencereli": [
+      "2025-05-20",
+      "2025-06-17"
+    ],
+    "bloklar": {
+      "TOPLU": {
+        "trafo": 31,
+        "satir": 3258,
+        "W_ortalama": -0.4769,
+        "W_medyan": 0.1856,
+        "W_budanmis10": -0.1736,
+        "W_std": 1.8737,
+        "gunler": [
+          "2025-05-20",
+          "2025-06-17"
+        ]
+      },
+      "ORGANIK": {
+        "trafo": 54,
+        "satir": 5569,
+        "W_ortalama": 0.4244,
+        "W_medyan": 0.7337,
+        "W_budanmis10": 0.4975,
+        "W_std": 1.0123,
+        "gunler": [
+          "2025-04-16",
+          "2025-04-28",
+          "2025-05-08",
+          "2025-05-09",
+          "2025-05-12",
+          "2025-05-14"
+        ]
+      },
+      "T1-benzeri (son60_ofs<=-2 & n>=30) | TOPLU": {
+        "trafo": 1,
+        "satir": 77,
+        "W_ortalama": -5.6243,
+        "W_medyan": -5.6243,
+        "W_budanmis10": -5.6243,
+        "W_std": null,
+        "gunler": [
+          "2025-05-20"
+        ]
+      },
+      "T1-benzeri (son60_ofs<=-2 & n>=30) | ORGANIK": {
+        "trafo": 2,
+        "satir": 244,
+        "W_ortalama": -0.5103,
+        "W_medyan": -0.5103,
+        "W_budanmis10": NaN,
+        "W_std": 0.2701,
+        "gunler": [
+          "2025-09-17",
+          "2025-11-07"
+        ]
+      }
+    },
+    "FARK_toplu_eksi_organik": {
+      "hepsi": {
+        "ortalama": -0.9013,
+        "medyan": -0.5481,
+        "budanmis10": -0.6711
+      },
+      "T1-benzeri (son60_ofs<=-2 & n>=30)": {
+        "ortalama": -5.114,
+        "medyan": -5.114,
+        "budanmis10": NaN
+      }
+    }
+  },
+  "bosluk>=180": {
+    "toplu_gunler_tam_pencereli": [],
+    "bloklar": {
+      "TOPLU": {
+        "trafo": 0
+      },
+      "ORGANIK": {
+        "trafo": 12,
+        "satir": 1225,
+        "W_ortalama": 0.5559,
+        "W_medyan": 0.9271,
+        "W_budanmis10": 0.6187,
+        "W_std": 1.1524,
+        "gunler": [
+          "2025-07-22",
+          "2025-08-01",
+          "2025-08-12",
+          "2025-09-06",
+          "2025-09-07",
+          "2025-09-10"
+        ]
+      },
+      "T2-benzeri (son60_ofs<=0) | TOPLU": {
+        "trafo": 0
+      },
+      "T2-benzeri (son60_ofs<=0) | ORGANIK": {
+        "trafo": 0
+      }
+    },
+    "FARK_toplu_eksi_organik": {}
+  }
+}

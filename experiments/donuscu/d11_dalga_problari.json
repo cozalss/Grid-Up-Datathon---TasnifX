@@ -1,0 +1,236 @@
+{
+  "dalga_gunu": "2026-05-11",
+  "adim": -0.3,
+  "taban": "tuketim_v102_kappa_optimum.csv",
+  "v102_MSE": 1.011091,
+  "problar": {
+    "tuketim_p11_dalga_soguk.csv": {
+      "aciklama": "train gecmisi YOK",
+      "trafo": 1326,
+      "satir": 108253,
+      "pay": 0.15147,
+      "Q": 0.013632200344765928,
+      "HAK1_kendi_skoru_gercek_ofset_eksi030_ise": 0.998729,
+      "senaryolar": {
+        "gercek_ofset=-0.50": {
+          "L": 0.02272,
+          "SNR": 3182.1,
+          "HAK2_kazanc": 0.037867,
+          "HAK2_MSE": 0.973224,
+          "HAK2_RMSLE": 0.986521
+        },
+        "gercek_ofset=-0.40": {
+          "L": 0.018176,
+          "SNR": 2545.7,
+          "HAK2_kazanc": 0.024235,
+          "HAK2_MSE": 0.986856,
+          "HAK2_RMSLE": 0.993406
+        },
+        "gercek_ofset=-0.30": {
+          "L": 0.013632,
+          "SNR": 1909.3,
+          "HAK2_kazanc": 0.013632,
+          "HAK2_MSE": 0.997459,
+          "HAK2_RMSLE": 0.998729
+        },
+        "gercek_ofset=-0.20": {
+          "L": 0.009088,
+          "SNR": 1272.8,
+          "HAK2_kazanc": 0.006059,
+          "HAK2_MSE": 1.005032,
+          "HAK2_RMSLE": 1.002513
+        },
+        "gercek_ofset=-0.15": {
+          "L": 0.006816,
+          "SNR": 954.6,
+          "HAK2_kazanc": 0.003408,
+          "HAK2_MSE": 1.007683,
+          "HAK2_RMSLE": 1.003834
+        },
+        "gercek_ofset=-0.10": {
+          "L": 0.004544,
+          "SNR": 636.4,
+          "HAK2_kazanc": 0.001515,
+          "HAK2_MSE": 1.009576,
+          "HAK2_RMSLE": 1.004777
+        },
+        "gercek_ofset=0.10": {
+          "L": -0.004544,
+          "SNR": -636.4,
+          "HAK2_kazanc": 0.001515,
+          "HAK2_MSE": 1.009576,
+          "HAK2_RMSLE": 1.004777
+        },
+        "gercek_ofset=0.20": {
+          "L": -0.009088,
+          "SNR": -1272.8,
+          "HAK2_kazanc": 0.006059,
+          "HAK2_MSE": 1.005032,
+          "HAK2_RMSLE": 1.002513
+        },
+        "gercek_ofset=0.30": {
+          "L": -0.013632,
+          "SNR": -1909.3,
+          "HAK2_kazanc": 0.013632,
+          "HAK2_MSE": 0.997459,
+          "HAK2_RMSLE": 0.998729
+        }
+      }
+    },
+    "tuketim_p12_dalga_aktif.csv": {
+      "aciklama": "son kayit >= 2026-03-27 (grup A)",
+      "trafo": 502,
+      "satir": 40771,
+      "pay": 0.05705,
+      "Q": 0.005131771397139667,
+      "HAK1_kendi_skoru_gercek_ofset_eksi030_ise": 1.002974,
+      "senaryolar": {
+        "gercek_ofset=-0.50": {
+          "L": 0.008557,
+          "SNR": 1198.5,
+          "HAK2_kazanc": 0.014262,
+          "HAK2_MSE": 0.996829,
+          "HAK2_RMSLE": 0.998413
+        },
+        "gercek_ofset=-0.40": {
+          "L": 0.006846,
+          "SNR": 958.8,
+          "HAK2_kazanc": 0.009128,
+          "HAK2_MSE": 1.001963,
+          "HAK2_RMSLE": 1.000981
+        },
+        "gercek_ofset=-0.30": {
+          "L": 0.005134,
+          "SNR": 719.1,
+          "HAK2_kazanc": 0.005134,
+          "HAK2_MSE": 1.005957,
+          "HAK2_RMSLE": 1.002974
+        },
+        "gercek_ofset=-0.20": {
+          "L": 0.003423,
+          "SNR": 479.4,
+          "HAK2_kazanc": 0.002282,
+          "HAK2_MSE": 1.008809,
+          "HAK2_RMSLE": 1.004395
+        },
+        "gercek_ofset=-0.15": {
+          "L": 0.002567,
+          "SNR": 359.5,
+          "HAK2_kazanc": 0.001284,
+          "HAK2_MSE": 1.009807,
+          "HAK2_RMSLE": 1.004892
+        },
+        "gercek_ofset=-0.10": {
+          "L": 0.001711,
+          "SNR": 239.7,
+          "HAK2_kazanc": 0.00057,
+          "HAK2_MSE": 1.010521,
+          "HAK2_RMSLE": 1.005247
+        },
+        "gercek_ofset=0.10": {
+          "L": -0.001711,
+          "SNR": -239.7,
+          "HAK2_kazanc": 0.00057,
+          "HAK2_MSE": 1.010521,
+          "HAK2_RMSLE": 1.005247
+        },
+        "gercek_ofset=0.20": {
+          "L": -0.003423,
+          "SNR": -479.4,
+          "HAK2_kazanc": 0.002282,
+          "HAK2_MSE": 1.008809,
+          "HAK2_RMSLE": 1.004395
+        },
+        "gercek_ofset=0.30": {
+          "L": -0.005134,
+          "SNR": -719.1,
+          "HAK2_kazanc": 0.005134,
+          "HAK2_MSE": 1.005957,
+          "HAK2_RMSLE": 1.002974
+        }
+      }
+    },
+    "tuketim_p13_dalga_kesik.csv": {
+      "aciklama": "son kayit <  2026-03-27 (grup B)",
+      "trafo": 394,
+      "satir": 32014,
+      "pay": 0.04479,
+      "Q": 0.004031493462881702,
+      "HAK1_kendi_skoru_gercek_ofset_eksi030_ise": 1.003524,
+      "senaryolar": {
+        "gercek_ofset=-0.50": {
+          "L": 0.006719,
+          "SNR": 941.1,
+          "HAK2_kazanc": 0.011199,
+          "HAK2_MSE": 0.999892,
+          "HAK2_RMSLE": 0.999946
+        },
+        "gercek_ofset=-0.40": {
+          "L": 0.005375,
+          "SNR": 752.8,
+          "HAK2_kazanc": 0.007167,
+          "HAK2_MSE": 1.003924,
+          "HAK2_RMSLE": 1.00196
+        },
+        "gercek_ofset=-0.30": {
+          "L": 0.004031,
+          "SNR": 564.6,
+          "HAK2_kazanc": 0.004031,
+          "HAK2_MSE": 1.00706,
+          "HAK2_RMSLE": 1.003524
+        },
+        "gercek_ofset=-0.20": {
+          "L": 0.002688,
+          "SNR": 376.4,
+          "HAK2_kazanc": 0.001792,
+          "HAK2_MSE": 1.009299,
+          "HAK2_RMSLE": 1.004639
+        },
+        "gercek_ofset=-0.15": {
+          "L": 0.002016,
+          "SNR": 282.3,
+          "HAK2_kazanc": 0.001008,
+          "HAK2_MSE": 1.010083,
+          "HAK2_RMSLE": 1.005029
+        },
+        "gercek_ofset=-0.10": {
+          "L": 0.001344,
+          "SNR": 188.2,
+          "HAK2_kazanc": 0.000448,
+          "HAK2_MSE": 1.010643,
+          "HAK2_RMSLE": 1.005307
+        },
+        "gercek_ofset=0.10": {
+          "L": -0.001344,
+          "SNR": -188.2,
+          "HAK2_kazanc": 0.000448,
+          "HAK2_MSE": 1.010643,
+          "HAK2_RMSLE": 1.005307
+        },
+        "gercek_ofset=0.20": {
+          "L": -0.002688,
+          "SNR": -376.4,
+          "HAK2_kazanc": 0.001792,
+          "HAK2_MSE": 1.009299,
+          "HAK2_RMSLE": 1.004639
+        },
+        "gercek_ofset=0.30": {
+          "L": -0.004031,
+          "SNR": -564.6,
+          "HAK2_kazanc": 0.004031,
+          "HAK2_MSE": 1.00706,
+          "HAK2_RMSLE": 1.003524
+        }
+      }
+    }
+  },
+  "hedefler": {
+    "ikinci": 1.00041,
+    "lider": 0.99138,
+    "ikinci_icin_gereken_kazanc": 0.0102708319,
+    "lider_icin_gereken_kazanc": 0.02825669559999988,
+    "toplam_dalga_payi": 0.25331,
+    "ucu_de_esitse_lider_icin_gereken_ofset": 0.3339908115864144,
+    "ucu_de_esitse_ikinci_icin_gereken_ofset": 0.2013615952591754
+  }
+}

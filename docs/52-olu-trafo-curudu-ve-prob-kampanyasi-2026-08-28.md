@@ -801,3 +801,115 @@ HAK 3  span tavani + HAK 2 birlesigi
 
 > **Span tavanı her yeni ölçümden sonra yeniden çözülür.** 1.00531 bugünkü
 > değerdir; her yeni gönderim span'i büyütür ve tavanı düşürebilir.
+
+---
+
+## 17. `v111` ÇÜRÜDÜ · 2026-05-11 dalgası · yeni plan
+
+### 17.1 `v111`/`v112` GÖNDERİLMEMELİ
+
+`d8_uret.py:28` `DELTA={"T1":1.4438,"T2":0.6378}` uyguluyor. Bu katsayı `d5`te
+**organik** dönüşlerden ölçüldü — hem de kesme başına **4-5 trafodan**
+(`2025-09-30: aday 101 → DÖNEN 4`). Hedef kohort ise:
+
+```
+T1  63 trafo -> %85.7 TOPLU  (33'u 2026-05-03, 21'i 2026-05-11)
+T2  77 trafo -> %84.4 TOPLU  (65'i 2026-05-11)
+```
+
+§14.4 bu riski görmüş, **üretime hiç geçmemiş**. `d8` tek katsayıyı ayrım
+yapmadan uyguluyor.
+
+### 17.2 Toplu dönüşün δ'sı ÖLÇÜLDÜ (`d10`)
+
+`d7`de ortalama −0,466 iken trafo-medyanı +0,186 idi; işaret çelişiyordu.
+Tam 122 günlük ileri pencere şartı + gün-kontrolü ile yeniden ölçüldü:
+
+```
+                trafo  satir   ortalama   medyan  budanmis%10   std
+TOPLU              31   3258    -0.4769  +0.1856      -0.1736  1.87
+ORGANIK            54   5569    +0.4244  +0.7337      +0.4975  1.01
+FARK (T-O)                      -0.9013  -0.5481      -0.6711
+```
+
+**Üç sağlam istatistik de aynı işarette:** toplu dönüşler organikten
+0,55–0,90 log birim aşağıda. `d7`nin işaret çelişkisi kısmi pencere
+artığıymış. Dolayısıyla `δ_toplu ≈ δ_organik − 0,67` → uygulanan 1,4438'e göre
+`g ≈ 0,25–0,55`, başa baş ise 0,50. **`v111` başa başın altında.**
+
+### 17.3 ASIL BULGU — 2026-05-11 dalgası, testin %25,33'ü
+
+Panel giriş günleri:
+```
+2026-04-01  3928 trafo  469.821 satir  %65.7   panel basi
+2026-05-11  2222 trafo  181.038 satir  %25.3   <- SISTEMIK DEVREYE ALMA
+2026-05-03   141 trafo   12.223 satir   %1.7
+```
+
+Bu blok bugüne kadar **kendi yönü olarak hiç prob edilmedi** — §16'nın "span
+tükendi" hükmünün dışında kalan yön tam olarak budur. Üç ayrık alt kümeye
+bölündü (satır kümeleri kesişmiyor → yönler dik):
+
+```
+alt kume                                trafo   satir      pay      Q(s=0.30)
+P11 soguk : train gecmisi YOK            1326  108.253   %15.15    0.013632
+P12 aktif : son kayit >= 2026-03-27       502   40.771    %5.70    0.005134
+P13 kesik : son kayit <  2026-03-27       394   32.014    %4.48    0.004031
+                                         2222  181.038   %25.33
+```
+
+`HAK2` kazancı `= δ² × pay`, prob adımından **bağımsız**. Eşikler:
+```
+ucu de |delta| 0.2014 ise  ->  2. sirayi gecer
+ucu de |delta| 0.3340 ise  ->  LIDERI GECER
+```
+
+### 17.4 Önsel: `v102` dalgayı YUKARI yazıyor
+
+Train geçmişi olan iki alt kümede, 2025'in aynı penceresine karşı
+(mevsim kayması dalga-dışı 4.086 trafodan +0,0376 ölçülüp düzeltildi):
+
+```
+grup    trafo   train ofs 2025-05-11..07-31   v102 ofs    fark   duzeltilmis
+aktif     502                        0.4693     0.6306  -0.1613     -0.1238
+kesik     394                        0.4318     0.7421  -0.3102     -0.2727
+```
+
+Yani beklenen gerçek ofset **negatif**; prob adımı `s = −0,30` seçildi.
+HAK2 kazancı `L²/Q ≥ 0` olduğu için işaret sonucu değiştirmez, yalnız probun
+kendi skorunu etkiler.
+
+> Soğuk blok için önsel YOK (train geçmişi yok). Uyarı: LB ile çözülmüş soğuk
+> sabiti (+0,104600) tüm soğuk satırlar üzerinden çözüldü ve soğuğun **%68'i**
+> bu dalga; yani o sabit zaten büyük ölçüde dalga-soğuğa göre ayarlı. Artık
+> sinyal küçük olabilir.
+
+### 17.5 Plan (29-30 Ağustos)
+
+```
+29 Agu HAK1  tuketim_p11_dalga_soguk.csv    Q=0.013632   SNR >= 240
+       HAK2  tuketim_p12_dalga_aktif.csv    Q=0.005134   SNR >= 120
+       HAK3  tuketim_p13_dalga_kesik.csv    Q=0.004031   SNR >=  94
+30 Agu HAK1  d12_coz.py --soguk .. --aktif .. --kesik ..
+             -> tuketim_v120_dalga_optimum.csv,  kazanc = sum L_i^2/Q_i >= 0
+```
+
+Üç prob da kapı denetiminden geçti (714.688 satır, id sırası birebir,
+0 NaN/negatif). Diklik doğrulandı: ikişerli ortak satır **0**.
+
+**Kaggle en iyi public skoru tuttuğu için kötü bir prob sıramızı DÜŞÜRMEZ** —
+`v109` 1.01818 geldi, tablo hâlâ 1.00553 gösteriyor. Prob bedava; yalnız hak
+harcar.
+
+### 17.6 Kalıcı kural 27
+
+> **Ölçülen katsayı, ölçüldüğü nüfusa uygulanır.** `d8` organik dönüşlerden
+> çıkan 1,4438'i %85'i toplu olan bir kohorta uyguladı. Bir δ üretime
+> geçmeden önce "hangi nüfusta ölçüldü, hangi nüfusa uygulanıyor" sorusu
+> yazılı olarak cevaplanır.
+
+### 17.7 Kalıcı kural 28
+
+> **Ayrı ölç, sonra birleştir.** Alt kümelerin işareti farklı olabiliyorsa tek
+> yönde birleştirmek Cauchy-Schwarz gereği kayıptır:
+> `sum(pay_i·δ_i²) >= (sum pay_i·δ_i)² / sum pay_i`. Hak varken ayrı ölç.

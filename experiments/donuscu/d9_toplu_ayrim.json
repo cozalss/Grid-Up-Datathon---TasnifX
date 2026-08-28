@@ -1,0 +1,222 @@
+{
+  "taban": "tuketim_v102_kappa_optimum.csv",
+  "delta_kaynagi": "d5 ORGANIK donusler (4-5 trafo/kesme)",
+  "toplu_esik": 8,
+  "toplu_gunler": [
+    "2026-05-03",
+    "2026-05-11"
+  ],
+  "v102_MSE": 1.011091,
+  "dosyalar": {
+    "tuketim_v113_toplu_prob.csv": {
+      "etiket": "TOPLU giren kohort",
+      "trafo": 119,
+      "degisen_satir": 9825,
+      "Q_v102ye_gore": 0.01630882087988045,
+      "basa_bas_g": 0.5,
+      "HAK1_duyarlilik": {
+        "g=-0.50": {
+          "kazanc": -0.032618,
+          "MSE": 1.043709,
+          "RMSLE": 1.021621
+        },
+        "g=+0.00": {
+          "kazanc": -0.016309,
+          "MSE": 1.0274,
+          "RMSLE": 1.013607
+        },
+        "g=+0.25": {
+          "kazanc": -0.008154,
+          "MSE": 1.019245,
+          "RMSLE": 1.009577
+        },
+        "g=+0.50": {
+          "kazanc": 0.0,
+          "MSE": 1.011091,
+          "RMSLE": 1.00553
+        },
+        "g=+0.75": {
+          "kazanc": 0.008154,
+          "MSE": 1.002937,
+          "RMSLE": 1.001467
+        },
+        "g=+1.00": {
+          "kazanc": 0.016309,
+          "MSE": 0.994782,
+          "RMSLE": 0.997388
+        },
+        "g=+1.50": {
+          "kazanc": 0.032618,
+          "MSE": 0.978473,
+          "RMSLE": 0.989178
+        },
+        "g=+2.00": {
+          "kazanc": 0.048926,
+          "MSE": 0.962165,
+          "RMSLE": 0.9809
+        }
+      },
+      "HAK2_kappa_optimumu": {
+        "g=-0.50": {
+          "kappa*": -0.5,
+          "kazanc": 0.004077,
+          "MSE": 1.007014,
+          "RMSLE": 1.003501
+        },
+        "g=+0.00": {
+          "kappa*": 0.0,
+          "kazanc": 0.0,
+          "MSE": 1.011091,
+          "RMSLE": 1.00553
+        },
+        "g=+0.25": {
+          "kappa*": 0.25,
+          "kazanc": 0.001019,
+          "MSE": 1.010072,
+          "RMSLE": 1.005023
+        },
+        "g=+0.50": {
+          "kappa*": 0.5,
+          "kazanc": 0.004077,
+          "MSE": 1.007014,
+          "RMSLE": 1.003501
+        },
+        "g=+0.75": {
+          "kappa*": 0.75,
+          "kazanc": 0.009174,
+          "MSE": 1.001917,
+          "RMSLE": 1.000958
+        },
+        "g=+1.00": {
+          "kappa*": 1.0,
+          "kazanc": 0.016309,
+          "MSE": 0.994782,
+          "RMSLE": 0.997388
+        },
+        "g=+1.50": {
+          "kappa*": 1.5,
+          "kazanc": 0.036695,
+          "MSE": 0.974396,
+          "RMSLE": 0.987115
+        },
+        "g=+2.00": {
+          "kappa*": 2.0,
+          "kazanc": 0.065235,
+          "MSE": 0.945856,
+          "RMSLE": 0.972551
+        }
+      }
+    },
+    "tuketim_v114_organik_prob.csv": {
+      "etiket": "ORGANIK giren kohort",
+      "trafo": 25,
+      "degisen_satir": 1534,
+      "Q_v102ye_gore": 0.00219245404394645,
+      "basa_bas_g": 0.5,
+      "HAK1_duyarlilik": {
+        "g=-0.50": {
+          "kazanc": -0.004385,
+          "MSE": 1.015476,
+          "RMSLE": 1.007708
+        },
+        "g=+0.00": {
+          "kazanc": -0.002192,
+          "MSE": 1.013283,
+          "RMSLE": 1.00662
+        },
+        "g=+0.25": {
+          "kazanc": -0.001096,
+          "MSE": 1.012187,
+          "RMSLE": 1.006075
+        },
+        "g=+0.50": {
+          "kazanc": 0.0,
+          "MSE": 1.011091,
+          "RMSLE": 1.00553
+        },
+        "g=+0.75": {
+          "kazanc": 0.001096,
+          "MSE": 1.009995,
+          "RMSLE": 1.004985
+        },
+        "g=+1.00": {
+          "kazanc": 0.002192,
+          "MSE": 1.008899,
+          "RMSLE": 1.004439
+        },
+        "g=+1.50": {
+          "kazanc": 0.004385,
+          "MSE": 1.006706,
+          "RMSLE": 1.003347
+        },
+        "g=+2.00": {
+          "kazanc": 0.006577,
+          "MSE": 1.004514,
+          "RMSLE": 1.002254
+        }
+      },
+      "HAK2_kappa_optimumu": {
+        "g=-0.50": {
+          "kappa*": -0.5,
+          "kazanc": 0.000548,
+          "MSE": 1.010543,
+          "RMSLE": 1.005258
+        },
+        "g=+0.00": {
+          "kappa*": 0.0,
+          "kazanc": 0.0,
+          "MSE": 1.011091,
+          "RMSLE": 1.00553
+        },
+        "g=+0.25": {
+          "kappa*": 0.25,
+          "kazanc": 0.000137,
+          "MSE": 1.010954,
+          "RMSLE": 1.005462
+        },
+        "g=+0.50": {
+          "kappa*": 0.5,
+          "kazanc": 0.000548,
+          "MSE": 1.010543,
+          "RMSLE": 1.005258
+        },
+        "g=+0.75": {
+          "kappa*": 0.75,
+          "kazanc": 0.001233,
+          "MSE": 1.009858,
+          "RMSLE": 1.004917
+        },
+        "g=+1.00": {
+          "kappa*": 1.0,
+          "kazanc": 0.002192,
+          "MSE": 1.008899,
+          "RMSLE": 1.004439
+        },
+        "g=+1.50": {
+          "kappa*": 1.5,
+          "kazanc": 0.004933,
+          "MSE": 1.006158,
+          "RMSLE": 1.003074
+        },
+        "g=+2.00": {
+          "kappa*": 2.0,
+          "kazanc": 0.00877,
+          "MSE": 1.002321,
+          "RMSLE": 1.00116
+        }
+      }
+    }
+  },
+  "ozdeslik": {
+    "max_sapma": 4.440892098500626e-16,
+    "ortak_satir": 0,
+    "Q_toplam": 0.018501274923826902,
+    "Q_v111": 0.018501274923826895
+  },
+  "hedefler": {
+    "ikinci_RMSLE": 1.00041,
+    "lider_RMSLE": 0.99138,
+    "ikinci_icin_gereken_kazanc": 0.0102708319,
+    "lider_icin_gereken_kazanc": 0.02825669559999988
+  }
+}
