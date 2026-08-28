@@ -1268,3 +1268,88 @@ iyi ölçülmemiş şans.**
 > tahmini" karşılaştırması model hatası ölçmez; modelin gördüğü son pencereyle
 > (burada Q1) düzeltilmeden hiçbir eksen sıralamasına girmez. Düzeltilmemiş hâli
 > §18'de 7 kat şişirdi.
+
+---
+
+## 20. Span eleği ve bulunan tek gerçek şans: `KESİK` sıfırlama
+
+### 20.1 Yeni alet: gönderim harcamadan eleme
+
+Bir yönün span-içi kısmının `L`si 22 ölçülmüş skordan **cebirsel** çıkar. Yani
+her aday prob, gönderilmeden önce elenebilir. Bu alet bugün her şeye uygulandı.
+
+### 20.2 Elenen her şey
+
+```
+prob                  span-ici   delta_span   hukum
+p15_ana_blok            86.56%      -0.0069   temiz (yuksek kapsam -> GUVENILIR)
+p11_dalga_soguk         49.84%      -0.0102   bos
+p22_guney               39.06%      -0.0168   bos
+p25_soguk_diger         34.36%      +0.0182   bos
+p21_metropol            28.04%      -0.0113   bos
+p24_poz                  9.72%      -0.0981   onselin TERSI
+BUZME (p - ort)         32.58%      -0.0028   bos    Q=2.94
+SABIT (global seviye)   99.07%      -0.0047   bos    Q=1.00, seviye zaten optimal
+SOGUK sifirlama         69.69%      +0.0005   bos    Q=10.50
+TUM TEST sifirlama      95.08%      +0.0008   bos    Q=46.53, SNR 4752
+```
+
+Yapısal yön taraması (ay/hafta günü/ufuk/seviye desili/güç bandı/il, 28 yön):
+en iyi 20'nin **toplamı 0,004390** — ve bu dik olmayan bir üst sınır. Gereken
+0,010271.
+
+> Sıfır kalemi de kapandı: `TUM TEST sifirlama` %95,08 kapsam ve SNR 4752 ile
+> `φ = +0,0008` veriyor. Yani gerçeği sıfır olan satırlar toplam MSE'mizin
+> ancak ~%3,7'sini taşıyor; model onları zaten buluyor.
+
+### 20.3 Ayakta kalan tek yön
+
+```
+KESIK trafolari SIFIRLA
+  560 trafo  43.956 satir (%6.15)   Q = 2.9998     <- blok problarimin 200 kati
+  span kapsami %13.0                              <- %87'si HIC OLCULMEMIS
+  span-ici phi = +0.0134
+```
+
+**Span-içi kısmın boş çıkması aleyhte kanıt değil:** o %13, `v25_hedge` ve
+`v27_v18hedge` ile zaten düzelttiğimiz kısımdır. Taze sinyal ölçülmemiş %87'de.
+
+Ve `v102` bu trafoları **hedge etmiyor** — blokta ortalama `log1p²` = 48,8,
+test genelinde 46,5. Yani normal tüketim seviyesinde yazıyor.
+
+### 20.4 Karar kartı
+
+`d = −log1p(v102)` yalnız kesik satırlarda. `κ* = φ` doğrudan blokun
+**ağırlıklı sıfır oranıdır**; `[0,1]` aralığında olduğu için `(1−κ)·log1p`
+asla negatife düşmez — **kırpma imkânsız.**
+
+```
+gelen skor   phi      HAK2 kazanci   HAK2 RMSLE   konum
+   2.00273   0.00%       0.000000      1.00553    3.
+   1.95728   3.00%       0.002700      1.00419    3.
+   1.91310   5.85%       0.010266      1.00041    2. sira ESIGI
+   1.87908   8.00%       0.019199      0.99594    2. SIRA
+   1.84688  10.00%       0.029998      0.99050    1. SIRA
+   1.76379  15.00%       0.067496      0.97139    1. SIRA
+```
+
+Grup B'nin ölçülmüş sıfır oranı **%1,7 – %28** (`docs/43`). Eşik %5,85.
+
+### 20.5 Dürüst kayıt
+
+`φ` **ağırlıklı** sıfır oranıdır (`log1p(v102)²` ile ağırlıklı), ham sıfır oranı
+değil. Gerçekte sıfır olan satırlar `v102`nin zaten düşük yazdığı satırlarsa
+`φ` ham orandan küçük çıkar. Span-içi ölçüm (%13 kapsam) `φ = 0,0134` diyor;
+bu, eşiğin beşte biri. **2. sıra garanti değil** — ama `Q = 3,0` ile bu, bugün
+taranan her şeyin içinde eşiğe ulaşabilen **tek** yön.
+
+### 20.6 29 Ağustos planı — nihai
+
+```
+HAK1  tuketim_p31_kesik_sifir.csv    phi'yi TAM olcer (skor ~2.0 gelecek, ONEMSIZ)
+HAK2  kappa* = phi uygulanir          kazanc phi^2 * 2.9998,  HER ZAMAN >= 0
+HAK3  p11_dalga_soguk                 (dik) ek olcum
+```
+
+`HAK1`in skoru ~2,0 gelecek; Kaggle en iyi skoru tuttuğu için sıramız
+etkilenmez (kanıt: `v109` 1.01818 geldi, tablo hâlâ 1.00553).
