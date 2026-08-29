@@ -1,0 +1,132 @@
+{
+ "tarih": "2026-08-29",
+ "rol": "KIRICI -- Plan B iddialarinin bagimsiz sinavi",
+ "taban": {"dosya": "tuketim_m6_ikiyon.csv", "LB": 1.00284, "m0": 1.005688, "N": 714688,
+           "olculmus_yon_sayisi": 25},
+
+ "iddia1_g7_L_gondermeden_hesaplanabilir": {
+  "hukum": "KISMEN KIRILDI -- cebir dogru, HATA BANDI 2.7 KAT KUCUK ILAN EDILMIS",
+  "cebir_bagimsiz_turetildi": true,
+  "turetim": "m_j=|d_j-r|^2/N=m0+Q_j-2<r,d_j>/N  =>  L_j=<r,d_j>/N=(m0+Q_j-m_j)/2. r=t-a0, a0=m6 log1p. sum(w)=1 SART: d_g7=g-a0=sum w_i P_i - a0 = sum w_i (P_i-a0) ancak sum(w)=1 ise. Dogrusallik <r,d_g7>=sum w_i <r,d_i> gecerli.",
+  "m101_yorum_hatasi": "m101_planB.py satirindaki '<r,d_j>/N = -L_j' yorumu ISARET OLARAK YANLIS (dogrusu +L_j). Kullanilan kod dogru; yalniz yorum yanlis.",
+  "olcumler": {"sum_w": 1.000000000, "artik_MSE": 3.043e-08, "artik_rms_log": 1.744e-04,
+               "L_g7": 0.002728, "Q_g7": 0.002494, "kazanc": 0.002984, "ongoru_skor": 1.00135,
+               "w_l1": 3.392},
+  "w_tekil_mi": {
+   "M_rank": 22, "n": 25, "cekirdek_boyutu": 3,
+   "teorik": "L=w@L cekirdek yonlerinde degismez OLMALI (sum v=0 ve sum v_i d_i=0 => sum v_i L_i=0)",
+   "sayisal_gercek": "DEGISIYOR",
+   "ayni_artikli_iki_cozucu": {"kisitli_lstsq_L": 0.002728, "D_uzayi_lstsq_L": 0.002786,
+                               "ikisinde_de_artik": 3.043e-08, "fark": 5.8e-05,
+                               "skor_farki": "1.00135 vs 1.00129"},
+   "w_l1_10_ile_sinirli_es_artik_tarama_dL_maks": 2.313e-04,
+   "sinirsiz_tarama_dL_maks": 0.504,
+   "sinirsiz_tarama_w_l1": 24054.8,
+   "not": "Degismezlik SARTSIZ degil, |w| kucuk kaldigi surece gecerli bir KOSULLANDIRMA ifadesi."
+  },
+  "artik_sifir_mi": {
+   "hukum": "SIFIR DEGIL",
+   "artik_MSE": 3.043e-08, "rms_log_birim": 1.744e-04,
+   "r_span_kare": 0.003371, "r_perp_kare": 1.002317,
+   "olculemez_katki_siniri_Cauchy_Schwarz": 1.746e-04,
+   "L_nin_yuzdesi": 6.4,
+   "skor_bandi": {"alt": 1.00115, "orta": 1.00135, "ust": 1.00154, "yari_genislik": 0.00019}
+  },
+  "bagimsiz_LOO_sinavi": {
+   "yontem": "her olculmus dosyayi disarida birak, kalan 24'ten L'sini tahmin et",
+   "ortalama_mutlak_hata_L": 3.45e-04, "medyan": 1.13e-04, "maks": 2.38e-03,
+   "artik_1e-6_altindaki_10_dosyada_maks_hata": 1.78e-04,
+   "yorum": "g7 gibi span-ici dosyalarda gercek hata ~1.8e-4 -- Cauchy-Schwarz siniriyla ayni mertebede, tesaduf degil"
+  },
+  "skor_yuvarlama_gurultusu": {"LB_ondalik": 5, "L_g7_uzerindeki_etki": 1.729e-05,
+                               "skor_etkisi": 0.00002, "hukum": "ihmal edilebilir"},
+  "kilavuz_iddiasi": "1.00137 +- 0.00007",
+  "kirici_hukmu": "gercekci band +- 0.00019 (2.7 kat daha genis). Iki bagimsiz ajanin ayni sayiyi bulmasi DOGRULAMA DEGIL -- ikisi de ayni span makinesini ve ayni olculemez e bilesenini tasiyor.",
+  "hafifletici": "L hatasi HAK3'un k'sini 0.070 kaydirir, GERCEK MSE cezasi 1.2e-05 (skorda 6e-06). Yani hata TAHMINI bozar, URETILEN DOSYAYI degil."
+ },
+
+ "iddia2_ucul_sistem_iyi_kosullu": {
+  "hukum": "GECTI",
+  "cond_G": 159.4,
+  "Q": [0.0025, 0.3884, 0.1672],
+  "kosinusler": [[1.0, -0.091, -0.081], [-0.091, 1.0, -0.095], [-0.081, -0.095, 1.0]],
+  "k1_senaryo_taramasi": {"r2_r3_araligi": "[0, 0.06], isaret serbest",
+                          "k1_maks": 1.639, "en_kotu_k": [1.345, 0.117, 0.177],
+                          "5_esigi_asiliyor_mu": false},
+  "AMA": "kilavuzun kendi uyarisi '|k| >= 0.45 ise on kayit bandi gecersiz' -- Plan B'de g7'nin k'si 1.11-1.35 cikiyor, yani kilavuz KENDI KURALINI TASARIM GEREGI ihlal ediyor. m6 -> g7 dogrultusunda %10-35 EKSTRAPOLASYON yapiliyor, dogrulanmis bolge disi."
+ },
+
+ "iddia3_planB_planA_dan_iyi": {
+  "hukum": "KIRILDI -- kosulsuz ustunluk yok",
+  "planA_nin_ustun_oldugu_senaryolar": [
+   "g7 gonderilirse L(g7) +-1.75e-4 belirsizlikten +-5e-6'ya duser; bu OLCUM 31 Agu ve 1 Eyl'deki TUM ortak cozumleri temizler. Plan B bu belirsizligi son gune kadar tasir.",
+   "HAK2'de y46'nin L'si ~0 gelirse (basabas 1.18073), Plan B'de HAK3 tamamen DOGRULANMAMIS span cebirine biner; Plan A'da span zaten dogrulanmistir.",
+   "HAK3 operasyonel olarak duserse gun 1.00284'te biter: 9 hakkin 3'u harcanir, ilerleme SIFIR. Plan A'da HAK1 ilk dakikada 1.00135'i kilitler ve 4. -> 3. sira guvenceye alinir.",
+   "Plan B'de g7'nin skoru m99'a EL ILE UYDURULACAK (1.001362). Bu adim docs/57'de YOK. Tek karakterlik bir hata sessizce felakete gotururu (asagi bak)."
+  ],
+  "HAK3_basarisizlik_riski": {
+   "uydurma_skor_typo_-0.001": {"m99_ongorusu": 1.00002, "k1": 1.523, "cond": 157,
+                                 "korkuluk": "HEPSI YESIL", "gerceklik": "cop dosya"},
+   "uydurma_skor_typo_-0.01": {"korkuluk": "tetiklendi (|k|1=5.17)", "yakalandi": true},
+   "uydurma_skor_typo_+0.01": {"m99_ongorusu": 0.99195, "k1": 2.983, "korkuluk": "HEPSI YESIL",
+                               "gerceklik": "k negatif, ters yon"},
+   "gecmis_kanit": "bu depoda zaman asimina ugrayan bir gonderim betigi yuzunden bir hak zaten bosa gitti (MEMORY.md)",
+   "buyukluk": "Plan B'nin asagi yonlu maliyeti = bir gun + 3 hak + tasinan belirsizlik. Geri gitme riski YOK (Kaggle en iyi public'i tutar)."
+  }
+ },
+
+ "iddia4_y46_y45_hazir": {
+  "hukum": "KAPI GECTI -- ama 'skoru sorun degil' ifadesi netlestirilmeli",
+  "tuketim_y46_amnezik_kirpik.csv": {
+   "satir": 714688, "id_sample_submission_ile": true, "id_test_csv_ile": true,
+   "nan": 0, "negatif": 0, "sonsuz": 0, "sifir": 0,
+   "maks": 98729, "ort": 1572.10, "Q": 0.3884,
+   "basabas_skor_L0": 1.18073,
+   "tabani_gecmesi_icin_gereken_r": 0.3116,
+   "olculmus_en_iyi_r": 0.124,
+   "beklenen_skor": "~1.18 (kacinilmaz). 'Ne gelirse gelsin' degil: 1.18 GELECEK."
+  },
+  "tuketim_y45_mevsimsel_kirpik.csv": {
+   "satir": 714688, "id_sample_submission_ile": true, "id_test_csv_ile": true,
+   "nan": 0, "negatif": 0, "sonsuz": 0, "sifir": 976,
+   "maks": 434388, "p99_99": 208246, "m6_maksini_asan_satir": 104, "1e5_ustu": 304,
+   "ort": 1964.54, "Q": 0.1672,
+   "basabas_skor_L0": 1.08298,
+   "tabani_gecmesi_icin_gereken_r": 0.2044,
+   "maks_434388_sorun_mu": "HAYIR -- TRAIN maks 50,403,051 ve TRAIN p99.99 = 275,254. 434k gozlemlenmis araligin tamamen icinde."
+  },
+  "risk": "Iki hak da tabanin cok ustunde skor uretecek. Kaggle en iyi public'i tuttugu icin sira gerilemez, ama 9 hakkin 2'si kalici bir puan getirmez."
+ },
+
+ "iddia5_m99_korkuluklari_yeterli": {
+  "hukum": "KIRILDI -- 4 delik",
+  "delik1_dosya_assert_ten_once_yaziliyor": {
+   "kanit": "out.to_csv ofset 3565 < assert ofset 3956",
+   "sonuc": "kapi denetimi patlarsa BOZUK DOSYA hedef adiyla diskte KALIR; sonraki adimda gonderilebilir"
+  },
+  "delik2_maks_deger_denetlenmiyor": {
+   "kanit": "kapi sozlugu 'maks' hesapliyor ama assert icinde YOK; isfinite denetimi de yok",
+   "somut_ornek": {"k": [1.0, -1.0, -1.0], "k1": 3.0, "tum_korkuluklar": "YESIL",
+                   "uretilen_dosya_maks": 3.889e06, "1e6_ustu_satir": 67}
+  },
+  "delik3_mse_m0_kontrolu_vacuous": {
+   "aciklama": "mse KULLANICININ VERDIGI skorlardan hesaplaniyor. Plan B'de g7'nin skoru uyduruluyor. -0.001'lik bir typo: ongoru 1.00002, |k|1=1.52, cond=157 -> DORT KORKULUK DA GECIYOR, sonuc cop.",
+   "eksik": "m99 hicbir skoru olculmus_skorlar.json ile karsilastirmiyor; taban skoru da denetlenmiyor"
+  },
+  "delik4_yon_dosyalarinin_id_hizasi_denetlenmiyor": "yon CSV'leri konumsal olarak hizalaniyor; farkli id sirasi sessizce yanlis d uretir (su anki dosyalar temiz, ama korkuluk yok)",
+  "onerilen_ek_korkuluklar": [
+   "to_csv'yi assert'ten SONRAYA al (tmp'ye yaz, gecerse tasi)",
+   "maks <= 3 * taban_maks ve np.isfinite(y).all() assert'i",
+   "her dosya=skor cifti icin olculmus_skorlar.json ile karsilastir; olmayan dosya icin --uydurma-skor bayragi ZORUNLU kil",
+   "her yon dosyasinin id'sini test.csv ile karsilastir"
+  ]
+ },
+
+ "ozet_hukum": {
+  "iddia1": "KISMEN KALDI (band 2.7x dar)",
+  "iddia2": "GECTI (ama kilavuzun kendi |k|<0.45 kurali ihlal ediliyor)",
+  "iddia3": "KALDI",
+  "iddia4": "GECTI (dosyalar temiz; y45 maks sorun degil)",
+  "iddia5": "KALDI"
+ }
+}

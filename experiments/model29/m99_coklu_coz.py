@@ -13,6 +13,7 @@ Ridge (public/private gurultusune karsi, kural 39):  k* = (G + lam*I)^-1 L
 import json
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -27,7 +28,42 @@ def yukle(ad):
     )
 
 
+def _skor_denetle(ad, skor):
+    """DELIK 3 (kirici ajan): m99 hicbir skoru olculmus kayitla karsilastirmiyordu.
+    Plan B'de g7'nin skoru EL ILE uyduruluyor; -0,001'lik bir typo dort korkulugun
+    da yesilinden geciyor ve cop dosya uretiyordu. Artik olculmus skorlarla
+    karsilastiriliyor; olculmemis dosya icin UYARI basiliyor."""
+    yol = os.path.join(os.path.dirname(os.path.abspath(__file__)), "olculmus_skorlar.json")
+    if not os.path.exists(yol):
+        return
+    with open(yol, encoding="utf-8") as f:
+        kayit = json.load(f)
+    if ad in kayit:
+        if abs(float(skor) - kayit[ad]) > 1e-9:
+            raise SystemExit(
+                f"SKOR UYUSMUYOR: {ad} icin verilen {skor}, olculmus {kayit[ad]}. "
+                "Yazim hatasi mi? Duzelt ya da olculmus_skorlar.json'i guncelle."
+            )
+    else:
+        print(f"[uyari] {ad} OLCULMEMIS -- skor {skor} EL ILE verildi, dogrulanamiyor")
+
+
+def _id_denetle(ad):
+    """DELIK 4: yon dosyalari konumsal hizalaniyordu; farkli ID sirasi sessizce
+    yanlis `d` uretir."""
+    yol = os.path.join(KOK, "submissions", ad) if not os.path.exists(ad) else ad
+    ids = pd.read_csv(yol, usecols=["id"]).id.values
+    te = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"), usecols=["id"]).id.values
+    if len(ids) != len(te) or not (ids == te).all():
+        raise SystemExit(f"ID HIZASI BOZUK: {ad} -- test.csv ile birebir degil")
+
+
 def coz(taban_ad, taban_skor, yonler, lam=0.0, cikti=None, yaz=True):
+    _skor_denetle(taban_ad, taban_skor)
+    _id_denetle(taban_ad)
+    for _ad, _sk in yonler:
+        _skor_denetle(_ad, _sk)
+        _id_denetle(_ad)
     a = yukle(taban_ad)
     N = len(a)
     m0 = float(taban_skor) ** 2
@@ -88,19 +124,41 @@ def coz(taban_ad, taban_skor, yonler, lam=0.0, cikti=None, yaz=True):
     out = pd.DataFrame({"id": te.id.values, "tuketim": y})
     cikti = cikti or "tuketim_coklu_optimum.csv"
     yol = os.path.join(KOK, "submissions", cikti)
-    out.to_csv(yol, index=False)
     ss = pd.read_csv(os.path.join(KOK, "data/raw/sample_submission.csv"))
+    taban_maks = float(np.expm1(a).max())
     kapi = dict(
         satir=len(out),
         id_birebir=bool((out.id.values == ss.iloc[:, 0].values).all()),
         nan=int(out.tuketim.isna().sum()),
         negatif=int((out.tuketim < 0).sum()),
+        sonsuz=int((~np.isfinite(out.tuketim.values)).sum()),
         maks=float(out.tuketim.max()),
+        taban_maks=taban_maks,
+        maks_orani=float(out.tuketim.max() / taban_maks),
     )
     print("KAPI:", json.dumps(kapi))
-    assert (
-        kapi["satir"] == 714688 and kapi["id_birebir"] and kapi["nan"] == 0 and kapi["negatif"] == 0
-    )
+    # DELIK 2 (kirici ajan, 29 Agustos): maks hesaplaniyordu ama ASSERT EDILMIYORDU.
+    # k=[1,0;-1,0;-1,0] ornegi dort korkulugun da yesilinden gecip maks 3,9e6 uretti.
+    sorun = []
+    if kapi["satir"] != 714688:
+        sorun.append(f"satir {kapi['satir']} != 714688")
+    if not kapi["id_birebir"]:
+        sorun.append("ID sirasi sample_submission ile UYUSMUYOR")
+    if kapi["nan"] or kapi["negatif"] or kapi["sonsuz"]:
+        sorun.append(f"NaN {kapi['nan']} negatif {kapi['negatif']} sonsuz {kapi['sonsuz']}")
+    if kapi["maks_orani"] > 3.0:
+        sorun.append(f"maks {kapi['maks']:.0f} tabanin {kapi['maks_orani']:.1f} katı (>3 yasak)")
+    if sorun:
+        print("\n!!! DUR — DOSYA YAZILMADI !!!")
+        for s_ in sorun:
+            print("   " + s_)
+        raise SystemExit("kapi denetimi kaldi -- dosya YAZILMADI")
+    # DELIK 1: eskiden to_csv assert'ten ONCE calisiyordu -> denetim patlarsa
+    # BOZUK DOSYA hedef adiyla diskte kaliyor ve gonderilebiliyordu. Artik once
+    # gecici dosyaya yazip, denetim gectikten SONRA tasiyoruz.
+    gecici = Path(yol + ".tmp")
+    out.to_csv(gecici, index=False)
+    gecici.replace(yol)
     print(f"YAZILDI {yol}")
     return np.sqrt(max(mse, 0)), k
 

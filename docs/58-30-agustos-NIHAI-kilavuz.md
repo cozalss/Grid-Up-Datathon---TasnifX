@@ -152,3 +152,54 @@ ikisi birden alınırsa kazançlar toplanmaz.
 | `tuketim_y45_mevsimsel_kirpik.csv` | 0,167 | 8,5 | %66 | −0,095 | 31 Ağu |
 | `tuketim_q1d_kuantil38_siki.csv` | 0,055 | 5,1 | %59 | −0,208 | 1 Eyl |
 | `tuketim_g7_span_tau3.csv` | 0,0025 | 23,1 | %0 | −0,091 | **gönderilmez** |
+
+---
+
+## KIRICI DENETIMI — 29 Ağustos gecesi, son tur
+
+Beş iddia sınandı: **2 geçti, 3 kırıldı.** Düzeltmeler yapıldı.
+
+### KIRILDI 1 — hata bandı 2,7 kat dar ilan edilmişti
+Gerçekçi band **±0,00019** (±0,00007 değil). Sebep: `g7`'nin span-dışı bileşeni
+(rms 1,74e-04 log-birim) ölçülemiyor; Cauchy-Schwarz sınırı `L`'nin %6,4'ü.
+Bağımsız LOO sınavında artığı <1e-6 olan 10 dosyada maks sapma 1,78e-04 —
+sınırla aynı mertebede, tesadüf değil.
+
+> **Ve keskin bir uyarı:** *iki bağımsız ajanın 1,00135 / 1,00137 demesi
+> DOĞRULAMA DEĞİL* — ikisi de aynı span makinesini ve aynı ölçülemez
+> bileşeni taşıyor. Bağımsızlık görünürde.
+
+**Hafifletici:** bu hata `k`'yı 0,070 kaydırır ama gerçek MSE cezası **1,2e-05**
+(skorda 6e-06). Yani *tahmini* bozar, *üretilen dosyayı* değil.
+
+### KIRILDI 2 — `m99` korkuluklarında 4 delik (HEPSİ KAPATILDI)
+1. **`to_csv` assert'ten ÖNCE çalışıyordu** → kapı denetimi patlarsa bozuk dosya
+   hedef adıyla diskte kalıyor ve gönderilebiliyordu. Artık geçici dosyaya yazılıp
+   denetim geçtikten **sonra** taşınıyor.
+2. **`maks` hesaplanıyor ama assert edilmiyordu.** `k=[1;−1;−1]` örneği dört
+   korkuluğun da yeşilinden geçip maks 3,9e6 üretiyordu. Artık
+   `maks ≤ 3×taban_maks` ve `isfinite` denetimi var.
+3. **Skorlar `olculmus_skorlar.json` ile karşılaştırılmıyordu.** `−0,001`'lik bir
+   yazım hatası tüm korkulukları geçip çöp dosya üretiyordu. Artık ölçülmüş
+   skorla çelişen değer **durduruyor**; ölçülmemiş dosya için uyarı basılıyor.
+4. **Yön dosyalarının ID hizası denetlenmiyordu** (konumsal hizalama). Artık
+   her dosya `test.csv` ile karşılaştırılıyor.
+
+Dördü de test edildi: sağlıklı durum geçiyor · skor typo'su yakalanıyor ·
+`g7` uydurma skoru uyarı verip devam ediyor · bozuk çözüm duruyor, dosya yazmıyor.
+
+### KIRILDI 3 — Plan B'nin üstünlüğü koşulsuz değil
+`g7` gönderilseydi `L(g7)` ±1,75e-04'ten ±5e-06'ya inerdi ve bu **31 Ağu + 1 Eyl'deki
+tüm ortak çözümleri** temizlerdi. Plan B bu belirsizliği son güne taşıyor.
+Karşı hesap: belirsizliğin bedeli çözüm başına 1,2e-05 MSE, üç çözümde 3,6e-05;
+bir hakkın değeri ~0,0016 MSE → **yine de 44 kat Plan B lehine.** Plan B kalıyor.
+
+### GEÇTİ — üçlü sistem ve dosyalar
+`cond(G₃) = 159,4`, karşılıklı kosinüsler |·| ≤ 0,10, senaryo taramasında
+`|k|₁` maks 1,639 (eşik 5). Dosyalar temiz; `y45`'in maks 434.388'i sorun değil
+(train maks 50,4M, p99.99 = 275.254).
+
+> **`|k| ≥ 0,45` kuralı vs yer değiştirme:** ilk kırıcı turu ölçmüştü ki öngörü
+> hatası `|k|` ile değil **yer değiştirme** ile büyüyor (korelasyon +0,75 vs +0,30).
+> Bizim yer değiştirmemiz **0,096**, doğrulanmış bölgenin (0,286) içinde. Kural
+> yanlış eksende ölçüyordu; bağlayıcı olan yer değiştirme ve o temiz.
