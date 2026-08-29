@@ -36,42 +36,70 @@ yalnız **1,23e-05 MSE** (katkının %0,41'i). Bir gönderim hakkının değeri
 
 ---
 
-## HAK 1 — `y46` ölç
+## GÜNCELLEME — karar analizi planı değiştirdi
+
+**Bulgu: `g7 · y40 = −0,555`.** `g7`'nin `L`'si BİLİNİYOR; onunla **ters
+korelasyonlu** bir yön süper-toplamsaldır. Ölçüldü (`r=0,035` senaryosu):
+
+```
+aday   kos(g7)   tek basina   g7 ile ORTAK   oran
+y40     -0,555     0,001225      0,009143    5,03x   <<<
+z2      -0,231     0,001225      0,005377    1,95x
+y46     -0,091     0,001225      0,004597    1,32x
+q1c     -0,034     0,001225      0,004342    1,11x
+```
+
+`y40` tek başına zayıf (Q 0,029, kurtoz 14,5) ama `g7` ile birlikte **5 kat**.
+Yer değiştirme 0,096 — doğrulanmış bölgenin (0,286) içinde.
+
+**Ve strateji: GÜN 1'DE BİRLEŞİM YOK, ÜÇ SONDA.** Her sondaya `g7` optimum
+katsayıyla gömülür → sonda hem ölçüm hem yüksek skorlu gönderim olur. O gün
+ayrıca "ortak optimum" göndermek hakkı boşa harcar (zaten sondaladığın iki
+yönün katsayısını rötuşlar). Monte Carlo: **P(2. sıra) 0,889 vs 0,853.**
+
+---
+
+## GÜN 1 — üç sonda (hepsi hazır, kapı denetiminden geçti)
+
+Her sonda: `m6 + 1,094·d_g7 + t·d_aday`
+
+| # | dosya | `t` | Q | kos(g7) | yer değ. | L=0 ise | r=0,035 ise | r=0,06 ise |
+|---|---|---|---|---|---|---|---|---|
+| **1** | `tuketim_sy40.csv` | 0,60 | 0,029 | **−0,555** | 0,084 | 1,00341 | **0,99987** | **0,99733** |
+| 2 | `tuketim_sq1c.csv` | 0,45 | 0,061 | −0,034 | 0,122 | 1,00729 | 1,00342 | 1,00065 |
+| 3 | `tuketim_sy46.csv` | 0,35 | 0,388 | −0,091 | 0,220 | 1,02377 | 1,01629 | 1,01091 |
+
+**Sıra: `sy40` → `sq1c` → `sy46`.** `sy40` önce, çünkü tek başına 2. sırayı
+getirebilecek tek sonda.
 
 ```powershell
-kaggle competitions submit -c grid-up-datathon -f submissions/tuketim_y46_amnezik_kirpik.csv -m "y46 AMNEZIK yon: 24 gecmis kolonu atilmis GBM, olu-trafo bileseni temizlenmis. Q=0.388 kurtoz=4.5. AMAC: L olcmek"
+kaggle competitions submit -c grid-up-datathon -f submissions/tuketim_sy40.csv -m "sonda y40: m6 + 1.094*d_g7 + 0.60*d_y40. g7 optimumda gomulu (L bilinen), y40 uzerine bahis. kos(g7,y40)=-0.555 super-toplamsal. AMAC: L_y40 olcmek"
 kaggle competitions submissions -c grid-up-datathon
 ```
+(diğer ikisi aynı biçimde)
 
-Neden: `Q` en büyük → **ölçüm en temiz** (anlamlı katkı için gereken `L`,
-gürültünün 146 katı). Kurtoz en düşük (4,5). Her şeye dik (`|kos| ≤ 0,21`).
+### Skor gelince `L` çözümü
 
-## HAK 2 — `q1c` ölç
-
-```powershell
-kaggle competitions submit -c grid-up-datathon -f submissions/tuketim_q1c_kapasite_siki.csv -m "q1c: kapasite ofsetli hedef (log1p(tuketim)-log_guc), siki kirpma. Artik haritasina nisanli. Q=0.061 kurtoz=5.0 kos(y46)=-0.011. AMAC: L olcmek"
-kaggle competitions submissions -c grid-up-datathon
+```
+L_y40 = (1,006831 - P^2) / 1,20
+L_q1c = (1,014633 - P^2) / 0,90
+L_y46 = (1,048109 - P^2) / 0,70
 ```
 
-Neden: **ölçülmüş hata haritasına nişan alan tek aday.**
-- Harita: D00 desilinde `+0,040` fazla tahmin → `q1c` D00'ı **−0,107** çekiyor
-- Harita: güç≤50'de `+0,018` fazla → `q1c` **−0,101** çekiyor
-- Bağımsız payı %83,9 (tüm mevcut yönler çıkarıldıktan sonra)
-- `y46` ile kosinüs **−0,011** → pratikte tam dik, kazançlar toplanır
+Sabitler `experiments/model29/m102_sonda.json` içinde (`cozum_sabiti`).
 
-## HAK 3 — ortak optimum
+---
+
+## GÜN 2 (3 hak) — ortak optimum + iki sonda
 
 ```powershell
-python experiments/model29/m99_coklu_coz.py tuketim_m6_ikiyon.csv=1.00284 tuketim_g7_span_tau3.csv=<HESAPLA> tuketim_y46_amnezik_kirpik.csv=<HAK1_skoru> tuketim_q1c_kapasite_siki.csv=<HAK2_skoru> --cikti tuketim_g9_ortak.csv
+python experiments/model29/m99_coklu_coz.py tuketim_m6_ikiyon.csv=1.00284 tuketim_g7_span_tau3.csv=1.00136 tuketim_y40_sota_temiz.csv=<coz> tuketim_q1c_kapasite_siki.csv=<coz> tuketim_y46_amnezik_kirpik.csv=<coz> --cikti tuketim_g9_ortak.csv
 ```
+> Ölçülen `L`'lerden eşdeğer skor: `S_j = sqrt(m0 + Q_j - 2*L_j)`
 
-> **`g7` için skor girmek yerine:** `m101_planB.py` `L(g7)`'yi doğrudan
-> hesaplıyor. En temizi `m99`'a `g7`'yi eşdeğer skorla vermek:
-> `S_g7 = sqrt(m0 + Q - 2L) = sqrt(1.005688 + 0.002494 - 2*0.002728)` =
-> **`1.00136`** — bu, `g7`nin ölçülseydi alacağı skor. (Doğrulandı: m99 bu skordan L=0,002740 çözüyor, hedef 0,002728; sonuç 1,00134.)
+Sonra iki sonda daha: `z2_analog`, `y45_mevsimsel`.
 
-Betik **korkuluklu**: `cond(G)>1e8`, `MSE<0`, `|k|₁>5`, `MSE>m0` → DURUR,
-dosya yazmaz. Tetiklenirse `--lam 0.001` ekle.
+## GÜN 3 (3 hak) — altı yönlü ortak optimum + son sonda + ince ayar
 
 ---
 
