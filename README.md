@@ -15,11 +15,11 @@ dersler var.
 
 | | |
 |---|---|
-| **Liderlik Tablosu** | **3. Sıra (TasnifX)**: `1.00284` · **1.** Grid Grinders `0.99064` · **2.** Atakan Aldemir `1.00041` · **4.** Ahmet B. ALTUNOK `1.00480` · **5.** Şaban Özdoğan `1.00510` — 2. sıra için gereken `−0,0024` (2026-08-29) |
+| **Liderlik Tablosu** | **4. Sıra (TasnifX)**: `1.00284` · **1.** Grid Grinders `0.99046` · **2.** Atakan Aldemir `0.99940` (hedef) · **3.** Tuna Deniz `1.00267` — 2. sıra için gereken `dMSE −0,006887` (2026-08-29 22:00) |
 | **28 Ağustos** | `v101` → `1.01614` (ıskaladı, `L`yi çözdü) · `v102 = v83 + 0.459·(v101−v83)` → **`1.00553`**, ön kayıtla 5 hanede birebir, 9.→2. sıra · `v109` → `1.01818` (CV türevli yönler `κ≈0`). Kota 3/3 kullanıldı |
 | **29 Ağustos SONUCU** | 3 hak: `m4` **1.04300** (öngörü 1.00 — YANILDI, aktarım `f=−0,42`) · `p51` prob **1.00946** · `m6` iki-yön optimum **1.00284** (öngörü 1.00292). `1.00553 → 1.00284`, **5.→3. sıra**. Bulgu: geri-test SICAK dedi, LB SOĞUK dedi (`κ_soğuk 0,337` vs `κ_sıcak 0,122`). Ayrıntı: [`docs/55`](docs/55-29-agustos-bilancosu.md) |
-| **📋 TAM DURUM** | **[`docs/59`](docs/59-tam-durum-2026-08-29.md)** — tek başına yeterli belge: yöntem, araçlar, ölçülmüş her şey, kapatılmış eksenler, yakalanan 11 hata, kalıcı kurallar 32-41 |
-| **30 Ağustos planı** | **Üç sonda, birleşim YOK.** `sy40` → `sq1c` → `sy46`. Her sonda `m6 + 1,094·d_g7 + t·d_aday` — hem ölçüm hem gönderilebilir skor. `g7` GÖNDERİLMEZ (afin kombinasyon, `L`'si hesaplanabilir; göndermemek 130 kat kârlı). Uçtan uca prova: `y40` ne çıkarsa çıksın sonuç `1.00284`'ten iyi (`r=0,035` → **0,99827**). **P(2. sıra) = %89.** Kılavuz: [`docs/58`](docs/58-30-agustos-NIHAI-kilavuz.md) |
+| **📋 KESİN KILAVUZ** | **[`docs/60`](docs/60-KESIN-KILAVUZ-30-agustos.md)** — 30 Ağustos koşu kılavuzu, docs/54+57+58'in yerine geçer. Tek başına yeterli. Arka plan: [`docs/59`](docs/59-tam-durum-2026-08-29.md) |
+| **30 Ağustos planı** | **Üç sonda, birleşim YOK:** `tuketim_s2y40.csv` → `tuketim_s2z2.csv` → `tuketim_s2sul.csv`. Her sonda `m6 + 1,093664·d_g7 + t·d_aday`; `g7` gönderilmez (afin kombinasyon). **2. sıra eşiği: her üç yönde `r ≥ 0,0137`** — ölçülmüş kalitelerin (0,049–0,124) 3,6–9 katı altında. Yönler sıfır bilgi taşısa bile `1,00061` (3. sıra). **Geriye gitme riski yok.** |
 | **⚠ Dış veri** | **SERBEST** — düzenleyici e-postayla teyit etti. Tek yükümlülük: notebook'ta kaynak+amaç+kullanım beyanı. İlk 20'nin notebook'u inceleniyor, son tarih **2 Eylül 13:00** |
 | **⚠ Final seçimi** | Yarışma sonunda **2 gönderim seçilmeli** (Kaggle arayüzü, tarayıcı — API'de yok). Seçilmezse en iyi public otomatik seçilir, ikinci slot boşa gider |
 | **1. sıra** | **ULAŞILAMIYOR** — gereken `Q·δ*² = 0.028257`, ölçülen en iyi `0.018500`. Nüfus büyütmek kapatmıyor (δ, Q'dan hızlı çürüyor). Varılabilecek yer `0.996–0.999` ile sağlam 2. sıra: [`docs/52`](docs/52-olu-trafo-curudu-ve-prob-kampanyasi-2026-08-28.md) §14.6 |
