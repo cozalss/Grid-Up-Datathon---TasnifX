@@ -1,0 +1,188 @@
+[
+ {
+  "dosya": "tuketim_y40_sota_temiz.csv",
+  "Q": 0.02851921990531961,
+  "Q_rejim_payi": {
+   "soguk": 0.46911877691096,
+   "kuyruk": 0.041713244363005365,
+   "cekirdek": 0.4891679787260348
+  },
+  "maks_fark": 1.9676310291691586,
+  "p999_fark": 1.1148189872694927,
+  "Q_yeni": 0.02676412339040927,
+  "yeni_pay": 0.9384591682122776,
+  "kos_m4": 0.21792401238076903,
+  "kos_m6dik": 0.11853251290506363,
+  "span_ortusme": 0.24807424652253285,
+  "korelasyon": 0.9951374660610143,
+  "kalibre_kazanc": 0.004096,
+  "kalibre_kazanc_yeni": 0.003843928752997489,
+  "basabas_skor": 1.0169597926689726,
+  "log_ort": 6.6017754249040905,
+  "log_std": 1.7142818281283925,
+  "maks": 152942.5239984425,
+  "alt1kwh_orani": 0.024322501567117398,
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  }
+ },
+ {
+  "dosya": "tuketim_y41_amnezik_temiz.csv",
+  "Q": 0.5001176934157757,
+  "Q_rejim_payi": {
+   "soguk": 0.055774584882382225,
+   "kuyruk": 0.04922304535867988,
+   "cekirdek": 0.8950023697589378
+  },
+  "maks_fark": 7.166793232458997,
+  "p999_fark": 6.0260709811615305,
+  "Q_yeni": 0.47949176661277476,
+  "yeni_pay": 0.9587578542520121,
+  "kos_m4": -0.14271199079832708,
+  "kos_m6dik": 0.14448333270784525,
+  "span_ortusme": 0.20308162336358232,
+  "korelasyon": 0.9105006448858888,
+  "kalibre_kazanc": 0.004096,
+  "kalibre_kazanc_yeni": 0.003927072171016241,
+  "basabas_skor": 1.227112746823117,
+  "log_ort": 6.6017754249040905,
+  "log_std": 1.5832416984873696,
+  "maks": 96592.11905847426,
+  "alt1kwh_orani": 0.022917692755440137,
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  }
+ },
+ {
+  "dosya": "tuketim_y46_amnezik_kirpik.csv",
+  "Q": 0.3884372558794304,
+  "Q_rejim_payi": {
+   "soguk": 0.0684084557070669,
+   "kuyruk": 0.05612472680251292,
+   "cekirdek": 0.8754668174904201
+  },
+  "maks_fark": 2.021878881706347,
+  "p999_fark": 2.021878881706347,
+  "Q_yeni": 0.3770866469750404,
+  "yeni_pay": 0.9707787841341532,
+  "kos_m4": -0.11452570125049442,
+  "kos_m6dik": 0.12690579032861088,
+  "span_ortusme": 0.17094214186632506,
+  "korelasyon": 0.931128033595365,
+  "kalibre_kazanc": 0.004096,
+  "kalibre_kazanc_yeni": 0.003976309899813491,
+  "basabas_skor": 1.1807308143177386,
+  "log_ort": 6.6017754249040905,
+  "log_std": 1.593751757878649,
+  "maks": 98728.75687625835,
+  "alt1kwh_orani": 0.022891107728127517,
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  }
+ },
+ {
+  "dosya": "tuketim_y42_kapasite_temiz.csv",
+  "Q": 0.05108739028618036,
+  "Q_rejim_payi": {
+   "soguk": 0.31437442037656843,
+   "kuyruk": 0.042354033533817115,
+   "cekirdek": 0.6432715460896146
+  },
+  "maks_fark": 3.241627499641369,
+  "p999_fark": 1.7858993275020099,
+  "Q_yeni": 0.037402420920247946,
+  "yeni_pay": 0.7321262783385055,
+  "kos_m4": 0.5044324561599365,
+  "kos_m6dik": 0.11585171053527142,
+  "span_ortusme": 0.5175651859055963,
+  "korelasyon": 0.9916716763090649,
+  "kalibre_kazanc": 0.004096,
+  "kalibre_kazanc_yeni": 0.0029987892360745184,
+  "basabas_skor": 1.0279958123874728,
+  "log_ort": 6.6017754249040905,
+  "log_std": 1.7461390851063658,
+  "maks": 145713.6176719343,
+  "alt1kwh_orani": 0.025928796901585026,
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  }
+ },
+ {
+  "dosya": "tuketim_y43_mevsimsel_temiz.csv",
+  "Q": 0.24214180418057885,
+  "Q_rejim_payi": {
+   "soguk": 0.25070669368052423,
+   "kuyruk": 0.034212485205180915,
+   "cekirdek": 0.7150808211142949
+  },
+  "maks_fark": 7.1707976749365,
+  "p999_fark": 5.334950015172432,
+  "Q_yeni": 0.24139749465206442,
+  "yeni_pay": 0.9969261419727452,
+  "kos_m4": -0.01900312159202669,
+  "kos_m6dik": 0.05208396487416758,
+  "span_ortusme": 0.05544238475439882,
+  "korelasyon": 0.961923823886598,
+  "kalibre_kazanc": 0.004096,
+  "kalibre_kazanc_yeni": 0.004083409477520364,
+  "basabas_skor": 1.117063026055638,
+  "log_ort": 6.601848891874743,
+  "log_std": 1.7987098304519173,
+  "maks": 440550.3052582988,
+  "alt1kwh_orani": 0.02665498791080863,
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  }
+ },
+ {
+  "dosya": "tuketim_y45_mevsimsel_kirpik.csv",
+  "Q": 0.16715959451125548,
+  "Q_rejim_payi": {
+   "soguk": 0.35941764939856213,
+   "kuyruk": 0.04595684100542898,
+   "cekirdek": 0.5946255095960089
+  },
+  "maks_fark": 2.014086603092178,
+  "p999_fark": 2.014086603092177,
+  "Q_yeni": 0.16687633936345017,
+  "yeni_pay": 0.9983054807674456,
+  "kos_m4": 0.005044667069147353,
+  "kos_m6dik": 0.0408542600803861,
+  "span_ortusme": 0.04116453853202256,
+  "korelasyon": 0.973363082983881,
+  "kalibre_kazanc": 0.004096,
+  "kalibre_kazanc_yeni": 0.004089059249223457,
+  "basabas_skor": 1.0829808837238335,
+  "log_ort": 6.6017939276878534,
+  "log_std": 1.7802413125582306,
+  "maks": 434387.9391826396,
+  "alt1kwh_orani": 0.02623522432166204,
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  }
+ }
+]

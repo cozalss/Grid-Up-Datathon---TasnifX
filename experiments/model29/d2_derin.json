@@ -1,0 +1,230 @@
+{
+ "A_dosya_kimligi": {
+  "hukum": "GECTI",
+  "p51_maks_log_fark": 4.440892098500626e-16,
+  "m6_maks_log_fark": 4.440892098500626e-16,
+  "LTOT_kodda": 0.022319,
+  "LTOT_tam": 0.022318546479711987,
+  "LTOT_yuvarlama_hatasi": 4.535202880115441e-07,
+  "kw": 0.1224276353574521,
+  "kc": 0.33687957152525483,
+  "kw_LTOT_tam_olsa": 0.12243140581535591,
+  "kc_LTOT_tam_olsa": 0.33685713561783004,
+  "ongoru_kod": 1.0029187720298796,
+  "ongoru_LTOT_tam": 1.0029189941962997,
+  "yuvarlamanin_skor_bedeli_RMSLE": 9.340084261566517e-12
+ },
+ "B_v102_gecmis": {
+  "hukum": "BILGI",
+  "taban": "v83 1.01318",
+  "yon": "v101 1.01614",
+  "Q": 0.0732921799441066,
+  "L": 0.033642696372053305,
+  "kappa": 0.45902163638343935,
+  "ongoru": 1.005530201863151,
+  "gerceklesen": 1.00553,
+  "sapma": -2.018631508615698e-07,
+  "v102_yeniden_kurma_maks_log_fark": 4.440892098500626e-16,
+  "NOT": "tek yon, tek kappa -> 1 parametre; m6 iki parametre"
+ },
+ "C_public_Q_yanlisi": {
+  "hukum": "BILGI",
+  "aciklama": "ongoru - gerceklesen; Q TUM satirda, skorlar PUBLIC yarida",
+  "sd_yuvarlamasiz": 0.0001021769981626887,
+  "ort_yuvarlamasiz": -5.571939109186408e-06,
+  "sd_yuvarlamali": 0.00010218436404557846,
+  "ort_yuvarlamali": -5.549549287507061e-06,
+  "p05_p95": [
+   -0.00017822305933556937,
+   0.00015535203135094133
+  ],
+  "gozlenen_sapma": 7.899419629975313e-05,
+  "kac_sd": 0.7730556141105742,
+  "P_gozlenen_yuzde": 0.20566666666666666
+ },
+ "D_asiri_uyum": {
+  "hukum": "BILGI",
+  "N": 714688,
+  "parca_basina_MSE_bagimsiz": 5.658920149211964e-06,
+  "parca_basina_RMSLE_bagimsiz": 2.8214471646583527e-06,
+  "parca_basina_MSE_kotu_durum": 9.062293188943609e-05,
+  "parca_basina_RMSLE_kotu_durum": 4.51831458106159e-05,
+  "d_kurtozu": 20.56765934615436,
+  "mevcut_2_parca_beklenen_private_kaybi_RMSLE": [
+   5.6428943293167055e-06,
+   9.03662916212318e-05
+  ],
+  "private_m6_tahmini": [
+   1.0028456428943293,
+   1.0029303662916211
+  ],
+  "J_bedeli_RMSLE": {
+   "2": [
+    5.6428943293167055e-06,
+    9.03662916212318e-05
+   ],
+   "3": [
+    8.464341493975058e-06,
+    0.0001355494374318477
+   ],
+   "4": [
+    1.1285788658633411e-05,
+    0.0001807325832424636
+   ],
+   "6": [
+    1.6928682987950116e-05,
+    0.0002710988748636954
+   ],
+   "8": [
+    2.2571577317266822e-05,
+    0.0003614651664849272
+   ],
+   "12": [
+    3.385736597590023e-05,
+    0.0005421977497273908
+   ],
+   "16": [
+    4.5143154634533644e-05,
+    0.0007229303329698544
+   ],
+   "24": [
+    6.771473195180046e-05,
+    0.0010843954994547815
+   ],
+   "40": [
+    0.00011285788658633411,
+    0.001807325832424636
+   ],
+   "80": [
+    0.00022571577317266823,
+    0.003614651664849272
+   ]
+  },
+  "esik_marjinal_kazanc": {
+   "aciklama": "yeni bir parca ancak LB kazanci bu esigi asarsa karli",
+   "bagimsiz": 2.8214471646583527e-06,
+   "kotu_durum": 4.51831458106159e-05
+  },
+  "esik_4_siraya_dusme": {
+   "aciklama": "4. sira 1.00480; private kayip bu farki yerse sira kaybi",
+   "fark": 0.0019599999999999618,
+   "J_bagimsiz": 694.6789663655803,
+   "J_kotu_durum": 43.37900703539448
+  }
+ },
+ "E_maske": {
+  "hukum": "UYARI",
+  "test_metinli": [
+   "10002650 tr-2",
+   "15001890-L-216",
+   "202917T",
+   "202918T",
+   "KISIK DM-1/TR-32",
+   "M-3115",
+   "Sarýgöl TR-67",
+   "ege perla tr 3a",
+   "ege perla tr-3",
+   "ege perla tr-4",
+   "m-1206 tr-2",
+   "Ýskele DM"
+  ],
+  "test_metinli_satir": {
+   "10002650 tr-2": 122,
+   "15001890-L-216": 83,
+   "202917T": 122,
+   "202918T": 122,
+   "KISIK DM-1/TR-32": 44,
+   "M-3115": 82,
+   "Sarýgöl TR-67": 120,
+   "ege perla tr 3a": 32,
+   "ege perla tr-3": 33,
+   "ege perla tr-4": 33,
+   "m-1206 tr-2": 122,
+   "Ýskele DM": 122
+  },
+  "train_metinli": [
+   "10002650 tr-2",
+   "15001890-L-216",
+   "202917T",
+   "202918T",
+   "KISIK DM-1/TR-32",
+   "M-3115",
+   "Sarýgöl TR-67",
+   "m-1206 tr-2",
+   "Ýskele DM"
+  ],
+  "on_ek_maskesiyle_degisen_satir": 490,
+  "degisen_tanimlar": {
+   "Ýskele DM": 122,
+   "m-1206 tr-2": 122,
+   "Sarýgöl TR-67": 120,
+   "M-3115": 82,
+   "KISIK DM-1/TR-32": 44
+  },
+  "id_sutunu_tanim_uyusmazligi": 0,
+  "NOT": "tam-string maskesi kullanildi; on-ek maskesi 490 satiri SICAK'a alirdi",
+  "degisen_satirlarin_Q_payi": 2.6125004903469552e-05,
+  "Q_payi_yuzde": 0.021520568973489942,
+  "kappa_farki_ile_MSE_etkisi_ust_sinir": 1.2014793857036325e-06
+ },
+ "F_uc_degerler": {
+  "hukum": "UYARI",
+  "d_maks": 4.212304432729046,
+  "d_p999": 2.8709860935584284,
+  "Q_ust_10_satir": 0.0020227619808291806,
+  "Q_ust_100_satir": 0.019071854159453266,
+  "Q_ust_1000_satir": 0.11721129348568142,
+  "Q_ust_binde1": 0.09176574264262358,
+  "Q_ust_yuzde1": 0.349236351020016,
+  "d_kurtozu": 20.56765934615436,
+  "m4_sifir_satir": 6120,
+  "m4_sifir_v102_ortalamasi": 0.35884261124183103,
+  "m6_orani_maks": 2.5043010254464937,
+  "NOT": "Q agir kuyruklu ise Q_public ile Q_all farki buyur -> ongoru bandi genisler"
+ },
+ "G_kohort": {
+  "hukum": "BILGI",
+  "hepsi": {
+   "satir": 714688,
+   "v102_ort": 1787.7619621107592,
+   "m6_ort": 1768.9102827642923,
+   "oran_ort": 0.9894551513311038,
+   "v102_medyan": 1052.5223459229537,
+   "m6_medyan": 1062.193915505447,
+   "d_ort": 0.0002407269207932483
+  },
+  "soguk": {
+   "satir": 158369,
+   "v102_ort": 1405.1019020967765,
+   "m6_ort": 1317.9016455019087,
+   "oran_ort": 0.9379402615107542,
+   "v102_medyan": 1042.912175088268,
+   "m6_medyan": 1088.2557537326657,
+   "d_ort": -4.47944905494689e-16
+  },
+  "sicak": {
+   "satir": 556319,
+   "v102_ort": 1896.6949502782572,
+   "m6_ort": 1897.300265624138,
+   "oran_ort": 1.000319142171909,
+   "v102_medyan": 1054.8689723632483,
+   "m6_medyan": 1054.3421709095228,
+   "d_ort": 0.00030925537608450504
+  },
+  "dalga_2026-05-11": {
+   "satir": 181038,
+   "v102_ort": 1760.9563528427748,
+   "m6_ort": 1697.204430561599,
+   "oran_ort": 0.9637969889609934,
+   "v102_medyan": 1174.7407322771687,
+   "m6_medyan": 1192.5948708759736,
+   "d_ort": 0.06236965782077206
+  },
+  "sicak_train_ort_kiyas": {
+   "satir": 556319,
+   "train_ort": 2569.6850856628016,
+   "v102_ort": 1896.6949502782572,
+   "m6_ort": 1897.300265624138
+  }
+ }
+}

@@ -1,0 +1,219 @@
+{
+ "_ne": "TasnifX 29 Agustos iddialarinin bagimsiz denetimi",
+ "_tarih": "2026-08-29",
+ "_kaynak": [
+  "d1_hesap.py",
+  "d2_derin.py",
+  "d3_ucgen.py",
+  "d3_sapma.py"
+ ],
+ "IDDIA_1_Q_toplam": {
+  "hukum": "GECTI",
+  "iddia": 0.121396,
+  "olculen": 0.12139551205942357,
+  "fark": -4.879405764296463e-07,
+  "not": "d = log1p(m4) - log1p(v102), N=714688 tam bolen. 6 hanede birebir."
+ },
+ "IDDIA_2_L_toplam": {
+  "hukum": "GECTI",
+  "iddia": 0.022319,
+  "olculen_tam": 0.022318546479711987,
+  "yuvarlama_hatasi": 4.535202880115441e-07,
+  "turetim": "MSE(k)=m0-2kL+k^2 Q ; L:=-<a-y,d>/N ; k=1 -> L=(m0+Q-M4^2)/2. Isaretler DOGRU, sayisal ozdeslik hatasi 2.2e-16.",
+  "kusur": "L_toplam kodda 0.022319 diye ELLE YAZILDI (m93/m94/m95). Tam deger 0.0223185465. Skora etkisi 9.3e-12 RMSLE -- ihmal edilebilir ama kappa'lari 5. hanede kaydiriyor (kc 0.336880 yerine 0.336857)."
+ },
+ "IDDIA_3_maske_ve_Q_ayrisimi": {
+  "hukum": "GECTI",
+  "soguk_satir": 158369,
+  "Q_sicak": 0.08662392338174923,
+  "Q_soguk": 0.03477158867767434,
+  "toplam_esitligi": 0.0,
+  "nan_tanim": 0,
+  "bosluk_farki": 0,
+  "metinli_tanim_test": 12,
+  "metinli_tanim_train": 9,
+  "not": "12 metinli tanim var, 9'u train'de de var -> tam-string karsilastirmasi DOGRU sonucu veriyor. Sayisal on-ek cikarimi yapilsaydi 490 satir YANLIS sekilde SOGUK'a giderdi (Q'nun %0.022'si, MSE etkisi 1.2e-6)."
+ },
+ "IDDIA_4_p51_dosyasi": {
+  "hukum": "GECTI",
+  "formul": "p51 = v102 + 0.50*d_sicak + 0.1838536*d_soguk",
+  "maks_log_fark": 4.440892098500626e-16,
+  "tc": 0.18385358421713943,
+  "not": "Diskteki dosya bit duzeyinde bu formul (4.4e-16)."
+ },
+ "IDDIA_5_L_ayrisimi": {
+  "hukum": "GECTI",
+  "L_sicak": 0.010605162105012665,
+  "L_soguk": 0.011713837894987334,
+  "not": "m95'in cozucusu cebirsel olarak dogru, bagimsiz turetimle birebir."
+ },
+ "IDDIA_6_m6_dosyasi": {
+  "hukum": "GECTI",
+  "kw": 0.1224276353574521,
+  "kc": 0.33687957152525483,
+  "maks_log_fark": 4.440892098500626e-16,
+  "diklik": "d_sicak ve d_soguk ayrik destekli -> ic carpim TAM 0 (yapisal)."
+ },
+ "IDDIA_7_ongoru_ve_sapma": {
+  "hukum": "GECTI (ongoru) / KALDI (sapmanin ACIKLAMASI)",
+  "ongoru": 1.0029187720298796,
+  "gerceklesen": 1.00284,
+  "sapma": -7.877202987960352e-05,
+  "yuvarlama_bandi": [
+   1.0029071376495229,
+   1.0029306565607825
+  ],
+  "sapma_bant_yarim_genisliginin_kati": 6.717504516067281,
+  "KUSUR": "docs/55 'sapma girdi skorlarinin 5 haneye yuvarlanmasindan geliyor' diyor. YANLIS: yuvarlama bandi [1.002907, 1.002931], yarim genislik 1.18e-5; gozlenen sapma 7.9e-5 = bandin 6.7 KATI, bant DISINDA.",
+  "GERCEK_KAYNAK": "Q TUM 714688 satirda olculuyor, LB skorlari ise PUBLIC %50'de. Q_public != Q_tum. Turetilen ozdeslik: gerceklesen_MSE - ongorulen_MSE = 0.2770*(Qw_tum-Qw_pub) + 0.3252*(Qc_tum-Qc_pub). Bu kanalin sd'si 9.28e-5 RMSLE; gozlenen sapma 0.85 sd. TAMAMEN NORMAL.",
+  "gereken_bagil_Q_kaymasi": -0.00447539657375121,
+  "sistematik_mi": "HAYIR. Simulasyon ortalamasi -5.5e-6 (ihmal edilebilir onyargi), sd 1.02e-4. Gerceklesen ongoruden IYI cikmasi SANS. Model L'yi sistematik kucuk tahmin ETMIYOR.",
+  "neden_v102_4e-7_idi": "v102 ongorusu TEK parametreliydi ve o yonun sd'si 3.27e-5 idi; gozlenen 2.0e-7 = 0.006 sd -- SANS eseri tam isabet, arac 'kesin' oldugu icin degil. v83 ucgeninde sapma 5.37e-6 = public-yarim sd'sinin 14.7 KATI ama yuvarlama bandi icinde (o yonun Q'su 0.0047, cok kucuk). m6 ise 2 parametreli, 1.58x buyutmeli ve d'nin kurtozu 20.6 -> sd 9.3e-5.",
+  "SONUC": "'0.00008 sapma yuvarlamadan' iddiasi CURUTULDU. Ongoru araci +-1e-5 degil, +-9e-5 (1 sd) hassasiyetindedir. Yarinki planlamada bu bant kullanilmalidir."
+ },
+ "PUBLIC_PRIVATE_RISKI": {
+  "hukum": "DUSUK RISK",
+  "asiri_uyum_turetimi": "L_j'nin public orneklem hatasi -> beklenen ek private MSE = 4*m0/N PARCA BASINA, parcanin buyuklugunden BAGIMSIZ. = 5.66e-6 MSE = 2.82e-6 RMSLE.",
+  "parca_basina_RMSLE_bagimsizlik": 2.8214471646583527e-06,
+  "parca_basina_RMSLE_kotu_durum": 4.51831458106159e-05,
+  "mevcut_2_parca_private_kaybi_RMSLE": [
+   5.6428943293167055e-06,
+   9.03662916212318e-05
+  ],
+  "private_m6_tahmini": [
+   1.0028456428943293,
+   1.0029303662916211
+  ],
+  "J_parca_bedeli_RMSLE": {
+   "2": [
+    5.6428943293167055e-06,
+    9.03662916212318e-05
+   ],
+   "3": [
+    8.464341493975058e-06,
+    0.0001355494374318477
+   ],
+   "4": [
+    1.1285788658633411e-05,
+    0.0001807325832424636
+   ],
+   "6": [
+    1.6928682987950116e-05,
+    0.0002710988748636954
+   ],
+   "8": [
+    2.2571577317266822e-05,
+    0.0003614651664849272
+   ],
+   "12": [
+    3.385736597590023e-05,
+    0.0005421977497273908
+   ],
+   "16": [
+    4.5143154634533644e-05,
+    0.0007229303329698544
+   ],
+   "24": [
+    6.771473195180046e-05,
+    0.0010843954994547815
+   ],
+   "40": [
+    0.00011285788658633411,
+    0.001807325832424636
+   ],
+   "80": [
+    0.00022571577317266823,
+    0.003614651664849272
+   ]
+  },
+  "J_esigi_4_siraya_dusme": {
+   "aciklama": "4. sira 1.00480; private kayip bu farki yerse sira kaybi",
+   "fark": 0.0019599999999999618,
+   "J_bagimsiz": 694.6789663655803,
+   "J_kotu_durum": 43.37900703539448
+  },
+  "kosul_sayilari": {
+   "2": 7.082685460994985,
+   "3": 11.09219695470776,
+   "4": 15.28925912043483
+  },
+  "J_toplam_ongoru_sd": {
+   "2": 9.21964058142217e-05,
+   "3": 9.698570290544563e-05,
+   "4": 9.448761141884671e-05
+  },
+  "SAYI": "Asiri uyum acisindan TEHLIKE ESIGI ~43 parca (kotu durum) / ~695 parca (bagimsizlik). 3-4 parca RISKSIZ. GERCEK kisit: (a) her ek parca 1 PROB GONDERIMI yiyor (9 hak var -> en fazla J=4-5 makul), (b) ongoru sd'si J'den bagimsiz ~9.5e-5'te sabit kaliyor; marjinal kazanc 2e-4'un altina duserse olcum gurultusunun icinde kaybolur."
+ },
+ "DAGILIM_SAGLAMASI": {
+  "hukum": "TEMIZ",
+  "m6_min": 0.0118720947776849,
+  "m6_maks": 180734.95004543543,
+  "m6_negatif": 0,
+  "m6_nan": 0,
+  "m6_kirpilan_satir": 0,
+  "log_uzayi_seviye": "m6 log-ort 6.6421 vs train Nis-Tem 2025 ayni trafolar 6.6318 (+0.010). Aritmetik ort 2260 vs 3328 farki kuyruk etkisi; RMSLE log uzayinda oldugu icin sorun YOK.",
+  "dalga_kohortu_2026_05_11": {
+   "satir": 181038,
+   "v102_ort": 1760.9563528427748,
+   "m6_ort": 1697.204430561599,
+   "oran_ort": 0.9637969889609934,
+   "v102_medyan": 1174.7407322771687,
+   "m6_medyan": 1192.5948708759736,
+   "d_ort": 0.06236965782077206
+  },
+  "soguk_d_ortalamasi": -4.47944905494689e-16,
+  "not_soguk_d_ort": "Soguk tarafta d'nin ortalamasi TAM 0 (-4.5e-16): m4'un soguk kanadi v102'yi log uzayinda ORTALAMA KORUYARAK yeniden dagitiyor. Hata degil, ama 'soguk yon salt yeniden dagitim' demek -- seviye bilgisi tasimiyor."
+ },
+ "KIRPMA_expm1": {
+  "hukum": "GECTI (m6) / KUSUR (belge)",
+  "m6_kirpilan": 0,
+  "p51_kirpilan": 0,
+  "neden": "kw,kc in [0,1] ve a,b >= 0 oldugundan harman hep >= 0.",
+  "m4_kirpilan_satir": 6120,
+  "m4_kirpma_Q_kaybi": 0.00018548794057642037,
+  "KUSUR": "m4'un KENDISI 6120 satirda (0.86%) sifira kirpildi. m71 Q'yu kirpma ONCESI olctu (0.121581) ve bu deger docs/53, docs/54 ve m90_on_kayit.json'a girdi. Dogru (dosya) degeri 0.121396. Fark 1.85e-4. EGER bu deger kullanilsaydi L=0.022411 (+0.4%), kappa=0.18433 olurdu. NEYSE KI m92/m93/m94/m95 Q'yu DOSYADAN yeniden hesapladi -> gonderilen zincir TEMIZ. Ama docs/54 kilavuzu YANLIS SAYI tasiyor; yarin elle kullanilirsa hata uretir."
+ },
+ "HIZALAMA": {
+  "hukum": "GECTI",
+  "satir": 714688,
+  "id_sample_submission_ile_birebir": true,
+  "id_sutunundaki_tanim_uyusmazligi": 0,
+  "csv_gidis_donus_kaybi": "0 (repr ile yazilmis, tam)"
+ },
+ "UC_DEGERLER": {
+  "hukum": "UYARI",
+  "d_maks": 4.212304432729046,
+  "d_kurtozu": 20.56765934615436,
+  "Q_ust_yuzde1_payi": 0.349236351020016,
+  "Q_ust_1000_satir_payi": 0.11721129348568142,
+  "not": "Q'nun %35'i satirlarin %1'inden geliyor, kurtoz 20.6. Bu yuzden Q_public ile Q_tum arasindaki fark buyuk (bagil sd %0.66-0.87) ve ongoru bandi genis. Daha DAR yonler (kucuk kurtoz) daha guvenilir ongoru verir."
+ },
+ "GECMIS_UCGENLER": [
+  {
+   "taban": "tuketim_v101_hepsi.csv",
+   "yon": "tuketim_v83_sicak_optimum.csv",
+   "harman": "tuketim_v102_kappa_optimum.csv",
+   "k_dosyada": 0.5409783636165606,
+   "k_optimum": 0.5409783636165613,
+   "optimumda_mi": true,
+   "Q": 0.0732921799441066,
+   "ongorulen_optimum": 1.005530201863151,
+   "gerceklesen": 1.00553,
+   "sapma": -2.018631508615698e-07,
+   "maks_log_fark": 1.7763568394002505e-15
+  },
+  {
+   "taban": "tuketim_v80_optimum.csv",
+   "yon": "tuketim_v81_sicak08.csv",
+   "harman": "tuketim_v83_sicak_optimum.csv",
+   "k_dosyada": 0.31074861626833217,
+   "k_optimum": 0.31074861626833417,
+   "optimumda_mi": true,
+   "Q": 0.00471430106563984,
+   "ongorulen_optimum": 1.0131853695252617,
+   "gerceklesen": 1.01318,
+   "sapma": -5.369525261755825e-06,
+   "maks_log_fark": 8.881784197001252e-16
+  }
+ ]
+}

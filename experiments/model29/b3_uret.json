@@ -1,0 +1,640 @@
+{
+ "sigma_L": 3.3901683460714896e-05,
+ "sigma_L_ust": 6.123448002394014e-05,
+ "m0": 1.0110905809000001,
+ "hedef_mse": 1.0008201681,
+ "k_opt": 20,
+ "k_guv": 17,
+ "mse_ana": 1.0028611811754389,
+ "loo": [
+  {
+   "dosya": "tuketim_m6_ikiyon.csv",
+   "r": 5.4304971311663284e-09,
+   "fark": 7.9208180591781e-05,
+   "norm": 1.2935228229788271,
+   "birim": 6.12344669801605e-05,
+   "yuvarlama_tavani": 1.6951160340766127e-05,
+   "cs_siniri": 5.460527780301678e-09
+  },
+  {
+   "dosya": "tuketim_p51_sicak05.csv",
+   "r": 1.3687590562458214e-08,
+   "fark": 0.00011676923126179191,
+   "norm": 1.9069196180998025,
+   "birim": 6.123448002394014e-05,
+   "yuvarlama_tavani": 2.4989506238145568e-05,
+   "cs_siniri": 1.3763282938268609e-08
+  },
+  {
+   "dosya": "tuketim_m4_hava_capali.csv",
+   "r": 4.114717624033712e-08,
+   "fark": -0.00017159741153763633,
+   "norm": 2.8023006133859334,
+   "birim": 6.12344766717588e-05,
+   "yuvarlama_tavani": 3.672314410422345e-05,
+   "cs_siniri": 4.137472012494619e-08
+  },
+  {
+   "dosya": "tuketim_v109_birlesik.csv",
+   "r": 0.13438690281287077,
+   "fark": 0.0016528627383696221,
+   "norm": 4.537838708437994,
+   "birim": 0.00036424008092137924,
+   "yuvarlama_tavani": 7.10625786717755e-05,
+   "cs_siniri": 0.13513006238542596
+  },
+  {
+   "dosya": "tuketim_v101_hepsi.csv",
+   "r": 7.215243960078853e-07,
+   "fark": -6.654652686691538e-06,
+   "norm": 1.1197421416947377,
+   "birim": 5.943022450347071e-06,
+   "yuvarlama_tavani": 2.2003446410935367e-05,
+   "cs_siniri": 7.255144259178089e-07
+  },
+  {
+   "dosya": "tuketim_v83_sicak_optimum.csv",
+   "r": 5.716651871439424e-07,
+   "fark": 4.832543725385312e-06,
+   "norm": 1.081949077701403,
+   "birim": 4.466516793611059e-06,
+   "yuvarlama_tavani": 1.2130968671093484e-05,
+   "cs_siniri": 5.748264956288484e-07
+  },
+  {
+   "dosya": "tuketim_v81_sicak08.csv",
+   "r": 2.4107708945458674e-06,
+   "fark": -2.145820267108095e-05,
+   "norm": 2.5788351312961812,
+   "birim": 8.320889695765689e-06,
+   "yuvarlama_tavani": 4.8536807077951045e-05,
+   "cs_siniri": 2.424102457592706e-06
+  },
+  {
+   "dosya": "tuketim_v80_optimum.csv",
+   "r": 1.1103818134572502e-06,
+   "fark": -5.715426253989918e-07,
+   "norm": 1.1283143269200415,
+   "birim": 5.065455713561053e-07,
+   "yuvarlama_tavani": 1.3067546018135757e-05,
+   "cs_siniri": 1.1165222248856688e-06
+  },
+  {
+   "dosya": "tuketim_v79_S3.csv",
+   "r": 3.120265327122028e-06,
+   "fark": -1.2489673930066343e-05,
+   "norm": 1.9789532134287373,
+   "birim": 6.311252759951164e-06,
+   "yuvarlama_tavani": 3.313328413601098e-05,
+   "cs_siniri": 3.137520394381013e-06
+  },
+  {
+   "dosya": "tuketim_v73_soguk_gun160.csv",
+   "r": 5.139137882930541e-06,
+   "fark": -2.057058113327296e-05,
+   "norm": 3.2593517870882582,
+   "birim": 6.311249130812507e-06,
+   "yuvarlama_tavani": 5.457078457364985e-05,
+   "cs_siniri": 5.167557315423147e-06
+  },
+  {
+   "dosya": "tuketim_v67_c1335_olay.csv",
+   "r": 6.289183765131498e-06,
+   "fark": -2.517408184526666e-05,
+   "norm": 3.988760417687213,
+   "birim": 6.311254427224598e-06,
+   "yuvarlama_tavani": 6.678315119336737e-05,
+   "cs_siniri": 6.323962951352675e-06
+  },
+  {
+   "dosya": "tuketim_v55_gunolcek.csv",
+   "r": 0.028889207888872726,
+   "fark": -1.0694540924099108e-05,
+   "norm": 1.5845212838321092,
+   "birim": 6.749382941852782e-06,
+   "yuvarlama_tavani": 1.9089710924419976e-05,
+   "cs_siniri": 0.029048965208498194
+  },
+  {
+   "dosya": "tuketim_v50_nihai30.csv",
+   "r": 0.0229231791594144,
+   "fark": -1.1969987044793359e-05,
+   "norm": 1.323418645110543,
+   "birim": 9.044747169776745e-06,
+   "yuvarlama_tavani": 1.5168322068500566e-05,
+   "cs_siniri": 0.023049944340165964
+  },
+  {
+   "dosya": "tuketim_v47_eskison.csv",
+   "r": 0.013259837402356927,
+   "fark": 0.00013720880682403856,
+   "norm": 1.6841535112077681,
+   "birim": 8.147048704939083e-05,
+   "yuvarlama_tavani": 2.1697564498365613e-05,
+   "cs_siniri": 0.013333164303191961
+  },
+  {
+   "dosya": "tuketim_v44_v27yeni.csv",
+   "r": 0.015724337889735956,
+   "fark": 0.00016615825312027226,
+   "norm": 2.098849981595627,
+   "birim": 7.91663313611163e-05,
+   "yuvarlama_tavani": 2.7452925423455383e-05,
+   "cs_siniri": 0.015811293478266198
+  },
+  {
+   "dosya": "tuketim_v46_gun.csv",
+   "r": 0.01469150603524552,
+   "fark": -0.00020025924954851883,
+   "norm": 1.938321030562809,
+   "birim": 0.00010331583178993407,
+   "yuvarlama_tavani": 2.4558737711410918e-05,
+   "cs_siniri": 0.014772750063620428
+  },
+  {
+   "dosya": "tuketim_v30_buzme.csv",
+   "r": 0.014694614953267753,
+   "fark": -0.00019859008658745813,
+   "norm": 1.9087321594740723,
+   "birim": 0.00010404293006839535,
+   "yuvarlama_tavani": 2.4949544424878105e-05,
+   "cs_siniri": 0.014775876173959325
+  },
+  {
+   "dosya": "tuketim_v27_v18hedge.csv",
+   "r": 0.02574962754694751,
+   "fark": 9.3223301143219e-05,
+   "norm": 1.9720029224237365,
+   "birim": 4.727340922428285e-05,
+   "yuvarlama_tavani": 2.7972810458218368e-05,
+   "cs_siniri": 0.025892022987282128
+  },
+  {
+   "dosya": "tuketim_v25_hedge.csv",
+   "r": 0.03629675488330377,
+   "fark": 0.00017148586741138195,
+   "norm": 3.9444118044803065,
+   "birim": 4.3475650087193664e-05,
+   "yuvarlama_tavani": 5.110943183575656e-05,
+   "cs_siniri": 0.03649747593780844
+  },
+  {
+   "dosya": "tuketim_v18.csv",
+   "r": 0.038886612779268546,
+   "fark": 0.0001048790919711746,
+   "norm": 1.366110531748431,
+   "birim": 7.67720396950194e-05,
+   "yuvarlama_tavani": 1.6628758206463238e-05,
+   "cs_siniri": 0.039101655747937905
+  },
+  {
+   "dosya": "tuketim_v16.csv",
+   "r": 0.17380490000496446,
+   "fark": -0.0005679091622135212,
+   "norm": 5.804232555218029,
+   "birim": 9.784397106952039e-05,
+   "yuvarlama_tavani": 8.267136485332025e-05,
+   "cs_siniri": 0.17476604110199193
+  },
+  {
+   "dosya": "tuketim_v15.csv",
+   "r": 0.09493444037820761,
+   "fark": -0.001085451145325366,
+   "norm": 2.163087365427436,
+   "birim": 0.0005018064284753824,
+   "yuvarlama_tavani": 3.5384066617218685e-05,
+   "cs_siniri": 0.0954594278334991
+  },
+  {
+   "dosya": "tuketim_v7.csv",
+   "r": 0.2716438991191637,
+   "fark": -0.0023787025713974796,
+   "norm": 3.187819155717106,
+   "birim": 0.000746184916773419,
+   "yuvarlama_tavani": 5.7046777820452634e-05,
+   "cs_siniri": 0.2731460898812927
+  },
+  {
+   "dosya": "tuketim_v2.csv",
+   "r": 0.25620551365710625,
+   "fark": 0.0009130172116137356,
+   "norm": 5.7134534038376925,
+   "birim": 0.00015980128778165362,
+   "yuvarlama_tavani": 9.073132048129207e-05,
+   "cs_siniri": 0.2576223301476301
+  }
+ ],
+ "harmanlar": {
+  "muhafazakar": {
+   "ad": "tuketim_b1_span_k13.csv",
+   "k": 13,
+   "ongoru": 1.0027813968664805,
+   "kazanc": 0.0055225378701814895,
+   "m6_log_fark_sd": 0.055826990227819805,
+   "m6_log_fark_maks": 0.6009607883994299,
+   "katsayilar": {
+    "tuketim_m6_ikiyon.csv": 0.05414159649899915,
+    "tuketim_p51_sicak05.csv": 0.059277476860349614,
+    "tuketim_m4_hava_capali.csv": 0.2044036976887944,
+    "tuketim_v109_birlesik.csv": 0.08600572243361558,
+    "tuketim_v81_sicak08.csv": -0.046342846082569195,
+    "tuketim_v80_optimum.csv": 0.02027266572264056,
+    "tuketim_v79_S3.csv": -0.07075852616198916,
+    "tuketim_v73_soguk_gun160.csv": 0.12526989830023993,
+    "tuketim_v67_c1335_olay.csv": 0.07526247567932627,
+    "tuketim_v55_gunolcek.csv": 0.13705246714844882,
+    "tuketim_v50_nihai30.csv": -0.10604628467874998,
+    "tuketim_v47_eskison.csv": -0.12833342430954484,
+    "tuketim_v44_v27yeni.csv": -0.026217536206636978,
+    "tuketim_v46_gun.csv": -0.0697793125026948,
+    "tuketim_v30_buzme.csv": -0.06479974185701035,
+    "tuketim_v27_v18hedge.csv": 0.03865734620650289,
+    "tuketim_v25_hedge.csv": 0.1209383162732543,
+    "tuketim_v18.csv": 0.024603929758714716,
+    "tuketim_v16.csv": -0.007488431142211293,
+    "tuketim_v15.csv": -0.17534776887718473,
+    "tuketim_v7.csv": -0.04108577621138444,
+    "tuketim_v2.csv": 0.03286411561593492
+   }
+  },
+  "birincil": {
+   "ad": "tuketim_b2_span_k15.csv",
+   "k": 15,
+   "ongoru": 1.0014295687543078,
+   "kazanc": 0.008234010498979122,
+   "m6_log_fark_sd": 0.05433790239517853,
+   "m6_log_fark_maks": 1.029233186693431,
+   "katsayilar": {
+    "tuketim_m6_ikiyon.csv": 0.6884430847873962,
+    "tuketim_p51_sicak05.csv": -0.7190429212897971,
+    "tuketim_m4_hava_capali.csv": 0.4347853141451092,
+    "tuketim_v109_birlesik.csv": 0.10424239613606137,
+    "tuketim_v101_hepsi.csv": 0.0394589847714293,
+    "tuketim_v83_sicak_optimum.csv": -0.033481057613357755,
+    "tuketim_v81_sicak08.csv": -0.06236736044721239,
+    "tuketim_v80_optimum.csv": -0.020457683490900113,
+    "tuketim_v79_S3.csv": -0.11990550639627087,
+    "tuketim_v73_soguk_gun160.csv": 0.10383286860310056,
+    "tuketim_v67_c1335_olay.csv": 0.027879163201837514,
+    "tuketim_v55_gunolcek.csv": 0.04014326242178255,
+    "tuketim_v50_nihai30.csv": -0.07910610225815579,
+    "tuketim_v47_eskison.csv": -0.13350109300656327,
+    "tuketim_v44_v27yeni.csv": -0.014653101883247352,
+    "tuketim_v46_gun.csv": -0.04843023058214921,
+    "tuketim_v30_buzme.csv": -0.1678508076436926,
+    "tuketim_v27_v18hedge.csv": 0.13899309561921272,
+    "tuketim_v25_hedge.csv": -0.1286177361392386,
+    "tuketim_v18.csv": 0.3218370110824444,
+    "tuketim_v16.csv": 0.010007289042896012,
+    "tuketim_v15.csv": -0.15955936890386097,
+    "tuketim_v7.csv": -0.026972638616156515,
+    "tuketim_v2.csv": 0.0029769969572995556
+   }
+  },
+  "agresif": {
+   "ad": "tuketim_b3_span_k20.csv",
+   "k": 20,
+   "ongoru": 1.0012691418173254,
+   "kazanc": 0.00862276617265666,
+   "m6_log_fark_sd": 0.05739907305104898,
+   "m6_log_fark_maks": 1.2363618518341344,
+   "katsayilar": {
+    "tuketim_m6_ikiyon.csv": 0.7303426700208688,
+    "tuketim_p51_sicak05.csv": -0.7686653856202651,
+    "tuketim_m4_hava_capali.csv": 0.45263463796188597,
+    "tuketim_v109_birlesik.csv": 0.09152146206017629,
+    "tuketim_v101_hepsi.csv": 0.02006711940915812,
+    "tuketim_v83_sicak_optimum.csv": -0.017027006269964444,
+    "tuketim_v81_sicak08.csv": -0.08637343022865501,
+    "tuketim_v80_optimum.csv": 0.01423779173760989,
+    "tuketim_v79_S3.csv": -0.09816510703976834,
+    "tuketim_v73_soguk_gun160.csv": 0.38826415848658297,
+    "tuketim_v67_c1335_olay.csv": -0.21682875192533488,
+    "tuketim_v55_gunolcek.csv": -0.012814231041757967,
+    "tuketim_v50_nihai30.csv": -0.022779441149182574,
+    "tuketim_v47_eskison.csv": 0.7803780495146737,
+    "tuketim_v44_v27yeni.csv": 0.6720113940108927,
+    "tuketim_v46_gun.csv": -0.9278110056512621,
+    "tuketim_v30_buzme.csv": -0.9196885120305528,
+    "tuketim_v27_v18hedge.csv": 0.14059925632029419,
+    "tuketim_v25_hedge.csv": 0.1301642847362637,
+    "tuketim_v18.csv": 0.06935673386995903,
+    "tuketim_v16.csv": -0.018799876374048702,
+    "tuketim_v15.csv": -0.12043776091742434,
+    "tuketim_v7.csv": -0.032235931742076056,
+    "tuketim_v2.csv": 0.013909193725644933
+   }
+  },
+  "guv": {
+   "ad": "tuketim_b2_span_k15.csv",
+   "k": 15,
+   "ongoru": 1.0014295687543078,
+   "kazanc": 0.008234010498979122,
+   "m6_log_fark_sd": 0.05433790239517853,
+   "m6_log_fark_maks": 1.029233186693431,
+   "katsayilar": {
+    "tuketim_m6_ikiyon.csv": 0.6884430847873962,
+    "tuketim_p51_sicak05.csv": -0.7190429212897971,
+    "tuketim_m4_hava_capali.csv": 0.4347853141451092,
+    "tuketim_v109_birlesik.csv": 0.10424239613606137,
+    "tuketim_v101_hepsi.csv": 0.0394589847714293,
+    "tuketim_v83_sicak_optimum.csv": -0.033481057613357755,
+    "tuketim_v81_sicak08.csv": -0.06236736044721239,
+    "tuketim_v80_optimum.csv": -0.020457683490900113,
+    "tuketim_v79_S3.csv": -0.11990550639627087,
+    "tuketim_v73_soguk_gun160.csv": 0.10383286860310056,
+    "tuketim_v67_c1335_olay.csv": 0.027879163201837514,
+    "tuketim_v55_gunolcek.csv": 0.04014326242178255,
+    "tuketim_v50_nihai30.csv": -0.07910610225815579,
+    "tuketim_v47_eskison.csv": -0.13350109300656327,
+    "tuketim_v44_v27yeni.csv": -0.014653101883247352,
+    "tuketim_v46_gun.csv": -0.04843023058214921,
+    "tuketim_v30_buzme.csv": -0.1678508076436926,
+    "tuketim_v27_v18hedge.csv": 0.13899309561921272,
+    "tuketim_v25_hedge.csv": -0.1286177361392386,
+    "tuketim_v18.csv": 0.3218370110824444,
+    "tuketim_v16.csv": 0.010007289042896012,
+    "tuketim_v15.csv": -0.15955936890386097,
+    "tuketim_v7.csv": -0.026972638616156515,
+    "tuketim_v2.csv": 0.0029769969572995556
+   }
+  },
+  "opt": {
+   "ad": "tuketim_b3_span_k20.csv",
+   "k": 20,
+   "ongoru": 1.0012691418173254,
+   "kazanc": 0.00862276617265666,
+   "m6_log_fark_sd": 0.05739907305104898,
+   "m6_log_fark_maks": 1.2363618518341344,
+   "katsayilar": {
+    "tuketim_m6_ikiyon.csv": 0.7303426700208688,
+    "tuketim_p51_sicak05.csv": -0.7686653856202651,
+    "tuketim_m4_hava_capali.csv": 0.45263463796188597,
+    "tuketim_v109_birlesik.csv": 0.09152146206017629,
+    "tuketim_v101_hepsi.csv": 0.02006711940915812,
+    "tuketim_v83_sicak_optimum.csv": -0.017027006269964444,
+    "tuketim_v81_sicak08.csv": -0.08637343022865501,
+    "tuketim_v80_optimum.csv": 0.01423779173760989,
+    "tuketim_v79_S3.csv": -0.09816510703976834,
+    "tuketim_v73_soguk_gun160.csv": 0.38826415848658297,
+    "tuketim_v67_c1335_olay.csv": -0.21682875192533488,
+    "tuketim_v55_gunolcek.csv": -0.012814231041757967,
+    "tuketim_v50_nihai30.csv": -0.022779441149182574,
+    "tuketim_v47_eskison.csv": 0.7803780495146737,
+    "tuketim_v44_v27yeni.csv": 0.6720113940108927,
+    "tuketim_v46_gun.csv": -0.9278110056512621,
+    "tuketim_v30_buzme.csv": -0.9196885120305528,
+    "tuketim_v27_v18hedge.csv": 0.14059925632029419,
+    "tuketim_v25_hedge.csv": 0.1301642847362637,
+    "tuketim_v18.csv": 0.06935673386995903,
+    "tuketim_v16.csv": -0.018799876374048702,
+    "tuketim_v15.csv": -0.12043776091742434,
+    "tuketim_v7.csv": -0.032235931742076056,
+    "tuketim_v2.csv": 0.013909193725644933
+   }
+  }
+ },
+ "eksenler": {
+  "dbuyuk": {
+   "aciklama": "|d| medyani ustu (sicak/soguk ayri)",
+   "q_sicak": 0.4999941011749416,
+   "q_soguk": 0.4999906640788255,
+   "Qz": 0.030348878008811045,
+   "Q_perp": 0.027320977554372156,
+   "span_disi_pay": 0.9002302340943276,
+   "kazanc_dk010": 0.0002732097755437216,
+   "kazanc_dk020": 0.0010928391021748864,
+   "kazanc_dk030": 0.002458887979893494,
+   "kazanc_dk050": 0.006830244388593039,
+   "dk_gerekli_hedef": 0.2733221172315015
+  },
+  "dpoz": {
+   "aciklama": "d > 0 (m4 yukari cekiyor)",
+   "q_sicak": 0.5878940483653554,
+   "q_soguk": 0.5496989189331233,
+   "Qz": 0.02959379148128434,
+   "Q_perp": 0.014356488748527834,
+   "span_disi_pay": 0.48511826399828295,
+   "kazanc_dk010": 0.00014356488748527835,
+   "kazanc_dk020": 0.0005742595499411134,
+   "kazanc_dk030": 0.001292083987367505,
+   "kazanc_dk050": 0.0035891221871319585,
+   "dk_gerekli_hedef": 0.3770498531882087
+  },
+  "seviye": {
+   "aciklama": "tahmin seviyesi medyan ustu",
+   "q_sicak": 0.4999924053750956,
+   "q_soguk": 0.49998392584565915,
+   "Qz": 0.030348878000875344,
+   "Q_perp": 0.025525640252929256,
+   "span_disi_pay": 0.841073605824671,
+   "kazanc_dk010": 0.00025525640252929254,
+   "kazanc_dk020": 0.0010210256101171702,
+   "kazanc_dk030": 0.002297307622763633,
+   "kazanc_dk050": 0.006381410063232314,
+   "dk_gerekli_hedef": 0.2827708070748368
+  },
+  "guc": {
+   "aciklama": "guc medyan ustu",
+   "q_sicak": 0.36700742592045477,
+   "q_soguk": 0.49444491404443225,
+   "Qz": 0.028815685521409614,
+   "Q_perp": 0.02671876442831511,
+   "span_disi_pay": 0.9272298730656079,
+   "kazanc_dk010": 0.00026718764428315114,
+   "kazanc_dk020": 0.0010687505771326045,
+   "kazanc_dk030": 0.00240468879854836,
+   "kazanc_dk050": 0.006679691107078778,
+   "dk_gerekli_hedef": 0.2763851519460657
+  },
+  "dalga": {
+   "aciklama": "2026-05-11 toplu dalgasi",
+   "q_sicak": 0.280664001033144,
+   "q_soguk": 0.7116484647915974,
+   "Qz": 0.024623954174827004,
+   "Q_perp": 0.022514490911344276,
+   "span_disi_pay": 0.9143328789313934,
+   "kazanc_dk010": 0.00022514490911344277,
+   "kazanc_dk020": 0.0009005796364537711,
+   "kazanc_dk030": 0.0020263041820209847,
+   "kazanc_dk050": 0.005628622727836069,
+   "dk_gerekli_hedef": 0.3010868775613476
+  },
+  "hazTem": {
+   "aciklama": "Haziran-Temmuz satirlari",
+   "q_sicak": 0.6786526658917429,
+   "q_soguk": 0.7221829667150368,
+   "Qz": 0.02586761285236184,
+   "Q_perp": 0.024387362050410425,
+   "span_disi_pay": 0.942775902422853,
+   "kazanc_dk010": 0.00024387362050410426,
+   "kazanc_dk020": 0.000975494482016417,
+   "kazanc_dk030": 0.002194862584536938,
+   "kazanc_dk050": 0.006096840512602606,
+   "dk_gerekli_hedef": 0.2892947022179686
+  }
+ },
+ "problar": {
+  "dbuyuk": {
+   "dosya": "tuketim_b4_prob_dbuyuk.csv",
+   "s": 0.14819293790275256,
+   "Q_perp": 0.027320977554372156,
+   "maliyet_mse": 0.0006,
+   "taban_mse": 1.0028611811754389,
+   "prob_skoru_L0": 1.0017290957017464,
+   "coz": "L = (1.002861 + 0.000600 - P^2)/(2*0.1482)",
+   "L_hassasiyeti": 0.0003373979941797975
+  },
+  "guc": {
+   "dosya": "tuketim_b5_prob_guc.csv",
+   "s": 0.14985368939204724,
+   "Q_perp": 0.02671876442831511,
+   "maliyet_mse": 0.0006000000000000001,
+   "taban_mse": 1.0028611811754389,
+   "prob_skoru_L0": 1.0017290957017464,
+   "coz": "L = (1.002861 + 0.000600 - P^2)/(2*0.1499)",
+   "L_hassasiyeti": 0.0003336587854650011
+  },
+  "seviye": {
+   "dosya": "tuketim_b6_prob_seviye.csv",
+   "s": 0.15331593753922096,
+   "Q_perp": 0.025525640252929256,
+   "maliyet_mse": 0.0005999999999999998,
+   "taban_mse": 1.0028611811754389,
+   "prob_skoru_L0": 1.0017290957017464,
+   "coz": "L = (1.002861 + 0.000600 - P^2)/(2*0.1533)",
+   "L_hassasiyeti": 0.0003261239555555606
+  }
+ },
+ "kapilar": [
+  {
+   "dosya": "tuketim_b1_span_k13.csv",
+   "satir": 714688,
+   "id_birebir": true,
+   "id_test_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "inf": 0,
+   "maks": 189456.7188838686,
+   "min": 0.0,
+   "baslik": "id,tuketim",
+   "aciklama": "span-optimum k=13 (muhafazakar), ongoru S=1.00278"
+  },
+  {
+   "dosya": "tuketim_b2_span_k15.csv",
+   "satir": 714688,
+   "id_birebir": true,
+   "id_test_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "inf": 0,
+   "maks": 187603.5630071763,
+   "min": 0.0,
+   "baslik": "id,tuketim",
+   "aciklama": "span-optimum k=15 (birincil), ongoru S=1.00143"
+  },
+  {
+   "dosya": "tuketim_b3_span_k20.csv",
+   "satir": 714688,
+   "id_birebir": true,
+   "id_test_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "inf": 0,
+   "maks": 187426.04268220064,
+   "min": 0.0,
+   "baslik": "id,tuketim",
+   "aciklama": "span-optimum k=20 (agresif), ongoru S=1.00127"
+  },
+  {
+   "dosya": "tuketim_b4_prob_dbuyuk.csv",
+   "satir": 714688,
+   "id_birebir": true,
+   "id_test_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "inf": 0,
+   "maks": 197949.29970010495,
+   "min": 0.0,
+   "baslik": "id,tuketim",
+   "aciklama": "eksen dbuyuk, s=0.1482, maliyet MSE +0.000600"
+  },
+  {
+   "dosya": "tuketim_b5_prob_guc.csv",
+   "satir": 714688,
+   "id_birebir": true,
+   "id_test_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "inf": 0,
+   "maks": 181949.03401662927,
+   "min": 0.0,
+   "baslik": "id,tuketim",
+   "aciklama": "eksen guc, s=0.1499, maliyet MSE +0.000600"
+  },
+  {
+   "dosya": "tuketim_b6_prob_seviye.csv",
+   "satir": 714688,
+   "id_birebir": true,
+   "id_test_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "inf": 0,
+   "maks": 185249.37517934226,
+   "min": 0.0,
+   "baslik": "id,tuketim",
+   "aciklama": "eksen seviye, s=0.1533, maliyet MSE +0.000600"
+  }
+ ],
+ "plan": [
+  {
+   "hak": 1,
+   "dosya": "tuketim_b2_span_k15.csv",
+   "tur": "harman",
+   "ongoru_S": 1.0014295687543078,
+   "not_": "span-optimum k=15. Tek hamlede en buyuk sicrama. Skoru AYNI ZAMANDA sigma'yi bagimsiz kalibre eder: gerceklesen ~1.0014 ise sigma kucuk (k=20'ye gec), >1.0025 ise sigma buyuk (k=13'e cekil)."
+  },
+  {
+   "hak": 2,
+   "dosya": "tuketim_b4_prob_dbuyuk.csv",
+   "tur": "prob",
+   "ongoru_S": 1.0017290957017464,
+   "not_": "eksen 'dbuyuk' icin L olcumu. Q_perp=0.027321. Cozum: L = (1.002861 + 0.000600 - P^2)/(2*0.1482)"
+  },
+  {
+   "hak": 3,
+   "dosya": "tuketim_b5_prob_guc.csv",
+   "tur": "prob",
+   "ongoru_S": 1.0017290957017464,
+   "not_": "eksen 'guc' icin L olcumu. Q_perp=0.026719. Cozum: L = (1.002861 + 0.000600 - P^2)/(2*0.1499)"
+  },
+  {
+   "hak": 4,
+   "dosya": "tuketim_b6_prob_seviye.csv",
+   "tur": "prob",
+   "ongoru_S": 1.0017290957017464,
+   "not_": "eksen 'seviye' icin L olcumu. Q_perp=0.025526. Cozum: L = (1.002861 + 0.000600 - P^2)/(2*0.1533)"
+  },
+  {
+   "hak": 5,
+   "dosya": "tuketim_b7_birlesik.csv (olcumlerden SONRA uretilir)",
+   "tur": "harman",
+   "ongoru_S": null,
+   "not_": "span + 3 eksenin olculmus optimumu; Gram matrisi ile ortak cozum"
+  },
+  {
+   "hak": 6,
+   "dosya": "tuketim_b3_span_k20.csv veya 4. eksen probu",
+   "tur": "kosullu",
+   "ongoru_S": null,
+   "not_": "hak1 sonucuna gore: sigma kucukse agresif span, degilse 4. eksen"
+  },
+  {
+   "hak": "7-9",
+   "dosya": "yedek",
+   "tur": "yedek",
+   "ongoru_S": null,
+   "not_": "1 Eylul; son birlesik + 2 yedek"
+  }
+ ]
+}

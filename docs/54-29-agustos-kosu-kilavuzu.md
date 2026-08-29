@@ -64,7 +64,7 @@ düzeyinde yeniden üretti, öngörüsü 5 hanede tutuyor):
 | 1,04 | +0,21 | 1,00286 | 3. |
 | 1,06427 | 0,00 | 1,00553 | değişmez |
 
-`Q(m4, v102) = 0,121581` · `m0 = 1,00553² = 1,011091` · `L = (m0+Q−S²)/2` · `κ* = L/Q`
+`Q(m4, v102) = 0,121396 (DUZELTILDI: eski 0,121581 kirpma oncesi olculmustu)` · `m0 = 1,00553² = 1,011091` · `L = (m0+Q−S²)/2` · `κ* = L/Q`
 
 ---
 

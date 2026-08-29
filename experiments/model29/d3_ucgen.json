@@ -1,0 +1,55 @@
+{
+ "ucgenler": [
+  {
+   "taban": "tuketim_v101_hepsi.csv",
+   "yon": "tuketim_v83_sicak_optimum.csv",
+   "harman": "tuketim_v102_kappa_optimum.csv",
+   "k_dosyada": 0.5409783636165606,
+   "k_optimum": 0.5409783636165613,
+   "optimumda_mi": true,
+   "Q": 0.0732921799441066,
+   "ongorulen_optimum": 1.005530201863151,
+   "gerceklesen": 1.00553,
+   "sapma": -2.018631508615698e-07,
+   "maks_log_fark": 1.7763568394002505e-15
+  },
+  {
+   "taban": "tuketim_v80_optimum.csv",
+   "yon": "tuketim_v81_sicak08.csv",
+   "harman": "tuketim_v83_sicak_optimum.csv",
+   "k_dosyada": 0.31074861626833217,
+   "k_optimum": 0.31074861626833417,
+   "optimumda_mi": true,
+   "Q": 0.00471430106563984,
+   "ongorulen_optimum": 1.0131853695252617,
+   "gerceklesen": 1.01318,
+   "sapma": -5.369525261755825e-06,
+   "maks_log_fark": 8.881784197001252e-16
+  }
+ ],
+ "ozet": {
+  "toplam": 2,
+  "optimum_k_ile": 2,
+  "sapmalar": [
+   -2.018631508615698e-07,
+   -5.369525261755825e-06
+  ],
+  "sapma_mutlak_maks": 5.369525261755825e-06,
+  "NOT": "k optimum degilse ongoru zaten optimum icin, kiyas anlamsiz"
+ },
+ "m4_kirpma": {
+  "sifir_satir": 6120,
+  "yuzde": 0.856317721859049,
+  "Q_dosyadan": 0.12139551205942357,
+  "Q_belgede_yazan": 0.121581,
+  "fark": 0.00018548794057642037,
+  "kirpilan_satirlarin_Q_payi": 0.0011934917487271145,
+  "kirpilan_v102_ort": 0.35884261124183103,
+  "kirpilan_v102_maks": 5.963347112004254,
+  "NOT": "m71 Q'yu KIRPMADAN ONCEKI log uzayinda olcmus (0.121581); diske yazilan dosyanin Q'su 0.121396. docs/53 ve docs/54 ESKI degeri tasiyor. m92/m93/m94/m95 dosyadan yeniden hesapladigi icin ZINCIR TEMIZ.",
+  "L_dosya": 0.022318546479711987,
+  "kappa_dosya": 0.18384984832706971,
+  "L_belge": 0.02241129045000012,
+  "kappa_belge": 0.1843321773138905
+ }
+}

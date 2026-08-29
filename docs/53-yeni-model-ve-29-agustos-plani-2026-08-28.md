@@ -284,7 +284,7 @@ Dosya: `submissions/tuketim_m4_hava_capali.csv` (714.688 satır, ID birebir,
 0 NaN, 0 negatif, maks 142.376, 133 öznitelik).
 
 ```
-Q(m4, v102) = 0,121581      BASABAS 1,06427
+Q(m4, v102) = 0,121396 (DUZELTILDI: eski 0,121581 kirpma oncesi olculmustu)      BASABAS 1,06427
       S      kappa*   optimum RMSLE
   0,95000   +0,9466     0,94982
   0,97000   +0,7887     0,96720

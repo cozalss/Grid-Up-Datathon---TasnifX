@@ -50,5 +50,11 @@
    }
   },
   "surpriz": "geri-test kazancin SICAK'ta oldugunu soyledi; LB SOGUK dedi (k_sog 0.337 > k_sic 0.122)"
+ },
+ "DUZELTME": {
+  "bayat_Q": 0.121581,
+  "dogru_Q": 0.121396,
+  "sebep": "m71 Q'yu kirpma ONCESI log uzayinda olctu; dosyanin gercek Q'su 0.121396",
+  "etki": "gonderilen zincir TEMIZ (m92-m95 dosyadan yeniden hesapladi); yalniz belgeler bayatti"
  }
 }

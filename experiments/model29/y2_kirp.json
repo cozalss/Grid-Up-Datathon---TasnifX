@@ -1,0 +1,22 @@
+{
+ "tuketim_y45_mevsimsel_kirpik.csv": {
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0
+  },
+  "kirpma": 2.0,
+  "kalan_pay": 0.690439798188865
+ },
+ "tuketim_y46_amnezik_kirpik.csv": {
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0
+  },
+  "kirpma": 2.0,
+  "kalan_pay": 0.7766916887631505
+ }
+}

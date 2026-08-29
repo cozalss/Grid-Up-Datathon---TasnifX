@@ -1,0 +1,10 @@
+yuklendi (13s)
+seviye 5,344 trafo (14s)
+mevsim endeksleri (16s)
+haftagunu (17s)
+kohort: 3147 yeni trafo, 258,786 satir, U_genel=1.034 (17s)
+finite olmayan 0 -> genel ortalama ile dolduruluyor
+  capa soguk: -0.9744  (satir 158,369)
+  capa kuyruk: +0.2710  (satir 29,873)
+  capa cekirdek: -0.1243  (satir 526,446)
+YAZILDI C:\Users\Cem\Desktop\Datahon_Laptop\Grid-Up-Datathon---TasnifX\submissions\tuketim_y33_klasik.csv kapi={'satir': 714688, 'id_birebir': True, 'nan': 0, 'negatif': 0} (28s)

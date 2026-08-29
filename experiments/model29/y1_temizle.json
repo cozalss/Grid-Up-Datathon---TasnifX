@@ -1,0 +1,25 @@
+{
+ "tuketim_y43_mevsimsel_temiz.csv": {
+  "curuk_Q_payi": 0.620675130059537,
+  "capa": {
+   "soguk": {
+    "satir": 158369,
+    "kaydirma": -1.343834716484067e-15
+   },
+   "kuyruk": {
+    "satir": 29000,
+    "kaydirma": -0.016698556184033323
+   },
+   "cekirdek": {
+    "satir": 467772,
+    "kaydirma": -0.07368357714007973
+   }
+  },
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0
+  }
+ }
+}

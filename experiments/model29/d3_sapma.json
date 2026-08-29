@@ -1,0 +1,126 @@
+{
+ "1_gecmis_ucgenler": [
+  {
+   "harman": "tuketim_v102_kappa_optimum.csv",
+   "kappa": 0.5409783636165613,
+   "Q": 0.0732921799441066,
+   "ongoru": 1.005530201863151,
+   "gerceklesen": 1.00553,
+   "sapma": -2.018631508615698e-07,
+   "yuvarlama_bandi": [
+    1.0055251900804898,
+    1.0055351894893265
+   ],
+   "yuvarlama_yarim_genislik": 4.999704418362505e-06,
+   "bantta_mi": true,
+   "sd_Q_yarim": 0.00026465359337035735,
+   "public_yarim_hipotezi_sd_sapma": 3.2678772328515304e-05,
+   "gozlenen_kac_sd": 0.006177195055930091
+  },
+  {
+   "harman": "tuketim_v83_sicak_optimum.csv",
+   "kappa": 0.31074861626833417,
+   "Q": 0.00471430106563984,
+   "ongoru": 1.0131853695252617,
+   "gerceklesen": 1.01318,
+   "sapma": -5.369525261755825e-06,
+   "yuvarlama_bandi": [
+    1.013180441250662,
+    1.0131903074398698
+   ],
+   "yuvarlama_yarim_genislik": 4.9330946039205514e-06,
+   "bantta_mi": true,
+   "sd_Q_yarim": 3.4498750607014512e-06,
+   "public_yarim_hipotezi_sd_sapma": 3.646458805535602e-07,
+   "gozlenen_kac_sd": 14.725314471136977
+  }
+ ],
+ "2_bugun_m6": {
+  "ongoru": 1.0029187720298796,
+  "gerceklesen": 1.00284,
+  "sapma": -7.877202987960352e-05,
+  "buyutme_carpani": 1.5815456859185648,
+  "A_katsayisi": 0.2770218766997708,
+  "B_katsayisi": 0.3251762820786058,
+  "sd_Qw_yarim": 0.0005697581739286768,
+  "sd_Qc_yarim": 0.0003032154363535987,
+  "public_yarim_hipotezi_sd_sapma": 9.277984997822975e-05,
+  "gozlenen_kac_sd": 0.8490208800519392,
+  "gereken_bagil_Q_kaymasi": -0.00447539657375121
+ },
+ "3_J_parca_riski": {
+  "2": {
+   "parca_satirlari": [
+    158369,
+    556319
+   ],
+   "Q_parca": [
+    0.03477158867767434,
+    0.08662392338174923
+   ],
+   "kosul_sayisi": 7.082685460994985,
+   "sd_L_yuvarlamadan": [
+    9.330520894299562e-06,
+    1.025987767223822e-05
+   ],
+   "sd_ongoru_yuvarlamadan_RMSLE": 3.629330225115827e-06,
+   "sd_ongoru_public_yarimdan_RMSLE": 9.212494345820634e-05,
+   "toplam_sd_RMSLE": 9.21964058142217e-05,
+   "gereken_prob_sayisi": 1,
+   "asiri_uyum_MSE": 1.1317840298423929e-05,
+   "asiri_uyum_RMSLE": 5.641994166711829e-06
+  },
+  "3": {
+   "parca_satirlari": [
+    158369,
+    29873,
+    526446
+   ],
+   "Q_parca": [
+    0.03477158867767434,
+    0.007081001340916804,
+    0.07954292204083244
+   ],
+   "kosul_sayisi": 11.09219695470776,
+   "sd_L_yuvarlamadan": [
+    9.330520894299562e-06,
+    9.330520894299562e-06,
+    1.4415491710574369e-05
+   ],
+   "sd_ongoru_yuvarlamadan_RMSLE": 4.481415111680162e-06,
+   "sd_ongoru_public_yarimdan_RMSLE": 9.688211128304425e-05,
+   "toplam_sd_RMSLE": 9.698570290544563e-05,
+   "gereken_prob_sayisi": 2,
+   "asiri_uyum_MSE": 1.6976760447635893e-05,
+   "asiri_uyum_RMSLE": 8.462991250067744e-06
+  },
+  "4": {
+   "parca_satirlari": [
+    108253,
+    50116,
+    72785,
+    483534
+   ],
+   "Q_parca": [
+    0.024745147700831836,
+    0.010026440976842504,
+    0.02431221692151025,
+    0.06231170646023899
+   ],
+   "kosul_sayisi": 15.28925912043483,
+   "sd_L_yuvarlamadan": [
+    9.330520894299562e-06,
+    9.330520894299562e-06,
+    9.330520894299562e-06,
+    1.7777536646707777e-05
+   ],
+   "sd_ongoru_yuvarlamadan_RMSLE": 5.509298903617906e-06,
+   "sd_ongoru_public_yarimdan_RMSLE": 9.432685904465157e-05,
+   "toplam_sd_RMSLE": 9.448761141884671e-05,
+   "gereken_prob_sayisi": 3,
+   "asiri_uyum_MSE": 2.2635680596847857e-05,
+   "asiri_uyum_RMSLE": 1.1283988333423659e-05
+  }
+ },
+ "3_yorum": "Bagliyici kisit ASIRI UYUM DEGIL (parca basina ~2.8e-6 RMSLE), COZUM SISTEMININ KOSUL SAYISI ve her parcanin bir GONDERIM HAKKI yemesi."
+}

@@ -1,0 +1,22 @@
+{
+ "capa": {
+  "soguk": {
+   "satir": 158369,
+   "kaydirma": -0.8802134314168137
+  },
+  "kuyruk": {
+   "satir": 29873,
+   "kaydirma": 0.4512950248943417
+  },
+  "cekirdek": {
+   "satir": 526446,
+   "kaydirma": 0.015989286779411138
+  }
+ },
+ "kapi": {
+  "satir": 714688,
+  "id_birebir": true,
+  "nan": 0,
+  "negatif": 0
+ }
+}

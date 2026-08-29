@@ -103,7 +103,20 @@ tek-`κ` harmanı 1,00349'da kalırdı.
 öngörülen skor 1,00553 birebir tuttu.
 
 Bugünkü sınavı da geçti: `m6` için öngörü **1,00292**, gerçekleşen **1,00284**.
-Sapma 0,00008 — girdi skorlarının 5 haneye yuvarlanmasından geliyor.
+Sapma 0,00008.
+
+**DUZELTME (dusmanca denetim, ayni gece):** bu sapma yuvarlamadan GELMIYOR.
+Yuvarlama bandi ±1,18e-5; gerceklesen bandin 6,7 kati disinda. Gercek kaynak:
+**`Q` tum 714.688 satirda olculuyor, LB skorlari PUBLIC %50'de.** Turetilen
+tam ozdeslik:
+```
+gerceklesen_MSE - ongorulen_MSE = 0,2770*(Qw_tum-Qw_pub) + 0,3252*(Qc_tum-Qc_pub)
+```
+Bu kanalin sd'si **9,28e-5 RMSLE**; gozlenen sapma 0,85 sd -- tamamen normal,
+sistematik yanlilik YOK.
+
+> **ARACIN GERCEK HASSASIYETI ±1e-5 DEGIL, ±9,5e-5 (1 sd).**
+> 2e-4'un altindaki marjinal kazanc olcum gurultusunden ayirt EDILEMEZ.
 
 ---
 
