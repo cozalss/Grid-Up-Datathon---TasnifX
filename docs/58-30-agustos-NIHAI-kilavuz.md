@@ -68,7 +68,7 @@ python experiments/model29/m99_coklu_coz.py tuketim_m6_ikiyon.csv=1.00284 tuketi
 > **`g7` için skor girmek yerine:** `m101_planB.py` `L(g7)`'yi doğrudan
 > hesaplıyor. En temizi `m99`'a `g7`'yi eşdeğer skorla vermek:
 > `S_g7 = sqrt(m0 + Q - 2L) = sqrt(1.005688 + 0.002494 - 2*0.002728)` =
-> **`1.00135`** — bu, `g7`'nin ölçülseydi alacağı skor.
+> **`1.00136`** — bu, `g7`nin ölçülseydi alacağı skor. (Doğrulandı: m99 bu skordan L=0,002740 çözüyor, hedef 0,002728; sonuç 1,00134.)
 
 Betik **korkuluklu**: `cond(G)>1e8`, `MSE<0`, `|k|₁>5`, `MSE>m0` → DURUR,
 dosya yazmaz. Tetiklenirse `--lam 0.001` ekle.
