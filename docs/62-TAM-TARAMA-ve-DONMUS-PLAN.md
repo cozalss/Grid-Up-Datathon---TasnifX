@@ -227,3 +227,71 @@ zaten biliniyor; sıfır varsaymak olmayan bir kazanç uydurur.
 gözlem 20 bilgi değildir; ortogonalleştirip artımlı değere bak.
 **49.** Korkuluk eşiğini, **iyi senaryoda tetiklenip tetiklenmediğini ölçerek** koy.
 Bir güvenlik kontrolü kazandığın anda seni durduruyorsa güvenlik değil, arızadır.
+
+---
+
+## 10. GEC EK (29 Agustos 23:50) — karamsar tahmin GERI CEKILDI
+
+### Liderlik tablosu degisti
+```
+1. Grid Grinders    0,99009   (aksam 0,99046'dan indi)
+2. Atakan Aldemir   0,99940
+3. Duo-Electra      1,00129   <- 21:32'de 1,00566'dan atladi
+4. Tuna Deniz       1,00267
+5. TasnifX          1,00284   <- BIZ
+```
+3. sira esigi artik **1,00129**.
+
+### Bolum 1'deki "Yanlis 1"in kendisi de guvenilmez cikti
+
+Karamsar revizyonum, adaylarin **span ici L**'sine dayaniyordu. O buyuklugun
+regularizasyona duyarliligini olctum:
+
+| yon | rcond 1e-15 | 1e-10 | 1e-4 | span artigi | \|c\|_1 |
+|---|---|---|---|---|---|
+| **g7** | +0,002751 | +0,002752 | +0,002743 | 0,0000 | 1,7 |
+| y40 | −0,013092 | −0,005186 | −0,005153 | 0,5061 | 4098 → 5,7 |
+| z2 | **+0,022891** | **−0,005239** | −0,004873 | 0,7796 | 14581 → 16,7 |
+
+`g7` her regularizasyonda ayni — span'in **icinde** oldugu icin. Ama `y40` ve
+`z2` icin tahmin savruluyor, `z2`'de **isaret doniyor**. Yarisi span disinda olan
+bir yonun "span ici L"si, kotu kosullu bir sistemden ekstrapolasyondur.
+
+Ayni kararsiz makine "durust onsel 0,0146"yi da uretmisti (`lstsq(V, r)`).
+**Her ikisi de nokta tahmini olarak geri cekildi.**
+
+### Geriye kalan SAGLAM olanlar
+
+1. **`L_g7 = 0,002751`** — her regularizasyonda ayni, artik %0,00. Planin
+   dayandigi tek sabit ve saglam.
+2. **Olculen `rho` degerleri kesin** — matris tersi yok:
+   `L_j = (m0 + Q_j − P_j²)/2`. m6'ya gore ortanca **0,027**.
+3. **Sonuc tablosu varsayimsiz** — yalnizca "olculen `rho` su ise skor bu" der.
+
+### Guncel beklenti (yeni esiklerle)
+
+| `rho` | 30 Agu sonu | 31 Agu sonu | 1 Eyl nihai | sira |
+|---|---|---|---|---|
+| −0,015 | 1,00108 | 1,00088 | 1,00071 | 3. |
+| 0,000 | 1,00065 | 1,00062 | 1,00060 | 3. |
+| +0,007 | 1,00013 | 1,00005 | 0,99995 | 3. |
+| **+0,015** | 0,99933 | 0,99909 | **0,99881** | **2.** |
+| +0,022 | 0,99827 | 0,99776 | 0,99716 | 2. |
+| +0,030 | 0,99698 | 0,99611 | 0,99510 | 2. |
+
+**Esik: `rho >= 0,010` ise 2. sira menzilde.** Olculmus gecmis ortancasi 0,027,
+yani gerekenin ~2,5 kati. Bu "yeni adaylar icin de gecerli mi" sorusu aciktir;
+ama soruyu sayisallastiran hesap da coktu. 2. siraya karsi saglam kanit YOK.
+
+### 1. sondanin ikinci isi
+
+`m107`, `L_y40 = 0` varsayimiyla 1,00090 ongoruyor. Geri cekilen karamsar model
+~1,0022 ongoruyordu. **Yarinki ilk skor bu iki modelden hangisinin dogru
+oldugunu da olcecek** — kalan 8 hakkin yorumu buna gore yapilacak.
+
+### Kural 50
+
+**50.** Bir tahmini geri cekmeden once, geri cekme gerekcesinin KENDISINI test et.
+Kotu kosullu bir matristen cikan sayiyla iyimser bir tahmini curutmek, yerine
+daha kotu bir tahmin koymaktan ibaret olabilir. Once `cond`'a ve regularizasyon
+duyarliligina bak; kararli olmayan buyuklukle karar verme.

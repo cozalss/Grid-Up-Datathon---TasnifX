@@ -15,7 +15,7 @@ dersler var.
 
 | | |
 |---|---|
-| **Liderlik Tablosu** | **4. Sıra (TasnifX)**: `1.00284` · **1.** Grid Grinders `0.99046` · **2.** Atakan Aldemir `0.99940` (hedef) · **3.** Tuna Deniz `1.00267` — 2. sıra için gereken kazanç `0,007046` (kalibre `m0`, 2026-08-29 23:30) |
+| **Liderlik Tablosu** | **4. Sıra (TasnifX)**: `1.00284` · **1.** Grid Grinders `0.99046` · **2.** Atakan Aldemir `0.99940` (hedef) · **3.** Tuna Deniz `1.00267` · **3.** Duo-Electra `1.00129` · **4.** Tuna Deniz `1.00267` · **5. TasnifX** — 2. sıra için gereken kazanç `0,007046` (2026-08-29 23:50) |
 | **28 Ağustos** | `v101` → `1.01614` (ıskaladı, `L`yi çözdü) · `v102 = v83 + 0.459·(v101−v83)` → **`1.00553`**, ön kayıtla 5 hanede birebir, 9.→2. sıra · `v109` → `1.01818` (CV türevli yönler `κ≈0`). Kota 3/3 kullanıldı |
 | **29 Ağustos SONUCU** | 3 hak: `m4` **1.04300** (öngörü 1.00 — YANILDI, aktarım `f=−0,42`) · `p51` prob **1.00946** · `m6` iki-yön optimum **1.00284** (öngörü 1.00292). `1.00553 → 1.00284`, **5.→3. sıra**. Bulgu: geri-test SICAK dedi, LB SOĞUK dedi (`κ_soğuk 0,337` vs `κ_sıcak 0,122`). Ayrıntı: [`docs/55`](docs/55-29-agustos-bilancosu.md) |
 | **📋 KESİN KILAVUZ** | **[`docs/62`](docs/62-TAM-TARAMA-ve-DONMUS-PLAN.md)** — DONMUŞ plan, docs/60+61in yerine geçer. Tek başına yeterli. Arka plan: [`docs/59`](docs/59-tam-durum-2026-08-29.md) |
