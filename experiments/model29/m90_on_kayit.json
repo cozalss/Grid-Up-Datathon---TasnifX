@@ -1,20 +1,54 @@
 {
-  "ne": "29 Agustos HAK1/HAK2 ON KAYITLI TAHMIN -- gonderimden ONCE yazildi",
-  "yazildi": "2026-08-28 21:15 yerel (18:15 UTC)",
-  "dosya": "submissions/tuketim_m4_hava_capali.csv",
-  "girdiler": {"Q_vs_v102": 0.121581, "m0": 1.011091, "mevcut_LB": 1.00553},
-  "tahmin": {
-    "HAK1_S_merkez": 1.00,
-    "HAK1_S_bant": [0.99, 1.02],
-    "HAK2_merkez": 0.98737,
-    "HAK2_bant": [0.98144, 0.99679],
-    "siralama_beklentisi": "1. veya 2."
-  },
-  "gerekce": [
-    "Carpimsal aktarim (v83 capasi) 0.942 diyor -- REDDEDILDI.",
-    "435 takim, lider 0.99064, onlarca takim %1 icinde: taban ~0.99 civarinda.",
-    "Hatanin %48'i sinyalsiz trafolarda (permutasyon testiyle olculdu).",
-    "Geri-testteki -%6,4'un buyuk kismi tasinmayacak varsayildi."
+ "ne": "29 Agustos HAK1/HAK2 ON KAYITLI TAHMIN -- gonderimden ONCE yazildi",
+ "yazildi": "2026-08-28 21:15 yerel (18:15 UTC)",
+ "dosya": "submissions/tuketim_m4_hava_capali.csv",
+ "girdiler": {
+  "Q_vs_v102": 0.121581,
+  "m0": 1.011091,
+  "mevcut_LB": 1.00553
+ },
+ "tahmin": {
+  "HAK1_S_merkez": 1.0,
+  "HAK1_S_bant": [
+   0.99,
+   1.02
   ],
-  "yanlislama": "S < 0.97 gelirse tahminim ASIRI KARAMSARDI; S > 1.04 gelirse geri-test LB'yi ONGORMUYOR ve model yatirimi kesilir."
+  "HAK2_merkez": 0.98737,
+  "HAK2_bant": [
+   0.98144,
+   0.99679
+  ],
+  "siralama_beklentisi": "1. veya 2."
+ },
+ "gerekce": [
+  "Carpimsal aktarim (v83 capasi) 0.942 diyor -- REDDEDILDI.",
+  "435 takim, lider 0.99064, onlarca takim %1 icinde: taban ~0.99 civarinda.",
+  "Hatanin %48'i sinyalsiz trafolarda (permutasyon testiyle olculdu).",
+  "Geri-testteki -%6,4'un buyuk kismi tasinmayacak varsayildi."
+ ],
+ "yanlislama": "S < 0.97 gelirse tahminim ASIRI KARAMSARDI; S > 1.04 gelirse geri-test LB'yi ONGORMUYOR ve model yatirimi kesilir.",
+ "SONUC": {
+  "olculdu": "2026-08-29",
+  "HAK1_gercek": 1.043,
+  "HAK1_tahmin_merkez": 1.0,
+  "HAK1_bant": [
+   0.99,
+   1.02
+  ],
+  "hukum": "TAHMIN YANLIS. Yanlislama esigi (S>1.04) TETIKLENDI.",
+  "aktarim_f_gercek": -0.42,
+  "kurtaran_hamle": "yonu soguk/sicak diye ikiye bolmek",
+  "HAK2_prob": 1.00946,
+  "HAK3_ongoru": 1.00292,
+  "HAK3_gercek": 1.00284,
+  "gun_sonu": {
+   "skor": 1.00284,
+   "sira": 3,
+   "sabah": {
+    "skor": 1.00553,
+    "sira": 5
+   }
+  },
+  "surpriz": "geri-test kazancin SICAK'ta oldugunu soyledi; LB SOGUK dedi (k_sog 0.337 > k_sic 0.122)"
+ }
 }
