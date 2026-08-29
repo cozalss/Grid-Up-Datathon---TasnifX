@@ -1,0 +1,102 @@
+{
+ "marjinal_Q": 0.0032354255617681703,
+ "marjinal_kurtoz": 24.039273037091718,
+ "l_kolon": [
+  "l_sic_ort30",
+  "l_sic_ort60",
+  "l_cdd22_ort30",
+  "l_cdd22_ort60",
+  "l_hdd18_ort30",
+  "l_hdd18_ort60",
+  "l_sic_yon",
+  "l_cdd22_yon",
+  "l_hdd18_yon",
+  "l_sic_yon30",
+  "l_sic_sapma60"
+ ],
+ "nan_egitim": {
+  "l_sic_ort30": 0.0,
+  "l_sic_ort60": 0.0,
+  "l_cdd22_ort30": 0.0,
+  "l_cdd22_ort60": 0.0,
+  "l_hdd18_ort30": 0.0,
+  "l_hdd18_ort60": 0.0,
+  "l_sic_yon": 0.0,
+  "l_cdd22_yon": 0.0,
+  "l_hdd18_yon": 0.0,
+  "l_sic_yon30": 0.0,
+  "l_sic_sapma60": 0.0
+ },
+ "nan_test": {
+  "l_sic_ort30": 0.0,
+  "l_sic_ort60": 0.0,
+  "l_cdd22_ort30": 0.0,
+  "l_cdd22_ort60": 0.0,
+  "l_hdd18_ort30": 0.0,
+  "l_hdd18_ort60": 0.0,
+  "l_sic_yon": 0.0,
+  "l_cdd22_yon": 0.0,
+  "l_hdd18_yon": 0.0,
+  "l_sic_yon30": 0.0,
+  "l_sic_sapma60": 0.0
+ },
+ "tur": [
+  200,
+  350
+ ],
+ "ozellik": 144,
+ "temizle": {
+  "curuk_Q_payi": 0.29294579060889026,
+  "capa": {
+   "soguk": {
+    "satir": 158369,
+    "kaydirma": -0.29075665960584335
+   },
+   "kuyruk": {
+    "satir": 29000,
+    "kaydirma": 0.020506264108315752
+   },
+   "cekirdek": {
+    "satir": 467772,
+    "kaydirma": 0.0435895806180613
+   }
+  },
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0
+  }
+ },
+ "olcum": {
+  "dosya": "tuketim_h1_isil.csv",
+  "Q": 0.05193687200830271,
+  "Q_rejim_payi": {
+   "soguk": 0.31267031317077504,
+   "kuyruk": 0.04313667950510358,
+   "cekirdek": 0.6441930073241214
+  },
+  "maks_fark": 2.7202156408431963,
+  "p999_fark": 1.9237236344249118,
+  "Q_yeni": 0.01716555479416511,
+  "yeni_pay": 0.3305080596964137,
+  "kos_m4": 0.8054713772233337,
+  "kos_m6dik": 0.14390205272174694,
+  "span_ortusme": 0.8182248714770203,
+  "korelasyon": 0.9914048909003091,
+  "kalibre_kazanc": 0.004096,
+  "kalibre_kazanc_yeni": 0.0013537610125165106,
+  "basabas_skor": 1.0284089031160235,
+  "log_ort": 6.6017754249040905,
+  "log_std": 1.7384033751072994,
+  "maks": 147402.90299972324,
+  "alt1kwh_orani": 0.0261498723918689,
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  }
+ }
+}

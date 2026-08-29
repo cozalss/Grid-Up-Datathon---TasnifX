@@ -1,0 +1,75 @@
+{
+ "hukum": "HAFTA GUNU OLCULEMEZ -- aday URETILMEDI",
+ "kapi": {
+  "Q_esigi": 0.01,
+  "kurtoz_esigi": 12,
+  "kos_esigi": 0.2
+ },
+ "hafta_gunu": {
+  "Q": 0.0034272069516868868,
+  "kurtoz": 22.657097707723572,
+  "PLASEBO_tohum_Q": 0.003481442676050537,
+  "sinyal_plasebo_orani": 0.9844214799982928,
+  "yonun_hafta_gunu_ekseninde_kalan_payi": 0.026905370209119563,
+  "saf_hafta_gunu_Q": 9.221027181840383e-05,
+  "hafta_gunu_profili_PztPaz": {
+   "0": 0.0003120383279035552,
+   "1": 0.0006069498413967033,
+   "2": 0.00043391612210436396,
+   "3": 0.0008468439735771576,
+   "4": 0.0009701156216957493,
+   "5": -0.004568253786340821,
+   "6": -0.02540630247463123
+  },
+  "kosinus": {
+   "m4_ekseni": -0.0380519595970418,
+   "tuketim_y40_sota_temiz.csv": -0.057596241756469525,
+   "tuketim_q1c_kapasite_siki.csv": -0.041156210679870624,
+   "tuketim_y46_amnezik_kirpik.csv": -0.020392421446084625,
+   "tuketim_y45_mevsimsel_kirpik.csv": -0.0184110511359951,
+   "tuketim_z2_analog.csv": -0.03615250802576764,
+   "tuketim_g7_span_tau3.csv": 0.05094240122856863
+  },
+  "modelsiz_tavan_yaz25_kuresel": 0.0005752853479512558,
+  "modelsiz_tavan_yaz25_trafoici": 0.0011299477774172984
+ },
+ "takvim_demeti": {
+  "takvim_taban_Q": 0.0036647489366156034,
+  "genis_takvim_Q": 0.0030815068999461457,
+  "genis_takvim_kolon": 18,
+  "modelsiz_tavan_yaz25_hg_tatil": 0.000576078506373433,
+  "hukum": "ayni sekilde OLCULEMEZ -- aday URETILMEDI"
+ },
+ "uzun_isil_pencere": {
+  "marjinal_Q": 0.0032354255617681703,
+  "marjinal_kurtoz": 24.039273037091718,
+  "l_kolon": [
+   "l_sic_ort30",
+   "l_sic_ort60",
+   "l_cdd22_ort30",
+   "l_cdd22_ort60",
+   "l_hdd18_ort30",
+   "l_hdd18_ort60",
+   "l_sic_yon",
+   "l_cdd22_yon",
+   "l_hdd18_yon",
+   "l_sic_yon30",
+   "l_sic_sapma60"
+  ],
+  "aday": "submissions/tuketim_h1_isil.csv",
+  "Q": 0.05193687200830271,
+  "kos_m4": 0.8054713772233337,
+  "kurtoz": 19.1,
+  "Q_yeni": 0.01716555479416511,
+  "yeni_pay": 0.3305080596964137,
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  },
+  "histerezis_modelsiz_tavan": 0.018921381828352436,
+  "hukum": "Q kapisini GECER ama kos(m4)=+0,805 -- m4 ekseninin yeniden atisi, YENI YON DEGIL"
+ }
+}
