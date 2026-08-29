@@ -1,0 +1,196 @@
+{
+  "denetci": "KIRICI",
+  "tarih": "2026-08-29",
+  "kaggle_gonderim": "YOK - hicbir sey gonderilmedi, hicbir mevcut dosya degistirilmedi",
+  "A_g7_span": {
+    "A1_g3_ile_ayni_mi": {
+      "sonuc": "GECTI",
+      "sha256_esit": true,
+      "not": "submissions/tuketim_g7_span_tau3.csv == experiments/model29/g3_aday_tau3.csv BAYT BAYT ayni (sha256 85b92a4d...)"
+    },
+    "A2_afin_kombinasyon_mu": {
+      "sonuc": "GECTI",
+      "artik_enerji_N": 3.035009e-08,
+      "artik_RMS": 0.0001742128,
+      "kirpma_delta_enerji": 3.045117e-08,
+      "oran": 0.9967,
+      "farkli_satir": 153,
+      "not": "artigin %99.67si 153 kirpma satirindan geliyor; kirpma disinda TAM afin kombinasyon"
+    },
+    "A3_agirlik_toplami_TAM_1_mi": {
+      "sonuc": "GECTI",
+      "sum_w": 1.0,
+      "sapma": -2.22e-16,
+      "l1_norm": 3.0,
+      "duyarlilik": "sum(w)=1+1e-4 olsaydi MSE +1.37e-3 kayardi (||t||^2/N=46.5); gozlenen sapma 1e-16 -> etkisiz"
+    },
+    "A4_bagimsiz_ongoru": {
+      "sonuc": "GECTI",
+      "benim_hesabim_mse": 1.00262738,
+      "benim_hesabim_rmsle": 1.0013128,
+      "g3_aday_json_mse": 1.0026273763280313,
+      "fark": 0.0,
+      "not": "m100_bagimsiz_denetim.py ve g1_gram.json OKUNMADAN turetildi, sonra karsilastirildi"
+    },
+    "A5_kirpma_etkisi": {
+      "sonuc": "GECTI - ZARARSIZ, hatta KUCUK KAZANC",
+      "kirpilan_satir": 153,
+      "hepsi_tam_sifir": true,
+      "ham_p_araligi": [-0.03221, -0.00005],
+      "kanit": "gercek t=log1p(y)>=0 ve ham p<0 oldugundan |0-t| <= |p-t|; kirpma hatayi SADECE azaltir",
+      "mse_kazanci_araligi": [3.045e-08, 1.243e-06],
+      "gercek_rmsle_araligi": [1.0013122, 1.0013128]
+    },
+    "A6_olcum_bandi_dogrulamasi": {
+      "sonuc": "GECTI",
+      "LOO_ongoru_hatasi_RMS": 7.738e-05,
+      "maks_hata": 0.0001685,
+      "n": 11,
+      "g3_bandi": 7.53e-05,
+      "docs56_iddiasi": 9.28e-05,
+      "not": "span'a TAM oturan 11 dosyanin skoru digerlerinden ongoruldu; +-0.00007 bandi AMPIRIK OLARAK DOGRULANDI"
+    },
+    "A7_yer_degistirme_guvenli_bolgede_mi": {
+      "sonuc": "GECTI",
+      "g7_sapma_m6ye": 0.0499,
+      "LOO_da_dogrulanan_en_buyuk_sapma": 0.2864,
+      "not": "g7 ampirik olarak dogrulanmis bolgenin cok icinde"
+    },
+    "A8_hata_gram_tanimsiz": {
+      "sonuc": "UYARI",
+      "en_kucuk_ozdeger": -3.44e-09,
+      "negatif_ozdeger_sayisi": 3,
+      "ucgen_esitsizligi_ihlali": 0,
+      "somuru_tau3_mse": 4.9e-05,
+      "somuru_l1_35": "MSE 1.00102 (tamamen sahte)",
+      "not": "|w|1=3te sayisal somuru yalnizca ~2.4e-5 RMSLE degerinde; |w|1>=33te sahte kazanc devraliyor -> docsun |w|1<=3-5 uyarisi DOGRU"
+    }
+  },
+  "B_y46": {
+    "B1_kapi": {
+      "sonuc": "GECTI",
+      "satir": 714688,
+      "id_test_csv_birebir": true,
+      "id_sample_submission_birebir": true,
+      "nan": 0,
+      "sonsuz": 0,
+      "negatif": 0,
+      "tam_sifir": 0
+    },
+    "B2_dagilim": {
+      "sonuc": "GECTI ama UYARI",
+      "y46": {"log_ort": 6.60178, "log_std": 1.59375, "maks": 98728.8, "min": 0.0120532, "alt1kwh_orani": 0.02289, "ust1e5_satir": 0, "q999": 41299.33},
+      "m6": {"log_ort": 6.60178, "log_std": 1.70895, "maks": 180735.0, "min": 0.0118721, "alt1kwh_orani": 0.02413, "ust1e5_satir": 250, "q999": 68895.25},
+      "UYARI": "y46nin UST KUYRUGU belirgin sikismis: 1e5 ustu HIC satir yok (m6da 250 var), 99.9 yuzdelik m6nin %60i. Toplu sifir / 1e6 ustu deger gibi sacmalik YOK."
+    },
+    "B3_tabana_esitleme_iddiasi": {
+      "sonuc": "GECTI",
+      "m6_ile_birebir_satir": 57277,
+      "oran": 0.08014,
+      "not": "980 trafo x ~58 satir = ~57.000 ile tutarli. y45 de ayni 57277; y40/y41 farkli set kullanmis (59547)"
+    },
+    "B4_span_ortusmesi": {
+      "sonuc": "KALDI - DOCS RAKAMI YANLIS",
+      "docs56_yeni_yuzde": {"y46": 97.1, "y45": 99.8, "y40": 93.8, "m3": 21.7},
+      "olculen_tam_span_20D": {"y46": 87.2, "y45": 65.8, "y40": 50.6, "m3": 20.7},
+      "sebep": "y1_olcum.py yeni_payi SADECE 2 BOYUTLU tabanla (E1=m4 yonu, E2=dikleştirilmis D6) hesapliyor; olculmus fark uzayinin sayisal ranki 20",
+      "etki": "y45 ve y40 icin 31 Agustos plani ASIRI IYIMSER (kazanc sirasiyla 0.66x ve 0.51x). y46 hala saglam.",
+      "capraz_dogrulama": "g7nin ayni olcumde yeni yuzdesi 0.0 cikiyor -> yontem dogru calisiyor"
+    },
+    "B5_kotu_skor_zarari": {
+      "sonuc": "DOGRULANAMADI - ACIK RISK",
+      "not": "public LBde en iyi skorun tutuldugu dogru. Ama FINAL SECIM sorusu docs/31:39te sorulmus, docs/52 §17.11de HALA CEVAPSIZ. Kaggle varsayilani (en iyi public otomatik secilir) bu yarisma icin DOGRULANMADI"
+    },
+    "B6_basabas_riski": {
+      "sonuc": "UYARI",
+      "Q_g7_tabanina": 0.39663,
+      "basabas_skor": 1.18295,
+      "not": "y46 tam 1.183 civari skor alirsa bilgi SIFIR, hak bosa gider. Ucgen sinirlari [0.389, 1.626] cok gevsek, bu ihtimali dislayamiyor"
+    }
+  },
+  "C_m99": {
+    "C1_cebir": {
+      "sonuc": "GECTI",
+      "turetim": "e_p = e_a + sum k_j d_j ; m_j = m0 + 2c_j + G_jj => c_j = (m_j-m0-G_jj)/2 ; L_j = -c_j = (m0+G_jj-m_j)/2",
+      "isaretler": "DOGRU",
+      "G_tanimi": "D@D.T/N DOGRU",
+      "mse_satiri": "m0 - 2k'L + k'Gk -- ridgeli Gr yerine ham G kullaniyor: DOGRU"
+    },
+    "C2_sinav": {
+      "sonuc": "GECTI",
+      "v102_m4_p51_ongoru": 1.00292,
+      "gerceklesen_m6": 1.00284,
+      "hata": 8.0e-05
+    },
+    "C3_arguman_ayristirma_hatasi": {
+      "sonuc": "KALDI -> KOORDINATOR TARAFINDAN DUZELTILDI",
+      "kanit": "docs/56 §5teki komut aynen ValueError: not enough values to unpack (expected 2, got 1) veriyor",
+      "sebep": "arg=[x for x in sys.argv[1:] if not x.startswith('--')] --ciktinin DEGERINI de yon saniyordu"
+    },
+    "C4_tekil_gram": {
+      "sonuc": "GECTI (patliyor)",
+      "not": "ayni yon iki kez verilince np.linalg.LinAlgError: Singular matrix"
+    },
+    "C5_KOTU_KOSULLU_GRAM_SESSIZ_COKME": {
+      "sonuc": "KALDI - CIDDI",
+      "olcumler": [
+        {"n_yon": 2, "kosul": 23.91, "k_l1": 0.323, "mse": 1.004336, "rmsle": 1.00217},
+        {"n_yon": 3, "kosul": 1.098e+15, "k_l1": 2.1163e+11, "mse": -584129.57, "yazilan_rmsle": 0.0},
+        {"n_yon": 4, "kosul": 1.614e+15, "k_l1": 2.1494e+11, "mse": -601648.36, "yazilan_rmsle": 0.0},
+        {"n_yon": 5, "kosul": 1.999e+15, "k_l1": 2.1325e+11, "mse": -577189.02, "yazilan_rmsle": 0.0},
+        {"n_yon": 7, "kosul": 2.961e+15, "k_l1": 2.1325e+11, "mse": -585832.23, "yazilan_rmsle": 0.0}
+      ],
+      "aciklama": "3+ neredeyse dogrusal-bagimli yonde np.linalg.solve PATLAMIYOR, k~1e11 donduruyor, MSE NEGATIF cikiyor ve sqrt(max(mse,0)) ile maskelenip ekrana 'ORTAK OPTIMUM MSE = -584129 RMSLE = 0.00000' yaziliyor",
+      "en_tehlikeli": "uretilen dosya KAPI DENETIMINDEN GECIYOR (n=5te yalnizca 7 negatif satir; id/nan/negatif/satir asserti temiz) -> mevcut assert bu cokmeyi YAKALAMAZ",
+      "ridge_varsayilan_0": "EVET, TEHLIKELI. lam=1e-4 bile |k|1i 0.98 -> 0.67ye indiriyor ve MSEyi yalnizca 1e-5 bozuyor",
+      "onerilen_korkuluk": "np.linalg.cond(G) > 1e8 ise DUR; mse < 0 ise DUR; |k|_1 > 5 ise DUR"
+    },
+    "C6_kirpma_sayilari": {
+      "sonuc": "GECTI (k>0) / UYARI (k<0)",
+      "g7_taban_y46_yon": [
+        {"y46_skoru": 1.10, "k": 0.2387, "negatif_satir": 0, "kirpma_d2": 0.0},
+        {"y46_skoru": 1.20, "k": -0.0512, "negatif_satir": 187, "kirpma_d2": 3.381e-08, "mse_bozulma_ust": 0.000368},
+        {"y46_skoru": 1.30, "k": -0.3664, "negatif_satir": 1185, "kirpma_d2": 8.418e-05, "mse_bozulma_ust": 0.0179}
+      ],
+      "cokulu_yon_kotu_kosul": {"n_yon": 7, "negatif_satir": 1306, "oran": 0.00183, "kirpma_d2": 0.0074337},
+      "not": "k POZITIF iken kirpma hic devreye girmiyor. k NEGATIF olunca kirpma isliyor ve o zaman ongoruyu BOZUYOR (kirpma artik hatayi azaltmiyor, cunku sapma isareti tersine donuyor)"
+    }
+  },
+  "D_gozden_kacanlar": {
+    "D1_olculmus_skorlar_json": {
+      "sonuc": "GECTI",
+      "anahtar_sayisi": 26,
+      "tekil": 26,
+      "yinelenen": [],
+      "v55_gunolcek": "TEK KEZ geciyor; git gecmisinde de (tek surum e24a330) tek kez. YINELENME YOK - endise asilsiz",
+      "gun1_baseline_csv": "41 SATIR, kolonlar ['id','hedef'], idler R00320... -> GECERLI GONDERIM DEGIL. g1_yukle.py DISLA setiyle disliyor, 25 dosya kullaniliyor. DOGRU ELE ALINMIS",
+      "ucgen_esitsizligi_ihlali": 0,
+      "not": "25 skorun 300 ciftinin hepsi ucgen esitsizligini sagliyor -> skorlar birbiriyle TUTARLI"
+    },
+    "D2_ayni_ad_farkli_icerik": {
+      "sonuc": "DOGRUDAN DOGRULANAMADI - dolayli olarak GUCLU",
+      "sebep": "submissions/ .gitignoreda (git ls-files submissions/ -> 0 dosya). Icerik gecmisi YOK",
+      "dolayli_kanit_1": "25 dosyanin mtimei surum numarasiyla MONOTON artiyor ve her biri kendi gonderim gununde; sonradan yeniden yazilma izi YOK",
+      "dolayli_kanit_2": "LOO sinavi: spana tam oturan 11 dosyanin skoru digerlerinin GEOMETRISINDEN 7.7e-5 RMS hatayla ongorulebiliyor. Herhangi bir dosya degismis olsaydi bu tutarlilik cikmazdi"
+    },
+    "D3_final_secim": {
+      "sonuc": "KALDI - PLANDAKI EN BUYUK DOGRULANMAMIS VARSAYIM",
+      "docs56_s8_iddiasi": "kaybetme riski yok. Kaggle en iyi public skoru tutar",
+      "gercek": "docs/31:39 bu soruyu sormus; docs/52 §17.11 'cevabini kaydetmemis ... bu yarisma icin DOGRULANMADI' diyor ve TARAYICIDAN BAKILACAK notunu birakmis. Hala yapilmadi",
+      "etki": "public LB icin iddia dogru. Ama SIRALAMAYI PRIVATE belirliyor; secim manuel ise ve yapilmazsa ne olacagi bilinmiyor"
+    },
+    "D4_ongoru_hatasi_yasasi": {
+      "sonuc": "YENI BULGU",
+      "kor_hata_l1": 0.297,
+      "kor_hata_yer_degistirme": 0.75,
+      "not": "ongoru hatasi |w|_1 ile DEGIL, log-uzayindaki YER DEGISTIRME ile buyuyor. docsun |w|1<=3-5 korkulugu yanlis eksende olcuyor",
+      "sapmalar": {"g7_HAK1": 0.0499, "LOO_dogrulanan_maks": 0.2864, "HAK3_k024": 0.1509, "HAK3_k037": 0.2299, "HAK3_k049": 0.3041},
+      "etki": "HAK1 guvenli. HAK3te k>=0.45 olursa ampirik olarak dogrulanmis bolgenin DISINA cikiyoruz; +-7e-5 bandi orada gecerli DEGIL"
+    },
+    "D5_zaman_ve_kota": {
+      "sonuc": "OLCULEMEDI",
+      "not": "Kaggle API cagrilmadi (gonderim yasagi). Kota acilis saati ve skorlama gecikmesi dogrulanmadi"
+    }
+  },
+  "ozet": {"gecti": 16, "uyari": 4, "kaldi": 5}
+}

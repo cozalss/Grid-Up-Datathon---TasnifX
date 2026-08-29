@@ -1,0 +1,296 @@
+{
+  "_meta": {
+    "olusturuldu_utc": "2026-08-29T05:50:00Z",
+    "yazan": "k1 kurallar denetimi",
+    "kaggle_api_surumu": "2.2.4",
+    "onemli_kesif": "kaggle competitions pages -c grid-up-datathon KOMUTU, tarayicida 404 veren giris-duvarli Overview/Rules/Evaluation/Timeline sayfalarinin TAM METNINI donduruyor. docs/31'in 'kapanmayan iki soru' dedigi maddeler bu yolla KAPANDI.",
+    "kullanilan_okuma_komutlari": [
+      "kaggle competitions pages -c grid-up-datathon   <-- ANA KAYNAK (rules/Evaluation/Timeline)",
+      "api.competition_list_topics + competition_list_topic_messages  <-- duzenleyici cevaplari",
+      "api.competitions_list(group='entered')  <-- alan dokumu",
+      "api.competition_get_submission_limits('grid-up-datathon')",
+      "api.competition_submissions('grid-up-datathon')",
+      "kaggle competitions leaderboard -c grid-up-datathon --download",
+      "kaggle competitions files -c grid-up-datathon"
+    ],
+    "not_koordinatore": "`kaggle competitions list -s grid-up-datathon` gercekten bos donuyor (Community yarismalari aramada cikmiyor). Ancak group='entered' ile TAM alan dokumu aliniyor -- asagidaki kaggle_api_alanlari bloku o yoldan geldi."
+  },
+
+  "1_final_gonderim_secimi": {
+    "SORU": "Final icin gonderim SECMEMIZ gerekiyor mu?",
+    "CEVAP": "EVET -- ve IKI TANE secebiliyoruz.",
+    "kesinlik": "KESIN",
+    "birincil_kaynak": "Yarisma 'rules' sayfasi, madde 'Submission Limitleri' -- kaggle competitions pages -c grid-up-datathon",
+    "birebir_alinti": "Gunde maximum 3 kere submission yapabilirsin. Final cozumu olarak iki submission'unu kullanabilirsin.",
+    "secilebilecek_adet": 2,
+    "secim_yapilmazsa_ne_olur": {
+      "cevap": "Kaggle varsayilani devreye girer: public leaderboard'da EN IYI skoru veren gonderim(ler) otomatik secilir.",
+      "kesinlik": "YUKSEK (Kaggle platform dokumantasyonu) -- ama BU YARISMA icin duzenleyici tarafindan ozel olarak teyit EDILMEDI",
+      "kaynak": "Kaggle Competitions dokumantasyonu: 'If you do not select submission(s) to be scored before the competition closes, the platform will automatically select those which performed the highest on the public leaderboard, unless otherwise communicated in the competition.'",
+      "not": "rules sayfasinda aksini soyleyen bir madde YOK, yani varsayilan gecerli."
+    },
+    "nihai_skor_nasil_belirlenir": "Secilen (en fazla 2) gonderimden PRIVATE skoru en iyi olan.",
+    "OPERASYONEL_RISK": "Secim ARAYUZDEN yapilir. Kaggle API'sinde final secimi yapan/gosteren HICBIR alan veya komut YOK (submission_fields = ref, fileName, date, description, status, publicScore, privateScore -- 'selected' bayragi yok). Yani bu isi ajan yapamaz, KULLANICI tarayicidan yapmali: Submissions ekrani -> 'Use for Final Score'.",
+    "TAVSIYE": "Otomatik secim en iyi PUBLIC'i alir. Bizim durumumuzda en iyi public (1.00284, m6_ikiyon) muhtemelen zaten secilecek. Ama IKINCI slotu bos birakmak, bedava bir hedge'i cope atmaktir -- birbirine benzemeyen ikinci bir dosya elle secilmelidir."
+  },
+
+  "2_public_private": {
+    "private_leaderboard_var_mi": {
+      "cevap": "EVET",
+      "kesinlik": "KESIN",
+      "kaynak": [
+        "rules sayfasi / Odul maddesi: 'Yarisma sona erdiginde olusacak olan \"Private Leaderboard'da\" yer alan siralama dikkate alinarak elde edecegin puan ve final sunumundaki performansina gore oduller belirlenecektir.'",
+        "Timeline & Prize sayfasi: '2 Eylul 2026, 00:10 - Private Leaderboard Release Tarihi'",
+        "Evaluation sayfasi: 'Private Leaderboard'da ilk 20 sirayi alan katilimcilar, notebooklarini ... paylasacaklar'"
+      ]
+    },
+    "final_siralama_neye_gore": "PRIVATE leaderboard. Public LB yalnizca gostergedir.",
+    "public_private_orani": {
+      "deger": "BELIRSIZ",
+      "aciklama": "Ne API ne rules/Evaluation sayfasi yuzde vermiyor. Kaggle Community Competitions kurulum ayari 'Solution Sampling' host tarafindan serbestce belirleniyor, varsayilan yayinlanmiyor.",
+      "depodaki_celiskili_iddialar": {
+        "docs/07 ve docs/14": "%50/%50 rastgele (2023 edisyonu + taranan 11 Coderspace yarismasinin 10'u) -- TARIHSEL CIKARIM, 2026 icin dogrulanmadi",
+        "docs/27 satir 167 ve docs/22": "'Public LB test'in %30'u' -- KAYNAKSIZ, nereden geldigi belirsiz",
+        "docs/55 ve docs/56": "public %50 VARSAYIMI uzerine hassasiyet formulu kurulmus (sd = 9.28e-5)"
+      }
+    },
+    "BOLUNMENIN_RASTGELE_MI_ZAMANSAL_MI_OLDUGU": {
+      "deger": "BELIRSIZ -- ANCAK DUZENLEYICI CEVABI ZAMANSAL BOLUNMEYE ISARET EDIYOR",
+      "onem": "COK YUKSEK -- tum LB-cozme (prob) metodolojimizin private'a tasinip tasinmayacagini belirler",
+      "soru_thread": "https://www.kaggle.com/competitions/grid-up-datathon/discussion/737076 (2026-08-23, 13 oy)",
+      "sorulan": "Public leaderboard'un test verisinin bir bolumunu kullandigi belirtilmisti. Bu bolum rastgele mi secildi, yoksa zaman bazli bir ayrim mi var (ornegin ilk aylar public, son aylar private)?",
+      "duzenleyici_cevabi_birebir": "15 ay gercek egitim verileri (01 Ocak 2025, 31 Mart 2026 sonu dahildir); hemen sonraki 4 ay (01 Nisan 2026-31 Temmuz 2026) verisi olacak sekilde ilerlenmelidir. Ozel veya genel bir ayrim bulunmamaktadir, zaman skalasi baz alinmistir.",
+      "cevap_tarihi": "2026-08-24 11:52 UTC",
+      "iki_olasi_okuma": {
+        "A_zamansal": "'Ozel(private)/genel(public) bir ayrim bulunmamaktadir, ZAMAN SKALASI BAZ ALINMISTIR' -> bolunme ZAMAN bazli (or. Nisan-Mayis public, Haziran-Temmuz private). Bu okuma soruya dogrudan cevap veriyor.",
+        "B_anlamsiz": "'Test seti secilirken ozel bir kural yok, sadece zaman siralamasi' -> soruyu gecistiren, bolunmeye dair bilgi vermeyen cevap."
+      },
+      "NEDEN_ONEMLI": "Public bolunme ZAMANSAL ise, LB skorlarindan cozulen katsayilar (kappa, c*, sicak/soguk agirliklari, span cozumleri) yalnizca ilk aylarin rejiminde optimize edilmis olur ve Haziran-Temmuz private'ta cokebilir. docs/56'daki tum hassasiyet ve span analizi 'rastgele %50' varsayimina dayanir; varsayim yanlissa o analiz de yanlistir.",
+      "TAVSIYE": "9 hakkin planinda bu belirsizlik ASIMETRIK bir risk olarak fiyatlanmali: iki final slotundan biri LB-agir (public'e cozulmus) cozum, digeri LB'ye HIC uydurulmamis, CV-secimli, mevsim-saglam bir cozum olmali."
+    },
+    "olculen_kanit": "27 gonderimin hicbirinde privateScore alani dolu degil (hepsi bos string) -- private yarisma bitince acilacak."
+  },
+
+  "3_kota_mekanigi": {
+    "gunluk_limit": 3,
+    "kesinlik": "KESIN -- uc bagimsiz kaynak",
+    "kaynaklar": [
+      "API alani maxDailySubmissions = 3",
+      "rules sayfasi: 'Gunde maximum 3 kere submission yapabilirsin.'",
+      "Gonderim gecmisi: 21,22,23,24,25,26,27,28,29 Agustos'un HER BIRINDE tam olarak 3 gonderim (toplam 27)"
+    ],
+    "toplam_limit_var_mi": "HAYIR -- competition_get_submission_limits: limited_by_total = False",
+    "anlik_durum_2026_08_29T05_45Z": {
+      "num_today": 3,
+      "num_allowed_now": 0,
+      "num_total": 27
+    },
+    "reset_zamani": {
+      "deger": "00:00 UTC = 03:00 TR",
+      "kesinlik": "KESIN -- olculdu",
+      "kanit_1": "25 Agustos'un ilk gonderimi 00:00:45 UTC. Bir onceki gonderim 24 Agustos 04:30 UTC idi. Kayan 24 saatlik pencere olsaydi (arada ~20 saat var) bu gonderim REDDEDILIRDI. Reddedilmedi -> sinir SABIT UTC gun sinirinda.",
+      "kanit_2": "26 Agustos'un uc gonderimi de 00:02-00:06 UTC arasinda -- ayni desen.",
+      "kanit_3": "Yarismaci forum cevabi (discussion 737159): 'Her gun 3 tane hakkin oluyor 03:00 de resetleniyor' (TR saati = 00:00 UTC)."
+    },
+    "api_zaman_damgalari_utc_mi": {
+      "cevap": "EVET, KESIN",
+      "kanit": "Leaderboard indirme dosyasinin adi 'grid-up-datathon-publicleaderboard-2026-08-29T05:45:28.csv'; ayni anda TR yerel saati 08:45 idi. UTC+3 farki birebir. Ayrica son gonderimimizin API damgasi 04:58:28 ile LB CSV'sindeki LastSubmissionDate birebir ayni."
+    },
+    "son_gun_davranisi": {
+      "kaggle_teknik_deadline": "2026-09-01 23:59:00 UTC = 2026-09-02 02:59 TR",
+      "kaynak": "API alani deadline",
+      "1_eylul_kotasi": "1 Eylul 00:00 UTC'de (TR 03:00) 3 hak acilir ve 23:59 UTC'ye (TR 02:59, 2 Eylul) kadar kullanilabilir.",
+      "kalan_hak_toplami": 9,
+      "dagilim": "30 Agustos: 3 | 31 Agustos: 3 | 1 Eylul: 3",
+      "UYARI": "Duzenleyicinin Timeline sayfasi '1 Eylul 2026, 23:59 - Kaggle Etabi Bitis' ve '2 Eylul 2026, 00:10 - Private Leaderboard Release' yaziyor. Bu iki satir arasinda 11 dakika var, yani duzenleyici Kaggle'in UTC deadline'ini oldugu gibi kopyalamis gorunuyor. Baglayici olan Kaggle'in kendi enforcement'idir (23:59 UTC). YINE DE son hak 23:59 UTC'ye birakilmamalidir: skorlama birkac dakika surer ve FINAL SECIMI de kapanistan ONCE yapilmis olmalidir."
+    }
+  },
+
+  "4_harici_veri": {
+    "genel_izin": {
+      "cevap": "SERBEST",
+      "kesinlik": "KESIN",
+      "kaynak": "discussion 736548 (2026-08-21 13:15 UTC), duzenleyici cevabi. Soru: (1) Open-Meteo gibi acik arsiv API'leri serbest mi? (2) Resmi tatil takvimi kisiti var mi? (3) Kaynak belirtmek yeterli mi? Cevap: '1) Evet. 2) Hayir, yok. 3) Evet, veri kaynagini belirtmeniz yeterli olacaktir.'",
+      "ek_kaynak": "Yarisma 'abstract' sayfasi: '...hava durumu, ozel gunler gibi ek verilerle birlikte gelecekteki tuketimi tahmin eden bir makine ogrenmesi modeli...' -- dis veri acikca tesvik ediliyor."
+    },
+    "KRITIK_SINIRLAMA__31_MART_KURALI": {
+      "BASLIK": "GORULMEMIS KISIT -- EN BUYUK RISK",
+      "kesinlik": "KESIN (duzenleyici resmi cevabi)",
+      "kaynak": "discussion 737242 'Hava Durumu Verisi', duzenleyici cevabi 2026-08-25 12:25 UTC",
+      "birebir_alinti": "Merhaba, yarismada tahminlerin 31 Mart 2026 tarihi itibariyla uretildigi kabul edileceginden, Nisan-Temmuz 2026 donemine ait GERCEKLESMIS hava durumu verilerinin kullanilmasi UYGUN OLMAYACAKTIR. Yarismacilar gecmis hava durumu verilerinden, uzun donem iklim normallerinden veya 31 Mart 2026 itibariyla erisilebilir ve yayimlanmis meteorolojik tahminlerden yararlanabilirler. Kullanilan harici verilerin kaynagiyla birlikte, tahmin tarihinde erisilebilir oldugunun da belirtilmesi beklenecektir.",
+      "ikinci_teyit": "discussion 737615 (2026-08-26 18:34 UTC), duzenleyici: 'Nisan 2026 - Temmuz 2026 donemi tahminlemesi yaparken hangi veri setini (gerceklesmis hava durumu verisi / tahminlenmis hava durumu verisi) hangi amacla kullandiginizi aciklamaniz beklenmektedir. Modellerinizi bizlerle paylasmadan once kullanilan kaynaklarin detaylarini iceren bir aciklama talep etmekteyiz.'",
+      "CELISKI_UYARISI": "Ayni duzenleyici 2026-08-23 19:11'de (discussion 736572, veri sizintisi) 'sunumda da bahsedildigi uzere tum acik kaynak kodlu verileri kullanabilirsiniz' demisti. 25 Agustos cevabi bunu DARALTIYOR. Katilimcilar bu celiskiyi acikca sikayet etti (737615). Duzenleyici celiskiyi COZMEDI.",
+      "BIZIM_DURUMUMUZ": {
+        "ihlal_var_mi": "EVET, MEVCUT EN IYI GONDERIMIMIZ BU KURALA AYKIRI GORUNUYOR",
+        "kanit_1": "data/external/hava_gunluk.parquet -> 2020-01-01 .. 2026-08-28, Nisan-Temmuz 2026 penceresinde 11.712 satir GERCEKLESMIS (Open-Meteo/ERA5 arsiv) veri iceriyor.",
+        "kanit_2": "experiments/model29/m71_nihai_hava.py: KESIM='2026-03-31' yalnizca EGITIM kesimi; test matrisi Xte 'sicaklik', 'cdd', 'hdd', 'a_', 'c_' onekli kolonlari Nisan-Temmuz 2026 icin ICERIYOR.",
+        "kanit_3": "docs/53 satir 277: 'm4'un Haziran/Temmuz'da daha ilimli kalmasi kusur degil, GERCEKLESMIS havanin...' -- gerceklesmis hava kullanildigi belgede yaziyor.",
+        "kanit_4": "Mevcut LB gonderimimiz m6_ikiyon = v102 + 0.12243*d_sicak + 0.33688*d_soguk, burada d = m4 - v102. Yani m6, m4'un (hava modelinin) agirlikli bir parcasini TASIYOR. Ayrica d_sicak/d_soguk ayrimi test doneminin gerceklesmis sicakligini kullanarak taniimlaniyor."
+      },
+      "RISKIN_BOYUTU": "Kapi 1 (private ilk 20) skorla gecilir; ancak Kapi 2 NOTEBOOK INCELEMESIDIR ve ilk 20'nin notebook'u 2 Eylul 13:00'a kadar teslim edilir. Gerceklesmis Nisan-Temmuz hava verisi kullanan bir notebook'un elenmesi somut bir ihtimaldir. Odul, private siralamasi + sunum performansina gore veriliyor -- yani LB skoru tek basina odul getirmiyor.",
+      "COZULMEMIS_SORU": "Ihlal eden notebook'lar degerlendirme disi birakilirsa siralama alttaki takimlara kayacak mi? Bu soru forumda IKI KEZ soruldu (737476 / 4 oy, 737765 / 9 oy) ve duzenleyici HICBIRINE CEVAP VERMEDI. 737765 halen 0 yanitli.",
+      "PIYASA_DURUMU": "Bir katilimci (737476, 2026-08-25) 'Su an LB'nin buyuk kismi bu veriyle skorlanmis durumda' diyor ve kurala uyanlarin ~0.02 dezavantajli oldugunu iddia ediyor. Yani ust siralarin cogu ayni riski tasiyor olabilir.",
+      "TAVSIYE": "Iki final slotunun ayrilmasi icin en guclu gerekce budur: SLOT A = en iyi public skor (hava dahil), SLOT B = 31 Mart kuralina UYUMLU (yalniz iklim normali / 31 Mart oncesi veri) uretilmis en iyi cozum. Boylece skor da uygunluk da hedge edilir. Ayrica notebook'ta her dis kaynagin '31 Mart 2026 itibariyla erisilebilirdi' beyani ZORUNLU."
+    },
+    "diger_dis_veri_notlari": {
+      "epias_retrospektif": "discussion 737147'de soruldu. Duzenleyici yalnizca 'EPIAS'ta dagitim sirketindeki trafolarin tuketim verileri bulunmamaktadir' dedi; retrospektif kullanimin serbest olup olmadigini SOYLEMEDI -> BELIRSIZ, ayni 31 Mart mantigi uygulanirsa risklidir.",
+      "gdz_2023_verisi": "TALEP REDDEDILDI. discussion 737601: 'Merhaba, ne yazik ki verileri paylasamamaktayiz.'",
+      "turizm_osm_verisi": "Ozel bir yasak YOK; 'acik kaynak serbest' genel izni kapsar. Ancak 31 Mart kuralinin ruhu geregi test donemine ait GERCEKLESMIS turizm/hareketlilik verisi kullaniliyorsa ayni risk gecerlidir -- BELIRSIZ, notebook'ta beyan edilmeli."
+    }
+  },
+
+  "5_diger_kisitlar": {
+    "takim": {
+      "max_boyut": 4,
+      "bizim_takim": "TasnifX -- 2 uye: cemzal, gizemkl (LB CSV TeamMemberUserNames alanindan DOGRULANDI)",
+      "birlesme_durumu": "TAMAMLANMIS -- docs/31'deki 'takim fiilen birlesmis mi?' acik isi KAPANDI.",
+      "kaggle_merger_deadline": "2026-09-01 23:59 UTC",
+      "duzenleyici_kurali": "Sonradan katilim YOK. discussion 737768 (2026-08-27): 'bireysel basvuru yapmamis yarismacilar maalesef sonradan yarismaya katilamamaktadir.'",
+      "GEREKLI_KONTROL": "rules: 'Kullanicilarin katiliminin ve skorunun gecerli olmasi icin son basvuru tarihinden once Coderspace basvuru sayfasindan yarismaya kaydinin tamamlanmis olmasi gerekir.' -> gizemkl'in Coderspace kaydinin ve e-posta eslesmesinin tamam oldugu TEYIT EDILMELI. Aksi halde SKOR GECERSIZ."
+    },
+    "hesap_kurali": "rules: 'Kullanicilar Kaggle'a birden fazla hesapla giris yapamaz. Birden fazla hesapla submission'da bulunamazlar.'",
+    "takimlar_arasi_paylasim": "rules: 'Takimlar arasinda Kaggle ortami disinda data, bilgi, cozum transferi yasaktir.' -> GitHub deposu PRIVATE oldugu dogrulandi (gh repo view: visibility=PRIVATE). Yarisma verisi git'te izlenmiyor (.gitignore: data/*, *.csv, *.parquet). RISK YOK, ama depo yarisma bitene kadar PRIVATE KALMALI.",
+    "veri_paylasim_yasagi": "rules: 'Gdz ve Adm Elektrik tarafindan olusturulan isbu veri setine ait tum haklar sakli olup, izinsiz paylasilamaz, cogaltilamaz.'",
+    "notebook_teslimi": {
+      "kim": "Private LB ilk 20",
+      "son_tarih": "2 Eylul 2026, 13:00",
+      "nasil": "coderspacetr hesaplari ile paylasim",
+      "kaynak": "rules sayfasi, 'Notebook Paylasimi' maddesi",
+      "UYARI": "docs/00-yarisma-brief '1-4 Eylul' diyordu; GERCEK son tarih 2 Eylul 13:00. Yarismanin kapanisindan (2 Eylul 02:59 TR) yalnizca ~10 saat sonra. Notebook 1 Eylul'den ONCE hazir olmali.",
+      "ICERIK_ZORUNLULUGU": "Kullanilan her dis veri kaynagi, kaynagi ve '31 Mart 2026 itibariyla erisilebilir oldugu' beyaniyla belirtilmelidir (discussion 737242 + 737615)."
+    },
+    "kernel_only_mu": "HAYIR -- isKernelsSubmissionsOnly = False. CSV gonderimi serbest.",
+    "internetsiz_calisma_zorunlulugu": "BELIRSIZ -- discussion 737487 'Internetsiz ortamda calisma kurali var mi?' (2026-08-25) sorulmus, CEVAPLANMAMIS. rules sayfasinda boyle bir madde yok.",
+    "gonderim_dosya_limiti": "Acik bir limit yayinlanmamis. OLCULEN: 28,4 MB'lik dosyalarimiz sorunsuz kabul edildi (27/27). Risk yok.",
+    "metrik": {
+      "api_alani": "Mean Columnwise Root Mean Squared Logarithmic Error (tag: mcrmsle)",
+      "Evaluation_sayfasi": "RMSLE = sqrt( mean( (log(1+tahmin) - log(1+gercek))^2 ) )",
+      "not": "sample_submission tek hedef kolon (tuketim) icerdiginden MCRMSLE = duz RMSLE. Evaluation sayfasi zaten dogrudan RMSLE yaziyor. Ayrica: 'Negatif tahminler 0 sayilir.'"
+    },
+    "diskalifiye_sebepleri": "rules: etik disi/hedef alan soylem, yarismanin saglikli ilerlemesine engel davranis, hile. Coderspace + GDZ/ADM inisiyatifiyle."
+  },
+
+  "6_rakip_hareketi": {
+    "snapshot_utc": "2026-08-29T05:45:28Z",
+    "toplam_takim": 449,
+    "kaynak": "kaggle competitions leaderboard -c grid-up-datathon --download (449 satir, SubmissionCount ve TeamMemberUserNames dahil)",
+    "not": "LastSubmissionDate = takimin SU ANKI EN IYI skorunu ureten gonderimin zamani, yani 'son IYILESME' zamani.",
+    "ilk_10": [
+      {"sira": 1, "takim": "Grid Grinders", "skor": 0.99046, "son_iyilesme_utc": "2026-08-29 00:16:04", "gonderim": 25, "uyeler": "gamzeakkurt,xdebron"},
+      {"sira": 2, "takim": "Atakan Aldemir", "skor": 1.00041, "son_iyilesme_utc": "2026-08-28 09:12:29", "gonderim": 24, "uyeler": "atakanaldemir"},
+      {"sira": 3, "takim": "TasnifX (BIZ)", "skor": 1.00284, "son_iyilesme_utc": "2026-08-29 04:58:28", "gonderim": 27, "uyeler": "cemzal,gizemkl"},
+      {"sira": 4, "takim": "Ahmet Bugrahan ALTUNOK", "skor": 1.00480, "son_iyilesme_utc": "2026-08-28 20:58:22", "gonderim": 21},
+      {"sira": 5, "takim": "Saban Ozdogan", "skor": 1.00512, "son_iyilesme_utc": "2026-08-28 17:55:03", "gonderim": 18},
+      {"sira": 6, "takim": "Ahmet Celik", "skor": 1.00559, "son_iyilesme_utc": "2026-08-28 11:11:00", "gonderim": 23},
+      {"sira": 7, "takim": "Kris Dreemurr", "skor": 1.00645, "son_iyilesme_utc": "2026-08-29 03:44:43", "gonderim": 25},
+      {"sira": 8, "takim": "Duo-Electra", "skor": 1.00823, "son_iyilesme_utc": "2026-08-28 19:30:41", "gonderim": 24},
+      {"sira": 9, "takim": "shining stars", "skor": 1.00867, "son_iyilesme_utc": "2026-08-29 01:58:47", "gonderim": 25},
+      {"sira": 10, "takim": "Abdulbaki Bayir", "skor": 1.00945, "son_iyilesme_utc": "2026-08-27 18:10:20", "gonderim": 9}
+    ],
+    "hareket_hizi": {
+      "ilk_20_son_12_saatte_iyilesen": 12,
+      "ilk_20_son_24_saatte_iyilesen": 17,
+      "ilk_20_son_48_saatte_iyilesen": 20,
+      "ilk_50_son_24_saatte_iyilesen": 42,
+      "ilk_50_son_48_saatte_iyilesen": 47,
+      "tum_alan_son_24_saatte_iyilesen": 213,
+      "tum_alan_son_48_saatte_iyilesen": 284,
+      "yorum": "ILK 20'NIN TAMAMI son 48 saatte iyilesti. Alan doymus degil; plato yok. 12 saatte ilk 20'nin %60'i ilerledi."
+    },
+    "DURUM_DEGISIKLIGI": {
+      "UYARI": "Gorev tanimindaki 'su an 3. siradayiz, hedef 2. sira (Atakan Aldemir 1.00041)' hala dogru ANCAK zirve degisti.",
+      "yeni_lider": "Grid Grinders 0.99046 -- 2026-08-29 00:16 UTC'de ortaya cikti. 1.00041'i 0.00995 farkla gecti; bu, bizim ile 2. sira arasindaki farkin (0.00243) 4 KATI.",
+      "anlami": "Grid Grinders muhtemelen nitel olarak farkli bir cozume (veya gerceklesmis-hava kaldiracina) ulasti. 1. sira artik span-icinde erisilebilir degil; 2. sira hedefi gecerliligini koruyor.",
+      "docs_56_ile_tutarlilik": "docs/56 'Grid Grinders 0.99064' yaziyor; guncel deger 0.99046. Yani lider 29 Agustos'ta bir kez daha iyilestirdi."
+    },
+    "hedef_2_sira_riski": "Atakan Aldemir 1.00041'de 2026-08-28 09:12'den beri (~20,5 saat) SABIT ve 24 gonderim kullanmis. Kalan 3 gununde 9 hakki daha var. Hedef sabit degildir."
+  },
+
+  "7_kaggle_api_alanlari_tam_dokum": {
+    "kaynak": "api.competitions_list(group='entered') -> grid-up-datathon nesnesinin TUM alanlari",
+    "id": 154356,
+    "title": "Grid Up Datathon",
+    "ref": "https://www.kaggle.com/competitions/grid-up-datathon",
+    "category": "Community",
+    "reward": "Kudos",
+    "evaluation_metric": "Mean Columnwise Root Mean Squared Logarithmic Error",
+    "tags": ["mcrmsle"],
+    "date_created": "2026-07-14 13:42:11.857 UTC",
+    "enabled_date": "2026-08-21 11:41:43.787 UTC",
+    "deadline": "2026-09-01 23:59:00 UTC",
+    "merger_deadline": "2026-09-01 23:59:00 UTC",
+    "new_entrant_deadline": null,
+    "max_daily_submissions": 3,
+    "max_team_size": 4,
+    "is_kernels_submissions_only": false,
+    "submissions_disabled": false,
+    "awards_points": false,
+    "kernel_count": 0,
+    "team_count": 449,
+    "user_has_entered": true,
+    "user_rank": 3,
+    "host_name": "",
+    "organization_name": "",
+    "yarisma_dosyalari": [
+      {"name": "sample_submission.csv", "size": 15244115, "creationDate": "2026-08-19 23:00:03.420"},
+      {"name": "test.csv", "size": 50661335, "creationDate": "2026-08-19 23:00:04.160"},
+      {"name": "train.csv", "size": 70029407, "creationDate": "2026-08-19 23:00:05.473"}
+    ]
+  },
+
+  "8_gonderim_gecmisi_gun_bazinda": {
+    "not": "Tum zaman damgalari UTC. Her gun tam 3 -> gunluk kota mekanigi dogrulanir.",
+    "2026-08-21": 3,
+    "2026-08-22": 3,
+    "2026-08-23": 3,
+    "2026-08-24": 3,
+    "2026-08-25": 3,
+    "2026-08-26": 3,
+    "2026-08-27": 3,
+    "2026-08-28": 3,
+    "2026-08-29": 3,
+    "toplam": 27,
+    "en_iyi_public": {"skor": 1.00284, "dosya": "tuketim_m6_ikiyon.csv", "ref": 55859849, "tarih_utc": "2026-08-29 04:58:28"},
+    "ikinci_en_iyi_public": {"skor": 1.00553, "dosya": "tuketim_v102_kappa_optimum.csv", "ref": 55833415, "tarih_utc": "2026-08-28 04:19:24"}
+  },
+
+  "9_BELIRSIZ_KALANLAR": [
+    {
+      "madde": "Public/private yuzde orani",
+      "durum": "BELIRSIZ",
+      "neden": "Ne API ne rules/Evaluation sayfasi yayinliyor; host ayari.",
+      "etki": "docs/55 ve docs/56'daki hassasiyet formulu (sd=9.28e-5) 'public %50' varsayimina dayaniyor; yanlissa hassasiyet tahmini de yanlis."
+    },
+    {
+      "madde": "Bolunme rastgele mi zamansal mi",
+      "durum": "BELIRSIZ, ama duzenleyici cevabi ZAMANSAL'a isaret ediyor",
+      "neden": "Cevap ('Ozel veya genel bir ayrim bulunmamaktadir, zaman skalasi baz alinmistir') iki turlu okunabiliyor.",
+      "etki": "EN YUKSEK. Zamansal ise LB-cozulmus katsayilar private'ta tasinmayabilir."
+    },
+    {
+      "madde": "Secim yapilmazsa Kaggle'in otomatik davranisinin BU yarismada gecerli oldugu",
+      "durum": "YUKSEK GUVEN, teyit yok",
+      "neden": "Kaggle platform dokumantasyonu net; rules sayfasinda aksi bir madde yok; ama duzenleyici ozel olarak dogrulamadi."
+    },
+    {
+      "madde": "31 Mart kuralini ihlal eden notebook'lar elenirse siralama kayar mi",
+      "durum": "BELIRSIZ",
+      "neden": "Iki kez soruldu (737476, 737765), duzenleyici CEVAP VERMEDI."
+    },
+    {
+      "madde": "EPIAS retrospektif veri kullanimi",
+      "durum": "BELIRSIZ",
+      "neden": "Duzenleyici soruyu gecistirdi; 31 Mart mantigi uygulanirsa riskli."
+    },
+    {
+      "madde": "Notebook'un internetsiz calismasi zorunlu mu",
+      "durum": "BELIRSIZ",
+      "neden": "discussion 737487'de soruldu, cevaplanmadi."
+    },
+    {
+      "madde": "Duzenleyicinin Timeline'daki saatlerin TR mi UTC mi oldugu",
+      "durum": "BELIRSIZ ama ONEMSIZ",
+      "neden": "Kaggle platformu 23:59 UTC'de gonderimi teknik olarak kapatir; baglayici olan odur."
+    }
+  ]
+}

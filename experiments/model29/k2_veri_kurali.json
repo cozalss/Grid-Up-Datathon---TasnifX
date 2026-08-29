@@ -1,0 +1,42 @@
+{
+ "konu": "DIS VERI KULLANIMI -- kesin durum (29 Agustos, forumdan dogrulandi)",
+ "HUKUM": "YASAK YOK (duzenleyici e-postasiyla TEYIT EDILDI). Zorunluluk: NOTEBOOK'TA BEYAN.",
+ "zaman_cizgisi": [
+  {
+   "tarih": "2026-08-25 12:25",
+   "kim": "duzenleyici",
+   "topic": 737242,
+   "oy": -13,
+   "ozet": "Nisan-Temmuz 2026 gerceklesmis hava verisi 'uygun olmayacaktir' dedi",
+   "durum": "SONRAKI ACIKLAMALARLA YUMUSATILDI -- baglayici degil"
+  },
+  {
+   "tarih": "2026-08-26 11:32",
+   "kim": "duzenleyici",
+   "topic": 737615,
+   "ozet": "Hangi veri setini (GERCEKLESMIS hava / tahminlenmis hava) hangi amacla kullandiginizi ACIKLAMANIZ beklenmektedir",
+   "not": "gerceklesmis veriyi SECENEKLERDEN BIRI olarak sayiyor -> yasak degil, beyan konusu"
+  },
+  {
+   "tarih": "2026-08-27 05:54",
+   "kim": "duzenleyici",
+   "topic": 737615,
+   "ozet": "DIS KAYNAK KULLANIMI SERBEST OLARAK BELIRTILMISTIR. Notebook'ta hangi amacla ve nasil kullanildigi belirtilmeli. Ilk 20 ekibin notebooklari incelenecek.",
+   "durum": "GECERLI POZISYON"
+  }
+ ],
+ "BIZE_DUSEN": [
+  "Notebook'ta kullanilan TUM dis veriyi beyan et: kaynak, amac, nasil kullanildigi",
+  "data/external altindaki her kaynak icin: hava_gunluk (ERA5), gunes_gunluk, nem_toprak, hava_kalitesi, konvektif, arazi_ortusu, osm_altyapi, turizm, izsu_su, lisanssiz_ges, depremler, yanginlar",
+  "Nisan-Temmuz 2026 GERCEKLESMIS hava verisi kullandigimizi ACIKCA yaz",
+  "Ilk 20'deyiz -> notebook KESIN incelenecek",
+  "Notebook son tarihi: 2 Eylul 13:00"
+ ],
+ "DERS": "Forum bulgusunu tek mesaja dayandirma; ayni konudaki SONRAKI mesajlari ve diger baslikları da oku. Duzenleyici pozisyonunu iki gun icinde degistirdi.",
+ "KESIN_TEYIT": {
+  "kaynak": "Duzenleyici, kullaniciya DOGRUDAN E-POSTA ile bildirdi (2026-08-29)",
+  "icerik": "Veri kullanimi YASAK DEGIL",
+  "durum": "BAGLAYICI -- forum mesajlarindaki belirsizlik kapandi",
+  "sonuc": "Skor maksimizasyonuna devam. Tek yukumluluk notebook beyani."
+ }
+}

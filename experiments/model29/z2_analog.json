@@ -1,0 +1,55 @@
+{
+ "dosya": "tuketim_z2_analog.csv",
+ "finite_olmayan": 0,
+ "ham": {
+  "Q": 0.44514033037410566,
+  "kurtoz": 46.875077636961954,
+  "en_kotu_yuzde1_pay": 0.6219900210786193
+ },
+ "curuk_Q_payi": 0.6647391238514619,
+ "temiz": {
+  "Q": 0.14923813717027237,
+  "kurtoz": 22.916988999691924,
+  "en_kotu_yuzde1_pay": 0.308802605110019
+ },
+ "kirpma": 2.0,
+ "capa": {
+  "soguk": {
+   "satir": 158369,
+   "kaydirma": -0.18506320408088936
+  },
+  "kuyruk": {
+   "satir": 29000,
+   "kaydirma": 0.28838123233948576
+  },
+  "cekirdek": {
+   "satir": 467772,
+   "kaydirma": -0.08165865859391971
+  }
+ },
+ "son": {
+  "Q": 0.11801465046075624,
+  "kurtoz": 8.977506699728398,
+  "en_kotu_yuzde1_pay": 0.23509254905485202
+ },
+ "kapi": {
+  "satir": 714688,
+  "id_birebir": true,
+  "nan": 0,
+  "negatif": 0,
+  "baslik": true
+ },
+ "dagilim": {
+  "log_ort": 6.601822727647078,
+  "log_std": 1.760076338469144,
+  "maks": 268737.92289507785,
+  "alt1kwh": 0.025247380675203726
+ },
+ "parametreler": {
+  "K_sicak": 30,
+  "K_soguk": 40,
+  "lag_gun": 364,
+  "donor_sicak": 1920,
+  "donor_soguk": 2141
+ }
+}

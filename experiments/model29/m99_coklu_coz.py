@@ -45,6 +45,30 @@ def coz(taban_ad, taban_skor, yonler, lam=0.0, cikti=None, yaz=True):
     Gr = G + lam * np.eye(len(G))
     k = np.linalg.solve(Gr, L)
     mse = m0 - 2 * k @ L + k @ G @ k
+
+    # --- KORKULUKLAR (29 Agustos gecesi kirici ajan buldu) ---
+    # 3+ neredeyse dogrusal-bagimli yonle np.linalg.solve PATLAMIYOR: cond(G)=1e15,
+    # k~1e11, MSE=-584129 cikiyor ve sqrt(max(mse,0)) maskesi bunu "0.00000" diye
+    # yaziyor. Uretilen dosya KAPI DENETIMINDEN DE GECIYOR. Sessiz felaket.
+    kosul = float(np.linalg.cond(Gr))
+    k1 = float(np.abs(k).sum())
+    uyari = []
+    if kosul > 1e8:
+        uyari.append(f"KOSUL SAYISI {kosul:.2e} > 1e8 -- yonler neredeyse dogrusal bagimli")
+    if mse < 0:
+        uyari.append(f"MSE NEGATIF ({mse:.3f}) -- fiziksel olarak imkansiz, cozum coktu")
+    if k1 > 5:
+        uyari.append(f"|k|_1 = {k1:.3f} > 5 -- asiri buyuk katsayilar, public/private riski")
+    if mse > m0 + 1e-12:
+        uyari.append(f"MSE ({mse:.6f}) tabandan ({m0:.6f}) KOTU -- cozum yanlis")
+    if uyari:
+        print("\n!!! DUR — COZUM GUVENILMEZ !!!")
+        for u in uyari:
+            print("   " + u)
+        print(f"   kosul={kosul:.3e}  |k|_1={k1:.4f}  mse={mse:.6f}")
+        print("   Cozum: --lam ile ridge ekle, ya da yon sayisini azalt.")
+        raise SystemExit("korkuluk tetiklendi -- dosya YAZILMADI")
+    print(f"[korkuluk] kosul={kosul:.3e}  |k|_1={k1:.4f}  -- TEMIZ")
     print(f"taban {taban_ad} skor {taban_skor}  m0={m0:.6f}")
     print(f"{'yon':34s} {'Q(=G_jj)':>10s} {'L':>10s} {'tek-basina kazanc':>18s} {'k*':>9s}")
     for j, ad in enumerate(adlar):
@@ -81,14 +105,44 @@ def coz(taban_ad, taban_skor, yonler, lam=0.0, cikti=None, yaz=True):
     return np.sqrt(max(mse, 0)), k
 
 
-if __name__ == "__main__":
-    arg = [x for x in sys.argv[1:] if not x.startswith("--")]
+def _ayristir(argv):
+    """--secenek DEGER ciftlerini AYIKLA; geriye yalniz dosya=skor ciftleri kalsin.
+
+    Eski surum '--cikti'nin DEGERINI de yon sanip cokuyordu (29 Agustos gecesi
+    kirici ajan buldu). Artik secenekler ve degerleri birlikte tuketiliyor,
+    ve her kalan arguman 'dosya.csv=skor' bicimi icin DENETLENIYOR.
+    """
     cikti = None
-    if "--cikti" in sys.argv:
-        cikti = sys.argv[sys.argv.index("--cikti") + 1]
     lam = 0.0
-    if "--lam" in sys.argv:
-        lam = float(sys.argv[sys.argv.index("--lam") + 1])
-    tab = arg[0].split("=")
-    yon = [a.split("=") for a in arg[1:]]
-    coz(tab[0], tab[1], [(a, s) for a, s in yon], lam=lam, cikti=cikti)
+    kalan = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--cikti":
+            cikti = argv[i + 1]
+            i += 2
+        elif a == "--lam":
+            lam = float(argv[i + 1])
+            i += 2
+        elif a.startswith("--"):
+            raise SystemExit(f"bilinmeyen secenek: {a}")
+        else:
+            kalan.append(a)
+            i += 1
+    if len(kalan) < 2:
+        raise SystemExit("en az bir taban ve bir yon gerekli\n" + (__doc__ or ""))
+    for x in kalan:
+        if x.count("=") != 1:
+            raise SystemExit(f"HATALI ARGUMAN: {x!r} -- 'dosya.csv=skor' bicimi bekleniyordu")
+        try:
+            float(x.split("=")[1])
+        except ValueError:
+            raise SystemExit(f"HATALI SKOR: {x!r}") from None
+    return kalan, cikti, lam
+
+
+if __name__ == "__main__":
+    kalan, cikti, lam = _ayristir(sys.argv[1:])
+    tab = kalan[0].split("=")
+    yon = [tuple(a.split("=")) for a in kalan[1:]]
+    coz(tab[0], tab[1], yon, lam=lam, cikti=cikti)
