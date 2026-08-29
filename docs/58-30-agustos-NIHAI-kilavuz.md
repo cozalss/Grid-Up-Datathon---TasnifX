@@ -81,9 +81,9 @@ kaggle competitions submissions -c grid-up-datathon
 ### Skor gelince `L` çözümü
 
 ```
-L_y40 = (1,006831 - P^2) / 1,20
-L_q1c = (1,014633 - P^2) / 0,90
-L_y46 = (1,048109 - P^2) / 0,70
+L_y40 = (1,006831155 - P^2) / 1,20
+L_q1c = (1,014633382 - P^2) / 0,90
+L_y46 = (1,048108681 - P^2) / 0,70
 ```
 
 Sabitler `experiments/model29/m102_sonda.json` içinde (`cozum_sabiti`).
@@ -203,3 +203,22 @@ bir hakkın değeri ~0,0016 MSE → **yine de 44 kat Plan B lehine.** Plan B kal
 > hatası `|k|` ile değil **yer değiştirme** ile büyüyor (korelasyon +0,75 vs +0,30).
 > Bizim yer değiştirmemiz **0,096**, doğrulanmış bölgenin (0,286) içinde. Kural
 > yanlış eksende ölçüyordu; bağlayıcı olan yer değiştirme ve o temiz.
+
+### Sonda denetimi (bağımsız türetim, `m103_sonda_denetim.py`)
+
+Üç sonda dosyası `m102`'ye bakmadan sıfırdan yeniden kuruldu:
+
+| kontrol | sonuç |
+|---|---|
+| Yeniden kurma (kırpılmayan satırlar) | maks fark **4,44e-16** — tam |
+| Kırpma etkisi | 145–195 satır, MSE etkisi **2,9e-09** (gürültünün 30 binde biri) |
+| İleri-geri çözüm sınavı | hata **1e-16** |
+| Kapı denetimi | üçü de temiz |
+
+**İki küçük kusur bulundu, ikisi de zararsız:**
+1. Diskteki dosya saf harmandan 145–195 satırda ayrılıyor — `expm1` sonrası
+   negatife düşüp sıfıra kırpılan satırlar. Kırpma hatayı yalnızca **azaltır**
+   (`|0−t| ≤ |p−t|`, `t ≥ 0`), etkisi 2,9e-09.
+2. `m102` `m0`'ı `1.005688` diye yuvarlamıştı; gerçeği `1.00284² = 1.005688066`.
+   `L`'ye etkisi 5,5e-08 — ölçüm gürültüsünden **1738 kat küçük**.
+   Yukarıdaki sabitler tam değerle yeniden hesaplandı.

@@ -1,0 +1,44 @@
+{
+ "sy40": {
+  "yeniden_kur_fark": 0.008025693984342483,
+  "cozum_sabiti": 1.0068311546058957,
+  "kapi": {
+   "satir": 714688,
+   "id_test": true,
+   "id_ss": true,
+   "nan": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "maks": 161761.45859624303
+  },
+  "gecti": false
+ },
+ "sq1c": {
+  "yeniden_kur_fark": 0.008025693984342483,
+  "cozum_sabiti": 1.0146333815558475,
+  "kapi": {
+   "satir": 714688,
+   "id_test": true,
+   "id_ss": true,
+   "nan": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "maks": 180809.8890596916
+  },
+  "gecti": false
+ },
+ "sy46": {
+  "yeniden_kur_fark": 0.008025693984342483,
+  "cozum_sabiti": 1.0481086809242222,
+  "kapi": {
+   "satir": 714688,
+   "id_test": true,
+   "id_ss": true,
+   "nan": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "maks": 157058.91557611126
+  },
+  "gecti": false
+ }
+}
