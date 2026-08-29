@@ -222,3 +222,32 @@ bir hakkın değeri ~0,0016 MSE → **yine de 44 kat Plan B lehine.** Plan B kal
 2. `m102` `m0`'ı `1.005688` diye yuvarlamıştı; gerçeği `1.00284² = 1.005688066`.
    `L`'ye etkisi 5,5e-08 — ölçüm gürültüsünden **1738 kat küçük**.
    Yukarıdaki sabitler tam değerle yeniden hesaplandı.
+
+### Uçtan uca prova (`m104_prova.py`) — TAMAMLANDI
+
+Zincir baştan sona koşuldu: sonda skoru → `L` çöz → eşdeğer skor → `m99` → dosya.
+
+**`y40` sondası tek başına, `g7` ile birlikte:**
+
+| `y40` kalitesi | sonda skoru | `L_y40` | ortak optimum | `\|k\|₁` | yer değ. |
+|---|---|---|---|---|---|
+| r = 0,06 | 0,99733 | +0,010137 | **0,99545** | 3,32 | 0,122 |
+| r = 0,035 | 0,99987 | +0,005909 | **0,99827** | 2,70 | 0,096 |
+| r = 0 | 1,00341 | 0,000000 | **1,00069** | 1,84 | 0,066 |
+| r = −0,02 | 1,00543 | −0,003382 | **1,00127** | 1,35 | 0,056 |
+| r = −0,05 | 1,00845 | −0,008450 | **1,00107** | 0,95 | 0,060 |
+
+**Her senaryoda `1,00284`'ten iyi.** Nötr durumda bile `1,00069` — `g7`'nin
+katkısı tek başına oraya taşıyor. Bu yalnız ilk sondayla; `q1c` ve `y46`
+sondaları üzerine ekleniyor.
+
+**Negatif `L` yolu test edildi ve KAZANDIRIYOR.** `L < 0` ise `κ < 0` olur, yani
+o yönden *uzaklaşılır*; kazanç `L²/Q` her iki işarette de pozitif. Cebir bunu
+doğru yapıyor, korkuluklar temiz geçiyor, üretilen dosya sağlıklı.
+
+**Yer değiştirme hepsinde doğrulanmış bölgenin içinde** (maks 0,122 vs sınır 0,286).
+`|k|₁` 3,32'ye kadar çıkıyor ama bağlayıcı ölçüt yer değiştirme — o temiz.
+
+**`m99` uyarısı beklenen davranış:** `g7`, `y40`, `q1c`, `y46` ölçülmüş dosyalar
+değil (eşdeğer skorla veriliyorlar), o yüzden "OLCULMEMIS -- el ile verildi"
+uyarısı basacak. Normal. Ölçülmüş bir dosyanın skoru yanlış girilirse DURDURUR.
