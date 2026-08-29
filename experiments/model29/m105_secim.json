@@ -1,0 +1,74 @@
+{
+ "olcu": {
+  "g7_span_tau3": {
+   "Q": 0.0024943684939945643,
+   "kurtoz": 23.14865896697389,
+   "en_kotu_yuzde1": 0.28672596082412527
+  },
+  "y40_sota_temiz": {
+   "Q": 0.02851921990531962,
+   "kurtoz": 14.478554341264699,
+   "en_kotu_yuzde1": 0.259059492041712
+  },
+  "q1c_kapasite_siki": {
+   "Q": 0.06092237866689803,
+   "kurtoz": 5.013887945464527,
+   "en_kotu_yuzde1": 0.10518331478887039
+  },
+  "y46_amnezik_kirpik": {
+   "Q": 0.38843725587943057,
+   "kurtoz": 4.515876063525546,
+   "en_kotu_yuzde1": 0.10522911469034738
+  },
+  "y45_mevsimsel_kirpik": {
+   "Q": 0.16715959451125548,
+   "kurtoz": 8.533103783203167,
+   "en_kotu_yuzde1": 0.23084212953362426
+  },
+  "z2_analog": {
+   "Q": 0.11794891776245875,
+   "kurtoz": 8.975156625549024,
+   "en_kotu_yuzde1": 0.23505506136249618
+  },
+  "q1d_kuantil38_siki": {
+   "Q": 0.0554480467916566,
+   "kurtoz": 5.091674856449821,
+   "en_kotu_yuzde1": 0.11658369363296699
+  }
+ },
+ "gecen": [
+  "y40_sota_temiz",
+  "q1c_kapasite_siki",
+  "y46_amnezik_kirpik",
+  "y45_mevsimsel_kirpik",
+  "z2_analog",
+  "q1d_kuantil38_siki"
+ ],
+ "en_iyi": [
+  {
+   "sonuc": 0.99708599856832,
+   "A": "y40_sota_temiz",
+   "B": "z2_analog"
+  },
+  {
+   "sonuc": 0.9974138163648409,
+   "A": "y40_sota_temiz",
+   "B": "y45_mevsimsel_kirpik"
+  },
+  {
+   "sonuc": 0.997683816677573,
+   "A": "y40_sota_temiz",
+   "B": "y46_amnezik_kirpik"
+  },
+  {
+   "sonuc": 0.9978977876267037,
+   "A": "y40_sota_temiz",
+   "B": "q1c_kapasite_siki"
+  },
+  {
+   "sonuc": 0.9981055092173068,
+   "A": "y40_sota_temiz",
+   "B": "q1d_kuantil38_siki"
+  }
+ ]
+}

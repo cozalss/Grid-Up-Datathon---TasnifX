@@ -1,0 +1,127 @@
+{
+ "dosya": "tuketim_t1_sulama.csv",
+ "finite_olmayan": 0,
+ "ham": {
+  "Q": 0.05999999999999999,
+  "kurtoz": 11.081857130887581,
+  "en_kotu_yuzde1_pay": 0.24458914309782576
+ },
+ "curuk_Q_payi": 0.05513205656428698,
+ "temiz": {
+  "Q": 0.05669207660614277,
+  "kurtoz": 12.088586052290502,
+  "en_kotu_yuzde1_pay": 0.2588602673165211
+ },
+ "kirpma": 2.0,
+ "capa": {
+  "soguk": {
+   "satir": 158369,
+   "kaydirma": -0.04222224951376095
+  },
+  "kuyruk": {
+   "satir": 29000,
+   "kaydirma": -0.04695204483045086
+  },
+  "cekirdek": {
+   "satir": 467772,
+   "kaydirma": -0.06123705375608061
+  }
+ },
+ "son": {
+  "Q": 0.05375318328558922,
+  "kurtoz": 11.145069922831262,
+  "en_kotu_yuzde1_pay": 0.25417417855887536
+ },
+ "kapi": {
+  "satir": 714688,
+  "id_birebir": true,
+  "nan": 0,
+  "negatif": 0,
+  "baslik": true
+ },
+ "dagilim": {
+  "log_ort": 6.601777590282965,
+  "log_std": 1.6975637198944429,
+  "maks": 271735.14593255473,
+  "alt1kwh": 0.024183979582699022
+ },
+ "ham_Q": 0.023678943374330266,
+ "ham_rms": 0.15387963924551637,
+ "olcek": 1.591821864668525,
+ "merkez": 0.13119286716857648,
+ "olculmus_trafo": 2157,
+ "kaynak_payi": {
+  "ilce": 0.9983433330348348,
+  "arazi": 0.001656666965165219
+ },
+ "ilce_genligi": {
+  "gordes": 1.092,
+  "sarigol": 0.879,
+  "kinik": 0.852,
+  "odemis": 0.771,
+  "bayindir": 0.477,
+  "cesme": 0.432,
+  "beydag": 0.412,
+  "alasehir": 0.385,
+  "karaburun": 0.333,
+  "kiraz": 0.326,
+  "karsiyaka": 0.276,
+  "cigli": 0.212,
+  "torbali": 0.197,
+  "turgutlu": 0.19,
+  "tire": 0.173,
+  "balcova": 0.173,
+  "menderes": 0.172,
+  "bayrakli": 0.171,
+  "selcuk": 0.16,
+  "selendi": 0.154,
+  "buca": 0.146,
+  "karabaglar": 0.131,
+  "ahmetli": 0.128,
+  "gaziemir": 0.127,
+  "sehzadeler": 0.123,
+  "kemalpasa": 0.112,
+  "yunusemre": 0.104,
+  "koprubasi": 0.103,
+  "seferihisar": 0.1,
+  "saruhanli": 0.097,
+  "narlidere": 0.085,
+  "salihli": 0.084,
+  "akhisar": 0.076,
+  "demirci": 0.074,
+  "aliaga": 0.066,
+  "bornova": 0.052,
+  "menemen": 0.046,
+  "kula": 0.026,
+  "urla": -0.01,
+  "konak": -0.024,
+  "kirkagac": -0.053,
+  "dikili": -0.084,
+  "bergama": -0.093,
+  "soma": -0.11,
+  "foca": -0.136,
+  "guzelbahce": -0.191
+ },
+ "arazi_R2": 0.10052007345250191,
+ "arazi_korelasyon": {
+  "tarim_orani": 0.2602791835277289,
+  "yerlesim_orani": -0.15394613673537533,
+  "su_orani": -0.15265558364431758,
+  "agac_orani": 0.03228732792724823,
+  "otlak_orani": 0.11754804380851645
+ },
+ "rampa_olcegi": 1.0781931003650786,
+ "rampa_ay": {
+  "4": 0.201,
+  "5": 0.531,
+  "6": 0.971,
+  "7": 1.028,
+  "8": 0.886
+ },
+ "cekirdek_agirlik": 0.6,
+ "ham_rejim_payi": {
+  "soguk": 0.371975257563686,
+  "kuyruk": 0.07487780773134037,
+  "cekirdek": 0.5531469347049733
+ }
+}

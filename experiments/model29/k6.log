@@ -1,0 +1,75 @@
+kesinti paneli (162240, 35) (19s)
+  kesim 2025-07-31: 319,732 satir (23s)
+  kesim 2025-08-31: 345,941 satir (27s)
+  kesim 2025-09-30: 381,282 satir (32s)
+  kesim 2025-10-31: 410,464 satir (38s)
+  kesim 2025-11-30: 440,147 satir (45s)
+  kesim 2025-12-31: 338,187 satir (51s)
+  TEST 714,688 satir (69s)
+{
+ "kesim": "2026-03-31",
+ "kesimler": [
+  "2025-07-31",
+  "2025-08-31",
+  "2025-09-30",
+  "2025-10-31",
+  "2025-11-30",
+  "2025-12-31"
+ ],
+ "egitim_satir": 2235753,
+ "test_satir": 714688,
+ "taban_ozellik": 52,
+ "kesinti_ozellik": 35,
+ "tur": [
+  185,
+  520
+ ],
+ "tohum": [
+  7,
+  17,
+  27
+ ],
+ "kesinti_test_nan": {
+  "ks_kesinti_adet": 0.068081,
+  "ks_kesinti_dk": 0.068081,
+  "ks_etkilenen_abone": 0.068081,
+  "ks_log_dk": 0.068081,
+  "ks_log_adet": 0.068081,
+  "ks_log_abone": 0.068081,
+  "ks_var": 0.068081,
+  "ks_ort_sure": 0.09431,
+  "ks_abone_basi_dk": 0.09431,
+  "ks_log_dk_z": 0.071211,
+  "ks_log_abone_z": 0.071211,
+  "ks_log_dk_dun": 0.0681,
+  "ks_log_dk_yarin": 0.068119,
+  "ks_var_dun": 0.0681,
+  "ks_var_yarin": 0.068119,
+  "ks_pay_dk": 0.068081,
+  "ks_pay_adet": 0.068081,
+  "ks_pay_abone": 0.068081,
+  "ks_log_dk_gunz": 0.068081,
+  "ks_abone_trafo": 0.068081,
+  "ks_adet_trafo": 0.068081
+ },
+ "kesinti_egitim_nan_ort": 0.269278
+}
+  taban/huber tohum 7 (108s)
+  taban/huber tohum 17 (143s)
+  taban/huber tohum 27 (178s)
+  taban/l1 tohum 7 (256s)
+  taban/l1 tohum 17 (325s)
+  taban/l1 tohum 27 (404s)
+  kesinti/huber tohum 7 (448s)
+  kesinti/huber tohum 17 (487s)
+  kesinti/huber tohum 27 (529s)
+  kesinti/l1 tohum 7 (644s)
+  kesinti/l1 tohum 17 (877s)
+  kesinti/l1 tohum 27 (1111s)
+DELTA: {
+ "Q": 0.0032790796219442113,
+ "ort": 0.0018593255092100131,
+ "std": 0.05723305452791256,
+ "mutlak_maks": 1.2224698610609377
+}
+BITTI (1111s)

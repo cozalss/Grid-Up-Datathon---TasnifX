@@ -1,0 +1,1429 @@
+{
+ "taban": {
+  "dosya": "tuketim_m6_ikiyon.csv",
+  "LB": 1.00284,
+  "m0": 1.005688
+ },
+ "olcut": {
+  "kosinus_esigi": 0.2,
+  "kurtoz_esigi": 10,
+  "Q_esigi": 0.01
+ },
+ "adaylar": {
+  "m4_hava": {
+   "dosya": "tuketim_m4_hava_capali.csv",
+   "Q": 0.08200202966950237,
+   "kurtoz": 22.721470191842094,
+   "en_kotu_yuzde1_pay": 0.36947301490399076,
+   "Q_rejim_payi": {
+    "soguk": 0.1864595991136287,
+    "kuyruk": 0.0665021906728841,
+    "cekirdek": 0.7470382102134873
+   },
+   "yeni_pay": 1.4821309954945755e-31,
+   "kos_m4ekseni": 0.9930179350165237,
+   "basabas_skor": 1.0429237890035408,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 9.999878702871001e-11,
+   "beklenen_kazanc_bagimsiz": 4.108760161314341e-13
+  },
+  "y40_sota": {
+   "dosya": "tuketim_y40_sota_temiz.csv",
+   "Q": 0.02851921990531961,
+   "kurtoz": 14.478554341264697,
+   "en_kotu_yuzde1_pay": 0.25907733741862193,
+   "Q_rejim_payi": {
+    "soguk": 0.46911877691096,
+    "kuyruk": 0.041713244363005365,
+    "cekirdek": 0.4891679787260348
+   },
+   "yeni_pay": 0.9384591682122776,
+   "kos_m4ekseni": 0.21792401238076903,
+   "basabas_skor": 1.0169597926689726,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.6321169589614993,
+   "beklenen_kazanc_bagimsiz": 0.0025972484821505984
+  },
+  "q1c_kapasite": {
+   "dosya": "tuketim_q1c_kapasite_siki.csv",
+   "Q": 0.06092237866689804,
+   "kurtoz": 5.013887945464527,
+   "en_kotu_yuzde1_pay": 0.10519803365757001,
+   "Q_rejim_payi": {
+    "soguk": 0.5178917566396634,
+    "kuyruk": 0.05466276874638399,
+    "cekirdek": 0.4274454746139526
+   },
+   "yeni_pay": 0.8943301666971595,
+   "kos_m4ekseni": 0.3235331667417021,
+   "basabas_skor": 1.0327683083184234,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.836548124075769,
+   "beklenen_kazanc_bagimsiz": 0.003437217297683761
+  },
+  "y45_mevsimsel": {
+   "dosya": "tuketim_y45_mevsimsel_kirpik.csv",
+   "Q": 0.16715959451125548,
+   "kurtoz": 8.533115786848848,
+   "en_kotu_yuzde1_pay": 0.23086543817621263,
+   "Q_rejim_payi": {
+    "soguk": 0.35941764939856213,
+    "kuyruk": 0.04595684100542898,
+    "cekirdek": 0.5946255095960089
+   },
+   "yeni_pay": 0.9983054807674456,
+   "kos_m4ekseni": 0.005044667069147353,
+   "basabas_skor": 1.0829808837238335,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.8570339388321774,
+   "beklenen_kazanc_bagimsiz": 0.0035213896182130396
+  },
+  "y46_amnezik": {
+   "dosya": "tuketim_y46_amnezik_kirpik.csv",
+   "Q": 0.3884372558794304,
+   "kurtoz": 4.515876063525546,
+   "en_kotu_yuzde1_pay": 0.10524384028714144,
+   "Q_rejim_payi": {
+    "soguk": 0.0684084557070669,
+    "kuyruk": 0.05612472680251292,
+    "cekirdek": 0.8754668174904201
+   },
+   "yeni_pay": 0.9707787841341532,
+   "kos_m4ekseni": -0.11452570125049442,
+   "basabas_skor": 1.1807308143177386,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.930384682503821,
+   "beklenen_kazanc_bagimsiz": 0.0038227738873185257
+  },
+  "z2_analog": {
+   "dosya": "tuketim_z2_analog.csv",
+   "Q": 0.11794891776245876,
+   "kurtoz": 8.975282410291873,
+   "en_kotu_yuzde1_pay": 0.23507360781193984,
+   "Q_rejim_payi": {
+    "soguk": 0.4000780438607972,
+    "kuyruk": 0.062454915561756065,
+    "cekirdek": 0.5374670405774467
+   },
+   "yeni_pay": 0.971530497260902,
+   "kos_m4ekseni": 0.16070449204184015,
+   "basabas_skor": 1.0600174138958562,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.8094792602363862,
+   "beklenen_kazanc_bagimsiz": 0.0033259964792518664
+  },
+  "g7_span_tau3": {
+   "dosya": "tuketim_g7_span_tau3.csv",
+   "Q": 0.002494368493994564,
+   "kurtoz": 23.205114105302677,
+   "en_kotu_yuzde1_pay": 0.2867455732660684,
+   "Q_rejim_payi": {
+    "soguk": 0.6552007806151495,
+    "kuyruk": 0.027996790833101304,
+    "cekirdek": 0.31680242855174917
+   },
+   "yeni_pay": 0.9961194524172627,
+   "kos_m4ekseni": -0.01283997773445793,
+   "basabas_skor": 1.004082849417315,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.6462407495681607,
+   "beklenen_kazanc_bagimsiz": 0.002655280454233155
+  },
+  "t1_sulama": {
+   "dosya": "tuketim_t1_sulama.csv",
+   "Q": 0.053752522674768335,
+   "kurtoz": 11.14533044742555,
+   "en_kotu_yuzde1_pay": 0.25417730232320096,
+   "Q_rejim_payi": {
+    "soguk": 0.4078595495584008,
+    "kuyruk": 0.08134929972583653,
+    "cekirdek": 0.5107911507157625
+   },
+   "yeni_pay": 0.956222322627719,
+   "kos_m4ekseni": -0.159733577256881,
+   "basabas_skor": 1.02929127202885,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.864555042131999,
+   "beklenen_kazanc_bagimsiz": 0.0035522924026623794
+  },
+  "t2_bayram": {
+   "dosya": "tuketim_t2_bayram.csv",
+   "Q": 0.010745159423953578,
+   "kurtoz": 37.24520278532738,
+   "en_kotu_yuzde1_pay": 0.4849926695659827,
+   "Q_rejim_payi": {
+    "soguk": 0.3156161311218606,
+    "kuyruk": 0.05966877668821695,
+    "cekirdek": 0.6247150921899223
+   },
+   "yeni_pay": 0.9976500741179759,
+   "kos_m4ekseni": -0.0280183354099012,
+   "basabas_skor": 1.0081830981641944,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.9844621461103249,
+   "beklenen_kazanc_bagimsiz": 0.004044967910559565
+  },
+  "t3_turizm": {
+   "dosya": "tuketim_t3_turizm.csv",
+   "Q": 0.03897922070151211,
+   "kurtoz": 14.625728649076892,
+   "en_kotu_yuzde1_pay": 0.2924576199055614,
+   "Q_rejim_payi": {
+    "soguk": 0.5368058403594327,
+    "kuyruk": 0.09092186689061292,
+    "cekirdek": 0.3722722927499543
+   },
+   "yeni_pay": 0.9860902859696623,
+   "kos_m4ekseni": 0.09942426200893828,
+   "basabas_skor": 1.0220896343772947,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.952148521125409,
+   "beklenen_kazanc_bagimsiz": 0.003912197365085293
+  },
+  "t3_turizm_tatil": {
+   "dosya": "tuketim_t3_turizm_tatil.csv",
+   "Q": 0.04240928690627737,
+   "kurtoz": 11.747995863176886,
+   "en_kotu_yuzde1_pay": 0.24728302329361074,
+   "Q_rejim_payi": {
+    "soguk": 0.5067884781784258,
+    "kuyruk": 0.07724129922975256,
+    "cekirdek": 0.41597022259182165
+   },
+   "yeni_pay": 0.9954008417155915,
+   "kos_m4ekseni": 0.06438041382726652,
+   "basabas_skor": 1.0237662266876542,
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "sonsuz": 0,
+    "baslik": true
+   },
+   "bagimsiz_pay_mevcutlara_gore": 0.9639736205507995,
+   "beklenen_kazanc_bagimsiz": 0.003960784451855331
+  }
+ },
+ "kosinus": {
+  "adlar": [
+   "m4_hava",
+   "y40_sota",
+   "q1c_kapasite",
+   "y45_mevsimsel",
+   "y46_amnezik",
+   "z2_analog",
+   "g7_span_tau3",
+   "t1_sulama",
+   "t2_bayram",
+   "t3_turizm",
+   "t3_turizm_tatil"
+  ],
+  "matris": [
+   [
+    1.0,
+    0.20241994599306615,
+    0.31755114229611053,
+    0.0001901345091799115,
+    -0.128696323011114,
+    0.1535172743453572,
+    -0.005559699730225692,
+    -0.17455990901276247,
+    -0.03248920312625429,
+    0.09124656886112482,
+    0.06141653805495048
+   ],
+   [
+    0.20241994599306615,
+    1.0,
+    0.12220134829026112,
+    0.02586090822004701,
+    0.11438299876703022,
+    0.13107712678136932,
+    -0.5547235289861726,
+    -0.24660695239798466,
+    -0.07309494209338335,
+    0.12414373264771679,
+    0.06253114355048067
+   ],
+   [
+    0.31755114229611053,
+    0.12220134829026112,
+    1.0,
+    0.2144224077361113,
+    -0.010582709963723218,
+    0.20461924671427328,
+    -0.033621221588585264,
+    -0.06595195398955599,
+    0.010572149967735242,
+    -0.0410509371736612,
+    -0.05554556636185165
+   ],
+   [
+    0.0001901345091799115,
+    0.02586090822004701,
+    0.2144224077361113,
+    1.0,
+    -0.09488679530307645,
+    0.3229731122461285,
+    -0.08092363675038872,
+    0.1816994764457222,
+    0.044210986182045414,
+    -0.04555171225346036,
+    -0.03482514309941003
+   ],
+   [
+    -0.128696323011114,
+    0.11438299876703022,
+    -0.010582709963723218,
+    -0.09488679530307645,
+    1.0,
+    -0.12004593737705516,
+    -0.09145790165269686,
+    0.002268971059197399,
+    -0.016647644491704985,
+    -0.1031915834458255,
+    -0.06307577661304248
+   ],
+   [
+    0.1535172743453572,
+    0.13107712678136932,
+    0.20461924671427328,
+    0.3229731122461285,
+    -0.12004593737705516,
+    0.9999999999999999,
+    -0.23075663355760315,
+    -0.008020730078612502,
+    -0.04514759613045669,
+    -0.02571011811828745,
+    -0.023852336364189243
+   ],
+   [
+    -0.005559699730225692,
+    -0.5547235289861726,
+    -0.033621221588585264,
+    -0.08092363675038872,
+    -0.09145790165269686,
+    -0.23075663355760315,
+    1.0,
+    0.11118611295590598,
+    0.008978299624349992,
+    -0.05160870658211464,
+    0.0817542989709931
+   ],
+   [
+    -0.17455990901276247,
+    -0.24660695239798466,
+    -0.06595195398955599,
+    0.1816994764457222,
+    0.002268971059197399,
+    -0.008020730078612502,
+    0.11118611295590598,
+    1.0,
+    0.09945268016814973,
+    -0.12379996915635158,
+    -0.13600504088155177
+   ],
+   [
+    -0.03248920312625429,
+    -0.07309494209338335,
+    0.010572149967735242,
+    0.044210986182045414,
+    -0.016647644491704985,
+    -0.04514759613045669,
+    0.008978299624349992,
+    0.09945268016814973,
+    1.0,
+    -0.016352526860712802,
+    -0.021470841121849826
+   ],
+   [
+    0.09124656886112482,
+    0.12414373264771679,
+    -0.0410509371736612,
+    -0.04555171225346036,
+    -0.1031915834458255,
+    -0.02571011811828745,
+    -0.05160870658211464,
+    -0.12379996915635158,
+    -0.016352526860712802,
+    1.0,
+    0.580943371263995
+   ],
+   [
+    0.06141653805495048,
+    0.06253114355048067,
+    -0.05554556636185165,
+    -0.03482514309941003,
+    -0.06307577661304248,
+    -0.023852336364189243,
+    0.0817542989709931,
+    -0.13600504088155177,
+    -0.021470841121849826,
+    0.580943371263995,
+    1.0
+   ]
+  ]
+ },
+ "hukum": {
+  "t1_sulama": {
+   "en_buyuk_kosinus_adi": "y40_sota",
+   "en_buyuk_kosinus": -0.24660695239798466,
+   "kosinusler": {
+    "m4_hava": -0.17455990901276247,
+    "y40_sota": -0.24660695239798466,
+    "q1c_kapasite": -0.06595195398955599,
+    "y45_mevsimsel": 0.1816994764457222,
+    "y46_amnezik": 0.002268971059197399,
+    "z2_analog": -0.008020730078612502,
+    "g7_span_tau3": 0.11118611295590598
+   },
+   "yeni_adaylarla": {
+    "t2_bayram": 0.09945268016814973,
+    "t3_turizm": -0.12379996915635158,
+    "t3_turizm_tatil": -0.13600504088155177
+   },
+   "kosinus_gecti": false,
+   "kurtoz_gecti": false,
+   "Q_gecti": true,
+   "hukum": "DUSTU"
+  },
+  "t2_bayram": {
+   "en_buyuk_kosinus_adi": "y40_sota",
+   "en_buyuk_kosinus": -0.07309494209338335,
+   "kosinusler": {
+    "m4_hava": -0.03248920312625429,
+    "y40_sota": -0.07309494209338335,
+    "q1c_kapasite": 0.010572149967735242,
+    "y45_mevsimsel": 0.044210986182045414,
+    "y46_amnezik": -0.016647644491704985,
+    "z2_analog": -0.04514759613045669,
+    "g7_span_tau3": 0.008978299624349992
+   },
+   "yeni_adaylarla": {
+    "t1_sulama": 0.09945268016814973,
+    "t3_turizm": -0.016352526860712802,
+    "t3_turizm_tatil": -0.021470841121849826
+   },
+   "kosinus_gecti": true,
+   "kurtoz_gecti": false,
+   "Q_gecti": true,
+   "hukum": "DIK ama kurtoz yuksek"
+  },
+  "t3_turizm": {
+   "en_buyuk_kosinus_adi": "y40_sota",
+   "en_buyuk_kosinus": 0.12414373264771679,
+   "kosinusler": {
+    "m4_hava": 0.09124656886112482,
+    "y40_sota": 0.12414373264771679,
+    "q1c_kapasite": -0.0410509371736612,
+    "y45_mevsimsel": -0.04555171225346036,
+    "y46_amnezik": -0.1031915834458255,
+    "z2_analog": -0.02571011811828745,
+    "g7_span_tau3": -0.05160870658211464
+   },
+   "yeni_adaylarla": {
+    "t1_sulama": -0.12379996915635158,
+    "t2_bayram": -0.016352526860712802,
+    "t3_turizm_tatil": 0.580943371263995
+   },
+   "kosinus_gecti": true,
+   "kurtoz_gecti": false,
+   "Q_gecti": true,
+   "hukum": "DIK ama kurtoz yuksek"
+  },
+  "t3_turizm_tatil": {
+   "en_buyuk_kosinus_adi": "g7_span_tau3",
+   "en_buyuk_kosinus": 0.0817542989709931,
+   "kosinusler": {
+    "m4_hava": 0.06141653805495048,
+    "y40_sota": 0.06253114355048067,
+    "q1c_kapasite": -0.05554556636185165,
+    "y45_mevsimsel": -0.03482514309941003,
+    "y46_amnezik": -0.06307577661304248,
+    "z2_analog": -0.023852336364189243,
+    "g7_span_tau3": 0.0817542989709931
+   },
+   "yeni_adaylarla": {
+    "t1_sulama": -0.13600504088155177,
+    "t2_bayram": -0.021470841121849826,
+    "t3_turizm": 0.580943371263995
+   },
+   "kosinus_gecti": true,
+   "kurtoz_gecti": false,
+   "Q_gecti": true,
+   "hukum": "DIK ama kurtoz yuksek"
+  }
+ },
+ "ayrinti": {
+  "t1_sulama": {
+   "dosya": "tuketim_t1_sulama.csv",
+   "finite_olmayan": 0,
+   "ham": {
+    "Q": 0.05999999999999999,
+    "kurtoz": 11.081857130887581,
+    "en_kotu_yuzde1_pay": 0.24458914309782576
+   },
+   "curuk_Q_payi": 0.05513205656428698,
+   "temiz": {
+    "Q": 0.05669207660614277,
+    "kurtoz": 12.088586052290502,
+    "en_kotu_yuzde1_pay": 0.2588602673165211
+   },
+   "kirpma": 2.0,
+   "capa": {
+    "soguk": {
+     "satir": 158369,
+     "kaydirma": -0.04222224951376095
+    },
+    "kuyruk": {
+     "satir": 29000,
+     "kaydirma": -0.04695204483045086
+    },
+    "cekirdek": {
+     "satir": 467772,
+     "kaydirma": -0.06123705375608061
+    }
+   },
+   "son": {
+    "Q": 0.05375318328558922,
+    "kurtoz": 11.145069922831262,
+    "en_kotu_yuzde1_pay": 0.25417417855887536
+   },
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "baslik": true
+   },
+   "dagilim": {
+    "log_ort": 6.601777590282965,
+    "log_std": 1.6975637198944429,
+    "maks": 271735.14593255473,
+    "alt1kwh": 0.024183979582699022
+   },
+   "ham_Q": 0.023678943374330266,
+   "ham_rms": 0.15387963924551637,
+   "olcek": 1.591821864668525,
+   "merkez": 0.13119286716857648,
+   "olculmus_trafo": 2157,
+   "kaynak_payi": {
+    "ilce": 0.9983433330348348,
+    "arazi": 0.001656666965165219
+   },
+   "ilce_genligi": {
+    "gordes": 1.092,
+    "sarigol": 0.879,
+    "kinik": 0.852,
+    "odemis": 0.771,
+    "bayindir": 0.477,
+    "cesme": 0.432,
+    "beydag": 0.412,
+    "alasehir": 0.385,
+    "karaburun": 0.333,
+    "kiraz": 0.326,
+    "karsiyaka": 0.276,
+    "cigli": 0.212,
+    "torbali": 0.197,
+    "turgutlu": 0.19,
+    "tire": 0.173,
+    "balcova": 0.173,
+    "menderes": 0.172,
+    "bayrakli": 0.171,
+    "selcuk": 0.16,
+    "selendi": 0.154,
+    "buca": 0.146,
+    "karabaglar": 0.131,
+    "ahmetli": 0.128,
+    "gaziemir": 0.127,
+    "sehzadeler": 0.123,
+    "kemalpasa": 0.112,
+    "yunusemre": 0.104,
+    "koprubasi": 0.103,
+    "seferihisar": 0.1,
+    "saruhanli": 0.097,
+    "narlidere": 0.085,
+    "salihli": 0.084,
+    "akhisar": 0.076,
+    "demirci": 0.074,
+    "aliaga": 0.066,
+    "bornova": 0.052,
+    "menemen": 0.046,
+    "kula": 0.026,
+    "urla": -0.01,
+    "konak": -0.024,
+    "kirkagac": -0.053,
+    "dikili": -0.084,
+    "bergama": -0.093,
+    "soma": -0.11,
+    "foca": -0.136,
+    "guzelbahce": -0.191
+   },
+   "arazi_R2": 0.10052007345250191,
+   "arazi_korelasyon": {
+    "tarim_orani": 0.2602791835277289,
+    "yerlesim_orani": -0.15394613673537533,
+    "su_orani": -0.15265558364431758,
+    "agac_orani": 0.03228732792724823,
+    "otlak_orani": 0.11754804380851645
+   },
+   "rampa_olcegi": 1.0781931003650786,
+   "rampa_ay": {
+    "4": 0.201,
+    "5": 0.531,
+    "6": 0.971,
+    "7": 1.028,
+    "8": 0.886
+   },
+   "cekirdek_agirlik": 0.6,
+   "ham_rejim_payi": {
+    "soguk": 0.371975257563686,
+    "kuyruk": 0.07487780773134037,
+    "cekirdek": 0.5531469347049733
+   }
+  },
+  "t2_bayram": {
+   "dosya": "tuketim_t2_bayram.csv",
+   "finite_olmayan": 0,
+   "ham": {
+    "Q": 0.012000000000000007,
+    "kurtoz": 34.163799032963745,
+    "en_kotu_yuzde1_pay": 0.4626885221649686
+   },
+   "curuk_Q_payi": 0.10062961577593042,
+   "temiz": {
+    "Q": 0.01079244461068884,
+    "kurtoz": 37.32986988299187,
+    "en_kotu_yuzde1_pay": 0.48559989858741986
+   },
+   "kirpma": 2.0,
+   "capa": {
+    "soguk": {
+     "satir": 158369,
+     "kaydirma": 0.013961562475669846
+    },
+    "kuyruk": {
+     "satir": 29000,
+     "kaydirma": 0.0074178908718154106
+    },
+    "cekirdek": {
+     "satir": 467772,
+     "kaydirma": -0.001019721005158763
+    }
+   },
+   "son": {
+    "Q": 0.010746337435145529,
+    "kurtoz": 37.24739476971902,
+    "en_kotu_yuzde1_pay": 0.48502460825336735
+   },
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "baslik": true
+   },
+   "dagilim": {
+    "log_ort": 6.6017763004766365,
+    "log_std": 1.704226018955283,
+    "maks": 180550.7437362701,
+    "alt1kwh": 0.02414480164771201
+   },
+   "ham_Q": 0.00018130240910926715,
+   "ham_rms": 0.01346485830260635,
+   "olcek": 8.135585911054783,
+   "sisirme": 8.135585911054783,
+   "normal_skor": true,
+   "etkilenen_satir_payi": 0.18412090310736992,
+   "kurban_katsayi": {
+    "saruhanli": 0.15,
+    "karaburun": 0.12,
+    "golmarmara": 0.104,
+    "gordes": 0.093,
+    "bayindir": 0.083,
+    "cesme": 0.076,
+    "sarigol": 0.069,
+    "odemis": 0.063,
+    "salihli": 0.057,
+    "demirci": 0.052,
+    "selendi": 0.047,
+    "kirkagac": 0.042,
+    "dikili": 0.037,
+    "seferihisar": 0.033,
+    "sehzadeler": 0.029,
+    "kula": 0.025,
+    "kemalpasa": 0.021,
+    "tire": 0.017,
+    "bergama": 0.013,
+    "menderes": 0.009,
+    "torbali": 0.006,
+    "urla": 0.002,
+    "foca": -0.002,
+    "alasehir": -0.006,
+    "selcuk": -0.009,
+    "beydag": -0.013,
+    "kiraz": -0.017,
+    "turgutlu": -0.021,
+    "menemen": -0.025,
+    "akhisar": -0.029,
+    "kinik": -0.033,
+    "bayrakli": -0.037,
+    "buca": -0.042,
+    "aliaga": -0.047,
+    "soma": -0.052,
+    "cigli": -0.057,
+    "karabaglar": -0.063,
+    "yunusemre": -0.069,
+    "konak": -0.083,
+    "bornova": -0.083,
+    "karsiyaka": -0.083,
+    "guzelbahce": -0.104,
+    "balcova": -0.12,
+    "gaziemir": -0.15
+   },
+   "tekgun_katsayi": {
+    "karaburun": 0.047,
+    "cesme": 0.038,
+    "dikili": 0.033,
+    "foca": 0.029,
+    "menderes": 0.026,
+    "urla": 0.024,
+    "kemalpasa": 0.021,
+    "seferihisar": 0.019,
+    "kula": 0.018,
+    "aliaga": 0.016,
+    "kiraz": 0.014,
+    "odemis": 0.013,
+    "torbali": 0.011,
+    "selcuk": 0.01,
+    "balcova": 0.009,
+    "guzelbahce": 0.007,
+    "sarigol": 0.006,
+    "demirci": 0.005,
+    "alasehir": 0.004,
+    "sehzadeler": 0.002,
+    "tire": 0.001,
+    "salihli": 0.0,
+    "karabaglar": -0.001,
+    "beydag": -0.002,
+    "buca": -0.004,
+    "menemen": -0.005,
+    "cigli": -0.006,
+    "selendi": -0.007,
+    "yunusemre": -0.009,
+    "bergama": -0.01,
+    "bayrakli": -0.014,
+    "saruhanli": -0.014,
+    "bornova": -0.014,
+    "bayindir": -0.014,
+    "karsiyaka": -0.014,
+    "soma": -0.019,
+    "turgutlu": -0.021,
+    "kinik": -0.024,
+    "gordes": -0.026,
+    "konak": -0.029,
+    "akhisar": -0.033,
+    "kirkagac": -0.038,
+    "gaziemir": -0.047
+   },
+   "ramazan_katsayi": {
+    "karaburun": 0.195,
+    "kula": 0.156,
+    "cesme": 0.135,
+    "selendi": 0.12,
+    "demirci": 0.108,
+    "seferihisar": 0.098,
+    "beydag": 0.089,
+    "kirkagac": 0.08,
+    "dikili": 0.066,
+    "saruhanli": 0.066,
+    "alasehir": 0.066,
+    "sehzadeler": 0.053,
+    "kiraz": 0.047,
+    "tire": 0.042,
+    "selcuk": 0.036,
+    "gordes": 0.031,
+    "bayindir": 0.025,
+    "urla": 0.02,
+    "kinik": 0.015,
+    "foca": 0.01,
+    "salihli": 0.005,
+    "kemalpasa": 0.0,
+    "bergama": -0.005,
+    "odemis": -0.01,
+    "guzelbahce": -0.015,
+    "menderes": -0.02,
+    "torbali": -0.025,
+    "sarigol": -0.031,
+    "akhisar": -0.036,
+    "balcova": -0.042,
+    "soma": -0.047,
+    "karsiyaka": -0.053,
+    "aliaga": -0.059,
+    "menemen": -0.066,
+    "buca": -0.073,
+    "karabaglar": -0.08,
+    "cigli": -0.089,
+    "bayrakli": -0.098,
+    "turgutlu": -0.108,
+    "konak": -0.12,
+    "yunusemre": -0.135,
+    "bornova": -0.156,
+    "gaziemir": -0.195
+   },
+   "kor_kurban_ramazan": 0.7284661795448952,
+   "kor_kurban_tekgun": 0.3459464003250045,
+   "ham_rejim_payi": {
+    "soguk": 0.2862116231201403,
+    "kuyruk": 0.055173831969947115,
+    "cekirdek": 0.6586145449099126
+   }
+  },
+  "t3_turizm": {
+   "kesimler": [
+    "2025-03-31",
+    "2025-05-31",
+    "2025-07-31",
+    "2025-09-30",
+    "2025-11-30"
+   ],
+   "egitim_satir": 1712888,
+   "ozellik": 70,
+   "soguk_agirlik": 3.0,
+   "tur": [
+    185,
+    520
+   ],
+   "tohum": [
+    7,
+    17
+   ],
+   "test_turizm_nan": {
+    "tz_ilce_pay": 0.0,
+    "tz_ilce_ay_yog": 0.0,
+    "tz_ilce_gec_l12": 0.0,
+    "tz_yoy_gec_dm": 0.0,
+    "tz_yoy_dol_dm": 0.0,
+    "tz_ilce_yoy_gec": 0.0,
+    "tz_ilce_yoy_dol": 0.0,
+    "tz_rejim_kirilma": 0.0,
+    "th_tarim": 0.0,
+    "th_yerlesim": 0.0,
+    "th_bayram": 0.0,
+    "th_tatil_yog": 0.0,
+    "th_tatil_pay": 0.0,
+    "th_tatil_tarim": 0.0,
+    "th_tatil_yerlesim": 0.0,
+    "th_bayram_yog": 0.0,
+    "th_bayram_tarim": 0.0,
+    "th_bayram_yerlesim": 0.0
+   },
+   "turizm_kazanim_payi": {
+    "taban": 0.0,
+    "turizm": 0.01103264694219597,
+    "tatil": 0.013289692310221245
+   },
+   "en_onemli_10": {
+    "taban": {
+     "h_ort14": 0.1943,
+     "h_ort7": 0.1566,
+     "h_ort": 0.1165,
+     "h_med": 0.0933,
+     "guc": 0.0744,
+     "h_ort28": 0.0436,
+     "ilce": 0.0351,
+     "g_guc": 0.0273,
+     "idnum": 0.0231,
+     "v_dalga": 0.0229
+    },
+    "turizm": {
+     "h_ort14": 0.182,
+     "h_ort7": 0.1612,
+     "h_ort": 0.1326,
+     "h_med": 0.0832,
+     "guc": 0.0706,
+     "h_ort28": 0.0488,
+     "ilce": 0.0332,
+     "g_guc": 0.0325,
+     "v_dalga": 0.0234,
+     "idnum": 0.0229
+    },
+    "tatil": {
+     "h_ort14": 0.1953,
+     "h_ort7": 0.1573,
+     "h_ort": 0.1222,
+     "h_med": 0.0868,
+     "guc": 0.0806,
+     "h_ort28": 0.04,
+     "ilce": 0.0329,
+     "g_guc": 0.0263,
+     "idnum": 0.0224,
+     "v_dalga": 0.0223
+    }
+   },
+   "adaylar": {
+    "t3_turizm": {
+     "dosya": "tuketim_t3_turizm.csv",
+     "finite_olmayan": 0,
+     "ham": {
+      "Q": 0.06,
+      "kurtoz": 18.538934922667227,
+      "en_kotu_yuzde1_pay": 0.29257053292457985
+     },
+     "curuk_Q_payi": 0.20479898996360124,
+     "temiz": {
+      "Q": 0.04771206060218392,
+      "kurtoz": 15.414145451570443,
+      "en_kotu_yuzde1_pay": 0.28345081147351975
+     },
+     "kirpma": 2.0,
+     "capa": {
+      "soguk": {
+       "satir": 158369,
+       "kaydirma": 0.17947610752628348
+      },
+      "kuyruk": {
+       "satir": 29000,
+       "kaydirma": 0.06814937566417612
+      },
+      "cekirdek": {
+       "satir": 467772,
+       "kaydirma": 0.03599466180235657
+      }
+     },
+     "son": {
+      "Q": 0.03901775243219081,
+      "kurtoz": 14.609886575260301,
+      "en_kotu_yuzde1_pay": 0.292221656130935
+     },
+     "kapi": {
+      "satir": 714688,
+      "id_birebir": true,
+      "nan": 0,
+      "negatif": 0,
+      "baslik": true
+     },
+     "dagilim": {
+      "log_ort": 6.601820431891804,
+      "log_std": 1.715711787877177,
+      "maks": 220216.71597978772,
+      "alt1kwh": 0.023988089907763948
+     },
+     "ham_delta_Q": 0.005278377887227763,
+     "ham_delta_rms": 0.07265244584477362,
+     "olcek": 3.3715172480451137,
+     "ham_rejim_payi": {
+      "soguk": 0.4746812094205545,
+      "kuyruk": 0.09190002681090217,
+      "cekirdek": 0.43341876376854344
+     },
+     "ham_ay_ort": {
+      "4": 0.00203,
+      "5": -0.0083,
+      "6": -0.02233,
+      "7": -0.04397
+     }
+    },
+    "t3_turizm_tatil": {
+     "dosya": "tuketim_t3_turizm_tatil.csv",
+     "finite_olmayan": 0,
+     "ham": {
+      "Q": 0.06,
+      "kurtoz": 11.865818398927024,
+      "en_kotu_yuzde1_pay": 0.2534591368592819
+     },
+     "curuk_Q_payi": 0.20034713497283732,
+     "temiz": {
+      "Q": 0.04797917190162976,
+      "kurtoz": 11.81992993651114,
+      "en_kotu_yuzde1_pay": 0.2518105042796076
+     },
+     "kirpma": 2.0,
+     "capa": {
+      "soguk": {
+       "satir": 158369,
+       "kaydirma": 0.1459870630235629
+      },
+      "kuyruk": {
+       "satir": 29000,
+       "kaydirma": 0.08947665347430493
+      },
+      "cekirdek": {
+       "satir": 467772,
+       "kaydirma": 0.024019856102280406
+      }
+     },
+     "son": {
+      "Q": 0.04241604387989853,
+      "kurtoz": 11.745632529718561,
+      "en_kotu_yuzde1_pay": 0.2472436305376507
+     },
+     "kapi": {
+      "satir": 714688,
+      "id_birebir": true,
+      "nan": 0,
+      "negatif": 0,
+      "baslik": true
+     },
+     "dagilim": {
+      "log_ort": 6.6017851597173545,
+      "log_std": 1.7255539620406068,
+      "maks": 210504.41600957472,
+      "alt1kwh": 0.02390413718993463
+     },
+     "ham_delta_Q": 0.004599463529273679,
+     "ham_delta_rms": 0.06781934480127097,
+     "olcek": 3.611786209319547,
+     "ham_rejim_payi": {
+      "soguk": 0.43767095122265187,
+      "kuyruk": 0.08562429273947492,
+      "cekirdek": 0.47670475603787343
+     },
+     "ham_ay_ort": {
+      "4": -0.00065,
+      "5": 8e-05,
+      "6": -0.01755,
+      "7": -0.03487
+     }
+    }
+   },
+   "tam_model_Q": {
+    "taban": 0.12233177880819292,
+    "turizm": 0.11833308140984121,
+    "tatil": 0.11873391508501173
+   }
+  },
+  "kesif": {
+   "panel": {
+    "train_satir": 1226237,
+    "test_satir": 714688,
+    "train_tarih": [
+     "2025-01-01",
+     "2026-03-31"
+    ],
+    "test_tarih": [
+     "2026-04-01",
+     "2026-07-31"
+    ],
+    "iller": [
+     "izmir",
+     "manisa"
+    ],
+    "ilce_sayisi": 47,
+    "test_ay_dagilimi": {
+     "4": 117604,
+     "5": 182673,
+     "6": 203279,
+     "7": 211132
+    }
+   },
+   "aylik": {
+    "satir": 7290,
+    "kapsam_degerleri": [
+     "isletme",
+     "isletme_basit"
+    ],
+    "rejimler": [
+     1,
+     2,
+     3
+    ],
+    "donem": [
+     "2019-1",
+     "2026"
+    ],
+    "son_donem": "202606",
+    "bizim_il_satir": 180,
+    "bizim_iller_var": [
+     "izmir",
+     "manisa"
+    ]
+   },
+   "geceleme_2025_2026": {
+    "202501": {
+     "izmir": 273101,
+     "manisa": 59033
+    },
+    "202502": {
+     "izmir": 241137,
+     "manisa": 50487
+    },
+    "202503": {
+     "izmir": 255670,
+     "manisa": 46204
+    },
+    "202504": {
+     "izmir": 555477,
+     "manisa": 74508
+    },
+    "202505": {
+     "izmir": 627014,
+     "manisa": 72173
+    },
+    "202506": {
+     "izmir": 767128,
+     "manisa": 66542
+    },
+    "202507": {
+     "izmir": 1306471,
+     "manisa": 77424
+    },
+    "202508": {
+     "izmir": 1540972,
+     "manisa": 78817
+    },
+    "202509": {
+     "izmir": 1123384,
+     "manisa": 73100
+    },
+    "202510": {
+     "izmir": 801498,
+     "manisa": 72756
+    },
+    "202511": {
+     "izmir": 482847,
+     "manisa": 64269
+    },
+    "202512": {
+     "izmir": 432504,
+     "manisa": 63606
+    },
+    "202601": {
+     "izmir": 448930,
+     "manisa": 60525
+    },
+    "202602": {
+     "izmir": 393084,
+     "manisa": 56218
+    },
+    "202603": {
+     "izmir": 440590,
+     "manisa": 46131
+    },
+    "202604": {
+     "izmir": 676078,
+     "manisa": 62040
+    },
+    "202605": {
+     "izmir": 950590,
+     "manisa": 54677
+    },
+    "202606": {
+     "izmir": 1060850,
+     "manisa": 58809
+    }
+   },
+   "yoy_2026_2025": {
+    "1": {
+     "izmir": 1.6438,
+     "manisa": 1.0253
+    },
+    "2": {
+     "izmir": 1.6301,
+     "manisa": 1.1135
+    },
+    "3": {
+     "izmir": 1.7233,
+     "manisa": 0.9984
+    },
+    "4": {
+     "izmir": 1.2171,
+     "manisa": 0.8327
+    },
+    "5": {
+     "izmir": 1.5161,
+     "manisa": 0.7576
+    },
+    "6": {
+     "izmir": 1.3829,
+     "manisa": 0.8838
+    }
+   },
+   "yoy_ay_ortalamasi": {
+    "1": 1.3346,
+    "2": 1.3718,
+    "3": 1.3609,
+    "4": 1.0249,
+    "5": 1.1368,
+    "6": 1.1334
+   },
+   "yoy_ay_demeaned": {
+    "1": {
+     "izmir": 0.3092,
+     "manisa": -0.3093
+    },
+    "2": {
+     "izmir": 0.2583,
+     "manisa": -0.2583
+    },
+    "3": {
+     "izmir": 0.3624,
+     "manisa": -0.3625
+    },
+    "4": {
+     "izmir": 0.1922,
+     "manisa": -0.1922
+    },
+    "5": {
+     "izmir": 0.3793,
+     "manisa": -0.3792
+    },
+    "6": {
+     "izmir": 0.2495,
+     "manisa": -0.2496
+    }
+   },
+   "yoy_il_ortalamasi_demeaned": {
+    "izmir": 0.2918,
+    "manisa": -0.2918
+   },
+   "ilce": {
+    "yillar": [
+     2023,
+     2024,
+     2025
+    ],
+    "bizim_ilce_satir": 127,
+    "bizim_ilce_sayisi": 45,
+    "panelde_ilce": 47,
+    "eslesen": 45,
+    "eslesmeyen_turizm": [],
+    "son_yil": 2025,
+    "en_buyuk_10_pay": [
+     {
+      "ilce": "salihli",
+      "il": "manisa",
+      "pay": 0.2766,
+      "geceleme": 220944
+     },
+     {
+      "ilce": "konak",
+      "il": "izmir",
+      "pay": 0.2648,
+      "geceleme": 2226470
+     },
+     {
+      "ilce": "yunusemre",
+      "il": "manisa",
+      "pay": 0.2626,
+      "geceleme": 209782
+     },
+     {
+      "ilce": "cesme",
+      "il": "izmir",
+      "pay": 0.1804,
+      "geceleme": 1516817
+     },
+     {
+      "ilce": "selcuk",
+      "il": "izmir",
+      "pay": 0.1371,
+      "geceleme": 1152572
+     },
+     {
+      "ilce": "sehzadeler",
+      "il": "manisa",
+      "pay": 0.1156,
+      "geceleme": 92353
+     },
+     {
+      "ilce": "menderes",
+      "il": "izmir",
+      "pay": 0.1155,
+      "geceleme": 971096
+     },
+     {
+      "ilce": "alasehir",
+      "il": "manisa",
+      "pay": 0.0847,
+      "geceleme": 67700
+     },
+     {
+      "ilce": "akhisar",
+      "il": "manisa",
+      "pay": 0.0734,
+      "geceleme": 58661
+     },
+     {
+      "ilce": "turgutlu",
+      "il": "manisa",
+      "pay": 0.0587,
+      "geceleme": 46859
+     }
+    ],
+    "test_satir_kapsami": 0.9335
+   },
+   "il_ay_payi_2025": {
+    "1": {
+     "izmir": 0.0325,
+     "manisa": 0.0739
+    },
+    "2": {
+     "izmir": 0.0287,
+     "manisa": 0.0632
+    },
+    "3": {
+     "izmir": 0.0304,
+     "manisa": 0.0578
+    },
+    "4": {
+     "izmir": 0.0661,
+     "manisa": 0.0933
+    },
+    "5": {
+     "izmir": 0.0746,
+     "manisa": 0.0903
+    },
+    "6": {
+     "izmir": 0.0912,
+     "manisa": 0.0833
+    },
+    "7": {
+     "izmir": 0.1554,
+     "manisa": 0.0969
+    },
+    "8": {
+     "izmir": 0.1833,
+     "manisa": 0.0987
+    },
+    "9": {
+     "izmir": 0.1336,
+     "manisa": 0.0915
+    },
+    "10": {
+     "izmir": 0.0953,
+     "manisa": 0.0911
+    },
+    "11": {
+     "izmir": 0.0574,
+     "manisa": 0.0804
+    },
+    "12": {
+     "izmir": 0.0514,
+     "manisa": 0.0796
+    }
+   },
+   "ilce_ay_yogunluk_yayilimi": {
+    "4": {
+     "n": 44,
+     "maks": 0.02579,
+     "medyan": 0.000903,
+     "maks_ilce": "salihli",
+     "std": 0.00609
+    },
+    "5": {
+     "n": 44,
+     "maks": 0.02498,
+     "medyan": 0.001019,
+     "maks_ilce": "salihli",
+     "std": 0.00615
+    },
+    "6": {
+     "n": 44,
+     "maks": 0.02416,
+     "medyan": 0.001215,
+     "maks_ilce": "konak",
+     "std": 0.00634
+    },
+    "7": {
+     "n": 44,
+     "maks": 0.04115,
+     "medyan": 0.001972,
+     "maks_ilce": "konak",
+     "std": 0.00922
+    }
+   },
+   "tatil": {
+    "test_tatil_satir": 48370,
+    "test_tatil_pay": 0.0677,
+    "gunler": [
+     "2026-04-23",
+     "2026-05-01",
+     "2026-05-19",
+     "2026-05-27",
+     "2026-05-28",
+     "2026-05-29",
+     "2026-06-06",
+     "2026-07-15"
+    ],
+    "egitimde_kurban": [
+     "2025-06-06",
+     "2025-06-07",
+     "2025-06-08",
+     "2025-06-09"
+    ]
+   }
+  }
+ }
+}

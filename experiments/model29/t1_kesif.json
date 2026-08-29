@@ -1,0 +1,361 @@
+{
+ "panel": {
+  "train_satir": 1226237,
+  "test_satir": 714688,
+  "train_tarih": [
+   "2025-01-01",
+   "2026-03-31"
+  ],
+  "test_tarih": [
+   "2026-04-01",
+   "2026-07-31"
+  ],
+  "iller": [
+   "izmir",
+   "manisa"
+  ],
+  "ilce_sayisi": 47,
+  "test_ay_dagilimi": {
+   "4": 117604,
+   "5": 182673,
+   "6": 203279,
+   "7": 211132
+  }
+ },
+ "aylik": {
+  "satir": 7290,
+  "kapsam_degerleri": [
+   "isletme",
+   "isletme_basit"
+  ],
+  "rejimler": [
+   1,
+   2,
+   3
+  ],
+  "donem": [
+   "2019-1",
+   "2026"
+  ],
+  "son_donem": "202606",
+  "bizim_il_satir": 180,
+  "bizim_iller_var": [
+   "izmir",
+   "manisa"
+  ]
+ },
+ "geceleme_2025_2026": {
+  "202501": {
+   "izmir": 273101,
+   "manisa": 59033
+  },
+  "202502": {
+   "izmir": 241137,
+   "manisa": 50487
+  },
+  "202503": {
+   "izmir": 255670,
+   "manisa": 46204
+  },
+  "202504": {
+   "izmir": 555477,
+   "manisa": 74508
+  },
+  "202505": {
+   "izmir": 627014,
+   "manisa": 72173
+  },
+  "202506": {
+   "izmir": 767128,
+   "manisa": 66542
+  },
+  "202507": {
+   "izmir": 1306471,
+   "manisa": 77424
+  },
+  "202508": {
+   "izmir": 1540972,
+   "manisa": 78817
+  },
+  "202509": {
+   "izmir": 1123384,
+   "manisa": 73100
+  },
+  "202510": {
+   "izmir": 801498,
+   "manisa": 72756
+  },
+  "202511": {
+   "izmir": 482847,
+   "manisa": 64269
+  },
+  "202512": {
+   "izmir": 432504,
+   "manisa": 63606
+  },
+  "202601": {
+   "izmir": 448930,
+   "manisa": 60525
+  },
+  "202602": {
+   "izmir": 393084,
+   "manisa": 56218
+  },
+  "202603": {
+   "izmir": 440590,
+   "manisa": 46131
+  },
+  "202604": {
+   "izmir": 676078,
+   "manisa": 62040
+  },
+  "202605": {
+   "izmir": 950590,
+   "manisa": 54677
+  },
+  "202606": {
+   "izmir": 1060850,
+   "manisa": 58809
+  }
+ },
+ "yoy_2026_2025": {
+  "1": {
+   "izmir": 1.6438,
+   "manisa": 1.0253
+  },
+  "2": {
+   "izmir": 1.6301,
+   "manisa": 1.1135
+  },
+  "3": {
+   "izmir": 1.7233,
+   "manisa": 0.9984
+  },
+  "4": {
+   "izmir": 1.2171,
+   "manisa": 0.8327
+  },
+  "5": {
+   "izmir": 1.5161,
+   "manisa": 0.7576
+  },
+  "6": {
+   "izmir": 1.3829,
+   "manisa": 0.8838
+  }
+ },
+ "yoy_ay_ortalamasi": {
+  "1": 1.3346,
+  "2": 1.3718,
+  "3": 1.3609,
+  "4": 1.0249,
+  "5": 1.1368,
+  "6": 1.1334
+ },
+ "yoy_ay_demeaned": {
+  "1": {
+   "izmir": 0.3092,
+   "manisa": -0.3093
+  },
+  "2": {
+   "izmir": 0.2583,
+   "manisa": -0.2583
+  },
+  "3": {
+   "izmir": 0.3624,
+   "manisa": -0.3625
+  },
+  "4": {
+   "izmir": 0.1922,
+   "manisa": -0.1922
+  },
+  "5": {
+   "izmir": 0.3793,
+   "manisa": -0.3792
+  },
+  "6": {
+   "izmir": 0.2495,
+   "manisa": -0.2496
+  }
+ },
+ "yoy_il_ortalamasi_demeaned": {
+  "izmir": 0.2918,
+  "manisa": -0.2918
+ },
+ "ilce": {
+  "yillar": [
+   2023,
+   2024,
+   2025
+  ],
+  "bizim_ilce_satir": 127,
+  "bizim_ilce_sayisi": 45,
+  "panelde_ilce": 47,
+  "eslesen": 45,
+  "eslesmeyen_turizm": [],
+  "son_yil": 2025,
+  "en_buyuk_10_pay": [
+   {
+    "ilce": "salihli",
+    "il": "manisa",
+    "pay": 0.2766,
+    "geceleme": 220944
+   },
+   {
+    "ilce": "konak",
+    "il": "izmir",
+    "pay": 0.2648,
+    "geceleme": 2226470
+   },
+   {
+    "ilce": "yunusemre",
+    "il": "manisa",
+    "pay": 0.2626,
+    "geceleme": 209782
+   },
+   {
+    "ilce": "cesme",
+    "il": "izmir",
+    "pay": 0.1804,
+    "geceleme": 1516817
+   },
+   {
+    "ilce": "selcuk",
+    "il": "izmir",
+    "pay": 0.1371,
+    "geceleme": 1152572
+   },
+   {
+    "ilce": "sehzadeler",
+    "il": "manisa",
+    "pay": 0.1156,
+    "geceleme": 92353
+   },
+   {
+    "ilce": "menderes",
+    "il": "izmir",
+    "pay": 0.1155,
+    "geceleme": 971096
+   },
+   {
+    "ilce": "alasehir",
+    "il": "manisa",
+    "pay": 0.0847,
+    "geceleme": 67700
+   },
+   {
+    "ilce": "akhisar",
+    "il": "manisa",
+    "pay": 0.0734,
+    "geceleme": 58661
+   },
+   {
+    "ilce": "turgutlu",
+    "il": "manisa",
+    "pay": 0.0587,
+    "geceleme": 46859
+   }
+  ],
+  "test_satir_kapsami": 0.9335
+ },
+ "il_ay_payi_2025": {
+  "1": {
+   "izmir": 0.0325,
+   "manisa": 0.0739
+  },
+  "2": {
+   "izmir": 0.0287,
+   "manisa": 0.0632
+  },
+  "3": {
+   "izmir": 0.0304,
+   "manisa": 0.0578
+  },
+  "4": {
+   "izmir": 0.0661,
+   "manisa": 0.0933
+  },
+  "5": {
+   "izmir": 0.0746,
+   "manisa": 0.0903
+  },
+  "6": {
+   "izmir": 0.0912,
+   "manisa": 0.0833
+  },
+  "7": {
+   "izmir": 0.1554,
+   "manisa": 0.0969
+  },
+  "8": {
+   "izmir": 0.1833,
+   "manisa": 0.0987
+  },
+  "9": {
+   "izmir": 0.1336,
+   "manisa": 0.0915
+  },
+  "10": {
+   "izmir": 0.0953,
+   "manisa": 0.0911
+  },
+  "11": {
+   "izmir": 0.0574,
+   "manisa": 0.0804
+  },
+  "12": {
+   "izmir": 0.0514,
+   "manisa": 0.0796
+  }
+ },
+ "ilce_ay_yogunluk_yayilimi": {
+  "4": {
+   "n": 44,
+   "maks": 0.02579,
+   "medyan": 0.000903,
+   "maks_ilce": "salihli",
+   "std": 0.00609
+  },
+  "5": {
+   "n": 44,
+   "maks": 0.02498,
+   "medyan": 0.001019,
+   "maks_ilce": "salihli",
+   "std": 0.00615
+  },
+  "6": {
+   "n": 44,
+   "maks": 0.02416,
+   "medyan": 0.001215,
+   "maks_ilce": "konak",
+   "std": 0.00634
+  },
+  "7": {
+   "n": 44,
+   "maks": 0.04115,
+   "medyan": 0.001972,
+   "maks_ilce": "konak",
+   "std": 0.00922
+  }
+ },
+ "tatil": {
+  "test_tatil_satir": 48370,
+  "test_tatil_pay": 0.0677,
+  "gunler": [
+   "2026-04-23",
+   "2026-05-01",
+   "2026-05-19",
+   "2026-05-27",
+   "2026-05-28",
+   "2026-05-29",
+   "2026-06-06",
+   "2026-07-15"
+  ],
+  "egitimde_kurban": [
+   "2025-06-06",
+   "2025-06-07",
+   "2025-06-08",
+   "2025-06-09"
+  ]
+ }
+}

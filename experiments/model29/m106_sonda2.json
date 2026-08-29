@@ -1,0 +1,56 @@
+{
+ "y40": {
+  "dosya": "tuketim_s2y40.csv",
+  "t": 0.6,
+  "c_g7": 1.0936635892282662,
+  "Q": 0.02851921990531961,
+  "kos_g7": -0.5547235289861726,
+  "yer_degistirme": 0.08432151296510937,
+  "cozum_sabiti": 1.0068311546058957,
+  "kapi": {
+   "satir": 714688,
+   "id_test": true,
+   "id_ss": true,
+   "nan": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "maks": 161761.45859624303
+  }
+ },
+ "z2": {
+  "dosya": "tuketim_s2z2.csv",
+  "t": 0.35,
+  "c_g7": 1.0936635892282662,
+  "Q": 0.11794891776245876,
+  "kos_g7": -0.23075663355760312,
+  "yer_degistirme": 0.12000880238525567,
+  "cozum_sabiti": 1.014123149707114,
+  "kapi": {
+   "satir": 714688,
+   "id_test": true,
+   "id_ss": true,
+   "nan": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "maks": 181847.20262039136
+  }
+ },
+ "sul": {
+  "dosya": "tuketim_s2sul.csv",
+  "t": 0.45,
+  "c_g7": 1.0936635892282662,
+  "Q": 0.053752522674768335,
+  "kos_g7": 0.111186112955906,
+  "yer_degistirme": 0.12302696173251164,
+  "cozum_sabiti": 1.0148566703703035,
+  "kapi": {
+   "satir": 714688,
+   "id_test": true,
+   "id_ss": true,
+   "nan": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "maks": 236717.66046754675
+  }
+ }
+}

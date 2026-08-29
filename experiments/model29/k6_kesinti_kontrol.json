@@ -1,0 +1,13 @@
+{
+ "aciklama": "ilce etiketleri karistirilmis kesinti kolonlari = GURULTU TABANI",
+ "karistirma_tohumu": 101,
+ "yerinde_kalan_ilce": 1,
+ "Q_gercek_delta": 0.0032790796219442113,
+ "Q_sahte_delta": 0.0037191370842445852,
+ "oran_gercek_bolu_sahte": 0.8816775363928925,
+ "sinyal_ustu_gurultu_payi": 1.0,
+ "kosinus_gercek_sahte": 0.7948811268008159,
+ "gain_payi_gercek": 0.0012561534207055447,
+ "gain_payi_sahte": 0.001369463588188536,
+ "HUKUM": "Q(gercek) ile Q(sahte) yakinsa fark BILGI DEGIL, kolon ornekleme gurultusudur."
+}

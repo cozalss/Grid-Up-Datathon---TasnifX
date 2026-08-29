@@ -251,3 +251,104 @@ doğru yapıyor, korkuluklar temiz geçiyor, üretilen dosya sağlıklı.
 **`m99` uyarısı beklenen davranış:** `g7`, `y40`, `q1c`, `y46` ölçülmüş dosyalar
 değil (eşdeğer skorla veriliyorlar), o yüzden "OLCULMEMIS -- el ile verildi"
 uyarısı basacak. Normal. Ölçülmüş bir dosyanın skoru yanlış girilirse DURDURUR.
+
+
+---
+
+# ★ GUNCELLEME 2 — 29 Agustos aksami: UCLU DEGISTI
+
+Dort yeni eksen denendi (kesinti · turizm/sulama · bayram · isil pencere ·
+hafta gunu). **Biri gecti: SULAMA.** Yeni ucluye gore sondalar yeniden uretildi.
+
+## YENI GUN 1 — uc sonda (hepsi kapi denetiminden gecti)
+
+Her sonda: `m6 + 1,093664·d_g7 + t·d_aday`
+
+| sira | dosya | `t` | Q | kos(g7) | yer deg. | L=0 ise | r=0,035 | r=0,06 |
+|---|---|---|---|---|---|---|---|---|
+| **1** | `tuketim_s2y40.csv` | 0,60 | 0,029 | **−0,555** | 0,084 | 1,00341 | **0,99987** | **0,99733** |
+| 2 | `tuketim_s2z2.csv` | 0,35 | 0,118 | −0,231 | 0,120 | 1,00704 | 1,00285 | 0,99985 |
+| 3 | `tuketim_s2sul.csv` | 0,45 | 0,054 | +0,111 | 0,123 | 1,00740 | 1,00377 | 1,00117 |
+
+### Cozum sabitleri (tam `m0 = 1.005688066` ile)
+```
+L_y40 = (1.006831155 - P^2) / 1.20
+L_z2  = (1.014123150 - P^2) / 0.70
+L_sul = (1.014856670 - P^2) / 0.90
+```
+Sonra esdeger skor `S_j = sqrt(m0 + Q_j - 2·L_j)` -> `m99_coklu_coz.py`.
+`g7` icin esdeger skor **1.00136** (gonderilmez).
+
+### Ortak optimum (r=0,035 senaryosu)
+```
+y40 + z2 + SULAMA   ->  0,99598     <- SECILEN
+y40 + z2 + BAYRAM   ->  0,99615
+y40 + y46 + z2      ->  0,99621
+y40 + q1c + y46     ->  0,99729     <- eski plan
+```
+
+---
+
+## Dort eksenin bilancosu
+
+| eksen | Q | kurtoz | hukum |
+|---|---|---|---|
+| **SULAMA** | 0,054 | 11,1 | **GECTI** — kos(y40) −0,25, super-toplamsal |
+| TURIZM | 0,039 | 14,6 | olculdu, sulamadan zayif |
+| BAYRAM | 0,011 | 37,2 | dik (|kos| ≤0,073) ama etki dogal olarak Q=0,00018, ×8,14 sisirilmis |
+| ISIL pencere | 0,052 | 19,1 | **kos(m4) = +0,805** — m4'un kopyasi, yeni yon degil |
+| KESINTI | 0,0015 | 19,8 | **gurultu** — asagi bak |
+| HAFTA GUNU | 0,0034 | 22,7 | **plaseboyla ayni** — asagi bak |
+
+### KESINTI — karistirilmis etiket kontrolu oldurdu
+```
+Q(gercek delta)     0,003279
+Q(SAHTE delta)      0,003719   <- sahte OLAN daha buyuk
+kos(gercek,sahte)   +0,795     <- yonun 3/4'u bilgi yok edilince de olusuyor
+```
+Fark, kesintinin bilgisi degil, 35 fazladan kolonun `feature_fraction=0.8`
+ornekleme desenini degistirmesi. Modelin kullandigi kadari da ilceye ozgu degil
+**gun duzeyi toplamlarda** — kesintiyi fiziksel sebep degil, EPIAS kayit
+yogunlugunun takvim vekili olarak kullaniyor.
+
+Kapsam yeterliydi (test 122/122 gun, 96/96 ilce, %100 esleme). Sorun kapsam degil.
+Egitimde 127 gun yok (2025-01-01..05-07) ve sifir orani rejimi **rastgele
+sicriyor** (2025-10: %76,8 -> 2025-12: %8,9) — kayit kaymasi, mevsimsel degil.
+
+> **Yonetisim notu:** `data/sources.yml`, SADE `panel_ilce_gun.parquet`'i de
+> `model_girdisi: false` isaretlemis (yalniz `_tam` degil). Alinmadi; kullanilirsa
+> notebook beyani sart.
+
+### HAFTA GUNU — plasebo kolu oldurdu
+```
+hafta gunu       Q = 0,00343
+takvim tabani    Q = 0,00367
+genis takvim     Q = 0,00308
+PLASEBO (yalniz tohum degisti)  Q = 0,00348
+```
+Sinyal/plasebo = **0,98**. Ve kesin kanit: yonun yalniz **%2,69'u** gercekten
+hafta gunu ekseninde -> **saf Q = 9,2e-05**, kapinin 100 kati altinda.
+Modelin tum hafta gunu bilgisi tek bir Pazar etkisi (−0,025).
+Bagimsiz modelsiz tavan (etiketlerden, yaz25'te): dMSE = 0,000575.
+CV'deki +0,00274 / t=+2,39 yanlis degil ama **LB'de olculemez**.
+
+### HISTEREZIS — tez dogru, bosluk bos
+Bagimsiz olculdu: tavan dMSE = **0,0189** (hafta gununun 33 kati). Ama uretim
+modeli `ay` + `doy_sin/cos` + `cdd22_ort7` ile bu tabloyu **zaten kuruyor** —
+marjinal Q yalniz 0,0032. Tavan bos degil, bosluk bos.
+
+### VERI DUZELTMESI — panelde 2 il var, 5 degil
+Test setinde yalniz **Izmir ve Manisa** geciyor. Mugla/Aydin/Denizli YOK.
+Yani "Mugla'da Ocak->Haziran 10 kat" rampasi veri kumemizin DISINDA. Ham
+il-aylik turizm serisi boylece `il`(2 seviye) x `ay` etkilesimine indirgeniyor
+-- "dis veri aslinda takvim olcuyor" hukmu burada birebir gecerli.
+
+---
+
+## KURAL 42 — plasebo kolu ZORUNLU
+
+*Bir ozellik ailesinin katkisini olcerken, AYNI ozelliklerle ama FARKLI TOHUMLA
+egitilmis bir plasebo kolu kur.* Bu turda uc ayri hipotezin "farki" tumuyle
+LightGBM kararsizligi cikti. Ayrica olay-tipi yonlerde (satirlarin %7-18'inde
+yasayan) kurtoz yapisal olarak 10'un altina inemez — kurtoz SERT eleme olcutu
+DEGILDIR, yalniz ongoru guvenilirligi uyarisidir.

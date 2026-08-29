@@ -1,0 +1,214 @@
+{
+ "kesimler": [
+  "2025-03-31",
+  "2025-05-31",
+  "2025-07-31",
+  "2025-09-30",
+  "2025-11-30"
+ ],
+ "egitim_satir": 1712888,
+ "ozellik": 70,
+ "soguk_agirlik": 3.0,
+ "tur": [
+  185,
+  520
+ ],
+ "tohum": [
+  7,
+  17
+ ],
+ "test_turizm_nan": {
+  "tz_ilce_pay": 0.0,
+  "tz_ilce_ay_yog": 0.0,
+  "tz_ilce_gec_l12": 0.0,
+  "tz_yoy_gec_dm": 0.0,
+  "tz_yoy_dol_dm": 0.0,
+  "tz_ilce_yoy_gec": 0.0,
+  "tz_ilce_yoy_dol": 0.0,
+  "tz_rejim_kirilma": 0.0,
+  "th_tarim": 0.0,
+  "th_yerlesim": 0.0,
+  "th_bayram": 0.0,
+  "th_tatil_yog": 0.0,
+  "th_tatil_pay": 0.0,
+  "th_tatil_tarim": 0.0,
+  "th_tatil_yerlesim": 0.0,
+  "th_bayram_yog": 0.0,
+  "th_bayram_tarim": 0.0,
+  "th_bayram_yerlesim": 0.0
+ },
+ "turizm_kazanim_payi": {
+  "taban": 0.0,
+  "turizm": 0.01103264694219597,
+  "tatil": 0.013289692310221245
+ },
+ "en_onemli_10": {
+  "taban": {
+   "h_ort14": 0.1943,
+   "h_ort7": 0.1566,
+   "h_ort": 0.1165,
+   "h_med": 0.0933,
+   "guc": 0.0744,
+   "h_ort28": 0.0436,
+   "ilce": 0.0351,
+   "g_guc": 0.0273,
+   "idnum": 0.0231,
+   "v_dalga": 0.0229
+  },
+  "turizm": {
+   "h_ort14": 0.182,
+   "h_ort7": 0.1612,
+   "h_ort": 0.1326,
+   "h_med": 0.0832,
+   "guc": 0.0706,
+   "h_ort28": 0.0488,
+   "ilce": 0.0332,
+   "g_guc": 0.0325,
+   "v_dalga": 0.0234,
+   "idnum": 0.0229
+  },
+  "tatil": {
+   "h_ort14": 0.1953,
+   "h_ort7": 0.1573,
+   "h_ort": 0.1222,
+   "h_med": 0.0868,
+   "guc": 0.0806,
+   "h_ort28": 0.04,
+   "ilce": 0.0329,
+   "g_guc": 0.0263,
+   "idnum": 0.0224,
+   "v_dalga": 0.0223
+  }
+ },
+ "adaylar": {
+  "t3_turizm": {
+   "dosya": "tuketim_t3_turizm.csv",
+   "finite_olmayan": 0,
+   "ham": {
+    "Q": 0.06,
+    "kurtoz": 18.538934922667227,
+    "en_kotu_yuzde1_pay": 0.29257053292457985
+   },
+   "curuk_Q_payi": 0.20479898996360124,
+   "temiz": {
+    "Q": 0.04771206060218392,
+    "kurtoz": 15.414145451570443,
+    "en_kotu_yuzde1_pay": 0.28345081147351975
+   },
+   "kirpma": 2.0,
+   "capa": {
+    "soguk": {
+     "satir": 158369,
+     "kaydirma": 0.17947610752628348
+    },
+    "kuyruk": {
+     "satir": 29000,
+     "kaydirma": 0.06814937566417612
+    },
+    "cekirdek": {
+     "satir": 467772,
+     "kaydirma": 0.03599466180235657
+    }
+   },
+   "son": {
+    "Q": 0.03901775243219081,
+    "kurtoz": 14.609886575260301,
+    "en_kotu_yuzde1_pay": 0.292221656130935
+   },
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "baslik": true
+   },
+   "dagilim": {
+    "log_ort": 6.601820431891804,
+    "log_std": 1.715711787877177,
+    "maks": 220216.71597978772,
+    "alt1kwh": 0.023988089907763948
+   },
+   "ham_delta_Q": 0.005278377887227763,
+   "ham_delta_rms": 0.07265244584477362,
+   "olcek": 3.3715172480451137,
+   "ham_rejim_payi": {
+    "soguk": 0.4746812094205545,
+    "kuyruk": 0.09190002681090217,
+    "cekirdek": 0.43341876376854344
+   },
+   "ham_ay_ort": {
+    "4": 0.00203,
+    "5": -0.0083,
+    "6": -0.02233,
+    "7": -0.04397
+   }
+  },
+  "t3_turizm_tatil": {
+   "dosya": "tuketim_t3_turizm_tatil.csv",
+   "finite_olmayan": 0,
+   "ham": {
+    "Q": 0.06,
+    "kurtoz": 11.865818398927024,
+    "en_kotu_yuzde1_pay": 0.2534591368592819
+   },
+   "curuk_Q_payi": 0.20034713497283732,
+   "temiz": {
+    "Q": 0.04797917190162976,
+    "kurtoz": 11.81992993651114,
+    "en_kotu_yuzde1_pay": 0.2518105042796076
+   },
+   "kirpma": 2.0,
+   "capa": {
+    "soguk": {
+     "satir": 158369,
+     "kaydirma": 0.1459870630235629
+    },
+    "kuyruk": {
+     "satir": 29000,
+     "kaydirma": 0.08947665347430493
+    },
+    "cekirdek": {
+     "satir": 467772,
+     "kaydirma": 0.024019856102280406
+    }
+   },
+   "son": {
+    "Q": 0.04241604387989853,
+    "kurtoz": 11.745632529718561,
+    "en_kotu_yuzde1_pay": 0.2472436305376507
+   },
+   "kapi": {
+    "satir": 714688,
+    "id_birebir": true,
+    "nan": 0,
+    "negatif": 0,
+    "baslik": true
+   },
+   "dagilim": {
+    "log_ort": 6.6017851597173545,
+    "log_std": 1.7255539620406068,
+    "maks": 210504.41600957472,
+    "alt1kwh": 0.02390413718993463
+   },
+   "ham_delta_Q": 0.004599463529273679,
+   "ham_delta_rms": 0.06781934480127097,
+   "olcek": 3.611786209319547,
+   "ham_rejim_payi": {
+    "soguk": 0.43767095122265187,
+    "kuyruk": 0.08562429273947492,
+    "cekirdek": 0.47670475603787343
+   },
+   "ham_ay_ort": {
+    "4": -0.00065,
+    "5": 8e-05,
+    "6": -0.01755,
+    "7": -0.03487
+   }
+  }
+ },
+ "tam_model_Q": {
+  "taban": 0.12233177880819292,
+  "turizm": 0.11833308140984121,
+  "tatil": 0.11873391508501173
+ }
+}

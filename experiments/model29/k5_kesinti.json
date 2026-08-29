@@ -1,0 +1,616 @@
+{
+ "HUKUM": {
+  "DIK_MI": "EVET -- DELTA yonu |kos| <= 0,074 ile mevcut butun yonlere DIK",
+  "ALINMALI_MI": "HAYIR",
+  "GEREKCE": [
+   "GURULTU TABANI KONTROLU: ilce etiketleri KARISTIRILMIS kesinti kolonlariyla uretilen sahte delta Q=0.0037191370842445852, gercek delta Q=0.0032790796219442113 -- oran 0.8816775363928925. Sahte, gercekten BUYUK.",
+   "kos(gercek delta, sahte delta) = 0.7948811268008159 -- yonun dortte ucu, bilgi tamamen yok edildiginde de aynen olusuyor. Fark kesintinin bilgisi degil, 35 fazladan kolonun feature_fraction ornekmesini degistirmesidir.",
+   "LightGBM gain payi: gercek kesinti kolonlari 0.0012561534207055447, karistirilmis kolonlar 0.001369463588188536 -- karistirilmis olanlar DAHA COK gain aliyor.",
+   "Gain'in cogu ilceye ozgu degil GUN duzeyi toplamlarda (ks_gun_toplam_dk/adet) -- yani model kesintiyi fiziksel sebep olarak degil, EPIAS kayit yogunlugunun takvim vekili olarak kullaniyor.",
+   "DELTA enerjisinin %54,0'u OLCULMUS-CURUK (olu trafo) satirlarda, temizlikten sonra kalanin %50,7'si SOGUK trafolarda -- yani kesinti panelinin trafo duzeyinde HIC bilgi tasiyamayacagi yerlerde. Fiziksel kesinti etkisinin sekli bu degildir.",
+   "Kurtoz 19,8 (> 10 kapisi) ve Q 0,00149 (< 0,01 kapisi): yon hem sivri hem LB'de olculemeyecek kadar kucuk.",
+   "TAM aday kapilari gecmiyor: kos(m4-v102 ekseni) = +0,616, kos(y40_sota) = +0,432 -- mevcut yonlerin tekrari.",
+   "docs/30 s4a ile TUTARLI: kesinti daha once olculmus, artigin %0,17'sini acikliyor ve isareti mekanik beklentinin TERSI (+0,0404) cikmisti."
+  ],
+  "VERI_YETERLI_MI": "Kapsam yeterli (test penceresi 122/122 gun, 47/47 ilce, %100 satir eslesmesi). Yetersiz olan KAPSAM DEGIL, SINYAL."
+ },
+ "BASLIK": {
+  "kos_g7_span_tau3": {
+   "TAM": -0.16021262853483634,
+   "DELTA": 0.07326453521137123,
+   "DELTA_OLCEK": 0.0732645352113712
+  },
+  "secilen": "DELTA",
+  "secilenin_kos_g7": 0.07326453521137123,
+  "mutlak_maks_kosinus": 0.07326453521137123,
+  "kurtoz": 19.7603598483448,
+  "Q": 0.0014913960978156884,
+  "gecti": {
+   "kosinus": true,
+   "kurtoz": false,
+   "Q": false
+  }
+ },
+ "taban": {
+  "dosya": "tuketim_m6_ikiyon.csv",
+  "LB": 1.00284,
+  "m0": 1.005688,
+  "log_ort": 6.6017754249040905,
+  "log_std": 1.7089532251056267,
+  "maks": 180734.95004543546,
+  "alt1kwh": 0.02413220874003761
+ },
+ "kalibrasyon": {
+  "m4_r": 0.0641,
+  "kirpma": 2.0,
+  "delta_ham_Q": 0.0032790796219442113,
+  "delta_olcek": 1.9129985546505288
+ },
+ "adaylar": {
+  "TAM": {
+   "finite_olmayan": 0,
+   "ham": {
+    "Q": 0.1797569501440828,
+    "kurtoz": 8.062548178782594,
+    "en_kotu_yuzde1_pay": 0.21094875856347337
+   },
+   "curuk_Q_payi": 0.19837288148463825,
+   "temiz": {
+    "Q": 0.14409804597711065,
+    "kurtoz": 8.738123236090987,
+    "en_kotu_yuzde1_pay": 0.21984602995753819
+   },
+   "kirpma": 2.0,
+   "capa": {
+    "soguk": {
+     "satir": 158369,
+     "kaydirma": -0.3095787213870811
+    },
+    "kuyruk": {
+     "satir": 29000,
+     "kaydirma": 0.26234044058911876
+    },
+    "cekirdek": {
+     "satir": 467772,
+     "kaydirma": -0.003095062751562416
+    }
+   },
+   "son": {
+    "Q": 0.11662060314923216,
+    "kurtoz": 8.512637154546503,
+    "en_kotu_yuzde1_pay": 0.22595530799328
+   },
+   "kosinus": {
+    "y40_sota": 0.43218983413775636,
+    "q1c_kapasite": 0.2889149042060691,
+    "y46_amnezik": -0.25905357095396847,
+    "y45_mevsimsel": -0.03865929455796369,
+    "z2_analog": 0.2052809274690827,
+    "g7_span_tau3": -0.16021262853483634,
+    "m4_v102_ekseni": 0.615847489284838,
+    "m6_dik_ekseni": 0.04622152879209934
+   },
+   "mutlak_maks_kosinus": 0.615847489284838,
+   "bagimsiz_pay_mevcutlara_gore": 0.44946878041779836,
+   "beklenen_kazanc_bagimsiz": 0.0018467818196684545,
+   "basabas_skor": 1.0593906754116877,
+   "Q_rejim_payi": {
+    "soguk": 0.2731363256155658,
+    "kuyruk": 0.06752209587781338,
+    "cekirdek": 0.6593415785066207,
+    "curuk": 0.0
+   },
+   "dagilim": {
+    "log_ort": 6.601780616804294,
+    "log_std": 1.7808252275935466,
+    "maks": 137662.49608806975,
+    "alt1kwh": 0.02650527223067968
+   },
+   "gecti": {
+    "kosinus": false,
+    "kurtoz": true,
+    "Q": true
+   }
+  },
+  "DELTA": {
+   "finite_olmayan": 0,
+   "ham": {
+    "Q": 0.0032790796219442113,
+    "kurtoz": 77.58706729038454,
+    "en_kotu_yuzde1_pay": 0.5195181607145344
+   },
+   "curuk_Q_payi": 0.5404541533988891,
+   "temiz": {
+    "Q": 0.0015068874209388033,
+    "kurtoz": 20.16423372169185,
+    "en_kotu_yuzde1_pay": 0.32492666701969786
+   },
+   "kirpma": 2.0,
+   "capa": {
+    "soguk": {
+     "satir": 158369,
+     "kaydirma": -0.0063243028459821484
+    },
+    "kuyruk": {
+     "satir": 29000,
+     "kaydirma": 0.008571536356550403
+    },
+    "cekirdek": {
+     "satir": 467772,
+     "kaydirma": -0.0023605614358215904
+    }
+   },
+   "son": {
+    "Q": 0.0014913960978156884,
+    "kurtoz": 19.7603598483448,
+    "en_kotu_yuzde1_pay": 0.32003737391446246
+   },
+   "kosinus": {
+    "y40_sota": -0.041401543669959275,
+    "q1c_kapasite": -0.004195609533023628,
+    "y46_amnezik": -0.00788350599256682,
+    "y45_mevsimsel": 0.003818562185281151,
+    "z2_analog": 0.015436244904660947,
+    "g7_span_tau3": 0.07326453521137123,
+    "m4_v102_ekseni": -0.02185976411421602,
+    "m6_dik_ekseni": -0.020281430158703304
+   },
+   "mutlak_maks_kosinus": 0.07326453521137123,
+   "bagimsiz_pay_mevcutlara_gore": 0.9924448013188548,
+   "beklenen_kazanc_bagimsiz": 0.004077767124106925,
+   "basabas_skor": 1.0035832781079086,
+   "Q_rejim_payi": {
+    "soguk": 0.507227556819261,
+    "kuyruk": 0.13641603198992489,
+    "cekirdek": 0.35635641119081407,
+    "curuk": 0.0
+   },
+   "dagilim": {
+    "log_ort": 6.6017754249040905,
+    "log_std": 1.714499631365864,
+    "maks": 193840.35071777055,
+    "alt1kwh": 0.024100026864869704
+   },
+   "gecti": {
+    "kosinus": true,
+    "kurtoz": false,
+    "Q": false
+   }
+  },
+  "DELTA_OLCEK": {
+   "finite_olmayan": 0,
+   "ham": {
+    "Q": 0.011999999999999997,
+    "kurtoz": 77.58706729038458,
+    "en_kotu_yuzde1_pay": 0.5195181607145343
+   },
+   "curuk_Q_payi": 0.5404541533988891,
+   "temiz": {
+    "Q": 0.00551455015921333,
+    "kurtoz": 20.164233721691858,
+    "en_kotu_yuzde1_pay": 0.32492666701969797
+   },
+   "kirpma": 2.0,
+   "capa": {
+    "soguk": {
+     "satir": 158369,
+     "kaydirma": -0.012098382203536076
+    },
+    "kuyruk": {
+     "satir": 29000,
+     "kaydirma": 0.01639733666121538
+    },
+    "cekirdek": {
+     "satir": 467772,
+     "kaydirma": -0.0045157506148904795
+    }
+   },
+   "son": {
+    "Q": 0.0054578586790085416,
+    "kurtoz": 19.760359848344795,
+    "en_kotu_yuzde1_pay": 0.32003737391446235
+   },
+   "kosinus": {
+    "y40_sota": -0.041401543669959254,
+    "q1c_kapasite": -0.004195609533023628,
+    "y46_amnezik": -0.00788350599256683,
+    "y45_mevsimsel": 0.0038185621852811517,
+    "z2_analog": 0.015436244904660957,
+    "g7_span_tau3": 0.0732645352113712,
+    "m4_v102_ekseni": -0.02185976411421602,
+    "m6_dik_ekseni": -0.020281430158703304
+   },
+   "mutlak_maks_kosinus": 0.0732645352113712,
+   "bagimsiz_pay_mevcutlara_gore": 0.9924448013188548,
+   "beklenen_kazanc_bagimsiz": 0.004077767124106925,
+   "basabas_skor": 1.0055574865113424,
+   "Q_rejim_payi": {
+    "soguk": 0.507227556819261,
+    "kuyruk": 0.13641603198992483,
+    "cekirdek": 0.3563564111908141,
+    "curuk": 0.0
+   },
+   "dagilim": {
+    "log_ort": 6.6017754249040905,
+    "log_std": 1.7203051168653083,
+    "maks": 206633.72226506987,
+    "alt1kwh": 0.024076240261484732
+   },
+   "gecti": {
+    "kosinus": true,
+    "kurtoz": false,
+    "Q": false
+   }
+  }
+ },
+ "ikili_kosinus_TAM_DELTA": -0.019435537419460153,
+ "secim": "DELTA",
+ "cikti": {
+  "dosya": "tuketim_k5_kesinti.csv",
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "id_test_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "baslik": true
+  },
+  "log_ort": 6.6017754249040905,
+  "log_std": 1.714499631365864,
+  "maks": 193840.35071777055,
+  "alt1kwh": 0.024100026864869704
+ },
+ "kunye": {
+  "k5_kesinti_veri.json": {
+   "kaynak": "data/external/epias/panel_ilce_gun.parquet (SADE)",
+   "satir": 123264,
+   "ilce": 96,
+   "il": 5,
+   "tarih": [
+    "2022-01-01",
+    "2026-08-17"
+   ],
+   "farkli_gun": 1284,
+   "train": {
+    "satir": 1226237,
+    "ilce": 47,
+    "panelde_olmayan_ilce": [],
+    "tarih": [
+     "2025-01-01",
+     "2026-03-31"
+    ],
+    "eslesen_satir": 959533,
+    "esleme_orani": 0.782502,
+    "pencere_kapsam": {
+     "gereken_gun": 455,
+     "kapsanan_farkli_gun": 328,
+     "hic_kayit_olmayan_gun": 127,
+     "ilk_10_eksik_gun": [
+      "2025-01-01",
+      "2025-01-02",
+      "2025-01-03",
+      "2025-01-04",
+      "2025-01-05",
+      "2025-01-06",
+      "2025-01-07",
+      "2025-01-08",
+      "2025-01-09",
+      "2025-01-10"
+     ],
+     "ilce_basina_gun_min": 328,
+     "ilce_basina_gun_med": 328.0,
+     "tam_kapsanan_ilce": 0,
+     "ilce_sayisi": 96
+    },
+    "dagilim": {
+     "kesinti_adet": {
+      "sifir_orani": 0.3846,
+      "ort": 7.24,
+      "medyan": 2.0,
+      "p95": 29.0,
+      "maks": 133.0
+     },
+     "kesinti_dk": {
+      "sifir_orani": 0.3847,
+      "ort": 1055.95,
+      "medyan": 198.0,
+      "p95": 4561.0,
+      "maks": 52646.0
+     },
+     "etkilenen_abone": {
+      "sifir_orani": 0.3846,
+      "ort": 2405.74,
+      "medyan": 120.0,
+      "p95": 11637.5,
+      "maks": 237425.0
+     }
+    }
+   },
+   "test": {
+    "satir": 714688,
+    "ilce": 47,
+    "panelde_olmayan_ilce": [],
+    "tarih": [
+     "2026-04-01",
+     "2026-07-31"
+    ],
+    "eslesen_satir": 714688,
+    "esleme_orani": 1.0,
+    "pencere_kapsam": {
+     "gereken_gun": 122,
+     "kapsanan_farkli_gun": 122,
+     "hic_kayit_olmayan_gun": 0,
+     "ilk_10_eksik_gun": [],
+     "ilce_basina_gun_min": 122,
+     "ilce_basina_gun_med": 122.0,
+     "tam_kapsanan_ilce": 96,
+     "ilce_sayisi": 96
+    },
+    "dagilim": {
+     "kesinti_adet": {
+      "sifir_orani": 0.0919,
+      "ort": 11.99,
+      "medyan": 9.0,
+      "p95": 32.0,
+      "maks": 74.0
+     },
+     "kesinti_dk": {
+      "sifir_orani": 0.0919,
+      "ort": 1725.15,
+      "medyan": 1158.5,
+      "p95": 5074.4,
+      "maks": 22727.0
+     },
+     "etkilenen_abone": {
+      "sifir_orani": 0.0919,
+      "ort": 3269.76,
+      "medyan": 887.0,
+      "p95": 14295.9,
+      "maks": 176495.0
+     }
+    }
+   },
+   "kayit_kaymasi": {
+    "SORU": "egitim %38,5 sifir vs test %9,2 -- mevsimsel mi kayit kaymasi mi?",
+    "HUKUM": "KAYIT KAYMASI (b). Testin mevsimsel ikizi 2025 Nis-Tem ayni seviyede DEGIL, ama 2025 Agustos/Aralik TAM test seviyesinde. Yani fark mevsimle degil, EPIAS kayit yogunlugunun aylik rejimiyle geliyor.",
+    "2025_nisan": "PANELDE HIC YOK (kapsam 2025-05-08'de basliyor)",
+    "test_mevsimsel_ikizi_2025_May08_Tem31": {
+     "gun": 80,
+     "sifir_orani": 0.6559,
+     "ort_adet": 3.81,
+     "ort_dk": 599.7
+    },
+    "2025_temmuz": {
+     "gun": 31,
+     "sifir_orani": 0.3425,
+     "ort_adet": 9.39,
+     "ort_dk": 1467.0
+    },
+    "2025_agustos": {
+     "gun": 31,
+     "sifir_orani": 0.0522,
+     "ort_adet": 12.33,
+     "ort_dk": 1573.6
+    },
+    "2025_aralik": {
+     "gun": 31,
+     "sifir_orani": 0.0885,
+     "ort_adet": 10.63,
+     "ort_dk": 1393.3
+    },
+    "2026_subat": {
+     "gun": 28,
+     "sifir_orani": 0.0532,
+     "ort_adet": 16.71,
+     "ort_dk": 2882.3
+    },
+    "TEST_2026_Nis_Tem": {
+     "gun": 122,
+     "sifir_orani": 0.0919,
+     "ort_adet": 11.99,
+     "ort_dk": 1725.2
+    },
+    "aylik_sifir_orani_47ilce": {
+     "2025-05": 0.9557,
+     "2025-06": 0.7915,
+     "2025-07": 0.3425,
+     "2025-08": 0.0522,
+     "2025-09": 0.3177,
+     "2025-10": 0.768,
+     "2025-11": 0.5248,
+     "2025-12": 0.0885,
+     "2026-01": 0.3693,
+     "2026-02": 0.0532,
+     "2026-03": 0.0796,
+     "2026-04": 0.0617,
+     "2026-05": 0.1373,
+     "2026-06": 0.095,
+     "2026-07": 0.0728,
+     "2026-08": 0.0438
+    },
+    "aylik_ort_adet_47ilce": {
+     "2025-05": 0.06,
+     "2025-06": 0.41,
+     "2025-07": 9.39,
+     "2025-08": 12.33,
+     "2025-09": 7.07,
+     "2025-10": 0.37,
+     "2025-11": 2.7,
+     "2025-12": 10.63,
+     "2026-01": 8.12,
+     "2026-02": 16.71,
+     "2026-03": 10.77,
+     "2026-04": 12.36,
+     "2026-05": 10.2,
+     "2026-06": 12.12,
+     "2026-07": 13.29,
+     "2026-08": 15.14
+    },
+    "gunluk_aktif_ilce_orani": {
+     "aciklama": "96 ilcenin kacinda o gun kesinti kaydi var -- CIFT TEPELI",
+     "tam_rejim_tipik": 0.462,
+     "delik_rejim_tipik": 0.131,
+     "esik": 0.3,
+     "dusuk_gun_toplam": 162,
+     "dusuk_gun_egitim": 154,
+     "dusuk_gun_test": 8
+    },
+    "ALINAN_ONLEM": [
+     "kapsanmayan gun -> TUM kesinti kolonlari NaN (sahte sifir GIRMEZ), ayrica ks_kapsandi bayragi",
+     "gunluk aktif-ilce orani < 0.3 olan gunler DUSUK KAYIT sayilir; SEVIYE kolonlari NaN'a cekilir, ks_dusuk_kayit bayragi kalir",
+     "egitim kesimleri 2025-07-31..2025-12-31 secildi -- hedef pencereleri kapsamin basladigi doneme dusuyor (2025-01..04 hic yok)",
+     "rejimden BAGIMSIZ turevler eklendi: ilce ici z-skoru (ks_log_dk_z), GUN ICI ilceler arasi z-skoru (ks_log_dk_gunz), gunun toplamina oran (ks_pay_dk/adet/abone) -- aylik kayit yogunlugu bunlarda sadelesir"
+    ]
+   },
+   "ozellik": {
+    "kolon": 35,
+    "adlar": [
+     "ks_kesinti_adet",
+     "ks_kesinti_dk",
+     "ks_etkilenen_abone",
+     "ks_log_dk",
+     "ks_log_adet",
+     "ks_log_abone",
+     "ks_var",
+     "ks_ort_sure",
+     "ks_abone_basi_dk",
+     "ks_log_dk_ort3",
+     "ks_log_dk_ort7",
+     "ks_log_adet_ort3",
+     "ks_log_adet_ort7",
+     "ks_log_abone_ort3",
+     "ks_log_abone_ort7",
+     "ks_var_ort3",
+     "ks_var_ort7",
+     "ks_log_dk_z",
+     "ks_log_abone_z",
+     "ks_log_dk_dun",
+     "ks_log_dk_yarin",
+     "ks_var_dun",
+     "ks_var_yarin",
+     "ks_gun_toplam_dk",
+     "ks_gun_toplam_adet",
+     "ks_gun_toplam_abone",
+     "ks_gun_aktif_oran",
+     "ks_dusuk_kayit",
+     "ks_pay_dk",
+     "ks_pay_adet",
+     "ks_pay_abone",
+     "ks_log_dk_gunz",
+     "ks_abone_trafo",
+     "ks_adet_trafo",
+     "ks_kapsandi"
+    ],
+    "test_nan_orani": {
+     "ks_kesinti_adet": 0.068081,
+     "ks_kesinti_dk": 0.068081,
+     "ks_etkilenen_abone": 0.068081,
+     "ks_log_dk": 0.068081,
+     "ks_log_adet": 0.068081,
+     "ks_log_abone": 0.068081,
+     "ks_var": 0.068081,
+     "ks_ort_sure": 0.09431,
+     "ks_abone_basi_dk": 0.09431,
+     "ks_log_dk_z": 0.071211,
+     "ks_log_abone_z": 0.071211,
+     "ks_log_dk_dun": 0.0681,
+     "ks_log_dk_yarin": 0.068119,
+     "ks_var_dun": 0.0681,
+     "ks_var_yarin": 0.068119,
+     "ks_pay_dk": 0.068081,
+     "ks_pay_adet": 0.068081,
+     "ks_pay_abone": 0.068081,
+     "ks_log_dk_gunz": 0.068081,
+     "ks_abone_trafo": 0.068081,
+     "ks_adet_trafo": 0.068081
+    },
+    "test_tam_dolu_kolon": 14,
+    "train_nan_ortalama": 0.465252
+   }
+  },
+  "k6_kesinti_model.json": {
+   "kesim": "2026-03-31",
+   "kesimler": [
+    "2025-07-31",
+    "2025-08-31",
+    "2025-09-30",
+    "2025-10-31",
+    "2025-11-30",
+    "2025-12-31"
+   ],
+   "egitim_satir": 2235753,
+   "test_satir": 714688,
+   "taban_ozellik": 52,
+   "kesinti_ozellik": 35,
+   "tur": [
+    185,
+    520
+   ],
+   "tohum": [
+    7,
+    17,
+    27
+   ],
+   "kesinti_test_nan": {
+    "ks_kesinti_adet": 0.068081,
+    "ks_kesinti_dk": 0.068081,
+    "ks_etkilenen_abone": 0.068081,
+    "ks_log_dk": 0.068081,
+    "ks_log_adet": 0.068081,
+    "ks_log_abone": 0.068081,
+    "ks_var": 0.068081,
+    "ks_ort_sure": 0.09431,
+    "ks_abone_basi_dk": 0.09431,
+    "ks_log_dk_z": 0.071211,
+    "ks_log_abone_z": 0.071211,
+    "ks_log_dk_dun": 0.0681,
+    "ks_log_dk_yarin": 0.068119,
+    "ks_var_dun": 0.0681,
+    "ks_var_yarin": 0.068119,
+    "ks_pay_dk": 0.068081,
+    "ks_pay_adet": 0.068081,
+    "ks_pay_abone": 0.068081,
+    "ks_log_dk_gunz": 0.068081,
+    "ks_abone_trafo": 0.068081,
+    "ks_adet_trafo": 0.068081
+   },
+   "kesinti_egitim_nan_ort": 0.269278,
+   "onem": {
+    "toplam_gain": 60479333.36419678,
+    "kesinti_gain_payi": 0.0012561534207055447,
+    "en_iyi_10_kesinti": {
+     "ks_gun_toplam_dk": 0.00054,
+     "ks_gun_toplam_adet": 0.00031,
+     "ks_log_adet_ort7": 0.00014,
+     "ks_gun_aktif_oran": 8e-05,
+     "ks_log_dk_ort7": 8e-05,
+     "ks_var_ort7": 6e-05,
+     "ks_log_abone_ort7": 4e-05,
+     "ks_log_dk_gunz": 1e-05,
+     "ks_log_dk_dun": 1e-05,
+     "ks_log_dk_ort3": 0.0
+    }
+   },
+   "delta": {
+    "Q": 0.0032790796219442113,
+    "ort": 0.0018593255092100131,
+    "std": 0.05723305452791256,
+    "mutlak_maks": 1.2224698610609377
+   }
+  },
+  "k6_kesinti_kontrol.json": {
+   "aciklama": "ilce etiketleri karistirilmis kesinti kolonlari = GURULTU TABANI",
+   "karistirma_tohumu": 101,
+   "yerinde_kalan_ilce": 1,
+   "Q_gercek_delta": 0.0032790796219442113,
+   "Q_sahte_delta": 0.0037191370842445852,
+   "oran_gercek_bolu_sahte": 0.8816775363928925,
+   "sinyal_ustu_gurultu_payi": 1.0,
+   "kosinus_gercek_sahte": 0.7948811268008159,
+   "gain_payi_gercek": 0.0012561534207055447,
+   "gain_payi_sahte": 0.001369463588188536,
+   "HUKUM": "Q(gercek) ile Q(sahte) yakinsa fark BILGI DEGIL, kolon ornekleme gurultusudur."
+  }
+ }
+}
