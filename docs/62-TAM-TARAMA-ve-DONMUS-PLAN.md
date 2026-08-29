@@ -295,3 +295,67 @@ oldugunu da olcecek** — kalan 8 hakkin yorumu buna gore yapilacak.
 Kotu kosullu bir matristen cikan sayiyla iyimser bir tahmini curutmek, yerine
 daha kotu bir tahmin koymaktan ibaret olabilir. Once `cond`'a ve regularizasyon
 duyarliligina bak; kararli olmayan buyuklukle karar verme.
+
+---
+
+## 11. DUZELTME (30 Agustos 00:40) — "iki uc da iyi haber" YANLISTI
+
+Sonda skorunu okurken "1,0009'dan ne kadar uzaksa o kadar bilgi" demistim.
+Yanlis. Onemli olan adayin HAM L'si degil, **g7'nin zaten soyledigi degerden
+ne kadar saptigi**.
+
+### Bilgi-yok noktasi
+
+j adayinin g7'ye ek marjinal kazanci sifirdir ancak ve ancak
+`L_j = (C_j / Q_g7) * L_g7`, yani
+
+```
+rho_olu(j) = kos(g7, j) x rho_g7 = kos(g7, j) x 0,0551
+```
+
+| aday | kos(g7) | olu nokta rho | y40 icin karsilik gelen 1. hak skoru |
+|---|---|---|---|
+| **y40** | −0,555 | **−0,031** | **1,00292** |
+| z2 | −0,231 | −0,013 | — |
+| sul | +0,111 | +0,006 | — |
+| y46 | −0,091 | −0,005 | — |
+| y45 | −0,081 | −0,004 | — |
+| t3 | −0,052 | −0,003 | — |
+| q1c | −0,034 | −0,002 | — |
+| p42 | — | ~0 | — |
+
+### y40 icin sonuc tablosu (marjinal kazanc)
+
+```
+1.hak skoru   rho_y40   g7'ye gore KAZANC   1 olcum sonrasi optimum
+   1,00330    -0,0364        0,00002              1,00138
+   1,00292    -0,0305        0,00000  <- OLU      1,00141
+   1,00186    -0,0146        0,00018              1,00122
+   1,00090     0,0000        0,00067              1,00073
+   0,99993    +0,0146        0,00147              0,99993
+   0,99891    +0,0300        0,00265              0,99876
+   0,99725    +0,0550        0,00530              0,99611
+```
+
+**y40 icin iyi skor = iyi haber. Simetri YOK.** Negatif taraf g7'nin zaten
+kapladigi bolge. Diger yedi adayin olu noktasi sifira yakin oldugu icin onlarda
+her iki uc de gercek bilgidir; asimetri yalnizca y40'a ozeldir.
+
+Ayni kosinus (−0,555) hem super-toplamsalligi hem olu bolgeyi buyutuyor --
+tek sayidan iki etki.
+
+### 1,0033 gelirse zincir nereye gider
+
+```
+1 olcum sonra   1,00138   (g7 tek basina 1,00141 -- neredeyse ilerleme yok)
+gun sonu  (3)   1,00126 / 1,00095 / 1,00036   (digerleri rho 0 / 0,015 / 0,027)
+NIHAI     (8)   1,00119 / 1,00005 / 0,99806
+```
+y40 olu bolgede cikarsa o eksen bosa gider, kalan 7 eksen is gorur.
+
+### Kural 51
+
+**51.** Bir sondanin bilgi degeri, olculen `rho`'nun buyuklugu degil, `rho`'nun
+**bilinen yonlerin ongordugu degerden sapmasidir**. Tek bilinen yon g7 iken
+olu nokta `kos(g7,j) x rho_g7`. Sondayi yorumlarken once bu noktayi hesapla;
+"buyuk |rho| = cok bilgi" yanlistir.
