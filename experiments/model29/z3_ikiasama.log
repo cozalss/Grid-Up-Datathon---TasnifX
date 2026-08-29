@@ -1,0 +1,23 @@
+  kesim 2025-03-31: 274,929 satir (35s)
+  kesim 2025-04-30: 288,083 satir (41s)
+  kesim 2025-05-31: 296,798 satir (48s)
+  kesim 2025-06-30: 305,529 satir (56s)
+  kesim 2025-07-31: 319,732 satir (65s)
+  kesim 2025-08-31: 345,941 satir (74s)
+  kesim 2025-09-30: 381,282 satir (84s)
+  kesim 2025-10-31: 410,464 satir (95s)
+  kesim 2025-11-30: 440,147 satir (107s)
+  kesim 2025-12-31: 338,187 satir (119s)
+egitim (3401092, 52) test (714688, 52); olu oran 0.0424, E[L|olu]=0.0246 (137s)
+
+=== A) OLME OLASILIGI (ikili) ===
+    tohum 7 (217s)
+    tohum 17 (245s)
+  p ortalama 0.0367 (egitimdeki oran 0.0424)
+
+=== B) KOSULLU SEVIYE (yalniz aktif satirlar) ===
+    tohum 7 (269s)
+    tohum 17 (295s)
+  E[L|aktif] ortalama 6.9510
+  YAZILDI tuketim_z3_ikiasama.csv  Q=0.06470 kurtoz=19.4 %1pay=36.2 curukpay=0.253 kapi=OK
+TAMAM (297s)

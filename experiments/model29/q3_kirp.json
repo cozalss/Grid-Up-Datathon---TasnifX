@@ -1,0 +1,98 @@
+{
+ "q1c": {
+  "dosya": "tuketim_q1c_kapasite_siki.csv",
+  "finite_olmayan": 0,
+  "ham": {
+   "Q": 0.10356321688172959,
+   "kurtoz": 13.372667953156252,
+   "en_kotu_yuzde1_pay": 0.25842990676999156
+  },
+  "curuk_Q_payi": 0.2150689006714858,
+  "temiz": {
+   "Q": 0.08128998967697335,
+   "kurtoz": 11.763145470560529,
+   "en_kotu_yuzde1_pay": 0.2559217646001059
+  },
+  "kirpma": 0.75,
+  "capa": {
+   "soguk": {
+    "satir": 158369,
+    "kaydirma": -0.050541566107031935
+   },
+   "kuyruk": {
+    "satir": 29000,
+    "kaydirma": 0.05135664720193544
+   },
+   "cekirdek": {
+    "satir": 467772,
+    "kaydirma": 0.020368525980378638
+   }
+  },
+  "son": {
+   "Q": 0.06092237866689803,
+   "kurtoz": 5.013887945464527,
+   "en_kotu_yuzde1_pay": 0.10519803365756993
+  },
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  },
+  "dagilim": {
+   "log_ort": 6.6017754249040905,
+   "log_std": 1.7652363307769097,
+   "maks": 225528.16211253853,
+   "alt1kwh": 0.025899413450344765
+  }
+ },
+ "q1d": {
+  "dosya": "tuketim_q1d_kuantil38_siki.csv",
+  "finite_olmayan": 0,
+  "ham": {
+   "Q": 0.12683376630537707,
+   "kurtoz": 21.99620591224452,
+   "en_kotu_yuzde1_pay": 0.3397750810290695
+  },
+  "curuk_Q_payi": 0.2345215582146178,
+  "temiz": {
+   "Q": 0.09708851379721135,
+   "kurtoz": 22.42809993136015,
+   "en_kotu_yuzde1_pay": 0.3387653216933826
+  },
+  "kirpma": 0.75,
+  "capa": {
+   "soguk": {
+    "satir": 158369,
+    "kaydirma": -0.1897623506678833
+   },
+   "kuyruk": {
+    "satir": 29000,
+    "kaydirma": 0.011610228500941644
+   },
+   "cekirdek": {
+    "satir": 467772,
+    "kaydirma": 0.027893669531943655
+   }
+  },
+  "son": {
+   "Q": 0.05544804679165661,
+   "kurtoz": 5.091674856449821,
+   "en_kotu_yuzde1_pay": 0.11659685192625346
+  },
+  "kapi": {
+   "satir": 714688,
+   "id_birebir": true,
+   "nan": 0,
+   "negatif": 0,
+   "baslik": true
+  },
+  "dagilim": {
+   "log_ort": 6.6017754249040905,
+   "log_std": 1.7569990671678604,
+   "maks": 164278.90172502646,
+   "alt1kwh": 0.025829452852153666
+  }
+ }
+}

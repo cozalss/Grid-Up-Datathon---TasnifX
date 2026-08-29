@@ -1,0 +1,112 @@
+{
+ "iddia1": {
+  "sum_w": 0.9999999999999974,
+  "artik": 3.042893006568599e-08,
+  "L_g7": 0.0027282877505173673,
+  "Q_g7": 0.002494368493994564,
+  "kazanc": 0.002984143709136882,
+  "ongoru": 1.0013510482797046,
+  "w_tekil_degil_bos_boyut": 4,
+  "L_sapmasi_cekirdek_yonunde": 0.00917525869185054,
+  "span_disi_L_siniri": 0.00017464084182838477,
+  "skor_band_yari": 0.00018463831917725493,
+  "loo_ortalama_hata": 0.00034480470997826996,
+  "loo_maks_hata": 0.0023772557571770407
+ },
+ "iddia2": {
+  "cond": 159.43459290900515,
+  "kosinus": [
+   [
+    1.0,
+    -0.0915,
+    -0.0809
+   ],
+   [
+    -0.0915,
+    1.0,
+    -0.0949
+   ],
+   [
+    -0.0809,
+    -0.0949,
+    1.0
+   ]
+  ],
+  "k1_maks_pozitif": 1.6388542460936077,
+  "k1_maks_isaret_serbest": 1.6388542460936077
+ },
+ "iddia4": {
+  "tuketim_y46_amnezik_kirpik.csv": {
+   "satir": 714688,
+   "kolon": [
+    "id",
+    "tuketim"
+   ],
+   "id_ss": true,
+   "id_test": true,
+   "nan": 0,
+   "neg": 0,
+   "sonsuz": 0,
+   "maks": 98728.75687625835,
+   "ort": 1572.1009143015438,
+   "medyan": 1007.1960918640892,
+   "sifir": 0,
+   "Q": 0.3884372558794304,
+   "basabas_skor": 1.1807308420971439
+  },
+  "tuketim_y45_mevsimsel_kirpik.csv": {
+   "satir": 714688,
+   "kolon": [
+    "id",
+    "tuketim"
+   ],
+   "id_ss": true,
+   "id_test": true,
+   "nan": 0,
+   "neg": 0,
+   "sonsuz": 0,
+   "maks": 434387.9391826396,
+   "ort": 1964.5432655925076,
+   "medyan": 1038.5384354959394,
+   "sifir": 976,
+   "Q": 0.16715959451125548,
+   "basabas_skor": 1.0829809140106097
+  },
+  "tuketim_g7_span_tau3.csv": {
+   "satir": 714688,
+   "kolon": [
+    "id",
+    "tuketim"
+   ],
+   "id_ss": true,
+   "id_test": true,
+   "nan": 0,
+   "neg": 0,
+   "sonsuz": 0,
+   "maks": 186307.25938566503,
+   "ort": 1775.9543171265068,
+   "medyan": 1060.331494899184,
+   "sifir": 153,
+   "Q": 0.002494368493994564,
+   "basabas_skor": 1.0040828820839416
+  },
+  "tuketim_m6_ikiyon.csv": {
+   "satir": 714688,
+   "kolon": [
+    "id",
+    "tuketim"
+   ],
+   "id_ss": true,
+   "id_test": true,
+   "nan": 0,
+   "neg": 0,
+   "sonsuz": 0,
+   "maks": 180734.95004543543,
+   "ort": 1768.9102827642923,
+   "medyan": 1062.193915505447,
+   "sifir": 0,
+   "Q": 0.0,
+   "basabas_skor": 1.00284
+  }
+ }
+}

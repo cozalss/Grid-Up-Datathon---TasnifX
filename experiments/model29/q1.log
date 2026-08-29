@@ -1,0 +1,7 @@
+onbellekten okundu (3401092, 52) / (714688, 52) (5s)
+ofset log_guc: tr ort 5.9989 te ort 6.0246
+  A kapasite-ofset bitti, ort 6.5998 (29s)
+  YAZILDI tuketim_q1a_kapasite.csv  Q=0.07957 kurtoz=10.9 %1pay=25.3 curukpay=0.215 kapi=OK
+  B kuantil0.38 bitti, ort 6.6262 (70s)
+  YAZILDI tuketim_q1b_kuantil38.csv  Q=0.08064 kurtoz=14.4 %1pay=31.1 curukpay=0.235 kapi=OK
+TAMAM (72s)
