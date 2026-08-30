@@ -183,11 +183,13 @@ for rr in [0.0, 0.0304, 0.0500, 0.0570, 0.0700, 0.0790, 0.0930, 0.1457, 0.2081]:
         "1. SIRA"
         if sk < 0.99009
         else "2. SIRA"
-        if sk < 0.99790
+        if sk < 0.99614
         else "3. sira"
-        if sk < 0.99940
+        if sk < 0.99927
         else "4. sira"
-        if sk < 1.00118
-        else "5.+"
+        if sk < 0.99937
+        else "5. sira"
+        if sk < 1.00049
+        else "6.+"
     )
     print(f"   {rr:11.4f} {sk:9.5f} {sr:>10s}")
