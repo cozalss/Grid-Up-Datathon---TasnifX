@@ -126,6 +126,32 @@ durgunlugu demek DEGILDIR.
 **Temiz cikanlar:** Gram-Schmidt dikligi 4.8e-16, capraz terim cebiri,
 sirasiz sonda kapisi, yinelenen eksen yok, atomik CSV yazimi.
 
+### `m162` — BAGIMSIZ DOGRULAMA GECTI
+
+Sentetik gercek artik `r_syn` kuruldu (`<r_syn,r_hat>/N = kL`,
+`<r_syn,GD_k>/N = rho_k`, `ort(r_syn^2) = M0`), gercek log hedef
+`t = a0 + r_syn`, ve her dosyanin skoru **dogrudan** `sqrt(ort((log1p(CSV) - t)^2))`
+ile hesaplandi — m148'in hicbir formulu kullanilmadan.
+
+Sentetik gercek `rho = [0.09, -0.05, 0.04, 0.02]`:
+
+| sonda | gercek | cozulen | hata |
+|---|---|---|---|
+| 1 | +0.0900 | +0.0901 | +1.4e-04 |
+| 2 | -0.0500 | -0.0503 | -3.1e-04 |
+| 3 | +0.0400 | +0.0389 | -1.1e-03 |
+| 4 | +0.0200 | +0.0204 | +4.1e-04 |
+
+```
+NIHAI DOSYANIN GERCEK SKORU  = 0.994702   (dogrudan)
+BETIGIN BILDIRDIGI BEKLENTI  = 0.994710   (fark -8.5e-06)
+KUSURSUZ OLCUMLE ULASILABILIR = 0.994699  (fark +2.1e-06)
+```
+
+Bu; capraz terim cebirini, isaret islemesini, kirpmayi, CSV gidis-donusunu
+ve nihai birlestirmeyi BAGIMSIZ bir gercek karsisinda dogrular. Kalan
+~1e-3 hata LB'nin 5 ondalikli yuvarlamasindandir, beklenen buyukluk.
+
 ---
 
 ## 7. YARIN
