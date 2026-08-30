@@ -28,7 +28,7 @@ BURA = os.path.dirname(os.path.abspath(__file__))
 M0, TABAN = 1.005846366, "tuketim_m6_ikiyon.csv"
 HEDEF_SOGUK, CARPAN, TAVAN = 0.222, 0.798, 1.95
 
-with open(os.path.join(BURA, "m119_tekhak.json")) as fh:
+with open(os.path.join(BURA, "m122_nihai.json")) as fh:
     V2 = json.load(fh)
 EKSENLER = V2["eksenler"]
 print(f"bilesikteki {len(EKSENLER)} eksen: {EKSENLER}")
@@ -66,20 +66,37 @@ def st(x):
 svB = st(pb)
 
 
+ufB = st(bf.ufuk_gun.to_numpy())
+ayB = st(pd.to_datetime(bf.tarih).dt.month.to_numpy().astype(np.float64))
+CARP = {"x_sv": svB, "x_soguk": sgm, "x_ufuk": ufB, "x_ay": ayB}
+ESIK = {"ust10": (0.9, True), "ust25": (0.75, True), "alt10": (0.1, False)}
+
+
 def kurB(ad):
-    kol, kip = (ad.split(":", 1) + [""])[:2] if ":" in ad else (ad, "")
+    """m122 ad bicimleri: 'kol', 'kol:kip', 'kolA*kolB'."""
+    if "*" in ad:
+        k1, k2 = ad.split("*", 1)
+        if k1 not in bf.columns or k2 not in bf.columns:
+            return None
+        b1, b2 = st(bf[k1].to_numpy()), st(bf[k2].to_numpy())
+        return None if b1 is None or b2 is None else st(b1 * b2)
+    kol, kip = ad.split(":", 1) if ":" in ad else (ad, "")
     if kol not in bf.columns:
         return None
     xb = bf[kol].to_numpy()
-    if kip == "x_sv":
-        return st(st(xb) * svB)
-    if kip == "x_soguk":
-        return st(st(xb) * sgm)
-    if kip == "ust10":
+    if kip in CARP:
+        b_ = st(xb)
+        return None if b_ is None else st(b_ * CARP[kip])
+    if kip in ESIK:
+        q, ust = ESIK[kip]
         fv = xb[np.isfinite(xb)]
         if fv.size == 0:
             return None
-        return st((xb > np.quantile(fv, 0.9)).astype(np.float64))
+        v_ = np.quantile(fv, q)
+        return st(((xb > v_) if ust else (xb < v_)).astype(np.float64))
+    if kip == "kare":
+        b_ = st(xb)
+        return None if b_ is None else st(b_**2)
     return st(xb)
 
 
