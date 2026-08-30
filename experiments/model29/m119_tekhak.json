@@ -1,0 +1,15 @@
+{
+ "kappa": 0.07,
+ "sabit": 1.0069839664569225,
+ "rho": 0.11929321806838077,
+ "oran": 3.9135174885579262,
+ "eksenler": [
+  "p_pencere_payi:x_sv",
+  "tanim_on3:x_soguk",
+  "p_ilk_ofset:x_sv",
+  "t_yuk_faktoru:ust10",
+  "yas:x_sv",
+  "t_egim_sicaklik_ort",
+  "asiri_sicak:x_soguk"
+ ]
+}
