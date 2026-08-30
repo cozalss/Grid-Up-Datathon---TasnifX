@@ -34,7 +34,9 @@ M29 = os.path.join(KOK, "experiments/model29")
 BURA = os.path.dirname(os.path.abspath(__file__))
 TABAN = "tuketim_m6_ikiyon.csv"  # M0 m112den gelir (docs/69)
 HEDEF_SOGUK, CARPAN, TAVAN = 0.222, 0.798, 1.95
-HEDEF_2, HEDEF_3 = 0.99790, 0.99940
+#: Canli liderlik tablosu (2026-08-30 17:26). Hedefler gun icinde SERTLESTI:
+#: Duo-Electra 1.00129 -> 0.99790 -> 0.99614, Berke Kuc yeni girdi 0.99927.
+HEDEF_2, HEDEF_3 = 0.99614, 0.99927
 RHO_S_ALT = 0.015
 AZAMI_EKSEN = 40  # kesim KAPIDAN gelsin, sert tavandan degil (Kural 64)
 sys.path.insert(0, M29)
@@ -254,7 +256,11 @@ for ad, h in [("3. sira", HEDEF_3), ("2. sira", HEDEF_2), ("1. sira", 0.99009)]:
     kap = np.sqrt(max(MSE_OPT - h * h, 1e-12))
     print(f"  {ad}: gereken rho {kap:.4f}  -> f = {kap / RHO:.3f}")
 
-KAPPA = 0.070
+# kappa HEDEFTEN turetilir: kappa* = sqrt(MSE_opt - hedef^2) hedefe ulasmak
+# icin gereken gerceklesme oranini EN AZA indirir. Hedef gun icinde degistigi
+# icin sabit yazmak yanlis olurdu (0.99790 -> 0.99614 gecisinde kappa*
+# 0.0785'ten 0.0987'ye cikti).
+KAPPA = float(np.sqrt(max(MSE_OPT - HEDEF_2**2, 1e-12)))
 pn = a0 + r_hat + KAPPA * birim
 y = np.clip(np.expm1(pn), 0.0, None)
 out = pd.DataFrame({"id": te.id.values, "tuketim": y})

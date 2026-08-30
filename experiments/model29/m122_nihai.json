@@ -1,7 +1,7 @@
 {
- "kappa": 0.07,
- "kappa_etkin": 0.06991697483477692,
- "sabit": 1.0069151138503192,
+ "kappa": 0.09908059710904177,
+ "kappa_etkin": 0.09892224432055063,
+ "sabit": 1.0118126204849984,
  "rho": 0.2522417966104322,
  "eksenler": [
   "p_ilk_ofset*osm_direk_yogunlugu",

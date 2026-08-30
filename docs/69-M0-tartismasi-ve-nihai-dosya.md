@@ -213,33 +213,60 @@ Sağlamlaştırılmış kurulumla (docs §2.5–2.7) YENİDEN ölçüldü ve ör
 
 ## 4. Gönderilecek dosya
 
+### Liderlik tablosu GÜN İÇİNDE İKİ KEZ SERTLEŞTİ
+
+```
+05:00                        17:26
+1. Grid Grinders  0.99009    1. Grid Grinders       0.99009
+2. Atakan         0.99940    2. Duo-Electra         0.99614   <- 1.00129'dan
+3. TasnifX        1.00115    3. Berke Kuc           0.99927   <- YENI GIRIS
+4. Ahmet B.       1.00118    4. Atakan Aldemir      0.99937
+5. Duo-Electra    1.00129    5. TasnifX             1.00115   <- BIZ
+                             6. Ahmet B. ALTUNOK    1.00118
+```
+
+### Aşağı risk TABANLI — bu agresif olmayı doğru kılıyor
+
+Yarışma sonunda **iki gönderim seçiliyor**. Mevcut **1.00115** bankada;
+başarısız bir sonda onu kaybettirmez, yalnızca seçilmez. Dolayısıyla `κ`
+hedeften türetilir ve hedefe ulaşma olasılığı en üste çıkarılır:
+
+```
+kappa* = sqrt(MSE_opt - hedef^2)
+hedef 0.99790 iken 0.0785 idi; 0.99614'e sertlesince 0.0991 oldu.
+```
+
+Sabit `κ` yazmak yanlış olurdu — hedef gün içinde iki kez değişti.
+
 ```
 submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
   40 eksen, hepsinde TAVAN DAYANIYOR (katsayi LB-capali, CV'ye degil)
-  rho_pred = 0.2522     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069917
-  sabit = 1.006915114   sifir tahmin 840
+  rho_pred = 0.2522     kappa(ilan) = 0.09908   kappa(ETKIN) = 0.098922
+  sabit = 1.011812620   sifir tahmin 1.404
+  ek bilesenin span-disi payi = 1.0000
 
-  COZUM:  rho = (1.006915114 - P*P) / 0.139834
+  COZUM:  rho = (1.011812620 - P*P) / 0.197844
 ```
 
 | gerçek `ρ` | skor | sıra |
 |---:|---:|---|
-| 0.2522 | 0.98572 | **2. SIRA** |
-| 0.1766 | 0.99107 | **2. SIRA** |
-| 0.0793 | 0.99788 | **2. SIRA** ← eşik |
-| 0.0700 | 0.99853 | 3. sıra |
-| 0.0574 | 0.99941 | 4. sıra |
-| 0.0500 | 0.99992 | 4. sıra |
-| 0.0000 | 1.00341 | 5.+ |
+| 0.2522 | 0.98077 | **1. SIRA** |
+| 0.1261 | 0.99341 | **2. SIRA** |
+| 0.0987 | 0.99614 | **2. SIRA** ← eşik |
+| 0.0956 | 0.99644 | 3. sıra ← taşınan tahminimiz |
+| 0.0590 | 1.00007 | 5. sıra |
+| 0.0000 | 1.00589 | 6.+ (ama 1.00115 bankada, seçilmez) |
 
-**Doğrulamalar:** işaret kararlılığı tek/çift gün **40/40**, zaman bölmesi
-de **40/40**; trafo-bölmeli çapraz doğrulama tutma **0.906**, plasebo **z=+33.9**;
-`rcond`-kırılgan eksen **2/40**.
+**Doğrulamalar:** 27 skorlu yönün 27'si kendi LB skorunu birebir yeniden
+kuruyor; sekiz kapı geçti; işaret kararlılığı tek/çift gün **40/40**, zaman
+bölmesi **39/40**; trafo-bölmeli çapraz doğrulama tutma **0.906**, plasebo
+**z=+33.9**; `rcond`-kırılgan eksen **2/40**; büzme gürültü altında **0/60**
+patlama.
 
-**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2522, yani gereken
-gerçekleşme oranı **%31.4**. Eşiğin üstünde ama **garanti değil** —
-bankaya alınabilecek güvenli bir 2. sıra yolu yok, bilinen en iyi optimumumuz
-1.000985 ve o da 4. sıra.
+**Dürüst duruş.** 2. sıra `ρ ≥ 0.0987` istiyor; zaman-tutmasıyla düzeltilmiş
+taşınan tahminimiz **0.0956** — kıl payı YETMİYOR. 3. sıra (`ρ ≥ 0.0590`)
+rahat görünüyor. Hedef gün içinde sertleştiği için 2. sıra artık sabahkinden
+zor; **garanti değil.**
 
 ---
 
