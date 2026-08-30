@@ -46,6 +46,17 @@ def oku(f):
     return np.log1p(d[k].values.astype(np.float64))
 
 
+def gonderim_olcumu(taban, tahmin, skor, *, m0=M0):
+    """Gonderilmis tahmini, gorulen LB skoruyla birebir bir Gram yonune cevir."""
+    taban = np.asarray(taban, dtype=np.float64)
+    tahmin = np.asarray(tahmin, dtype=np.float64)
+    if taban.shape != tahmin.shape:
+        raise ValueError(f"satir sayisi uyusmuyor: {len(taban)} != {len(tahmin)}")
+    yon = tahmin - taban
+    ic_carpim = (m0 + float((yon * yon).mean()) - float(skor) ** 2) / 2.0
+    return yon, ic_carpim
+
+
 def durum_yukle():
     if os.path.exists(DURUM):
         return json.load(open(DURUM))
