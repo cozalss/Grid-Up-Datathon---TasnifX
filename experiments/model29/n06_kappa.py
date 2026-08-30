@@ -31,9 +31,24 @@ import numpy as np
 
 KOK = r"c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
 M29 = os.path.join(KOK, "experiments/model29")
-SABIT_HATA = 1.72e-4
 YUV = 5e-6 / np.sqrt(3.0)
 TAVAN = 1.95
+
+# SABIT_HATA: sonda cozumundeki "sabit"in kendi hatasi. Eskiden m112'nin
+# LOO'sundan 1.72e-4 aliniyordu. n10 ayni buyuklugu LB'nin 29 olcumu
+# uzerinde DOGRUDAN olctu: ort |hata| 3.10e-4, RMS 7.27e-4. Muhafazakar
+# olan RMS'i almak kappa'yi gereksiz buyutur; ort |hata| daha temsili.
+# (n10 ayrica m112'nin sigma_L = 2.27e-4 varsayimini REDDETTI: G'nin uc
+#  TAM SIFIR kipinde u'L = 0 olmak zorunda ve gozlenen sapma 2.94e-06,
+#  yani yalnizca LB yuvarlamasi. Bu iki sayi ayni sey DEGIL -- biri L
+#  vektorunun gurultusu, digeri span tahmininin skor cinsinden hatasi.)
+SABIT_HATA = 1.72e-4
+_N10 = os.path.join(M29, "n10_c_carpani.json")
+if os.path.exists(_N10):
+    with open(_N10, encoding="utf-8") as fh:
+        _D10 = json.load(fh)
+    SABIT_HATA = float(_D10["loo_skor_tahmini"]["ort_mutlak_hata"])
+    print(f"SABIT_HATA n10'dan: {SABIT_HATA:.3e} (LOO ort |hata|)")
 
 with open(os.path.join(M29, "m148_demet.json"), encoding="utf-8") as fh:
     _D = json.load(fh)
@@ -43,9 +58,17 @@ B = len(ONG)
 # ZATEN URETILMIS sondalarin kappa'si DONDURULUR. Dosya diskte duruyor ve
 # sabit/kappa_etkin m148_demet.json'a yazildi; buradan farkli bir kappa
 # yazarsak cozum formulu dosyayla UYUSMAZ ve olculen rho YANLIS cikar.
+# DONDURMA KOSULU: yalnizca CSV GERCEKTEN DISKTE ISE. m148_demet.json
+# OYNAK bir dosyadir -- m161 ve n07 onu git'ten geri aliyor, ve git'teki
+# surum eski bir sondayi (eski kappa'siyla) listeliyor olabilir. Kaydin
+# varligina bakip dosyanin varligina bakmamak, ISLEMEMIS bir kappa'yi
+# dondurur: bir kez kappa_1'i 0.0517'de dondurdu, oysa diskteki D1
+# 0.130 ile uretilmisti. Baglayici olan sey DOSYADIR.
+_SUB = os.path.join(KOK, "submissions")
 DONUK = {}
 for _s in _D.get("sondalar", []):
-    DONUK[int(_s["sonda"]) - 1] = float(_s["kappa"])
+    if os.path.exists(os.path.join(_SUB, _s["dosya"])):
+        DONUK[int(_s["sonda"]) - 1] = float(_s["kappa"])
 if DONUK:
     print(
         f"donduruldu (zaten uretilmis): {sorted(DONUK)} -> "
@@ -69,9 +92,15 @@ if _c_olc:
     c_mid = float(_c_olc)
     sd = 0.15  # olcumden sonra kalan belirsizlik (LB yuvarlamasi + sabit hatasi)
     print(f"|c| OLCULDU: {c_mid:.3f} (sigma_log {sd})")
+elif os.path.exists(_N10):
+    _cn = _D10["c_nihai"]
+    c_mid = float(_cn["nokta"])
+    _lo, _hi = (float(x) for x in _cn["ga90"])
+    sd = (np.log(_hi) - np.log(_lo)) / (2 * 1.6449)
+    print(f"|c| n10'dan OLCULDU: {c_mid:.3f} %90 GA [{_lo:.3f}, {_hi:.3f}]")
 else:
     c_mid, sd = 0.57, (np.log(1.26) - np.log(0.17)) / (2 * 1.6449)
-    print(f"|c| ONSEL: medyan {c_mid}, %90 GA [0.17, 1.26]")
+    print(f"|c| ONSEL (olculmemis): medyan {c_mid}, %90 GA [0.17, 1.26]")
 mu = np.log(c_mid)
 c = np.exp(rng.normal(mu, sd, 200000))  # (S,)
 RHO = np.outer(c, ONG) / TAVAN  # (S, B) gercek rho ornekleri

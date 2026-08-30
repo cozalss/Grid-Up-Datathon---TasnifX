@@ -56,6 +56,15 @@ if p.returncode != 0:
     print(p.stderr[-3000:])
     raise SystemExit(f"m148 hata verdi ({p.returncode})")
 
+# SIRA ONEMLI: n06 "diskte dosyasi olan sondanin kappa'sini DONDUR" kuralini
+# uyguluyor. 1. gecisin urettigi D1 ortada kalirsa n06 o GECICI kappa'yi
+# dondurur ve 2. gecis bir sey degistiremez. Bu yuzden D1 n06'dan ONCE
+# silinir; boylece n06 hicbir seyi dondurmadan taze secim yapar.
+# DIKKAT: json'u BURADA geri ALMA -- n06 blok tahminlerini (rho_k_tahmin)
+# ondan okuyor ve git'teki surum ESKI kurulusu tasiyor olabilir.
+# Yalnizca CSV silinir; json 1. gecisin taze ciktisiyla kalir.
+Path(os.path.join(S, "tuketim_D1_demet.csv")).unlink(missing_ok=True)
+
 # kappa'yi yeni blok tahminlerine gore yeniden optimize et
 print("--- kappa yeniden optimize ediliyor ---")
 p = subprocess.run(
@@ -71,8 +80,8 @@ if p.returncode != 0:
     raise SystemExit("n06_kappa hata verdi")
 print(p.stdout.strip().splitlines()[-1])
 
-# D1'i dogru kappa ile YENIDEN uret
-Path(os.path.join(S, "tuketim_D1_demet.csv")).unlink()
+# D1'i dogru kappa ile YENIDEN uret. CSV zaten n06'dan once silindi;
+# simdi json geri alinir ki 2. gecis sonda kaydini sifirdan yazsin.
 subprocess.run(
     ["git", "checkout", "--", "experiments/model29/m148_demet.json"],
     cwd=KOK,

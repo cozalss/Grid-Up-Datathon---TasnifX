@@ -72,9 +72,28 @@ def esikler():
     return rng.normal(ESIK1, s1, S), rng.normal(ESIK2, s2, S)
 
 
+# |c| ONSELI. n10 bunu LB'nin KENDI 29 olcumu uzerinde birak-birini-disarida
+# ile OLCTU (vekil blok kullanmadan) ve m149'un 0.57 [0.17, 1.26] degerini
+# 0.43 [0.18, 0.80] ile degistirdi -- merkez daha dusuk, aralik daha dar.
+# Ayni calisma sigma_L'yi de dogrudan olctu: G'nin 3 TAM SIFIR kipinde
+# u'L = 0 olmak ZORUNDA, gozlenen sapma saf olcum hatasidir -> 2.94e-06,
+# LB yuvarlamasinin 1.02 kati. m112'nin varsaydigi 2.27e-04 (77 kat buyuk)
+# veriyle REDDEDILDI.
+C_YOL = os.path.join(M29, "n10_c_carpani.json")
+if os.path.exists(C_YOL):
+    with open(C_YOL, encoding="utf-8") as fh:
+        _C = json.load(fh)["c_nihai"]
+    C_MID = float(_C["nokta"])
+    C_LO, C_HI = (float(x) for x in _C["ga90"])
+    print(f"|c| n10'dan OLCULDU: {C_MID:.3f} %90 GA [{C_LO:.3f}, {C_HI:.3f}]")
+else:
+    C_MID, C_LO, C_HI = 0.57, 0.17, 1.26
+    print(f"UYARI: n10_c_carpani.json yok -> eski onsel {C_MID} [{C_LO}, {C_HI}]")
+
+
 def model_a():
-    mu = np.log(0.57)
-    sd = (np.log(1.26) - np.log(0.17)) / (2 * 1.6449)
+    mu = np.log(C_MID)
+    sd = (np.log(C_HI) - np.log(C_LO)) / (2 * 1.6449)
     return np.exp(rng.normal(mu, sd, S)) * ONG_TOP / TAVAN
 
 

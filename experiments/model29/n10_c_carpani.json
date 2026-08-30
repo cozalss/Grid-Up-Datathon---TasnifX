@@ -1,0 +1,82 @@
+{
+ "aciklama": "n10: |c| carpaninin LB LOO ile bagimsiz dogrulamasi (vekil blok yok)",
+ "tarih": "2026-08-31",
+ "betik": "experiments/model29/n10_c_dogrulama.py",
+ "sigma_L": {
+  "olculen": 2.9377803611172106e-06,
+  "ga90": [
+   1.8202163876235556e-06,
+   8.578343755222646e-06
+  ],
+  "yontem": "G'nin 3 TAM SIFIR kipinde u'L'nin sapmasi; Vu=0 oldugu icin u'L=0 olmali",
+  "lb_yuvarlamasi": 2.8867513459481293e-06,
+  "m112_yari_orneklem": 0.0002268,
+  "hukum": "gurultu pratikte YALNIZ LB yuvarlamasidir; 2.27e-04 veriyle REDDEDILDI"
+ },
+ "loo_skor_tahmini": {
+  "n": 19,
+  "ort_mutlak_hata": 0.00031003598460469694,
+  "rms_hata": 0.0007269111837595525,
+  "bos_model_rms": 0.004565359355977432,
+  "rms_azalma": 0.8407767873063909
+ },
+ "c_katmanlar": {
+  "TUM": [
+   0.4773352240997913,
+   0.34485016176171346,
+   0.644683128411512,
+   19
+  ],
+  "dik pay >= 0.02": [
+   0.3569713638979867,
+   0.15224974017827292,
+   0.8579770041392293,
+   5
+  ],
+  "dik pay >= 0.05": [
+   0.36609893373445773,
+   0.12901865519479735,
+   1.5222863275016465,
+   3
+  ],
+  "dik pay >= 0.10": [
+   0.3315272544446268,
+   0.03543176635005648,
+   1.9378575294370954,
+   2
+  ]
+ },
+ "senaryolar": {
+  "G_tum": 0.4773352240997913,
+  "D_dikpay_002": 0.3569713638979867,
+  "D2_dikpay_010": 0.3315272544446268
+ },
+ "ortusme_temizlenmis_c": 0.4674422599511914,
+ "sifir_kip_ortusmesi": {
+  "ortanca": 2.1904955590454033e-09,
+  "maks": 0.7689768873386628
+ },
+ "c_nihai": {
+  "nokta": 0.43351750073887085,
+  "ga90": [
+   0.18388818561418535,
+   0.7977988981008325
+  ],
+  "ga50": [
+   0.32556839744230287,
+   0.5520980095959
+  ]
+ },
+ "P_c_1_95": 0.0003625,
+ "siralama_olasiligi": {
+  "1": 0.0090875,
+  "2": 0.0623625,
+  "3": 0.4450875
+ },
+ "uyarilar": [
+  "TASIMA VARSAYIMI DOGRULANMADI: LOO dik yonleri GONDERIM FARKLARIdir, bizim demet yonlerimiz OZNITELIK eksenleridir. |c|'nin iki sinif arasinda tasindigi LB ile GOSTERILMEMISTIR.",
+  "B1 (skor tahmini) ile B2 (|c|) ayni buyuklugun iki birimidir; bagimsiz iki kanit DEGILDIR.",
+  "dik pay >= 0.10 alt kumesinde n kucuk; katman farki tasinir.",
+  "1.95 carpani DISLANDI (P = 0.0004). m148 demet plani rho_k'yi OLCTUGU icin bundan zarar gormez; ama katsayiyi dogrudan 1.95*|rho_s| ile koyan m117/m118/m119/m121/m122/m125 ailesi optimumun ~4.5 katini koyar ve beklenen kazanci NEGATIFTIR (-2.13*rho_s^2)."
+ ]
+}
