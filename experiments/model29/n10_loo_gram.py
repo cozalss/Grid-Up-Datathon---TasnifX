@@ -104,4 +104,6 @@ np.savez(
 print(f"N={N}  K={K}  olculmus={sum(OLC)}  turetilmis={K - sum(OLC)}")
 print(f"YAZILDI {CIKTI}")
 w = np.linalg.eigvalsh(G)
-print(f"G ozdegerleri: en buyuk {w[-1]:.4e}  en kucuk {w[0]:.4e}  kosul {w[-1] / max(w[0], 1e-300):.2e}")
+print(
+    f"G ozdegerleri: en buyuk {w[-1]:.4e}  en kucuk {w[0]:.4e}  kosul {w[-1] / max(w[0], 1e-300):.2e}"
+)
