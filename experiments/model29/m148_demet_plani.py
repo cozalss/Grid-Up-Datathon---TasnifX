@@ -160,6 +160,15 @@ def kur(ad):
         if ust:
             return st((xt > v_).astype(np.float64)), st((xb > v_).astype(np.float64))
         return st((xt < v_).astype(np.float64)), st((xb < v_).astype(np.float64))
+    if kip == "mnt75":
+        # MENTESE (hinge): max(x - q75, 0). m144'un G_mentese ailesi.
+        # Esik kipi bilgiyi 0/1'e indirger; mentese esigin USTUNDEKI
+        # buyuklugu de tasir, bu yuzden ayri bir yon acar.
+        fv = xt[np.isfinite(xt)]
+        if fv.size == 0:
+            return None, None
+        v_ = float(np.quantile(fv, 0.75))
+        return st(np.maximum(xt - v_, 0.0)), st(np.maximum(xb - v_, 0.0))
     if kip == "kare":
         a_, b_ = st(xt), st(xb)
         return (None, None) if a_ is None else (st(a_**2), st(b_**2))
@@ -186,9 +195,29 @@ print(
 ONCEKI = []
 KAT_LISTE = []
 RHO_CV_LISTE = []
-for kayit in TARAMA:
-    if len(kul) >= AZAMI_EKSEN:
-        break
+# --- m144'un F_guc_yas + G_mentese aileleri: mevcut 40'a KURULUS GEREGI dik
+# (hepsi Qd >= 0.25 kapisindan gecti), bu yuzden GERCEKTEN YENI boyut acarlar.
+# m157: 40 eksenin ICINDE 5. yon yok (en iyi artik PCA E[rho^2] = 0.00012);
+# bu 10 eksen ise 10 KATINI vaat ediyor. sqrt(sum rho_s^2) = 0.0593.
+# D/B/E/C aileleri m144'un 200+ satirlik ureteclerini isterdi -- tasiyici
+# betige yarisma bitmeden o buyuklukte kod GIRMEZ.
+YENI_EKSENLER = [
+    "yas*bitki_ortusu_orani",
+    "yas*yerlesim_orani",
+    "yas*tarim_orani",
+    "yas*trafo_basina_nufus",
+    "p_ilk_ofset:mnt75",
+    "yas*osm_hat_yogunlugu",
+    "nem_ort:mnt75",
+    "ulusal_tepe:mnt75",
+    "yagis_toplam:mnt75",
+    "et0_toplam:mnt75",
+]
+YENI_MASKE = []
+for kayit in TARAMA + [{"eksen": a, "_yeni": True} for a in YENI_EKSENLER]:
+    _yeni = bool(kayit.get("_yeni"))
+    if not _yeni and len(kul) >= AZAMI_EKSEN:
+        continue  # ilk 40'ta dur AMA yeni eksenlere devam et (eskiden break)
     ad = kayit["eksen"]
     xt, xb = kur(ad)
     if xt is None or xb is None:
@@ -246,6 +275,7 @@ for kayit in TARAMA:
     kul.append(ad)
     KAT_LISTE.append(float(rho_kul))
     RHO_CV_LISTE.append(float(rho_cv))
+    YENI_MASKE.append(_yeni)
     print(
         f"{ad[:34]:>34s} {rho_cv:+8.4f} {rho_s:+8.4f} {rho_kul:+8.4f} {Qd:6.3f} "
         f"{'EVET':>6s} {np.sqrt(float((duz * duz).mean())):8.4f}"
@@ -322,12 +352,35 @@ HAVA = (
     "sicaklik",
 )
 ISR = np.sign(KATS)
+# YENI EKSENLERI AYIRAN MASKE. H1..H4 yeni eksenlerde SIFIRLANIR ki
+# GD[0..3] BIREBIR AYNI kalsin -- D1 zaten uretildi ve sabit/kappa_etkin
+# m148_demet.json'a dondu; GD[0] kayarsa olculen rho_1 YANLIS YONE atfedilir.
+# Yeni yon (Y) ise yalniz yeni eksenlerde yasar, dolayisiyla otomatik olarak
+# H1..H4'e diktir.
+_YM = np.array(YENI_MASKE, dtype=bool)
+
+
+def _s40(w):
+    w = np.asarray(w, dtype=np.float64).copy()
+    w[_YM] = 0.0
+    return w
+
+
+def _sY(w):
+    w = np.asarray(w, dtype=np.float64).copy()
+    w[~_YM] = 0.0
+    return w
+
+
+# SIRALAMA ONEMLI: ilk DORT sonda H1,H2,H3,Y verir -- yani m157'nin onerdigi
+# "H4 <-> yeni yon TAKASI" hicbir hak harcamadan gerceklesir. H4 besinci
+# siraya duser ve ancak yedek hak kullanilirsa olculur.
 HIPOTEZ = {
-    "H1 1.95|rho_s|": np.abs(KATS),
-    "H2 rho_cv": np.abs(np.array(RHO_CV_LISTE)),
-    "H3 hava/mevsim": np.array([1.0 if any(h in a for h in HAVA) else 0.0 for a in kul]),
-    "H4 trafo/yapisal": np.array([0.0 if any(h in a for h in HAVA) else 1.0 for a in kul]),
-    "H5 esit": np.ones(len(kul)),
+    "H1 1.95|rho_s|": _s40(np.abs(KATS)),
+    "H2 rho_cv": _s40(np.abs(np.array(RHO_CV_LISTE))),
+    "H3 hava/mevsim": _s40([1.0 if any(h in a for h in HAVA) else 0.0 for a in kul]),
+    "Y  m144 yeni eksen": _sY(np.abs(KATS)),
+    "H4 trafo/yapisal": _s40([0.0 if any(h in a for h in HAVA) else 1.0 for a in kul]),
 }
 BETA = np.zeros(N)
 for i in range(len(U)):

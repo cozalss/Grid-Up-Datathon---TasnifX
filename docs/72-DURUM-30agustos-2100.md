@@ -22,9 +22,37 @@ Liderlik tablosu (30 Agustos 20:23):
 Bugun uc kez geciildik. Kota bugun bitti (3/3 kullanildi).
 
 > **HEDEF (kullanici, 30 Agustos 21:30):** ASIL AMAC **1. SIRA**.
-> 2. sira da kabul edilebilir. Gereken toplam rho^2:
-> 1. sira **0.02175**, 2. sira **0.00973**, 3. sira 0.00349.
-> 1. sira, 2. siranin **2.23 KATI** sinyal istiyor.
+> 2. sira da kabul edilebilir.
+
+### ⚠ HAREKETLI HEDEF — esik gunde −0.004 kayiyor
+
+Nihai siralama **1 Eylul 23:59 UTC**'deki tabloya gore belirlenir; rakipler
+o ana kadar iyilesmeye devam eder. Simdiye kadarki tum hesaplar BUGUNKU
+esige goreydi. Gozlenen 2. sira esigi:
+
+```
+~29 Agu        0.99940
+30 Agu 07:51   0.99790
+30 Agu 17:26   0.99614
+30 Agu 22:06   0.99556   (Abdulbaki Bayir yeni girdi)
+```
+
+Bitise 2.2 gun kala uc senaryo (`m160`):
+
+| senaryo | nihai esik | gereken rho² | gereken \|c\| | P(2. sira) |
+|---|---|---|---|---|
+| kayma DURUR | 0.99556 | 0.01089 | 0.806 | %33 |
+| yarilanarak yavaslar | 0.99116 | 0.01963 | 1.083 | %18 |
+| gozlenen hiz surer | 0.98676 | 0.02833 | 1.301 | %11 |
+| hizlanir | 0.98236 | 0.03700 | 1.486 | %8 |
+
+**ERKEN BITIRMEK ESIGI KURTARMAZ** — nihai tablo bitiste belirlenir.
+Erken bitirmek yalnizca yurutme riskini azaltir.
+
+**Bunun sonucu:** daha once "marjinal" diye elenen kalemler yeniden acildi.
+Biri uygulandi (bkz. §3 "GUNCELLEME 23:20").
+
+23:19 itibariyla son bir saatte esik DEGISMEDI — kayma yavasliyor olabilir.
 
 **Kalan hak: 6.** 31 Agustos 03:00 (yerel) sifirlanir → 3 hak.
 1 Eylul 03:00 → 3 hak. Son siralamada **2 gonderim secilir, Kaggle
@@ -174,7 +202,39 @@ rho_1 = 0 ise skor 1.00235   |   tahmin tutarsa 0.99967
 > `sabit 1.015096786` degerleri **ESKIDIR**. Gecerli olan yukaridakidir
 > (tavan 1.95 → 0.8 duzeltmesinden sonra).
 
-### Dort dik yon (rakip hipotezler)
+### GUNCELLEME 23:20 — BES YON, dorduncusu YENI EKSENLERDEN
+
+`m157` bir kacis buldu: yeni eksen eklemek normalde `H1`'i degistirip **D1'i
+gecersiz kilar**, ama `H1..H4`'un agirliklari yeni eksenlerde **sifirlanirsa**
+`GD[0..3]` birebir ayni kalir. Uygulandi ve **D1 yeniden uretilince md5 BIT
+BIT AYNI** cikti (`6995cfdf8adedabebd8af5721a7b915e`).
+
+`m144`'un **F_guc_yas + G_mentese** ailelerinden 10 eksen eklendi
+(`yas*bitki_ortusu_orani`, `p_ilk_ofset:mnt75`, `ulusal_tepe:mnt75` …).
+`kur()`'a yalnizca uc satirlik bir `:mnt75` (mentese) kolu gerekti.
+
+```
+hipotez              eksen  artakalan  ongorulen rho_k
+H1 1.95|rho_s|          40      1.000           0.2522
+H2 rho_cv               40      0.369           0.0000
+H3 hava/mevsim          26      0.433           0.0000
+Y  m144 yeni eksen      10      1.000           0.1156   <- YENI
+H4 trafo/yapisal        14      0.211           0.0000
+```
+
+`Y`'nin artakalani **1.000** (tam dik) ve hedge yonleri arasinda **sifirdan
+farkli ongorusu olan tek yon**. Siralama oyle kuruldu ki **ilk dort sonda
+`H1, H2, H3, Y` verir** — yani `m157`'nin onerdigi "H4 ↔ yeni yon takasi"
+**hicbir hak harcamadan** gerceklesir; `H4` besinci siraya duser ve ancak
+yedek hak kullanilirsa olculur.
+
+**Kazanc:** P(2. sira) %33.2 → **%36.9**, P(1. sira) %16.0 → **%18.4**.
+
+Bes zorunlu dogrulamanin besi de gecti: sonda 1 kaydi birebir, diklik
+4.44e-15, `H1..H4` artakalanlari degismedi, `TABAN_MSE` 1.00202690,
+ve D1'in md5'i degismedi.
+
+### Dort dik yon (rakip hipotezler) — 23:20'den ONCEKI kurulus
 
 `toplam(rho_k^2) = ||P_altuzay r||^2` — sonuc yalnizca **secilen alt uzaya**
 baglidir, eksenleri nasil grupladigimiza degil. Bu yuzden 4 boyut, rakip
