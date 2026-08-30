@@ -273,7 +273,6 @@ print(f"\n{len(kul)} eksen, bilesigin ongorulen rho = {RHO:.4f}")
 # Yani her sonda hem onceki OLCUMLERI kullanir hem yeni bir yon olcer.
 # Hak biterse elimizde kalan son dosya tum onceki kazanimlari tasir.
 # ---------------------------------------------------------------------------
-DEMET = int(os.environ.get("DEMET", "5"))
 YUV = 5e-6 / np.sqrt(3.0)
 TABAN_MSE = float(M0 - 2 * kL + float((r_hat * r_hat).mean()))
 print(f"\nGERCEK taban MSE = {TABAN_MSE:.7f} -> saf span skoru {np.sqrt(TABAN_MSE):.5f}")
@@ -458,6 +457,14 @@ for k, P in sorted(OLCUM.items()):
             f"DUR: sonda {k} icin girilen skor {P} makul araligin (0.90, 1.20) "
             f"disinda. Ondalik kaymis ya da yanlis sayi girilmis olabilir."
         )
+    gerekli = {int(j) for j in g.get("onceki_r", {})}
+    if not gerekli <= set(RHO_OLC):
+        raise SystemExit(
+            f"DUR: sonda {k} tabaninda {sorted(gerekli)} sondalarinin olcumu "
+            f"kullanilmis ama elimizde {sorted(RHO_OLC)} var. Eksik: "
+            f"{sorted(gerekli - set(RHO_OLC))}. Capraz terim SESSIZCE duserdi "
+            f"ve rho_{k} ISARETI ters cikardi. Once eksik skoru gir."
+        )
     capraz = sum(
         float(g.get("onceki_r", {}).get(str(j), 0.0)) * RHO_OLC[j] for j in RHO_OLC if j < k
     )
@@ -512,7 +519,8 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
         print(f"\n  sonda {k + 1} ZATEN VAR: {kayit['dosya']}")
         print(f"    kappa_etkin={kayit['kappa_etkin']:.6f}  sabit={kayit['sabit']:.9f}")
         print(
-            f"    COZUM:  rho_{k + 1} = ({kayit['sabit']:.9f} - P*P) / "
+            f"    COZUM:  rho_{k + 1} = ({kayit['sabit']:.9f} - 2*"
+            f"{sum(float(kayit.get('onceki_r', {}).get(str(j), 0.0)) * RHO_OLC[j] for j in RHO_OLC):.9f} - P*P) / "
             f"{2 * kayit['kappa_etkin']:.6f}"
         )
         print("    Yeniden uretilmedi. Skoru m148_olcumler.json'a yazip tekrar kos.")
@@ -523,19 +531,46 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     kp = kapilar(out)
     if not all(kp.values()):
         raise SystemExit(f"DUR: sonda {k + 1} KAPI KALDI -> {kp}")
-    out.to_csv(yol + ".tmp", index=False)
-    Path(yol + ".tmp").replace(yol)
     dgv = np.log1p(out.tuketim.values) - a0
     sabit = float(M0 - 2 * kL + float(dgv @ dgv) / N)
-    ek = dgv - (np.log1p(np.clip(np.expm1(taban), 0.0, None)) - a0)
+    tb = np.log1p(np.clip(np.expm1(taban), 0.0, None)) - a0
+    ek = dgv - tb
     ketkin = float(np.sqrt(float((ek * ek).mean())))
-    # OZ-DENETIM (m152): sabit = TABAN_MSE + toplam r_j^2 + kappa_etkin^2
-    bek = TABAN_MSE + sum(v * v for v in RHO_OLC.values()) + ketkin**2
-    if abs(sabit - bek) > 1e-5:
+    # OZ-DENETIM. Amaci REFERANS SABIT hatasini yakalamak: bir oturum
+    # TABAN_MSE yerine MSE_OPT kullanmis ve 8.5e-05 sapma dogurmustu.
+    # (1) ASIL KORUMA -- TABAN_MSE'yi SIFIRDAN yeniden hesapla. Kirpmadan
+    #     BAGIMSIZDIR, bu yuzden esik cok sikidir.
+    tm_kontrol = float(M0 - 2 * kL + float((r_hat * r_hat).mean()))
+    if abs(TABAN_MSE - tm_kontrol) > 1e-12:
         raise SystemExit(
-            f"DUR: oz-denetim tutmadi. sabit={sabit:.9f} beklenen={bek:.9f} "
-            f"fark={sabit - bek:.2e}. Referans sabit yanlis olabilir."
+            f"DUR: TABAN_MSE tutarsiz. {TABAN_MSE:.12f} vs {tm_kontrol:.12f}. "
+            f"Referans sabit yanlis (MSE_OPT ile karistirilmis olabilir)."
         )
+    # (2) sabit'in ideal cebirden sapmasi YALNIZCA kirpmadan gelmeli.
+    #     Kirpma terimi TAM olculebilir; geriye kalan artik ~0 olmali.
+    #     Eski surum kirpmayi hesaba katmiyordu ve kappa buyuyunce
+    #     (0.0125 -> 0.0517) sonda 2'de boru hattini KILITLIYORDU.
+    _r2 = sum(v * v for v in RHO_OLC.values())
+    ideal = TABAN_MSE + _r2 + ketkin**2
+    kirpma = (
+        2.0 * float((tb * ek).mean())
+        + float((tb * tb).mean())
+        - float((r_hat * r_hat).mean())
+        - _r2
+    )
+    artik = sabit - ideal - kirpma
+    if abs(artik) > 1e-9:
+        raise SystemExit(
+            f"DUR: oz-denetim tutmadi. artik={artik:.3e} (kirpma disi sapma). "
+            f"sabit={sabit:.9f} ideal={ideal:.9f} kirpma={kirpma:.3e}"
+        )
+    if abs(kirpma) > 1e-4:
+        print(f"  UYARI: kirpma sapmasi buyuk ({kirpma:+.2e}) -- kappa cok mu buyuk?")
+    # KAPILAR VE OZ-DENETIM GECTI -> ANCAK SIMDI DISKE YAZ.
+    # Onceden once yazilip sonra abort ediliyordu; kaydi olmayan OKSUZ bir CSV
+    # diskte kaliyordu ve gonderilirse skoru cozulemezdi (bir hak yanardi).
+    out.to_csv(yol + ".tmp", index=False)
+    Path(yol + ".tmp").replace(yol)
     PLAN = [q for q in PLAN if q["sonda"] != k + 1]
     PLAN.append(
         dict(
