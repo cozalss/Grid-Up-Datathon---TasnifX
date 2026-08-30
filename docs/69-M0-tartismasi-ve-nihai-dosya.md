@@ -205,6 +205,10 @@ yarısında sınanır — testin durumu tam budur), beş kesimin medyanı.
 `n=6` en yüksek taşınan değeri veriyor ama sapması 0.696 — ölçülemiyor.
 `n=8`→40 eğilimi temiz, artan, sapması düşen. **n=40 seçildi.**
 
+Sağlamlaştırılmış kurulumla (docs §2.5–2.7) YENİDEN ölçüldü ve örüntü aynı
+çıktı: `n=6` taşınan 0.1151 ama sapma 0.647 (ölçülemiyor); `n=40` taşınan
+0.0956, sapma 0.130. Kesim 40'ta kalıyor.
+
 ---
 
 ## 4. Gönderilecek dosya
@@ -212,16 +216,16 @@ yarısında sınanır — testin durumu tam budur), beş kesimin medyanı.
 ```
 submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
   40 eksen, hepsinde TAVAN DAYANIYOR (katsayi LB-capali, CV'ye degil)
-  rho_pred = 0.2518     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069865
-  sabit = 1.006906082   sifir tahmin 1.207
+  rho_pred = 0.2522     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069917
+  sabit = 1.006915114   sifir tahmin 840
 
-  COZUM:  rho = (1.006906082 - P*P) / 0.139731
+  COZUM:  rho = (1.006915114 - P*P) / 0.139834
 ```
 
 | gerçek `ρ` | skor | sıra |
 |---:|---:|---|
-| 0.2518 | 0.98576 | **2. SIRA** |
-| 0.1762 | 0.99110 | **2. SIRA** |
+| 0.2522 | 0.98572 | **2. SIRA** |
+| 0.1766 | 0.99107 | **2. SIRA** |
 | 0.0793 | 0.99788 | **2. SIRA** ← eşik |
 | 0.0700 | 0.99853 | 3. sıra |
 | 0.0574 | 0.99941 | 4. sıra |
@@ -229,11 +233,11 @@ submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
 | 0.0000 | 1.00341 | 5.+ |
 
 **Doğrulamalar:** işaret kararlılığı tek/çift gün **40/40**, zaman bölmesi
-de **40/40**; trafo-bölmeli çapraz doğrulama tutma **0.904**, plasebo **z=+31.6**;
+de **40/40**; trafo-bölmeli çapraz doğrulama tutma **0.906**, plasebo **z=+33.9**;
 `rcond`-kırılgan eksen **2/40**.
 
-**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2518, yani gereken
-gerçekleşme oranı **%31.5**. Eşiğin üstünde ama **garanti değil** —
+**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2522, yani gereken
+gerçekleşme oranı **%31.4**. Eşiğin üstünde ama **garanti değil** —
 bankaya alınabilecek güvenli bir 2. sıra yolu yok, bilinen en iyi optimumumuz
 1.000985 ve o da 4. sıra.
 

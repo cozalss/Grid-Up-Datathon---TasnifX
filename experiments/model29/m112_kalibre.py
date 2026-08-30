@@ -392,12 +392,17 @@ W_TABAN = 1e-6  # w_i / w_max bunun altindaysa kip atilir
 ANLAM_SIGMA = 2.0  # c_i, sigma_i'nin bu kati kadar buyuk degilse kip atilir
 
 
-def L_gurultusu(V, N, *, tekrar=50, tohum=3):
+def L_gurultusu(V, N, *, tekrar=200, tohum=3):
     """sigma_L_j = (Q_j^tum - Q_j^public)/2 -- yari-orneklem sacilimindan.
 
     Kaggle skoru yalniz public %50 satirda; biz Q'yu tum satirlarda
     hesapliyoruz. Fark, yone ozgu bir olcum gurultusudur ve LB
     yuvarlamasindan (5e-6) ~30 kat buyuktur.
+
+    tekrar=200: 50 tekrar YAKINSAMAMISTI -- tohuma gore ort sigma_L
+    1.84e-04 ile 2.16e-04 arasinda oynuyordu (%17). 200 ve 400 tekrar
+    ayni degeri veriyor (2.20-2.22e-04). Saf optimuma etkisi 1.8e-05,
+    kucuk ama bedava.
     """
     rng = np.random.default_rng(tohum)
     k = V.shape[1]

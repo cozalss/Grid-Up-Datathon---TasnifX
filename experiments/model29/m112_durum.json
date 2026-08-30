@@ -41,5 +41,6 @@
  },
  "notlar": [
   "2026-08-30: 'bekleyen' (hedef996_bilesik) SILINDI. sabit'i hatali formulle (k'Gk yerine k'L) hesaplanmisti; kappa=0.005 oldugu icin cozulen rho +0.0121 kayardi -- olculmus en buyuk sinyalin (0.0304) dort kati. Yeniden uretilmeli."
- ]
+ ],
+ "UYARI_yapisal_gecmis": "yapisal[] ve gecmis[] icindeki L/rho degerleri BAYATTIR: eski (hatali) sabit formuluyle (k'Gk, k'L yerine) ve eski M0 ile uretildiler. GRAM'A GIRMIYORLAR -- bilgi olcumler[] uzerinden CSV+skor olarak giriyor ve o yol dogrudur. Bu degerler yalnizca ekran/belge alintisidir; karar icin KULLANMAYIN, gercek katki Gram'dan yeniden okunmalidir. seviye icin Gram'dan okunan L = +0.003720, yenibaslangic icin +0.004660."
 }

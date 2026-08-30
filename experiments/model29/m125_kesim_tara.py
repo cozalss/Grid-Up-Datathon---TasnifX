@@ -157,16 +157,17 @@ for ad in EKSENLER:
     if xt is None:
         continue
     cc = Gi @ ((V.T @ xt) / N)
-    Lsp = float(cc @ L)
     xp0 = xt - V @ cc
     Qs = 1.0 - float((xp0 * xp0).mean())
-    rho_s = Lsp / np.sqrt(Qs)
+    # m122 ile AYNI: L_span tahmini buzmeli r_hat'ten (docs/69 §2.6)
+    rho_s = float((r_hat * xt).mean()) / np.sqrt(Qs)
     xp = xp0.copy()
     for u in ONC:
         xp -= float((xp * u).mean()) * u
     Qd = float((xp * xp).mean())
     kor = float((ww * rb * xb).mean()) / np.sqrt(float((ww * rb * rb).mean()))
-    beta = np.sign(CARPAN * kor) * TAVAN * abs(rho_s) * np.sqrt(Qd)
+    # m122 ile AYNI: sqrt(Q_dik) CARPANI YOK (docs/69 §2.5)
+    beta = np.sign(CARPAN * kor) * TAVAN * abs(rho_s)
     XT.append(xp / np.sqrt(Qd))
     XB.append(xb)
     BETA.append(beta)
