@@ -211,9 +211,17 @@ for kayit in TARAMA:
     dayanir = abs(rho_cv) >= TAVAN * abs(rho_s)
     if not dayanir:  # KAPI: tavan dayanmiyorsa tahmin CV'ye kalir
         continue
+    # KATSAYI (docs/69 §2.5). seviye kalibrasyonu IKI BIRIM YON arasindaydi:
+    #   rho_s = L_span/sqrt(Q_span) = +0.0156  (span birim yonu)
+    #   rho_u = L_dik /sqrt(Q_dik)  = -0.0304  (dik birim yonu)   oran 1.95
+    # Yani 1.95*|rho_s| DOGRUDAN dik birim yondeki korelasyonun tahminidir ve
+    # u yonundeki optimal katsayi da odur. Eski kod ayrica sqrt(Q_dik) ile
+    # carpiyordu; bu 1.95*|rho_s|'i TUM eksenin korelasyonu sayip izotropiyle
+    # dik parcaya dagitmaya denk gelir -- oysa seviye'de rho_x/rho_s = 0.99,
+    # 1.95 degil. Olcum de sqrt'siz hali destekliyor: blok korelasyonu
+    # 0.2288 vs 0.2269, zaman-bolmeli tutma 1.098 vs 1.057.
     rho_kul = np.sign(rho_cv) * TAVAN * abs(rho_s)
-    b = rho_kul * np.sqrt(Qd)
-    duz += b * (xp / np.sqrt(Qd))
+    duz += rho_kul * (xp / np.sqrt(Qd))
     ONCEKI.append(xp / np.sqrt(Qd))
     kul.append(ad)
     print(

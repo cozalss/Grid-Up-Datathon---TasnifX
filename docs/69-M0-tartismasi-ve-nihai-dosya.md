@@ -92,6 +92,30 @@ yazılmıştı; `κ = 0.005` olduğu için gönderilip `--kaydet` çalıştırı
 **2.4 Çözüm böleni.** Kırpma (`expm1 → 0`) yönü kısaltıyor: ilan edilen
 `κ = 0.070`, gerçekleşen **0.069782**. Çözümde etkin olan kullanılır.
 
+**2.5 KATSAYI FORMÜLÜ — yedinci hata.** Bileşiğe eksen eklerken katsayı
+`1.95·|rho_s|·sqrt(Q_dik)` konuyordu. Yanlış. `seviye` kalibrasyonu **iki
+BİRİM yön** arasındaydı:
+
+```
+rho_s = L_span/sqrt(Q_span) = +0.0156   (span birim yonu)
+rho_u = L_dik /sqrt(Q_dik)  = -0.0304   (dik birim yonu)     oran 1.95
+```
+
+Yani `1.95·|rho_s|` doğrudan **dik birim yöndeki** korelasyonun tahminidir ve
+`u` yönündeki optimal katsayı da odur. Ekstra `sqrt(Q_dik)` çarpanı,
+`1.95·|rho_s|`'i *tüm eksenin* korelasyonu sayıp izotropiyle dik parçaya
+dağıtmaya denk gelir — oysa `seviye`'de `rho_x/rho_s = 0.99`, 1.95 değil.
+`seviye`'de eski formül 0.0246 verirdi, ölçülen 0.0304 (%19 eksik).
+
+Ölçüm de düzeltmeyi destekledi (κ ölçeği ayrı seçildiği için yalnız göreli
+ağırlıklar önemli; "blok kor" o yönün yaz25 artığıyla korelasyonu):
+
+```
+                      formul  rho_pred  blok kor  zaman tut  2.sira f
+   A (eski): rho_kul*sqrt(Qd)   0.2081    0.2269      1.057     0.380
+    B (dogru): rho_kul          0.2685    0.2288      1.098     0.295
+```
+
 ---
 
 ## 3. Eksen sayısı ölçülerek bulundu
@@ -121,16 +145,16 @@ yarısında sınanır — testin durumu tam budur), beş kesimin medyanı.
 ```
 submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
   40 eksen, hepsinde TAVAN DAYANIYOR (katsayi LB-capali, CV'ye degil)
-  rho_pred = 0.2081     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069782
-  sabit = 1.006835337   sifir tahmin 1.934
+  rho_pred = 0.2685     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069815
+  sabit = 1.006839595   sifir tahmin 1.626
 
-  COZUM:  rho = (1.006835337 - P*P) / 0.139565
+  COZUM:  rho = (1.006839595 - P*P) / 0.139629
 ```
 
 | gerçek `ρ` | skor | sıra |
 |---:|---:|---|
-| 0.2081 | 0.98883 | **2. SIRA** |
-| 0.1457 | 0.99322 | **2. SIRA** |
+| 0.2685 | 0.98456 | **2. SIRA** |
+| 0.1879 | 0.99025 | **2. SIRA** |
 | 0.0793 | 0.99788 | **2. SIRA** ← eşik |
 | 0.0700 | 0.99853 | 3. sıra |
 | 0.0574 | 0.99941 | 4. sıra |
@@ -140,14 +164,14 @@ submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
 **Doğrulamalar:** işaret kararlılığı tek/çift gün **40/40**, zaman bölmesi
 **37/40**; trafo-bölmeli çapraz doğrulama tutma **0.857**, plasebo **z=+32.7**.
 
-**Dürüst duruş.** 2. sıra `ρ ≥ 0.0790` istiyor; öngörü 0.2081, zaman-tutmasıyla
-düzeltilmiş taşınan değer **0.0930**. Eşiğin üstünde ama **garanti değil** —
+**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2685, yani gereken
+gerçekleşme oranı **%29.5**. Eşiğin üstünde ama **garanti değil** —
 bankaya alınabilecek güvenli bir 2. sıra yolu yok, bilinen en iyi optimumumuz
 1.000985 ve o da 4. sıra.
 
 ---
 
-## 5. Kalıcı kurallar 65–68
+## 5. Kalıcı kurallar 65–69
 
 **65.** `M0` bir özdeşlik DEĞİL etkin bir sabittir: `P` public %50'de ölçülür,
 `Q` tüm satırlarda hesaplanır. Taban gönderimin skoruna çekmek denklemin iki
@@ -167,3 +191,8 @@ mayına dönüştü.
 **68.** Bileşiğe eksen eklemek `ρ_pred`'i her zaman büyütür ama TAŞINAN kısmı
 büyütmeyebilir. Kesim, zaman-bölmeli tutma ölçülerek bulunmalı; tek kesim
 gürültülüdür, en az beş kesimin medyanı alınmalı.
+
+**69.** Bir kalibrasyon oranının HANGİ İKİ NİCELİK arasında ölçüldüğünü yaz.
+`1.95` iki BİRİM yön korelasyonu arasındaydı; kod onu "tüm eksenin
+korelasyonu" sanıp ayrıca `sqrt(Q_dik)` ile böldü. Aynı sayı, hangi nicelik
+olduğu belirtilmediği için iki farklı formülde kullanıldı.
