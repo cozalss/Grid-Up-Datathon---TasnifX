@@ -1,5 +1,36 @@
 # GENIS SPAN YENIDEN KURULUMU — 31 Agustos 2026
 
+> ## ⚠ EN GUNCEL KARAR (02:10) — asagidaki "136 eksen" ANLATISI ASILDI
+>
+> `n11` blok-disi olcumu, eksen eklemenin GERCEKLESEN `rho`'yu
+> **DUSURDUGUNU** gosterdi. Sabah 136 eksene genisletmek YANLISTI.
+>
+> ```
+> K=17   rho 0.1591  (+%29.8)
+> K=25   rho 0.1642  (+%33.9)   <- TEPE, secildi
+> K=40   rho 0.1451  (+%18.4)
+> K=136  rho 0.1226  (taban)
+> ```
+>
+> Kazanc %95 AO [+%12, +%56], P(iyi) = 1.00. Ongorulen `||BETA||` ise
+> `0.2141 -> 0.4788` BUYUYOR: eksen eklemek **tahmini sisirip gerceklesen
+> `rho`'yu dusuruyor**.
+>
+> `m148` artik `K_AZAMI` (varsayilan **25**) ile kirpiyor.
+>
+> **Guncel beklenti (`n14_birlesik_beklenti.json`):**
+>
+> | yapilandirma | medyan skor | P(1.) | P(2.) | P(ilk uc) |
+> |---|---|---|---|---|
+> | K=136, blok kazanci YOK | 0.99523 | %20.9 | %23.2 | %91.1 |
+> | **K=25, blok kazanci YOK** | **0.99070** | **%40.9** | **%46.4** | **%97.5** |
+> | K=25, blok kazanci VAR (OLCULMEDI) | 0.98450 | %59.1 | %65.6 | %99.1 |
+>
+> Asagidaki bolumler tarihsel kayittir; genis span calismasi bosa gitmedi
+> — `H_carpim40` ailesini acmak, K egrisini olcebilmemizi sagladi ve
+> kesim kararinin dayanagini olusturdu.
+
+
 Bu belge, 31 Agustos gecesi yapilan **buyuk yeniden kurulumu** kaydeder.
 docs/72'nin yerini alir; oradaki plan artik GECERSIZDIR.
 
