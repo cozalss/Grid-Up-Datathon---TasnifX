@@ -65,6 +65,43 @@ ikisinin buzmeli birlesimi, ileri secim.
 
 ---
 
+## 6. hakkin ALTERNATIF kullanimi — UYARLANABILIR 5. SONDA
+
+`docs/76` 6. hakki "dogrulama-ve-onarim" icin ayirmisti. Daha degerli bir
+kullanim var ve karar D4 sonrasina birakilabilir.
+
+**Fikir:** dort blok olculdukten sonra hangi blogun en buyuk `rho`'yu
+tasidigini BILIYORUZ. O blogu ikiye bolup ALT YONUNU olcmek, onceden
+planlanmis bir 5. bloktan kesinlikle daha iyidir.
+
+**Neden:** blok icindeki agirliklandirma da yanlis olabilir. Blok `k`'yi
+iki dik yarima bolersek, ayni Cauchy-Schwarz bir kat asagida isler:
+
+```
+rho_k1^2 + rho_k2^2  =  rho_k^2 / cos^2(phi)
+```
+
+`phi` = blok ICINDEKI gercek dagilimla bizim agirliklandirmamiz arasindaki
+aci. `rho_k = 0.11` ve `cos^2(phi) = 0.7` ise kazanc `0.0052` rho^2 —
+gereken toplamin (`0.0225`) dortte biri. Kucuk bir sayi degil.
+
+**Sira:** D1,D2,D3 (31 Agu) → D4, D5(uyarlanabilir), Z_NIHAI (1 Eyl).
+Tam 6 hak, **yedek kalmaz**.
+
+**KARAR NE ZAMAN:** D4'ten sonra.
+
+| durum | 6. hak |
+|---|---|
+| Zincir temiz yurudu, olculen `rho`'lar beklentiyle tutarli | **D5 uyarlanabilir sonda** |
+| Herhangi bir tutarsizlik ya da surpriz oldu | **Yedek olarak sakla** |
+
+**Uygulama gereksinimi:** `GD_5`, secilen blogun eksen kumesi ICINDE
+yasayan ve `GD_1..GD_4`'e dik bir yon olmalidir. Blok `k`'nin eksenlerini
+`|rho_s|` medyanindan ikiye bolup ust yarinin `BETA`'sini `GD_k`'ye
+diklestirmek yeterlidir. Bu yetenek m148'e EKLENMELIDIR (henuz yok).
+
+---
+
 ## Her degisiklikten sonra ZORUNLU
 
 1. `n07_temiz_kurulum.py` kosulur (sahte dosyalari siler, D1'i yeniden
