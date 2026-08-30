@@ -487,7 +487,26 @@ SABIT_HATA = 1.72e-4  # m112 LOO: kalibre sabitin kendi hatasi
 #   kappa 0.0517 -> toplam kayip 0.000031 rho^2   (16 KAT IYI)
 # 2. sira icin gereken 0.01089 yaninda 0.000490 kucuk degildir.
 # Bu yuzden TEKDUZE 0.0517; kappa_1 zaten D1'in uretildigi degerdir.
-KAPPA_K = np.full(DEMET, 0.05174190699701174)
+# n06_kappa.py: blok basina optimum. Amac fonksiyonu
+#   -sigma(rho)^2 + P(yurutme kazasi) * E[2*kappa*rho_k - kappa^2]
+# ile |c| ~ log-normal(medyan 0.57, %90 GA [0.17,1.26]) uzerinden ornekleme.
+# Sonuc: buyuk bloklarda buyuk kappa. Zincir buyutmesi max 2.0 (guvenli).
+_KJ = os.path.join(M29, "n06_kappa.json")
+if os.path.exists(_KJ):
+    with open(_KJ, encoding="utf-8") as fh:
+        KAPPA_K = np.array(json.load(fh)["kappa_yeni"], dtype=np.float64)
+    if len(KAPPA_K) != DEMET:
+        raise SystemExit(
+            f"DUR: n06_kappa.json {len(KAPPA_K)} kappa veriyor ama {DEMET} blok var. "
+            f"DEMET_HEDEF degistiyse n06_kappa.py'yi TEKRAR KOS."
+        )
+else:
+    # Sifirdan kurulumda kilitlenme olmasin: n06 m148'in ciktisini okur,
+    # m148 de n06'nin ciktisini. Dosya yoksa ESKI tekduze degere DUS ve
+    # yuksek sesle uyar; sonra n06'yi kosup m148'i tekrar kosmak yeter.
+    KAPPA_K = np.full(DEMET, 0.05174190699701174)
+    print("\n  !! UYARI: n06_kappa.json yok -> ESKI tekduze kappa 0.05174.")
+    print("     n06_kappa.py'yi kos, sonra bu betigi TEKRAR kos.\n")
 print()
 print(f"{DEMET} dik yon kuruldu. sqrt(toplam rho_k^2) = {np.sqrt((RHO_K**2).sum()):.4f}")
 dikkat = np.abs(GD @ GD.T / N - np.eye(DEMET)).max()
@@ -722,25 +741,36 @@ if SIRADAKI is None:
     if _sk > 1.00115:
         print("  UYARI: 1.00115 yedeginden KOTU -- son secimde YEDEGI kullan.")
 
-print(f"\n{'toplam rho^2':>13s} {'nihai skor':>11s}  sira")
-for f in [0.0, 0.00349, 0.00973, 0.02175]:
+# KARAR TABLOSU. ONEMLI: siralamayi BUGUNKU tabloya gore soylemek YANILTIR --
+# nihai siralama 1 Eylul 23:59 UTC'deki tabloya gore belirlenir ve rakipler
+# o ana kadar iyilesmeye devam eder. n02_esik_tahmini.json bitis icin
+# 2. sira 0.9897 [0.9870, 0.9908], 1. sira 0.9872 tahmin ediyor.
+# Asagida IKISI de gosterilir ki hangi esige gore konustugumuz belli olsun.
+_ESIK_BUGUN = [
+    (0.990095, "1."),
+    (0.996145, "2."),
+    (0.999275, "3."),
+    (0.999375, "4."),
+    (1.000475, "5."),
+    (1.000495, "6."),
+]
+_ESIK_BITIS = [(0.9872, "1."), (0.9897, "2."), (0.99927, "3.")]
+
+
+def _sira(sk, tablo):
+    for esik, ad in tablo:
+        if sk < esik:
+            return ad
+    return "geride"
+
+
+print(
+    f"\n{'toplam rho^2':>13s} {'nihai skor':>11s}  {'bugunku tablo':>13s}  {'BITIS TAHMINI':>13s}"
+)
+for f in [0.0, 0.00349, 0.00973, 0.01690, 0.02253, 0.03000]:
     sk = np.sqrt(max(TABAN_MSE - f, 1e-9))
-    sr = (
-        "1. SIRA"
-        if sk < 0.990095
-        else "2. SIRA"
-        if sk < 0.996145
-        else "3. sira"
-        if sk < 0.999275
-        else "4. sira"
-        if sk < 0.999375
-        else "5. sira"
-        if sk < 1.000475
-        else "6. sira"
-        if sk < 1.000495
-        else "7.+"
-    )
-    print(f"{f:13.5f} {sk:11.5f}  {sr}")
+    print(f"{f:13.5f} {sk:11.5f}  {_sira(sk, _ESIK_BUGUN):>13s}  {_sira(sk, _ESIK_BITIS):>13s}")
+print("  (bitis tahmini: n02_esik_tahmini.json, 2. sira 0.9897 %80 GA [0.9870, 0.9908])")
 
 yaz_atomik(
     GECMIS_YOL,

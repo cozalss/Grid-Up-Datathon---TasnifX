@@ -37,8 +37,22 @@ TABAN_MSE = 1.00202690323433
 TAVAN = 1.95
 S = 400000
 
+# DIKKAT: m148_demet.json OYNAK bir dosyadir -- zincir sinamasi (m161) ve
+# n07_temiz_kurulum onu git'ten geri aliyor. Bu betik bir kez ESKI dort
+# yonlu surumu (||BETA|| = 0.2775) okuyup YANLIS sayi uretti. Bu yuzden
+# okunan degeri DENETLIYORUZ: genis span kurulusunda dort blogun HEPSI
+# gercek sinyal tasir (hepsi > 0.10); eski kurulusta ucu ~1e-16 idi.
 with open(os.path.join(M29, "m148_demet.json"), encoding="utf-8") as fh:
     ONG = np.array(json.load(fh)["rho_k_tahmin"], dtype=float)
+if os.environ.get("BETA_BLOKLAR"):
+    ONG = np.array([float(x) for x in os.environ["BETA_BLOKLAR"].split(",")])
+    print(f"BETA_BLOKLAR ortam degiskeninden alindi: {ONG.tolist()}")
+if (np.abs(ONG) < 0.10).any():
+    raise SystemExit(
+        f"DUR: m148_demet.json ESKI kurulusu gosteriyor {np.round(ONG, 4).tolist()}.\n"
+        "     Genis span kurulusunda dort blogun hepsi > 0.10 olmali.\n"
+        "     Once n07_temiz_kurulum.py kos, ya da BETA_BLOKLAR=... ver."
+    )
 ONG_TOP = float(np.sqrt((ONG**2).sum()))
 
 with open(os.path.join(M29, "n02_esik_tahmini.json"), encoding="utf-8") as fh:
@@ -109,6 +123,60 @@ for ad, rho, agirlik in [
     print(
         f"{ad:>28s} {np.median(rho):11.4f} {np.median(sk):12.5f} "
         f"{100 * p1:6.1f}% {100 * p2:6.1f}% {100 * p3:7.1f}%"
+    )
+
+# --- BLOK BOLMESI KAZANCI -------------------------------------------------
+# Yukaridaki iki model de TEK BILESIGIN gerceklesen rho'sunu tahmin eder.
+# Oysa m148 tek bilesik gondermiyor: BETA'yi 4 dik bloga bolup her blogun
+# rho'sunu AYRI olcuyor ve OLCULEN degerlerle en iyi bilesimi kuruyor.
+#
+# CEBIR: bloklarda gercek korelasyon vektoru (rho_1..rho_B), bizim ongordugumuz
+# goreli agirliklar w_k = ||BETA_k||/||BETA||. Tek bilesik su kadarini yakalar:
+#     rho_bilesik = toplam_k w_k * rho_k
+# Blok olcumuyle yakalanan ise:
+#     toplam_k rho_k^2
+# Cauchy-Schwarz: (toplam w_k rho_k)^2 <= toplam rho_k^2, esitlik ANCAK
+# rho w ile ORANTILIYSA. Yani
+#     toplam rho_k^2 = rho_bilesik^2 / cos^2(theta)
+# theta = gercek rho vektoru ile ongordugumuz agirliklar arasindaki aci.
+#
+# cos^2(theta) NE OLABILIR? 4 boyutta TAMAMEN RASGELE bir yon icin
+# E[cos^2] = 1/B = 0.25. Kusursuz tahminde 1.0. Bizim tahminimiz aile
+# duzeyinde bir on bilgidir -- rasgeleden iyi, kusursuzdan uzak.
+# Muhafazakar olarak cos^2 ~ Uniform(0.35, 0.95) aliyoruz; bu, kazanc
+# carpaninin rho^2'de 1.05 ile 2.9 arasinda olmasi demektir.
+#
+# BU KAZANC OLCULMEMISTIR -- n09_K_karari.json'un "B blok" sutunu gelince
+# gercek degerle degistirilecek. O zamana kadar burasi BELIRSIZ bir
+# UST YON gostergesidir, kesin bir kazanc degil.
+B_BLOK = 4
+cos2 = rng.uniform(0.35, 0.95, S)
+print(f"\nBLOK BOLMESI KAZANCI eklendiginde (B={B_BLOK}, cos^2 ~ U(0.35,0.95), OLCULMEDI):")
+print(
+    f"{'model':>28s} {'medyan rho':>11s} {'medyan skor':>12s} "
+    f"{'P(1.)':>7s} {'P(2.)':>7s} {'P(ilk3)':>8s}"
+)
+for ad in ["A |c| carpani", "B doyum", "KARISIM %50/%50"]:
+    if ad == "A |c| carpani":
+        rc = model_a()
+    elif ad == "B doyum":
+        rc = model_b()
+    else:
+        ra, rb = model_a(), model_b()
+        rc = np.where(rng.random(S) < 0.5, ra, rb)
+    t2 = np.minimum(rc**2 / cos2, TABAN_MSE - 1e-6)  # tavan: skor >= 0
+    sk = np.sqrt(np.maximum(TABAN_MSE - t2, 1e-9))
+    SONUC[ad + " +blok"] = {
+        "medyan_skor": float(np.median(sk)),
+        "P_1": float((sk <= e1).mean()),
+        "P_2": float((sk <= e2).mean()),
+        "P_3": float((sk <= 0.99927).mean()),
+    }
+    print(
+        f"{ad:>28s} {np.median(np.sqrt(t2)):11.4f} {np.median(sk):12.5f} "
+        f"{100 * float((sk <= e1).mean()):6.1f}% "
+        f"{100 * float((sk <= e2).mean()):6.1f}% "
+        f"{100 * float((sk <= 0.99927).mean()):7.1f}%"
     )
 
 print("\nYORUM")
