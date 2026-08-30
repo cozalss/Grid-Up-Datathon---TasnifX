@@ -16,11 +16,11 @@
   }
  ],
  "bekleyen": {
-  "aday": "seviye_x_ay",
-  "cikti": "tuketim_K_PROBE_seviye_x_ay.csv",
-  "sabit": 1.001065410152843,
-  "kappa": 0.005245907896004393,
-  "Q_dik": 0.9084450986626701
+  "aday": "hedef996_bilesik",
+  "cikti": "tuketim_K_PROBE_TARGET996.csv",
+  "sabit": 1.0010605914108708,
+  "kappa": 0.00500029011261634,
+  "Q_dik": 0.9998839650525223
  },
  "gecmis": [
   {
@@ -31,13 +31,18 @@
   }
  ],
  "plan_31agustos": [
-  "seviye_x_ay",
-  "ay",
+  "hedef996_bilesik",
+  "y46",
+  "p42",
+  "q1c",
+  "sul",
   "nihai"
  ],
  "hazir_dosyalar": {
   "exact_banka": "tuketim_K_EXACT_BANKA.csv",
   "rank2_onsel": "tuketim_K_RANK2_ONSEL.csv",
-  "seviye_x_ay_sondasi": "tuketim_K_PROBE_seviye_x_ay.csv"
+  "seviye_x_ay_sondasi": "tuketim_K_PROBE_seviye_x_ay.csv",
+  "hedef996_cv": "tuketim_K_TARGET996_CV.csv",
+  "hedef996_sondasi": "tuketim_K_PROBE_TARGET996.csv"
  }
 }
