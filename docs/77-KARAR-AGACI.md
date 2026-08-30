@@ -1,5 +1,21 @@
 # KARAR AGACI — olcumler gelince ne yapilacak
 
+> ## ✔ OLCUMLER GELDI — verilen kararlar (31 Agustos 05:00)
+>
+> | olcum | sonuc | KARAR |
+> |---|---|---|
+> | `n09` K egrisi | B=4'te K=25 ile K=136 arasinda **fark yok** (P=0.67). Dusus yalnizca B=1'de. | `K_AZAMI=25` — gerekce **cokus sigortasi**, kazanc degil |
+> | `n09` blok sayisi | B=5 kazanci +0.0035 LB rho^2 ama **P(kazanc>esik) = %54** | `DEMET_HEDEF=4`, 6. hak D4'ten sonra karara birakildi |
+> | `n10` `\|c\|` | **0.434** %90 GA [0.184, 0.798] (eskiden 0.57 [0.17,1.26]) | `n06_kappa` bununla yeniden turetildi |
+> | `n11` agirliklandirma | Anlamli fark **yok**; `sign(rho_cv)` **dogrulandi** (alternatifi %24 kotu) | statuko `KATS` |
+> | `n15` blok bolmesi | Vekilin gurultusu karar esiginin **6 kati** — soru cevaplanamiyor | statuko `oran` |
+> | `n12` kirmizi takim | 7 kusur, ikisi KRITIK (dongusel sinama, bos oz-denetim) | hepsi duzeltildi, `m162` yazildi |
+> | `n17` esik | 2. sira **8 saattir sabit** | bitis tahmini 0.9897 -> **0.99343** |
+>
+> Guncel durumun tamami: **docs/78**. Asagisi karar cerceverisidir, kayit
+> icin duruyor.
+
+
 Dort olcum yurutuluyor. Her birinin sonucu somut bir yapilandirmaya
 baglanir. Amac: sonuc gelince TARTISMAK degil UYGULAMAK.
 

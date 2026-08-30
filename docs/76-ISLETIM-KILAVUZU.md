@@ -95,8 +95,12 @@ Ekranda cozulen `rho_k` ve guncel `toplam rho^2` gorunur.
 1. sonda yalnizca blok 1'i olcmez, **`|c|`'yi de olcer**:
 
 ```
-|c| = 1.95 * rho_1_olculen / ongorulen_1        (ongorulen_1 = 0.3758)
+|c| = 1.95 * rho_1_olculen / ongorulen_1
 ```
+
+`ongorulen_1` betigin **o kosuda yazdirdigi** 1. blok degeridir; guncel
+yapilandirmada **0.1302** (`hava/oran-dusuk`). Elle sabit bir sayi
+kullanma — yapilandirma degistiginde kayar.
 
 `|c|` tum bloklari AYNI oranda olcekler. Onsel belirsizligi yedi kat
 genislikteydi (%90 GA [0.17, 1.26]); olcumden sonra daralir. Kalan
