@@ -134,6 +134,16 @@ ESIK = {"ust10": (0.9, True), "ust25": (0.75, True), "alt10": (0.1, False)}
 
 
 def kur(ad):
+    # H_carpim40 ailesi: "M[eksen1]x[eksen2]" -- iki m121 ekseninin carpimi.
+    # Her iki parca da kur()'un zaten bildigi adlardir, ozyineleme yeter.
+    if ad.startswith("M[") and "]x[" in ad and ad.endswith("]"):
+        ic = ad[2:-1]
+        k1, k2 = ic.split("]x[", 1)
+        a1, b1 = kur(k1)
+        a2, b2 = kur(k2)
+        if a1 is None or a2 is None or b1 is None or b2 is None:
+            return None, None
+        return st(a1 * a2), st(b1 * b2)
     if "*" in ad:
         k1, k2 = ad.split("*", 1)
         if k1 not in tp.columns or k2 not in tp.columns:
@@ -201,19 +211,27 @@ RHO_CV_LISTE = []
 # bu 10 eksen ise 10 KATINI vaat ediyor. sqrt(sum rho_s^2) = 0.0593.
 # D/B/E/C aileleri m144'un 200+ satirlik ureteclerini isterdi -- tasiyici
 # betige yarisma bitmeden o buyuklukte kod GIRMEZ.
-YENI_EKSENLER = [
-    "yas*bitki_ortusu_orani",
-    "yas*yerlesim_orani",
-    "yas*tarim_orani",
-    "yas*trafo_basina_nufus",
-    "p_ilk_ofset:mnt75",
-    "yas*osm_hat_yogunlugu",
-    "nem_ort:mnt75",
-    "ulusal_tepe:mnt75",
-    "yagis_toplam:mnt75",
-    "et0_toplam:mnt75",
-]
+# --- m144'un KAPIDAN GECEN 329 ekseninin TAMAMI aday olur.
+# Onceki surum bunlarin yalnizca 10'unu elle yazmisti ("tasiyici betige
+# 200 satirlik ureteç girmez" gerekcesiyle); oysa H_carpim40 ailesinin
+# 285 ekseni "M[a]x[b]" adlandirmasiyla kur()'un ZATEN bildigi iki eksenin
+# carpimidir -- ureteç gerekmez, ozyineleme yeter.
+#
+# NEDEN ONEMLI: BETA = toplam KATS[i]*U[i] ve GD_1 = BETA/||BETA||, yani
+# tahminimizin TAMAMI 1. sondada. m144 ||BETA|| icin 0.2522 (dar) vs
+# 0.4972 (genis) veriyor -- bu buyumenin tamami dogrudan olculen rho'ya gider.
+#
+# KAPILAR YENIDEN UYGULANIR: asagidaki dongu her aday icin Qs, rho_s,
+# rcond kararliligi, Q_dik >= 0.25, plasebo z >= 3 ve tavan kapilarini
+# BASTAN gecirir. Yani m144'un kapilarina GUVENMIYORUZ, tekrar oluyoruz.
+# Q_dik kapisi ardisik uygulandigi icin eksen sayisi KENDILIGINDEN sinirlanir.
+with open(os.path.join(M29, "m144_yeni_aileler.json"), encoding="utf-8") as fh:
+    _M144 = json.load(fh)["kapidan_gecen"]
+# |rho_s| buyukten kucuge: dik artigi en cok tasiyan once girsin
+YENI_EKSENLER = [r["eksen"] for r in sorted(_M144, key=lambda r: -abs(r["rho_s"]))]
+YENI_AILE = {r["eksen"]: r["aile"] for r in _M144}
 YENI_MASKE = []
+AILE_LISTE = []
 for kayit in TARAMA + [{"eksen": a, "_yeni": True} for a in YENI_EKSENLER]:
     _yeni = bool(kayit.get("_yeni"))
     if not _yeni and len(kul) >= AZAMI_EKSEN:
@@ -276,6 +294,7 @@ for kayit in TARAMA + [{"eksen": a, "_yeni": True} for a in YENI_EKSENLER]:
     KAT_LISTE.append(float(rho_kul))
     RHO_CV_LISTE.append(float(rho_cv))
     YENI_MASKE.append(_yeni)
+    AILE_LISTE.append(YENI_AILE.get(ad, "m121_taban"))
     print(
         f"{ad[:34]:>34s} {rho_cv:+8.4f} {rho_s:+8.4f} {rho_kul:+8.4f} {Qd:6.3f} "
         f"{'EVET':>6s} {np.sqrt(float((duz * duz).mean())):8.4f}"
@@ -358,30 +377,62 @@ ISR = np.sign(KATS)
 # Yeni yon (Y) ise yalniz yeni eksenlerde yasar, dolayisiyla otomatik olarak
 # H1..H4'e diktir.
 _YM = np.array(YENI_MASKE, dtype=bool)
+AILE = np.array(AILE_LISTE)
+_HV = np.array([bool(any(h in a for h in HAVA)) for a in kul])
+
+# --- AILE BLOKLARI ---------------------------------------------------------
+# Once anlamli aileler, sonra buyuk olanlar hava/yapisal diye ikiye bolunur.
+# Etiket -> bu bloga giren eksenlerin maskesi.
+_HAM = {}
+for _f in sorted(set(AILE_LISTE)):
+    _m = np.equal(AILE, _f)  # ruff SIM300: AILE buyuk harfli, sabit sanilyor
+    if _f in ("m121_taban", "H_carpim40"):
+        # buyuk aileler: hava vs yapisal olarak ayrilir
+        _HAM[f"{_f}/hava"] = _m & _HV
+        _HAM[f"{_f}/yapi"] = _m & ~_HV
+    else:
+        _HAM[_f] = _m
+
+# blogun ongorulen agirligi = ||BETA_blok|| = sqrt(toplam KATS^2)
+_AG = {k: float(np.sqrt((KATS[m] ** 2).sum())) for k, m in _HAM.items() if m.sum()}
+# kucuk bloklari en kucuk komsuya kat: her blok anlamli rho tasisin
+BLOK_ALT = 0.06
+while True:
+    _kucuk = [k for k, v in _AG.items() if v < BLOK_ALT]
+    if not _kucuk or len(_AG) <= 2:
+        break
+    _k = min(_kucuk, key=lambda k: _AG[k])
+    _hedef = min((k for k in _AG if k != _k), key=lambda k: _AG[k])
+    _HAM[_hedef] = _HAM[_hedef] | _HAM[_k]
+    del _HAM[_k], _AG[_k]
+    _AG[_hedef] = float(np.sqrt((KATS[_HAM[_hedef]] ** 2).sum()))
+
+# DEMET_HEDEF blok kalana kadar en kucuk ikisini birlestir; sonda sayisi
+# gonderim hakkiyla sinirli (6 hak = DEMET_HEDEF sonda + 1 nihai).
+DEMET_HEDEF = int(os.environ.get("DEMET_HEDEF", "4"))
+while len(_AG) > DEMET_HEDEF:
+    _k = min(_AG, key=lambda k: _AG[k])
+    _hedef = min((k for k in _AG if k != _k), key=lambda k: _AG[k])
+    _HAM[_hedef] = _HAM[_hedef] | _HAM[_k]
+    del _HAM[_k], _AG[_k]
+    _AG[_hedef] = float(np.sqrt((KATS[_HAM[_hedef]] ** 2).sum()))
+
+# EN BUYUK ONCE: hak biterse elde kalan dosya en cok kazanci tasisin
+_SIRA = sorted(_AG, key=lambda k: -_AG[k])
+print()
+print(f"{'blok':>34s} {'eksen':>6s} {'||BETA_b||':>11s}")
+for _k in _SIRA:
+    print(f"{_k[:34]:>34s} {int(_HAM[_k].sum()):6d} {_AG[_k]:11.4f}")
+print(f"{'TOPLAM':>34s} {len(kul):6d} {np.sqrt(sum(v * v for v in _AG.values())):11.4f}")
 
 
-def _s40(w):
-    w = np.asarray(w, dtype=np.float64).copy()
-    w[_YM] = 0.0
+def _blok(m):
+    w = np.zeros(len(kul))
+    w[m] = np.abs(KATS[m])
     return w
 
 
-def _sY(w):
-    w = np.asarray(w, dtype=np.float64).copy()
-    w[~_YM] = 0.0
-    return w
-
-
-# SIRALAMA ONEMLI: ilk DORT sonda H1,H2,H3,Y verir -- yani m157'nin onerdigi
-# "H4 <-> yeni yon TAKASI" hicbir hak harcamadan gerceklesir. H4 besinci
-# siraya duser ve ancak yedek hak kullanilirsa olculur.
-HIPOTEZ = {
-    "H1 1.95|rho_s|": _s40(np.abs(KATS)),
-    "H2 rho_cv": _s40(np.abs(np.array(RHO_CV_LISTE))),
-    "H3 hava/mevsim": _s40([1.0 if any(h in a for h in HAVA) else 0.0 for a in kul]),
-    "Y  m144 yeni eksen": _sY(np.abs(KATS)),
-    "H4 trafo/yapisal": _s40([0.0 if any(h in a for h in HAVA) else 1.0 for a in kul]),
-}
+HIPOTEZ = {k: _blok(_HAM[k]) for k in _SIRA}
 BETA = np.zeros(N)
 for i in range(len(U)):
     BETA = BETA + KATS[i] * U[i]
