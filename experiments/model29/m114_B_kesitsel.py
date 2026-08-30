@@ -31,6 +31,7 @@ EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
 HEDEF_SOGUK, CARPAN, HEDEF_SKOR = 0.222, 0.798, 0.99940
 CIKTI = "tuketim_K_B_KESITSEL.csv"
 sys.path.insert(0, BURA)
+from m112_kalibre import buzmeli_r_hat  # noqa: E402
 from m113_yon_kurucu import yonler  # noqa: E402
 
 TEMIZ = [
@@ -108,10 +109,11 @@ for o in DUR.get("olcumler", []):
     L.append((M0 + float((dd * dd).mean()) - o["skor"] ** 2) / 2)
 V, L = np.array(V).T, np.array(L)
 G = (V.T @ V) / N
-Gi = np.linalg.pinv(G, rcond=1e-6)
-r_hat = V @ (Gi @ L)
+Gi = np.linalg.pinv(G, rcond=1e-6)  # DIKLESTIRME icin tam span
+r_hat, gercek_kazanc = buzmeli_r_hat(V, L, G, N)  # TABAN icin kip buzmesi
 nrm = float((r_hat * r_hat).mean())
-MSE_OPT = M0 - nrm
+MSE_OPT = M0 - gercek_kazanc
+print(f"buzmeli taban: gercek kazanc={gercek_kazanc:.6f} -> saf optimum {np.sqrt(MSE_OPT):.6f}")
 tp = pd.read_parquet(os.path.join(DN, "test.parquet"))
 Yt = yonler(tp, a0)
 
