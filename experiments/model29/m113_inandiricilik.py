@@ -33,10 +33,9 @@ S = os.path.join(KOK, "submissions")
 M29 = os.path.join(KOK, "experiments/model29")
 BURA = os.path.dirname(os.path.abspath(__file__))
 TABAN = "tuketim_m6_ikiyon.csv"  # M0 m112den gelir (docs/69)
-EK_MODEL = {}  # bosaltildi (docs/69): s3y40 kendi skoruyla Gram'da
 HEDEF_SOGUK, CARPAN = 0.222, 0.798
 sys.path.insert(0, M29)
-from m112_kalibre import M0  # noqa: E402
+from m112_kalibre import EK_MODEL, M0  # noqa: E402
 
 sys.path.insert(0, BURA)
 from m113_yon_kurucu import yonler  # noqa: E402

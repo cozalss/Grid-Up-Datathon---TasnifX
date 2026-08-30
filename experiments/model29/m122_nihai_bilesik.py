@@ -33,13 +33,12 @@ S = os.path.join(KOK, "submissions")
 M29 = os.path.join(KOK, "experiments/model29")
 BURA = os.path.dirname(os.path.abspath(__file__))
 TABAN = "tuketim_m6_ikiyon.csv"  # M0 m112den gelir (docs/69)
-EK_MODEL = {}  # bosaltildi (docs/69): s3y40 kendi skoruyla Gram'da
 HEDEF_SOGUK, CARPAN, TAVAN = 0.222, 0.798, 1.95
 HEDEF_2, HEDEF_3 = 0.99790, 0.99940
 RHO_S_ALT = 0.015
 AZAMI_EKSEN = 40  # kesim KAPIDAN gelsin, sert tavandan degil (Kural 64)
 sys.path.insert(0, M29)
-from m112_kalibre import M0, buzmeli_r_hat  # noqa: E402
+from m112_kalibre import EK_MODEL, M0, buzmeli_r_hat  # noqa: E402
 
 te = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"))
 ss = pd.read_csv(os.path.join(KOK, "data/raw/sample_submission.csv"))

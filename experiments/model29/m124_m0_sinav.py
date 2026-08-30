@@ -28,9 +28,8 @@ S = os.path.join(KOK, "submissions")
 M29 = os.path.join(KOK, "experiments/model29")
 BURA = os.path.dirname(os.path.abspath(__file__))
 TABAN = "tuketim_m6_ikiyon.csv"
-EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
 sys.path.insert(0, M29)
-from m112_kalibre import buzmeli_r_hat  # noqa: E402
+from m112_kalibre import EK_MODEL, buzmeli_r_hat  # noqa: E402
 
 te = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"))
 IDS = te.id.values

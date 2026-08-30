@@ -121,10 +121,10 @@ yarısında sınanır — testin durumu tam budur), beş kesimin medyanı.
 ```
 submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
   40 eksen, hepsinde TAVAN DAYANIYOR (katsayi LB-capali, CV'ye degil)
-  rho_pred = 0.2081     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069800
-  sabit = 1.006825406   sifir tahmin 1.741
+  rho_pred = 0.2081     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069782
+  sabit = 1.006835337   sifir tahmin 1.934
 
-  COZUM:  rho = (1.006825406 - P*P) / 0.139604
+  COZUM:  rho = (1.006825406 - P*P) / 0.139565
 ```
 
 | gerçek `ρ` | skor | sıra |
