@@ -1,0 +1,44 @@
+{
+ "bolge_KUZEY B\u00d6": {
+  "cikti": "tuketim_YP_bolge_KUZEY B\u00d6.csv",
+  "kappa": 0.005070064355502381,
+  "Q_dik": 0.972552522765513,
+  "sabit": 1.0019987491242937,
+  "kirpik": 256
+ },
+ "haftasonu": {
+  "cikti": "tuketim_YP_haftasonu.csv",
+  "kappa": 0.005093778960528385,
+  "Q_dik": 0.9635179684878721,
+  "sabit": 1.0019986098920193,
+  "kirpik": 264
+ },
+ "bolge_G\u00dcNEY B\u00d6": {
+  "cikti": "tuketim_YP_bolge_G\u00dcNEY B\u00d6.csv",
+  "kappa": 0.005194175125921078,
+  "Q_dik": 0.9266310152958487,
+  "sabit": 1.001998661365726,
+  "kirpik": 274
+ },
+ "bolge_METROPOL": {
+  "cikti": "tuketim_YP_bolge_METROPOL.csv",
+  "kappa": 0.005197345225511743,
+  "Q_dik": 0.9255009703929483,
+  "sabit": 1.001998563375376,
+  "kirpik": 288
+ },
+ "guc": {
+  "cikti": "tuketim_YP_guc.csv",
+  "kappa": 0.005447494813865077,
+  "Q_dik": 0.8424543124584747,
+  "sabit": 1.0019989059067618,
+  "kirpik": 258
+ },
+ "seviye2": {
+  "cikti": "tuketim_YP_seviye2.csv",
+  "kappa": 0.006136525074538495,
+  "Q_dik": 0.6638882502494092,
+  "sabit": 1.0019995462450426,
+  "kirpik": 40
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "cikti": "tuketim_TS_taban.csv",
+ "aday": null,
+ "nrm": 0.003871724346360592,
+ "kappa": 0.0,
+ "Q_dik": 0.0,
+ "sabit": 1.0019736567331505,
+ "kirpik": 270,
+ "e_norm": 0.0004939185557111375,
+ "kapi": {
+  "satir": 714688,
+  "id_ss": true,
+  "nan": 0,
+  "negatif": 0,
+  "sonsuz": 0,
+  "maks": 181201.59476860892,
+  "taban_maks": 180734.95004543546
+ }
+}
