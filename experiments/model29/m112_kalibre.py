@@ -40,12 +40,82 @@ EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
 # testle ayni Nisan-Temmuz penceresindeki sinyalin LB'de olculen seviye
 # sinyaline oranlanip yaklasik %35 buzulmus halidir.
 RANK2_ONSEL = (("seviye_x_ay", -0.030), ("ay", 0.035))
+# Uc ileri-zaman blogunda isareti degismeyen, test ufkuyla ayni Nisan-Temmuz
+# penceresinde olculen ardisk ortogonal rho'larin %55'i. Bilinen geometriye
+# dik maliyetleri 9.30e-3'tur: 1.00052 guvenli tabandan 0.99586 tasarim onseli.
+HEDEF996_ONSEL = (
+    ("h", 0.064020),
+    ("t_hg_genligi", 0.013200),
+    ("sv_yas", -0.060445),
+    ("h_t_log_ort", -0.020625),
+    ("gunes_radyasyon", -0.014465),
+    ("h_sicaklik_ort", 0.025960),
+    ("ulusal_gunluk", -0.008140),
+)
+HEDEF996_KOLONLAR = [
+    "id",
+    "tarih",
+    "t_hg_genligi",
+    "yas",
+    "t_log_ort",
+    "gunes_radyasyon",
+    "sicaklik_ort",
+    "ulusal_gunluk",
+]
+MODEL_ADAYLAR = {
+    "z2": "tuketim_z2_analog.csv",
+    "sul": "tuketim_t1_sulama.csv",
+    "y46": "tuketim_y46_amnezik_kirpik.csv",
+    "y45": "tuketim_y45_mevsimsel_kirpik.csv",
+    "q1c": "tuketim_q1c_kapasite_siki.csv",
+    "t3": "tuketim_t3_turizm.csv",
+    "p42": "tuketim_p42_seviye_egrilik.csv",
+}
+KORUNAN_CIKTILAR = {TABAN, *EK_MODEL, *MODEL_ADAYLAR.values()}
 
 
-def oku(f):
+def idye_hizala(gonderim, beklenen_idler):
+    """Tam boy gonderimi Kaggle'in kullandigi id anahtariyla test sirasina getir."""
+    beklenen_idler = np.asarray(beklenen_idler)
+    if len(gonderim) != len(beklenen_idler):
+        return gonderim
+    if gonderim.id.duplicated().any() or pd.Index(beklenen_idler).duplicated().any():
+        raise ValueError("gonderim veya test id kumesi mukerrer")
+    if np.array_equal(gonderim.id.values, beklenen_idler):
+        return gonderim
+    konum = pd.Index(gonderim.id).get_indexer(beklenen_idler)
+    if (konum < 0).any():
+        raise ValueError("gonderim id kumesi ham test ile uyusmuyor")
+    return gonderim.iloc[konum].reset_index(drop=True)
+
+
+def oku(f, *, beklenen_idler=None):
     d = pd.read_csv(os.path.join(S, f))
+    if beklenen_idler is not None:
+        d = idye_hizala(d, beklenen_idler)
     k = "tuketim" if "tuketim" in d.columns else d.columns[-1]
     return np.log1p(d[k].values.astype(np.float64))
+
+
+def skoru_dogrula(skor):
+    """Durum dosyasina yalnizca makul ve sonlu bir LB skoru girmesine izin ver."""
+    if skor is None or not np.isfinite(skor) or not 0.0 < float(skor) < 3.0:
+        raise ValueError(f"gecersiz LB skoru: {skor}")
+    return float(skor)
+
+
+def cikti_adini_dogrula(ad, *, ek_korunan=()):
+    """Gonderimi submissions disina veya kaynak modelin ustune yazma."""
+    yol = Path(ad)
+    if (
+        yol.name != ad
+        or yol.is_absolute()
+        or yol.suffix.lower() != ".csv"
+        or ad in KORUNAN_CIKTILAR
+        or ad in ek_korunan
+    ):
+        raise ValueError(f"gecersiz ya da korunan cikti adi: {ad}")
+    return ad
 
 
 def gonderim_olcumu(taban, tahmin, skor, *, m0=M0):
@@ -65,6 +135,16 @@ def gonderim_olcumlerini_ekle(taban, yonler, ic_carpimlar, olcumler, *, okuyucu=
         yon, ic_carpim = gonderim_olcumu(taban, okuyucu(olcum["dosya"]), olcum["skor"], m0=m0)
         yonler.append(yon)
         ic_carpimlar.append(ic_carpim)
+
+
+def dosya_adaylarini_ekle(taban, adaylar, dosyalar, *, okuyucu=oku):
+    """Hazir model ciktilarini tabana gore ham aday yonlere cevir."""
+    taban = np.asarray(taban, dtype=np.float64)
+    for ad, dosya in dosyalar.items():
+        tahmin = np.asarray(okuyucu(dosya), dtype=np.float64)
+        if tahmin.shape != taban.shape:
+            raise ValueError(f"{ad}: satir sayisi uyusmuyor: {len(tahmin)} != {len(taban)}")
+        adaylar[ad] = tahmin - taban
 
 
 def onsele_dayali_duzeltme(adaylar, bilinen, gram, katsayilar, n):
@@ -88,9 +168,64 @@ def onsele_dayali_duzeltme(adaylar, bilinen, gram, katsayilar, n):
     return duzeltme, bilgi
 
 
+def _standartla(degerler, ad):
+    """Eksik/sonsuz degerleri medyanla doldurup merkezli birim yon kur."""
+    x = np.array(degerler, dtype=np.float64, copy=True)
+    sonlu = np.isfinite(x)
+    if not sonlu.any():
+        raise ValueError(f"{ad}: sonlu deger yok")
+    x[~sonlu] = np.median(x[sonlu])
+    x -= x.mean()
+    rms = np.sqrt(float((x * x).mean()))
+    if rms < 1e-12:
+        raise ValueError(f"{ad}: sabit yon")
+    return x / rms
+
+
+def hedef996_yonleri(ozellikler, a0):
+    """Ileri-zaman CV'de kararlı kalan yedi ham 0.996 eksenini yeniden kur."""
+    tarih = pd.to_datetime(ozellikler["tarih"])
+    ay = tarih.dt.month.to_numpy(dtype=np.float64)
+    gun = tarih.dt.day.to_numpy(dtype=np.float64)
+    h = _standartla(ay - ay.min() + (gun - 1.0) / 31.0, "h")
+    sv = _standartla(a0, "seviye")
+    yas = _standartla(ozellikler["yas"].to_numpy(), "yas")
+    t_log_ort = _standartla(ozellikler["t_log_ort"].to_numpy(), "t_log_ort")
+    sicaklik = _standartla(ozellikler["sicaklik_ort"].to_numpy(), "sicaklik_ort")
+    ham = {
+        "h": h,
+        "t_hg_genligi": ozellikler["t_hg_genligi"].to_numpy(),
+        "sv_yas": sv * yas,
+        "h_t_log_ort": h * t_log_ort,
+        "gunes_radyasyon": ozellikler["gunes_radyasyon"].to_numpy(),
+        "h_sicaklik_ort": h * sicaklik,
+        "ulusal_gunluk": ozellikler["ulusal_gunluk"].to_numpy(),
+    }
+    return {ad: _standartla(yon, ad) for ad, yon in ham.items()}
+
+
+def hedef996_paketi(te, a0, bilinen, gram):
+    """Test ozelliklerinden hedef duzeltmeyi ve tek-haklik bilesik sondayi kur."""
+    yol = os.path.join(KOK, "data/interim/deney/test.parquet")
+    ozellikler = pd.read_parquet(yol, columns=HEDEF996_KOLONLAR)
+    if len(ozellikler) != len(te) or not np.array_equal(ozellikler.id.values, te.id.values):
+        raise ValueError("hedef996 ozellikleri ham test ile ayni sirada degil")
+    yonler = hedef996_yonleri(ozellikler, a0)
+    duzeltme, bilgi = onsele_dayali_duzeltme(
+        yonler,
+        bilinen,
+        gram,
+        HEDEF996_ONSEL,
+        len(te),
+    )
+    yonler["hedef996_bilesik"] = _standartla(duzeltme, "hedef996_bilesik")
+    return yonler, duzeltme, bilgi
+
+
 def durum_yukle():
     if os.path.exists(DURUM):
-        return json.load(open(DURUM))
+        with open(DURUM) as akim:
+            return json.load(akim)
     # seviye 2026-08-30'da olculdu: skor 1.00115
     return {
         "yapisal": {"seviye": -0.024649},
@@ -154,26 +289,32 @@ def yapisal_yonler(te, a0, tr_tanim):
 
 def kur(te, a0, N, d):
     """Bilinen her seyden r_hat kur. Doner: r_hat, izdusum fonksiyonu."""
-    SK = json.load(open(os.path.join(BURA, "olculmus_skorlar.json")))
+    with open(os.path.join(BURA, "olculmus_skorlar.json")) as akim:
+        SK = json.load(akim)
     V, L = [], []
     for f, P in SK.items():
         if f == TABAN or not os.path.exists(os.path.join(S, f)):
             continue
-        v = oku(f)
+        v = oku(f, beklenen_idler=te.id.values)
         if len(v) != N:
             continue
         dd = v - a0
         V.append(dd)
         L.append((M0 + float((dd * dd).mean()) - P * P) / 2)
     for f, Lj in EK_MODEL.items():
-        V.append(oku(f) - a0)
+        V.append(oku(f, beklenen_idler=te.id.values) - a0)
         L.append(Lj)
     # Yapisal adaylar yalnizca yeni sonda uretmek icin yeniden kurulur. Olculmus
     # sondalar Gram'a gonderilen CSV'nin kendisiyle eklenir; boylece yon tanimi
     # sonradan degisse bile gorulen LB skoru birebir yeniden uretilir.
     tr = pd.read_csv(os.path.join(KOK, "data/raw/train.csv"), usecols=["tanim"])
     Y = yapisal_yonler(te, a0, set(tr.tanim.unique()))
-    gonderim_olcumlerini_ekle(a0, V, L, d.get("olcumler", []))
+
+    def guvenli_oku(dosya):
+        return oku(dosya, beklenen_idler=te.id.values)
+
+    dosya_adaylarini_ekle(a0, Y, MODEL_ADAYLAR, okuyucu=guvenli_oku)
+    gonderim_olcumlerini_ekle(a0, V, L, d.get("olcumler", []), okuyucu=guvenli_oku)
     V = np.array(V).T
     L = np.array(L)
     G = (V.T @ V) / N
@@ -189,14 +330,28 @@ def main():
     ap.add_argument("--liste", action="store_true")
     ap.add_argument("--nihai", action="store_true")
     ap.add_argument("--rank2", action="store_true")
+    ap.add_argument("--hedef996", "--target996", dest="hedef996", action="store_true")
+    ap.add_argument("--bekleyeni-degistir", action="store_true")
     ap.add_argument("--kaydet")
     ap.add_argument("--skor", type=float)
     a = ap.parse_args()
     d = durum_yukle()
-
+    if a.cikti:
+        with open(os.path.join(BURA, "olculmus_skorlar.json")) as akim:
+            ek_korunan = set(json.load(akim))
+        ek_korunan.update(o["dosya"] for o in d.get("olcumler", []))
+        try:
+            cikti_adini_dogrula(a.cikti, ek_korunan=ek_korunan)
+        except ValueError as hata:
+            raise SystemExit(str(hata)) from hata
+    if a.kaydet:
+        try:
+            a.skor = skoru_dogrula(a.skor)
+        except ValueError as hata:
+            raise SystemExit(str(hata)) from hata
     te = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"))
     ss = pd.read_csv(os.path.join(KOK, "data/raw/sample_submission.csv"))
-    a0 = oku(TABAN)
+    a0 = oku(TABAN, beklenen_idler=te.id.values)
     N = len(a0)
     r_hat, V, G, Y = kur(te, a0, N, d)
     nrm = float((r_hat * r_hat).mean())
@@ -218,10 +373,13 @@ def main():
         print("KAYDEDILDI. Yeni taban icin --liste calistir.")
         return
 
-    if sum(bool(x) for x in (a.aday, a.nihai, a.rank2)) > 1:
-        raise SystemExit("--aday, --nihai ve --rank2 birlikte kullanilamaz")
+    hedef_yonler, hedef_duzeltme, hedef_bilgi = hedef996_paketi(te, a0, V, G)
+    Y.update(hedef_yonler)
 
-    if a.liste or not (a.aday or a.nihai or a.rank2):
+    if sum(bool(x) for x in (a.aday, a.nihai, a.rank2, a.hedef996)) > 1:
+        raise SystemExit("--aday, --nihai, --rank2 ve --hedef996 birlikte kullanilamaz")
+
+    if a.liste or not (a.aday or a.nihai or a.rank2 or a.hedef996):
         print(f"\n{'aday':>22s} {'Q_dik':>9s} {'span-disi':>10s} {'rho=0.03 kazanci':>17s}")
         dosya_adaylari = [(o["aday"], None) for o in d.get("olcumler", []) if o["aday"] not in Y]
         for ad, x in list(Y.items()) + dosya_adaylari:
@@ -235,7 +393,24 @@ def main():
         print(f"\nolculen yapisal: {json.dumps(d['yapisal'], indent=1)}")
         return
 
-    if a.rank2:
+    if a.aday and d.get("bekleyen") and not a.bekleyeni_degistir:
+        raise SystemExit(
+            f"bekleyen sonda var: {d['bekleyen']['aday']}; "
+            "degistirmek icin --bekleyeni-degistir kullan"
+        )
+
+    if a.hedef996:
+        p = a0 + r_hat + hedef_duzeltme
+        etiket = "HEDEF996 (ileri-zaman CV onseli)"
+        kap, Qd, xp = 0.0, 0.0, None
+        maliyet = float((hedef_duzeltme * hedef_duzeltme).mean())
+        onsel_skor = np.sqrt(max(M0 - nrm - maliyet, 0.0))
+        print(f"\n{etiket}:")
+        for satir in hedef_bilgi:
+            print(f"  {satir['aday']:18s} beta={satir['katsayi']:+.6f} Q_dik={satir['Q_dik']:.4f}")
+        print(f"  sifir-sinyal geometri maliyeti = {maliyet:.6f}")
+        print(f"  CV onseli dogruysa beklenen skor = {onsel_skor:.5f}")
+    elif a.rank2:
         duzeltme, bilgi = onsele_dayali_duzeltme(Y, V, G, RANK2_ONSEL, N)
         p = a0 + r_hat + duzeltme
         etiket = "RANK2 ONSEL (kontrollu agresif)"
@@ -292,6 +467,8 @@ def main():
         print(f"BEKLENEN SKOR {np.sqrt(sabit):.5f}  (tum L'ler olculmus)")
     elif a.rank2:
         print("HEDEF: seviye_x_ay rho<=-0.035 ve ay rho>=+0.040 ise 2. sira asilir")
+    elif a.hedef996:
+        print("HEDEF: 0.99600; bu CV onselidir, gercek skor bilesik LB sondasiyla kalibre edilir")
     else:
         d["bekleyen"] = dict(aday=a.aday, cikti=a.cikti, sabit=sabit, kappa=kap, Q_dik=Qd)
         durum_kaydet(d)
