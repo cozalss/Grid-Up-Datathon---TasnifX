@@ -268,6 +268,11 @@ Tüm saatler **Türkiye saati (UTC+3)**. `PY = ./.venv/Scripts/python.exe`
 | 2 | `$PY -m kaggle competitions submissions -c grid-up-datathon -v \| head -3` | en üst satırın damgası | `2026-08-30 05:07` olmalı; başka bir şey varsa **DUR** |
 | 3 | `ls -l submissions/tuketim_D1_demet.csv` | 28 394 529 bayt | tutmuyorsa dosyayı yeniden üret |
 | 4 | tarayıcıda Kaggle'a gir, submissions sayfasını aç | oturum açık mı | §3 ve §4.5 için şart |
+| 5 | **aynı sayfada** *"You selected X of N"* metnini oku | **N kaç?** | **N=2 ise plan aynen yürür. N=1 ise DUR ve haber ver — yedek stratejisi çöker, karar baştan hesaplanır** |
+
+> **Adım 5 atlanamaz.** Community yarışmalarında seçilebilecek gönderim
+> sayısı host ayarıdır (§3c); 2 olduğu **garanti değil** ve API'den
+> öğrenilemez. Tüm "aşağı yön kapalı" iddiası N≥2 varsayımına dayanıyor.
 
 ### T+1: 31 Ağustos 03:00 — SONDA 1
 
@@ -330,10 +335,16 @@ sonraya bırakılmaz.
 ### T+6: 1 Eylül, en geç 22:00 yerel — SON SEÇİM (tarayıcı)
 
 1. `https://www.kaggle.com/competitions/grid-up-datathon/submissions` aç.
-2. **İki** gönderim işaretle:
+2. *"You selected X of **N**"* metnini bir kez daha oku (T-0 adım 5'te
+   okunmuştu; teyit et).
+3. **N ≥ 2 ise** iki gönderim işaretle:
    - `tuketim_Z_NIHAI.csv` (ya da o ana kadarki en iyi birleşik)
    - `tuketim_YP_seviye.csv` — public 1.00115, **YEDEK**
-3. Sayfayı **yenile** ve işaretlerin durduğunu gözle doğrula.
+
+   **N = 1 ise** tek seçim yapılır ve kural şudur: ölçülen `toplam rho^2`
+   §3 tablosunda **3. sıra eşiğini (0.00349) net geçiyorsa** `Z_NIHAI`,
+   **geçmiyorsa** `tuketim_YP_seviye.csv`. Kararı vermeden önce haber ver.
+4. Sayfayı **yenile** ve işaretlerin durduğunu gözle doğrula.
    API bunu okuyamaz (§3); tek doğrulama gözdür — ekran görüntüsü al.
 
 > Seçim son ana bırakılmaz: bitiş 2 Eylül 02:59 yerel, hedef **2 Eylül 01:00**,
