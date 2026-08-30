@@ -120,9 +120,27 @@ carpanini olcer** — iki gundur tahmin etmeye calistigimiz sayiyi.
 1. sirayi hedeflemenin **ek maliyeti yok**: ayni 4 sonda hem 2. hem 1.
 sirayi acar, fark yalnizca beklentidedir.
 
-### Adim 3 — Dort yon de olculunce
+### Adim 3 — Dort yon de olculunce → **`NIHAI=1` SART**
+
+> ### ⚠ BU ADIM ATLANIRSA NIHAI DOSYA HIC URETILMEZ
+>
+> 23:20 guncellemesiyle **bes yon** var (H1, H2, H3, Y, H4) ama planimiz
+> **dort sonda**. Betik varsayilan olarak **besinin besini** bekler ve
+> dorduncu olcumden sonra yalnizca "SIRADAKI: sonda 5" der.
+>
+> Dorduncu skoru girdikten sonra betigi **soyle** kos:
+>
+> ```
+> NIHAI=1 ./.venv/Scripts/python.exe experiments/model29/m148_demet_plani.py
+> ```
+>
+> Ciktida `[KACIS] NIHAI=1 -> 4 olcumle nihai uretiliyor` gormelisin.
+> Sinandi: 4 olcumle uretilen `Z_NIHAI`'nin beklenen skoru gercekle birebir.
 
 Betik `submissions/tuketim_Z_NIHAI.csv` uretir. **Asil gonderim budur.**
+
+Yedek hak kalirsa 5. sonda (`H4 trafo/yapisal`) da olculebilir; o zaman
+`NIHAI=1` gerekmez, betik kendiliginden nihaiyi uretir.
 
 ### Adim 4 — SON SECIM (yalnizca tarayicidan yapilir, API'de yok)
 
