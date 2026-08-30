@@ -187,6 +187,45 @@ korumalidir.**
 Karar `n09_K_karari.json` ile verilecek. Sonuca gore `K_AZAMI` ortam
 degiskeniyle eksen sayisi tek komutla kirpilir.
 
+### GUNCELLEME 01:45 — `|c|` OLCULDU, tablo degisti
+
+`n10` `|c|`'yi **LB'nin kendi 29 olcumu uzerinde** birak-birini-disarida
+ile olctu (vekil blok kullanmadan, span cebirinin tam ic carpimlariyla):
+
+```
+|c| = 0.43   %90 GA [0.18, 0.80]     (eskiden 0.57 [0.17, 1.26])
+```
+
+Merkez daha DUSUK, aralik daha DAR. Iki yan bulgu:
+
+- **`sigma_L` dogrudan olculdu.** `G`'nin uc TAM SIFIR kipi var; `Vu = 0`
+  oldugu icin `u'L = 0` olmak ZORUNDA ve gozlenen sapma saf olcum
+  hatasidir: **2.94e-06**, LB yuvarlamasinin 1.02 kati. m112'nin varsaydigi
+  `2.27e-04` (77 kat buyuk) **veriyle reddedildi**. Ayni kipler
+  `|ΔM0| <= 4e-06` siniri da koyuyor; `M0 = 1.005846366` bu testi geciyor.
+- **`1.95` carpani pratikte dislandi:** `P(|c| >= 1.95) = 0.0004`.
+  m148 bundan **zarar gormez** (`rho`'yu LB'de olcer, katsayiyi olcumden
+  koyar). Ama m117–m125 ailesinden hazir bir dosya gonderilseydi
+  katsayilari `rho_s^2 (2·1.95·0.43 − 1.95^2) = −2.13 rho_s^2`, yani
+  **negatif kazanc** verirdi.
+
+**Olculen `|c|` ile guncel tablo:**
+
+| durum | medyan skor | P(1.) | P(2.) | P(ilk uc) |
+|---|---|---|---|---|
+| blok kazanci HARIC | 0.99344 | %20.5 | %23.4 | **%95.4** |
+| blok kazanci dahil (OLCULMEDI) | 0.98924 | %43.7 | %52.7 | %98.1 |
+
+Iki model (`|c|` ve doyum) olculen `|c|` ile **birbirine yakinsadi** —
+ikisi de P(2.) ~ %23 veriyor.
+
+**Okunusu:** 3. sira (basari esigi) **%95+ ile hemen hemen kesin**.
+2. sira tamamen **blok bolmesi kazancinin** buyuklugune bagli, ve o kazanc
+henuz olculmedi. `n09` tam onu olcuyor.
+
+`kappa` da olculen degerlerle yeniden turetildi:
+**`[0.052, 0.050, 0.045, 0.040]`** (zincir buyutmesi en fazla 2.09).
+
 **Doyum dogrulanirsa tasarim sonucu:** darbogaz eksen sayisi degil
 AGIRLIKLANDIRMA hatasidir. m148'in blok bolmesi tam da onu onarir
 (bloklar arasi agirligi LB secer). O durumda **blok sayisini 4'ten 5'e
