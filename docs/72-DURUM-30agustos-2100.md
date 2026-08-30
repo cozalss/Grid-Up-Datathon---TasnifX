@@ -32,7 +32,7 @@ IYISINI alir.**
 
 ---
 
-Gonderim mekaniginin tam dokumu: 
+Gonderim mekaniginin tam dokumu: `docs/73-gonderim-mekanigi.md`
 
 ---
 
@@ -72,13 +72,40 @@ Betik `submissions/tuketim_Z_NIHAI.csv` uretir. **Asil gonderim budur.**
 
 ### Adim 4 — SON SECIM (yalnizca tarayicidan yapilir, API'de yok)
 
-Kaggle arayuzunde **iki gonderim** isaretle:
+> ### ⚠ ONCE BUNU DOGRULA — TUM STRATEJI BUNA BAGLI
+>
+> Community yarismalarinda **kac gonderim secilebilecegi HOST AYARIDIR**;
+> 2 oldugu **garanti degildir** (Kaggle Community Competitions Setup Guide,
+> "Scored Private Submissions" ayari). Tarayiciya girer girmez **ILK IS**
+> yarismanin **My Submissions** sekmesindeki *"You selected X of N"*
+> metnini oku.
+>
+> - **N = 2 ise:** asagidaki plan aynen gecerli, asagi yon KAPALI.
+> - **N = 1 ise:** yedek strateji **CALISMAZ**. O durumda tek secim
+>   yapilabilir ve karar tamamen degisir: olculen `toplam rho^2` guvenli
+>   sinirin altindaysa `Z_NIHAI` yerine **`tuketim_YP_seviye.csv` (1.00115)**
+>   secilmelidir. Bana haber ver, yeniden hesaplarim.
+
+Kaggle arayuzunde (**My Submissions** sekmesi) **iki gonderim** isaretle:
 
 1. `tuketim_Z_NIHAI.csv` (ya da o ana kadarki en iyi demet dosyasi)
 2. `tuketim_YP_seviye.csv` — **1.00115, YEDEK**
 
-Yedek isaretli kaldigi surece **kaybetme riski yoktur**; Kaggle ikisinin
-iyisini alir. En gec **1 Eylul 23:00 UTC**'ye kadar yapilmali.
+Yedek isaretli kaldigi surece **kaybetme riski yoktur**; Kaggle secilenler
+arasindan **private'ta iyi olani** alir.
+
+**Uc kritik kural:**
+
+1. **Otomatige BIRAKMA.** Secim yapilmazsa Kaggle otomatik secer, ama
+   kriteri (*"en yuksek public"*) resmi dokumanda **belgeli degil** ve
+   otomatik secimin aksadigi kayitli bir vaka var (2019 NDSC Advanced).
+   Ustelik bizim sondalarimiz public'te KOTU skor verebilir; otomatik secim
+   yanlis dosyalari isaretleyebilir.
+2. **Secilecek dosya SKORLANMIS olmali.** Gonderilmemis bir dosya
+   secilemez — `Z_NIHAI` diskte durmasi hicbir sey ifade etmez, **Kaggle'a
+   gonderilmis olmali.**
+3. **Erken yap.** En gec **1 Eylul 22:00 UTC = 2 Eylul 01:00 yerel**;
+   bitise dakikalar kala birakma.
 
 ---
 
