@@ -116,6 +116,40 @@ ağırlıklar önemli; "blok kor" o yönün yaz25 artığıyla korelasyonu):
     B (dogru): rho_kul          0.2685    0.2288      1.098     0.295
 ```
 
+**2.6 `rho_s` REGULARIZASYONA KIRILGANDI — sekizinci hata.** Bileşiğin her
+katsayısı `1.95·|rho_s|` ile belirleniyor ve `rho_s = c'L / sqrt(Q_span)`,
+`c = pinv(G, rcond)(V'x/N)`. `G`'nin tekil değerleri `…3.9e-06, 5.3e-07…` ve
+`rcond=1e-6` kesimi (6.6e-07) **tam aralarına** düşüyor. `c`, o neredeyse-tekil
+kipe büyük katsayı verince `L`'nin gürültüsünü büyütüyordu:
+
+```
+40 eksenin 12'si rcond'a KIRILGAN
+t_yuk_faktoru:  rho_s = -0.00401 (1e-4)   -0.01996 (1e-6)     5 KAT
+```
+
+Yani o eksenin katsayısı 5 kat fazlaydı.
+
+**Çözüm:** `L_span = <r_hat, x>/N`. `r_hat` zaten kip başına optimal büzmeyle
+kurulmuş, gürültü-farkındalıklı tahmindir (`m112.buzmeli_r_hat`) ve tekil
+kipleri kendiliğinden öldürür. Geometri (`x_perp`) için `pinv` kullanılmaya
+devam eder — orada gürültü yok, yalnızca izdüşüm var. Ayrıca `rcond` 1e-5 ile
+1e-6 arasında %30'dan fazla oynayan eksenler elenir.
+
+```
+kirilgan eksen   12/40 -> 2/40
+capraz tutma     0.857 -> 0.896
+isaret (zaman)   37/40 -> 39/40
+ic korelasyon   0.2784 -> 0.2846
+```
+
+**Elenen iki denetim (hata BURADA DEĞİLDİ):**
+- Eşik kesitleri (`ust10`/`ust25`): eşik test dağılımından alınıp bloğa
+  uygulanıyor; 11 kesitin hiçbiri blokta dengesiz değil.
+- NaN doldurma uyuşmazlığı: `t_*` sütunları test'te %22-28, blokta %7.5-8.9
+  NaN (soğuk trafo payı farkı). Ağırlıklı standartlaştırmayla karşılaştırdım:
+  **40/40 işaret aynı** kaldı, büyüklükler ~%20 kaydı. CV'den yalnız işaret
+  alındığı için bileşiğin yönü etkilenmiyor.
+
 ---
 
 ## 3. Eksen sayısı ölçülerek bulundu
@@ -145,16 +179,16 @@ yarısında sınanır — testin durumu tam budur), beş kesimin medyanı.
 ```
 submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
   40 eksen, hepsinde TAVAN DAYANIYOR (katsayi LB-capali, CV'ye degil)
-  rho_pred = 0.2685     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069815
-  sabit = 1.006839595   sifir tahmin 1.626
+  rho_pred = 0.2406     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069883
+  sabit = 1.006854592   sifir tahmin 1.586
 
-  COZUM:  rho = (1.006839595 - P*P) / 0.139629
+  COZUM:  rho = (1.006854592 - P*P) / 0.139766
 ```
 
 | gerçek `ρ` | skor | sıra |
 |---:|---:|---|
-| 0.2685 | 0.98456 | **2. SIRA** |
-| 0.1879 | 0.99025 | **2. SIRA** |
+| 0.2406 | 0.98652 | **2. SIRA** |
+| 0.1684 | 0.99162 | **2. SIRA** |
 | 0.0793 | 0.99788 | **2. SIRA** ← eşik |
 | 0.0700 | 0.99853 | 3. sıra |
 | 0.0574 | 0.99941 | 4. sıra |
@@ -162,16 +196,17 @@ submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
 | 0.0000 | 1.00341 | 5.+ |
 
 **Doğrulamalar:** işaret kararlılığı tek/çift gün **40/40**, zaman bölmesi
-**37/40**; trafo-bölmeli çapraz doğrulama tutma **0.857**, plasebo **z=+32.7**.
+**39/40**; trafo-bölmeli çapraz doğrulama tutma **0.896**, plasebo **z=+22.8**;
+`rcond`-kırılgan eksen **2/40**.
 
-**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2685, yani gereken
-gerçekleşme oranı **%29.5**. Eşiğin üstünde ama **garanti değil** —
+**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2406, yani gereken
+gerçekleşme oranı **%32.9**. Eşiğin üstünde ama **garanti değil** —
 bankaya alınabilecek güvenli bir 2. sıra yolu yok, bilinen en iyi optimumumuz
 1.000985 ve o da 4. sıra.
 
 ---
 
-## 5. Kalıcı kurallar 65–69
+## 5. Kalıcı kurallar 65–70
 
 **65.** `M0` bir özdeşlik DEĞİL etkin bir sabittir: `P` public %50'de ölçülür,
 `Q` tüm satırlarda hesaplanır. Taban gönderimin skoruna çekmek denklemin iki
@@ -196,3 +231,9 @@ gürültülüdür, en az beş kesimin medyanı alınmalı.
 `1.95` iki BİRİM yön korelasyonu arasındaydı; kod onu "tüm eksenin
 korelasyonu" sanıp ayrıca `sqrt(Q_dik)` ile böldü. Aynı sayı, hangi nicelik
 olduğu belirtilmediği için iki farklı formülde kullanıldı.
+
+**70.** Gürültülü bir ölçüm vektörünü (`L`) neredeyse-tekil bir Gram ile
+çarpan HER ifade büzmeli tahminle kurulmalıdır, yalnız `r_hat` değil.
+`rho_s = c'L` aynı kırılganlığı taşıyordu ve 40 eksenin 12'sinde katsayıyı
+5 kata kadar şişiriyordu. Geometri (izdüşüm) ile TAHMİN (gürültülü `L` ile
+çarpım) ayrılmalı: birincisi `pinv`, ikincisi büzme.

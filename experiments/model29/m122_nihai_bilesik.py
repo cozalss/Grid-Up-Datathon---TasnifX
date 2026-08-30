@@ -84,6 +84,7 @@ for o in DUR.get("olcumler", []):
 V, L = np.array(V).T, np.array(L)
 G = (V.T @ V) / N
 Gi = np.linalg.pinv(G, rcond=1e-6)
+GI5 = np.linalg.pinv(G, rcond=1e-5)  # rcond kararlilik kapisi icin
 r_hat, gercek, kL = buzmeli_r_hat(V, L, G, N)
 nrm = float((r_hat * r_hat).mean())
 MSE_OPT = M0 - gercek
@@ -188,14 +189,29 @@ for kayit in TARAMA:
     xt, xb = kur(ad)
     if xt is None or xb is None:
         continue
+    # GEOMETRI (izdusum) -- burada gurultu yok, pinv dogrudan kullanilir
     cc = Gi @ ((V.T @ xt) / N)
-    Lsp = float(cc @ L)
     xp0 = xt - V @ cc
     Qs = 1.0 - float((xp0 * xp0).mean())
     if Qs < 0.02:
         continue
-    rho_s = Lsp / np.sqrt(Qs)
+    # L_span TAHMINI (docs/70). Eskiden c'L kullaniliyordu; c neredeyse-tekil
+    # kiplere buyuk katsayi verdigi icin L'nin gurultusunu buyutuyordu.
+    # G'nin tekil degerleri ...3.9e-06, 5.3e-07... ve rcond=1e-6 kesimi
+    # (6.6e-07) tam aralarina dusuyor: 40 eksenin 12'si rcond'a kirilgandi,
+    # t_yuk_faktoru'nde rho_s 1e-4'te -0.004, 1e-6'da -0.020 (5 KAT).
+    # r_hat zaten kip basina optimal buzmeyle kurulmus gurultu-farkindalikli
+    # tahmindir; <r_hat, x>/N kararlidir (kirilgan eksen 12 -> 2).
+    rho_s = float((r_hat * xt).mean()) / np.sqrt(Qs)
     if abs(rho_s) < RHO_S_ALT:
+        continue
+    # RCOND KARARLILIK KAPISI: geometri de rcond'a asiri duyarli olmasin
+    cc5 = GI5 @ ((V.T @ xt) / N)
+    xp5 = xt - V @ cc5
+    Qs5 = 1.0 - float((xp5 * xp5).mean())
+    if Qs5 < 0.02:
+        continue
+    if abs(float((r_hat * xt).mean()) / np.sqrt(Qs5) - rho_s) > 0.3 * abs(rho_s):
         continue
     xp = xp0.copy()
     for u in ONCEKI:
