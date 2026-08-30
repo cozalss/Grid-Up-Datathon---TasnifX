@@ -375,8 +375,16 @@ DEMET = len(GD)
 # m112'nin LOO'suna gore ort |hata| = 1.72e-04. Bu da 1/(2*kappa) ile buyur.
 # ---------------------------------------------------------------------------
 SABIT_HATA = 1.72e-4  # m112 LOO: kalibre sabitin kendi hatasi
-KAPPA_K = np.full(DEMET, 0.0125)
-KAPPA_K[0] = 0.05174190699701174  # D1 GONDERILDI/URETILDI -- ASLA DEGISTIRME
+# ZINCIR KARARLILIGI (kirmizi takim K1). m150 kappa_2..4 = 0.0125 onermisti;
+# o optimizasyon YALNIZCA sondanin kendi yedek degerine bakiyordu ve ZINCIR
+# BUYUTMESINI atlamisti. Capraz terim kappa_k'ya BOLUNUR:
+#   rho_1'deki e_1 hatasi -> rho_4'te -r_1*e_1/kappa_4  (kazanc r_1/kappa_4)
+# r_1 = 0.1475 (1. sira senaryosu) ve kappa_4 = 0.0125 iken kazanc 11.8:
+#   kappa 0.0125 -> toplam kayip 0.000490 rho^2
+#   kappa 0.0517 -> toplam kayip 0.000031 rho^2   (16 KAT IYI)
+# 2. sira icin gereken 0.01089 yaninda 0.000490 kucuk degildir.
+# Bu yuzden TEKDUZE 0.0517; kappa_1 zaten D1'in uretildigi degerdir.
+KAPPA_K = np.full(DEMET, 0.05174190699701174)
 print()
 print(f"{DEMET} dik yon kuruldu. sqrt(toplam rho_k^2) = {np.sqrt((RHO_K**2).sum()):.4f}")
 dikkat = np.abs(GD @ GD.T / N - np.eye(DEMET)).max()
@@ -483,7 +491,14 @@ for k, r in sorted(RHO_OLC.items()):
     taban = taban + r * GD[k - 1]
     ONCEKI_R[str(k)] = float(r)
 
+# KACIS YOLU (kirmizi takim K2). Bir sonda ERROR donerse ya da zaman biterse
+# 4 olcumun 4'unu beklemek Z_NIHAI'nin HIC uretilememesine gider (slack 0).
+# NIHAI=1 cevre degiskeni, elde HANGI olcumler varsa onlarla nihaiyi uretir.
 SIRADAKI = next((k for k in range(1, DEMET + 1) if k not in RHO_OLC), None)
+if os.environ.get("NIHAI") == "1" and RHO_OLC:
+    print(f"  [KACIS] NIHAI=1 -> {len(RHO_OLC)} olcumle nihai uretiliyor")
+    print(f"          olculenler: {sorted(RHO_OLC)}")
+    SIRADAKI = None
 print(f"\nSIRADAKI: {'sonda ' + str(SIRADAKI) if SIRADAKI else 'hepsi olculdu -> NIHAI'}")
 
 PLAN = list(GECMIS.values())
