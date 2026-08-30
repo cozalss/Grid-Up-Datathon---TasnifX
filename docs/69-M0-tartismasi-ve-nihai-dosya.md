@@ -279,8 +279,16 @@ Sabit LB katsayılarıyla ölçüldüğünde (`m130`) zaman aşınması **yok**:
   40    0.2522   0.2125    0.1068  0.1591  0.1538  0.1671  0.3025  0.066    1.105
 ```
 
-Korelasyon geç pencerede **daha yüksek** (oran 1.05–1.11) ve test tam da
-geç-ufuk durumu.
+**`m131` uyarısı — GEÇ/TÜM oranı bilgi taşımıyor.** Rastgele işaretli
+bileşikler de ortanca **1.155** oran veriyor (%5–%95: −1.31…2.57); gözlenen
+1.168 tam ortancada, eksen eksen 23/40 (~şans, binom p=0.215). Yani "geç
+pencerede daha güçlü" bulgusu sinyalimize özgü değil, bloğun kendi
+yapısından geliyor. Oranı **ne bonus ne ceza** olarak kullanmıyoruz.
+
+**Asıl kanıt:** sinyal **beş pencerenin beşinde de pozitif** (0.107…0.303;
+şans olasılığı 1/32). Mevsim eksenleri atılınca da ayakta (27 eksen,
+kor 0.153). Yani zaman aşınması yok — `m125`'in 0.388 "taşıma oranı"
+geçersiz.
 
 Doğru çerçeve:
 
