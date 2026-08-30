@@ -1,0 +1,269 @@
+{
+ "M0_kullanilan": 1.005846366,
+ "M0_a0_ozdesligi": 1.0056880656,
+ "kisitlar": {
+  "kisitlar": [
+   [
+    "null mod w=1.5e-16",
+    1.0058503165096462,
+    5.962103047052838e-06,
+    0.00022170917891098035
+   ],
+   [
+    "null mod w=1.9e-12",
+    1.0058950194104261,
+    2.71363425243649e-05,
+    0.000363813930303382
+   ],
+   [
+    "a0 ozdesligi",
+    1.0056880656,
+    1.00284e-05,
+    0.0
+   ]
+  ],
+  "eku": 1.0056885523306516,
+  "eku_sd": 1.0014389247787602e-05,
+  "ki2": 0.8546038267680195
+ },
+ "capa": {
+  "capa_gram": [
+   -2.1108939009150912e-18,
+   0.00693625395272564,
+   0.0934737216369339
+  ],
+  "tek_kisit": 1.0058464819736563
+ },
+ "loo": {
+  "loo_en_iyi": 1.0064000000000006,
+  "loo_t": 0.8113589714293071
+ },
+ "duyarlilik": {
+  "1.005846366": {
+   "kL": 0.0037780773664365867,
+   "sabit": 1.004697039336844,
+   "d_rho": 0.0
+  },
+  "1.005688066": {
+   "kL": 0.003738843054386578,
+   "sabit": 1.0046172075609439,
+   "d_rho": -0.0007721232053471909
+  },
+  "1.005836366": {
+   "kL": 0.0037737342504760153,
+   "sabit": 1.0046957255687652,
+   "d_rho": -1.2706604715046995e-05
+  },
+  "1.005856366": {
+   "kL": 0.0037824549589617336,
+   "sabit": 1.0046982841517937,
+   "d_rho": 1.2039698456607395e-05
+  },
+  "en_kotu_d_rho": 0.0007721232053471909
+ },
+ "gonderim_dogrulamasi": [
+  {
+   "dosya": "tuketim_m6_ikiyon.csv",
+   "skor": 1.00284,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55859849",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_p51_sicak05.csv",
+   "skor": 1.00946,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55859829",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_m4_hava_capali.csv",
+   "skor": 1.043,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55859665",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v109_birlesik.csv",
+   "skor": 1.01818,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55837187",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v102_kappa_optimum.csv",
+   "skor": 1.00553,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55833415",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v101_hepsi.csv",
+   "skor": 1.01614,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55833361",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v83_sicak_optimum.csv",
+   "skor": 1.01318,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55811502",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v81_sicak08.csv",
+   "skor": 1.01429,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55811392",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v80_optimum.csv",
+   "skor": 1.01341,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55811381",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v79_S3.csv",
+   "skor": 1.01556,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55781080",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v73_soguk_gun160.csv",
+   "skor": 1.01538,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55780987",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v67_c1335_olay.csv",
+   "skor": 1.01548,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55780927",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v55_gunolcek.csv",
+   "skor": 1.01591,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55755749",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v50_nihai30.csv",
+   "skor": 1.01686,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55755676",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v47_eskison.csv",
+   "skor": 1.0175,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55732850",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v44_v27yeni.csv",
+   "skor": 1.03053,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55732790",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v46_gun.csv",
+   "skor": 1.02448,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55732647",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v30_buzme.csv",
+   "skor": 1.02639,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55717274",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v27_v18hedge.csv",
+   "skor": 1.03362,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55707804",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v25_hedge.csv",
+   "skor": 1.0482,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55707720",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v18.csv",
+   "skor": 1.0337,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55688907",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v16.csv",
+   "skor": 1.06605,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55684082",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v15.csv",
+   "skor": 1.0391,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55684049",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v7.csv",
+   "skor": 1.16922,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55668961",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_v2.csv",
+   "skor": 1.16143,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55668648",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "gun1_baseline.csv",
+   "skor": 1.2267,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55668434",
+   "durum": "GECERLI | TEST ID'LERINE HIZALANMIYOR -- ATILDI"
+  },
+  {
+   "dosya": "tuketim_s3y40.csv",
+   "skor": 1.00177,
+   "kaynak": "olculmus_skorlar",
+   "ref": "55880996",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_YP_seviye.csv",
+   "skor": 1.00115,
+   "kaynak": "m112_durum",
+   "ref": "55881832",
+   "durum": "GECERLI"
+  },
+  {
+   "dosya": "tuketim_K_yenibas.csv",
+   "skor": 1.00191,
+   "kaynak": "m112_durum",
+   "ref": "55882431",
+   "durum": "GECERLI"
+  }
+ ]
+}

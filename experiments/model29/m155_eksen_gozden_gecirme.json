@@ -1,0 +1,174 @@
+{
+ "taban_mse": 1.00202690323433,
+ "eksen_sayisi": {
+  "mevcut": 40,
+  "yeni": 22
+ },
+ "ters_isaretli": [
+  "p_ilk_ofset*tanim_on3",
+  "t_kayma:ust25",
+  "g_ilce_kova_n:x_soguk",
+  "t_kayma:ust10",
+  "ilce_toplam_guc:x_sv"
+ ],
+ "en_kararsiz5": [
+  "bulut_dusuk_ort:x_soguk",
+  "nem_ort:x_soguk",
+  "toprak_nem_ort:x_soguk",
+  "g_ilce_kova_n:x_soguk",
+  "yagis_toplam:x_soguk"
+ ],
+ "yeni_eksenler": [
+  "te_il:x_soguk",
+  "yas*bitki_ortusu_orani",
+  "yas*yerlesim_orani",
+  "yas*tarim_orani",
+  "yas*trafo_basina_nufus",
+  "p_ilk_ofset:mnt75",
+  "t_yuk_faktoru:uf_log",
+  "te_on2:x_soguk",
+  "hv_nem_ort_go7",
+  "hv_nem_ort_g1",
+  "yas*osm_hat_yogunlugu",
+  "hv_hissedilen_max_g1",
+  "nem_ort:mnt75",
+  "yil_cos3:x_sv",
+  "hv_yagis_toplam_g1",
+  "hv_yagis_toplam_g2",
+  "ulusal_tepe:mnt75",
+  "yagis_toplam:mnt75",
+  "te_bolge_soguk:x_sv",
+  "hv_yagis_toplam_go7",
+  "uf_mentese98",
+  "et0_toplam:mnt75"
+ ],
+ "kumeler": [
+  {
+   "baslik": "S1  mevcut 40 eksen",
+   "n": 40,
+   "K": 4,
+   "r2": 0.039927636603658764,
+   "null": 0.00016134677977915242,
+   "r2_tum_dik": 0.0842036651549804,
+   "rho2": 0.025323332425005837,
+   "skor": 0.988283143036106
+  },
+  {
+   "baslik": "S2  40 - 5 ters isaretli (35)",
+   "n": 35,
+   "K": 4,
+   "r2": 0.02811602991934646,
+   "null": 0.00011809897907695389,
+   "r2_tum_dik": 0.058646641032474495,
+   "rho2": 0.01782919441448738,
+   "skor": 0.992067391269284
+  },
+  {
+   "baslik": "S3  40 + 22 yeni (62)",
+   "n": 62,
+   "K": 4,
+   "r2": 0.04261864977005502,
+   "null": 0.0001263564866075111,
+   "r2_tum_dik": 0.10119325715503813,
+   "rho2": 0.02705926233207251,
+   "skor": 0.9874044971045339
+  },
+  {
+   "baslik": "S4  35 + 22 yeni (57)",
+   "n": 57,
+   "K": 4,
+   "r2": 0.03450264788969794,
+   "null": 0.00010370696575269532,
+   "r2_tum_dik": 0.0837356631631907,
+   "rho2": 0.021905383176132026,
+   "skor": 0.9900108686566012
+  },
+  {
+   "baslik": "S5  40 - 5 en kararsiz (35)",
+   "n": 35,
+   "K": 4,
+   "r2": 0.03854698492639605,
+   "null": 0.00013366789083246914,
+   "r2_tum_dik": 0.07580432135649441,
+   "rho2": 0.024461753941515032,
+   "skor": 0.9887189435288549
+  },
+  {
+   "baslik": "S6  57 (40+yeni - 5 kararsiz)",
+   "n": 57,
+   "K": 4,
+   "r2": 0.04069902751766968,
+   "null": 0.00010596351050242358,
+   "r2_tum_dik": 0.09627171873003211,
+   "rho2": 0.025849825532020136,
+   "skor": 0.988016739586081
+  },
+  {
+   "baslik": "S7  40 eksen + HB yonu",
+   "n": 40,
+   "K": 5,
+   "r2": 0.049827329770124246,
+   "null": 0.00018016554374635435,
+   "r2_tum_dik": 0.0842036651549804,
+   "rho2": 0.031615512768014345,
+   "skor": 0.9850946099062342
+  },
+  {
+   "baslik": "S8  62 eksen + HB yonu",
+   "n": 62,
+   "K": 5,
+   "r2": 0.050805890891378575,
+   "null": 0.00013142422232166948,
+   "r2_tum_dik": 0.10119325715503813,
+   "rho2": 0.03226970307272212,
+   "skor": 0.9847625095227823
+  }
+ ],
+ "gereken": {
+  "1. sira (0.99009)": 0.021748695134329976,
+  "2. sira (0.99614)": 0.009732003634330022
+ },
+ "sizintisiz": [
+  {
+   "baslik": "40 eksen, secim de bolmeli",
+   "r2": 0.034848053841743484,
+   "null": 0.0001451832249479524,
+   "net": 0.034702870616795535,
+   "net_zaman": 0.018502929025345363,
+   "rho2": 0.022098926820257866,
+   "skor": 0.9899131155884704,
+   "ortak": 0.816025641025641
+  },
+  {
+   "baslik": "62 eksen (A-G dahil), secim de bolmeli",
+   "r2": 0.038958213929962605,
+   "null": 0.00011674403213320439,
+   "net": 0.0388414698978294,
+   "net_zaman": 0.02086255837902429,
+   "rho2": 0.024734403396817352,
+   "skor": 0.9885810537520496,
+   "ortak": 0.8560278993992465
+  },
+  {
+   "baslik": "40 eksen + HB yonu, secim de bolmeli",
+   "r2": 0.04556951746190887,
+   "null": 0.00016948892893416367,
+   "net": 0.04540002853297471,
+   "net_zaman": 0.019685343746739963,
+   "rho2": 0.02891091976991243,
+   "skor": 0.9864664127401488,
+   "ortak": 0.8097756410256409
+  },
+  {
+   "baslik": "62 eksen + HB yonu, secim de bolmeli",
+   "r2": 0.04963038649252175,
+   "null": 0.0001404308569651412,
+   "net": 0.04948995563555661,
+   "net_zaman": 0.022567047063490612,
+   "rho2": 0.03151540170854499,
+   "skor": 0.9851454215118625,
+   "ortak": 0.8560278993992465
+  }
+ ],
+ "boru_hatti_plasebo": 8.941242915305548e-05
+}
