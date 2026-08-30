@@ -179,16 +179,16 @@ yarısında sınanır — testin durumu tam budur), beş kesimin medyanı.
 ```
 submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
   40 eksen, hepsinde TAVAN DAYANIYOR (katsayi LB-capali, CV'ye degil)
-  rho_pred = 0.2406     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069883
-  sabit = 1.006854592   sifir tahmin 1.586
+  rho_pred = 0.2433     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069901
+  sabit = 1.006856941   sifir tahmin 848
 
-  COZUM:  rho = (1.006854592 - P*P) / 0.139766
+  COZUM:  rho = (1.006856941 - P*P) / 0.139802
 ```
 
 | gerçek `ρ` | skor | sıra |
 |---:|---:|---|
-| 0.2406 | 0.98652 | **2. SIRA** |
-| 0.1684 | 0.99162 | **2. SIRA** |
+| 0.2433 | 0.98633 | **2. SIRA** |
+| 0.1703 | 0.99149 | **2. SIRA** |
 | 0.0793 | 0.99788 | **2. SIRA** ← eşik |
 | 0.0700 | 0.99853 | 3. sıra |
 | 0.0574 | 0.99941 | 4. sıra |
@@ -196,11 +196,11 @@ submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
 | 0.0000 | 1.00341 | 5.+ |
 
 **Doğrulamalar:** işaret kararlılığı tek/çift gün **40/40**, zaman bölmesi
-**39/40**; trafo-bölmeli çapraz doğrulama tutma **0.896**, plasebo **z=+22.8**;
+**39/40**; trafo-bölmeli çapraz doğrulama tutma **0.902**, plasebo **z=+25.9**;
 `rcond`-kırılgan eksen **2/40**.
 
-**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2406, yani gereken
-gerçekleşme oranı **%32.9**. Eşiğin üstünde ama **garanti değil** —
+**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2433, yani gereken
+gerçekleşme oranı **%32.5**. Eşiğin üstünde ama **garanti değil** —
 bankaya alınabilecek güvenli bir 2. sıra yolu yok, bilinen en iyi optimumumuz
 1.000985 ve o da 4. sıra.
 

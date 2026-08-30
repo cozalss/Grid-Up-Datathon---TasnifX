@@ -70,7 +70,7 @@ for o in DUR.get("olcumler", []):
 V, L = np.array(V).T, np.array(L)
 G = (V.T @ V) / N
 Gi = np.linalg.pinv(G, rcond=1e-6)
-_, gercek, kL = buzmeli_r_hat(V, L, G, N)
+r_hat, gercek, kL = buzmeli_r_hat(V, L, G, N)
 print(f"saf optimum {np.sqrt(M0 - gercek):.6f}")
 
 tp = pd.read_parquet(os.path.join(DN, "test.parquet"))
@@ -187,17 +187,22 @@ def degerlendir(uret):
     for ad, xt, xb in uret:
         if xt is None or xb is None:
             continue
+        # GEOMETRI: izdusum, gurultu yok -> pinv
         cc = Gi @ ((V.T @ xt) / N)
-        Lsp = float(cc @ L)
         xp = xt - V @ cc
         Qd = float((xp * xp).mean())
         Qs = 1.0 - Qd
         if Qd < 0.05 or Qs < 0.02:
             continue
-        rho_s = Lsp / np.sqrt(Qs)
+        # L_span TAHMINI (docs/69 §2.6): c'L neredeyse-tekil kiplerde L'nin
+        # gurultusunu buyutuyordu (40 eksenin 12'si rcond'a kirilgandi).
+        # r_hat buzmeli ve gurultu-farkindalikli oldugu icin kararli.
+        rho_s = float((r_hat * xt).mean()) / np.sqrt(Qs)
         rho_cv = CARPAN * float((ww * rb * xb).mean()) / np.sqrt(m0b)
         rk = np.sign(rho_cv) * min(abs(rho_cv), TAVAN * abs(rho_s))
-        cikti.append((ad, rho_cv, rho_s, rk, Qd, rk * rk * Qd))
+        # katki: katsayi rk (sqrt(Qd) CARPANI YOK, docs/69 §2.5) ama eksenin
+        # yeni bilgi tasimasi icin Qd hala esik olarak kullanilir
+        cikti.append((ad, rho_cv, rho_s, rk, Qd, rk * rk))
     return cikti
 
 
