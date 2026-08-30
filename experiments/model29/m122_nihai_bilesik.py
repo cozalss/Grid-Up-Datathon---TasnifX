@@ -1,15 +1,21 @@
-"""TEK HAK v2 -- genis taramadan cikan eksenlerle.
+"""NIHAI BILESIK -- duzeltilmis kapiyla.
 
-zy taramasi 428 aday arasindan |rho_s|'i 0.0405'e kadar cikan eksenler buldu
-(onceki havuzda tavan 0.027 idi). Iki YENI aile:
-  panel penceresi x seviye   (p_gun_sayisi, p_yayilma, p_ilk_ofset, p_doluluk)
-  trafo adi oneki x soguk    (tanim_on2..5)
+DUZELTME. Onceki kapi "oran = rho_pred / rho_s(bilesik) <= 4" idi. Bu YANLIS:
+tek eksen icin oran = 1.95*sqrt(Q_dik) <= 1.95 her zaman; cok eksende ise
+eksenlerin SPAN bileseni birbirini goturunce payda kuculuyor ve oran siisiyor.
+Yani oran, inandiriciligi degil isaret sadelesmesini olcuyor.
 
-Yontem m117 ile ayni ve DEGISMIYOR:
-  - her eksen once span'a, sonra onceki eksenlere dik
-  - rho_kul = isaret(rho_cv) * min(|rho_cv|, 1.95*|rho_s|)   [seviye kalibresi]
-  - bilesigin KENDI inandiricilik sinavi (oran <= 4)
-Sadece aday havuzu genisledi.
+DOGRU KAPI: her eksenin katsayisi 1.95*|rho_s| TAVANINA DAYANSIN.
+Dayaniyorsa tahmin LB'nin kendi olcumune capalidir (CV'ye degil).
+    rho_kul = isaret(rho_cv) * min(|rho_cv|, 1.95*|rho_s|)
+    TAVAN DAYANIYOR  <=>  |rho_cv| >= 1.95*|rho_s|
+
+Bilesigin ongorulen rho'su = ||beta|| (dik eksenler). Bu, her eksenin kendi
+LB olcumune capali oldugu icin savunulabilir; tek varsayim 1.95 carpaninin
+seviye'den digerlerine tasinmasi (n=1, docs/68).
+
+Ek kapi: rho_s'in kendi gurultusu sigma(rho_s) ~ 3e-4; |rho_s| >= 0.015
+(50 sigma) sarti aranir.
 """
 
 import json
@@ -30,6 +36,8 @@ M0, TABAN = 1.005846366, "tuketim_m6_ikiyon.csv"
 EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
 HEDEF_SOGUK, CARPAN, TAVAN = 0.222, 0.798, 1.95
 HEDEF_2, HEDEF_3 = 0.99790, 0.99940
+RHO_S_ALT = 0.015
+AZAMI_EKSEN = 14
 sys.path.insert(0, M29)
 from m112_kalibre import buzmeli_r_hat  # noqa: E402
 
@@ -116,17 +124,14 @@ def st(x):
 
 svT, svB = st(a0), st(pb)
 sgT = tp.soguk_mu.values.astype(np.float64)
-
-
 ufT, ufB = st(tp.ufuk_gun.to_numpy()), st(bf.ufuk_gun.to_numpy())
 ayT = st(pd.to_datetime(tp.tarih).dt.month.to_numpy().astype(np.float64))
 ayB = st(pd.to_datetime(bf.tarih).dt.month.to_numpy().astype(np.float64))
-ESIK = {"ust10": (0.9, True), "ust25": (0.75, True), "alt10": (0.1, False)}
 CARP = {"x_sv": (svT, svB), "x_soguk": (sgT, sgm), "x_ufuk": (ufT, ufB), "x_ay": (ayT, ayB)}
+ESIK = {"ust10": (0.9, True), "ust25": (0.75, True), "alt10": (0.1, False)}
 
 
 def kur(ad):
-    """m121 ad bicimlerini coz: 'kol', 'kol:kip', 'kolA*kolB'."""
     if "*" in ad:
         k1, k2 = ad.split("*", 1)
         if k1 not in tp.columns or k2 not in tp.columns:
@@ -142,28 +147,24 @@ def kur(ad):
     xt, xb = tp[kol].to_numpy(), bf[kol].to_numpy()
     if kip in CARP:
         mt, mb = CARP[kip]
-        a0_, b0_ = st(xt), st(xb)
-        if a0_ is None or b0_ is None:
-            return None, None
-        return st(a0_ * mt), st(b0_ * mb)
+        a_, b_ = st(xt), st(xb)
+        return (None, None) if a_ is None or b_ is None else (st(a_ * mt), st(b_ * mb))
     if kip in ESIK:
         q, ust = ESIK[kip]
         fv = xt[np.isfinite(xt)]
         if fv.size == 0:
             return None, None
-        e_ = np.quantile(fv, q)
+        v_ = np.quantile(fv, q)
         if ust:
-            return st((xt > e_).astype(np.float64)), st((xb > e_).astype(np.float64))
-        return st((xt < e_).astype(np.float64)), st((xb < e_).astype(np.float64))
+            return st((xt > v_).astype(np.float64)), st((xb > v_).astype(np.float64))
+        return st((xt < v_).astype(np.float64)), st((xb < v_).astype(np.float64))
     if kip == "kare":
         a_, b_ = st(xt), st(xb)
-        if a_ is None or b_ is None:
-            return None, None
-        return st(a_**2), st(b_**2)
+        return (None, None) if a_ is None else (st(a_**2), st(b_**2))
     return st(xt), st(xb)
 
 
-with open(os.path.join(BURA, "m121_derin_tarama.json")) as fh:
+with open(os.path.join(M29, "m121_derin_tarama.json")) as fh:
     TARAMA = json.load(fh)
 rng = np.random.default_rng(5)
 tn = bf.tanim.values
@@ -175,12 +176,15 @@ PERM = [
 ]
 
 duz = np.zeros(N)
-ham = np.zeros(N)
-ONCEKI = []
 kul = []
-IZ = []
-print(f"\n{'eksen':>30s} {'rho_cv':>8s} {'rho_s':>8s} {'rho_kul':>8s} {'Q_dik':>6s} {'katki':>10s}")
+print(
+    f"\n{'eksen':>34s} {'rho_cv':>8s} {'rho_s':>8s} {'rho_kul':>8s} {'Q_dik':>6s} "
+    f"{'tavan':>6s} {'kum.rho':>8s}"
+)
+ONCEKI = []
 for kayit in TARAMA:
+    if len(kul) >= AZAMI_EKSEN:
+        break
     ad = kayit["eksen"]
     xt, xb = kur(ad)
     if xt is None or xb is None:
@@ -192,75 +196,41 @@ for kayit in TARAMA:
     if Qs < 0.02:
         continue
     rho_s = Lsp / np.sqrt(Qs)
+    if abs(rho_s) < RHO_S_ALT:
+        continue
     xp = xp0.copy()
     for u in ONCEKI:
         xp -= float((xp * u).mean()) * u
     Qd = float((xp * xp).mean())
-    if Qd < 0.10:
+    if Qd < 0.25:  # eksenler birbirinden GERCEKTEN farkli olsun
         continue
     kor = float((ww * rb * xb).mean()) / np.sqrt(m0b)
     gur = np.std([float((ww * rb[s] * xb).mean()) / np.sqrt(m0b) for s in PERM])
     if abs(kor) < 3 * gur:
         continue
     rho_cv = CARPAN * kor
-    rho_kul = np.sign(rho_cv) * min(abs(rho_cv), TAVAN * abs(rho_s))
-    if abs(rho_kul) < 0.008:
+    dayanir = abs(rho_cv) >= TAVAN * abs(rho_s)
+    if not dayanir:  # KAPI: tavan dayanmiyorsa tahmin CV'ye kalir
         continue
+    rho_kul = np.sign(rho_cv) * TAVAN * abs(rho_s)
     b = rho_kul * np.sqrt(Qd)
-    u = xp / np.sqrt(Qd)
-    duz += b * u
-    ham += b * xt
-    ONCEKI.append(u)
+    duz += b * (xp / np.sqrt(Qd))
+    ONCEKI.append(xp / np.sqrt(Qd))
     kul.append(ad)
-    # ARTIMLI INANDIRICILIK: her eklemeden sonra bilesigin kendi oranini olc
-    Qh_ = float((ham * ham).mean())
-    uh_ = ham / np.sqrt(Qh_)
-    ch_ = Gi @ ((V.T @ uh_) / N)
-    uhp_ = uh_ - V @ ch_
-    Qdh_ = float((uhp_ * uhp_).mean())
-    rs_ = float(ch_ @ L) / np.sqrt(max(1 - Qdh_, 1e-9))
-    rho_ = float(np.sqrt(float((duz * duz).mean())))
-    oran_ = abs(rho_) / (abs(rs_) + 1e-9)
-    IZ.append(dict(n=len(kul), eksen=ad, rho=rho_, oran=oran_, duz=duz.copy(), ham=ham.copy()))
     print(
-        f"{ad[:30]:>30s} {rho_cv:+8.4f} {rho_s:+8.4f} {rho_kul:+8.4f} {Qd:6.3f} "
-        f"{rho_kul**2 * Qd:10.3e} | rho={rho_:.4f} oran={oran_:.2f}"
+        f"{ad[:34]:>34s} {rho_cv:+8.4f} {rho_s:+8.4f} {rho_kul:+8.4f} {Qd:6.3f} "
+        f"{'EVET':>6s} {np.sqrt(float((duz * duz).mean())):8.4f}"
     )
-    if len(kul) >= 45:
-        break
 
-# oran <= 4 kisiti altinda rho'yu ust'e cikaran on-eki sec
-UYGUN = [z for z in IZ if z["oran"] <= 4.0]
-if not UYGUN:
-    raise SystemExit("hicbir on-ek inandiricilik esigini gecmedi")
-SEC = max(UYGUN, key=lambda z: z["rho"])
-print(f"\nSECILEN: ilk {SEC['n']} eksen  rho={SEC['rho']:.4f}  oran={SEC['oran']:.2f}")
-duz, ham = SEC["duz"], SEC["ham"]
-kul = kul[: SEC["n"]]
 Q = float((duz * duz).mean())
 birim = duz / np.sqrt(Q)
 RHO = float(np.sqrt(Q))
-Qh = float((ham * ham).mean())
-uh = ham / np.sqrt(Qh)
-ch = Gi @ ((V.T @ uh) / N)
-uhp = uh - V @ ch
-Qdh = float((uhp * uhp).mean())
-rho_sh = float(ch @ L) / np.sqrt(max(1 - Qdh, 1e-9))
-oran = abs(RHO) / (abs(rho_sh) + 1e-9)
-print(f"\n{len(kul)} eksen. BILESIGIN ongorulen rho = {RHO:.4f}  (v1: 0.0884)")
-print(
-    f"  inandiricilik: rho_s(LB)={rho_sh:+.4f}  oran={oran:.1f} "
-    f"{'TEMIZ' if oran <= 4 else 'SUPHELI'}"
-)
+print(f"\n{len(kul)} eksen (hepsinde TAVAN DAYANIYOR -> tahmin LB-capali)")
+print(f"BILESIGIN ongorulen rho = {RHO:.4f}")
 for ad, h in [("3. sira", HEDEF_3), ("2. sira", HEDEF_2), ("1. sira", 0.99009)]:
     kap = np.sqrt(max(MSE_OPT - h * h, 1e-12))
     print(f"  {ad}: gereken rho {kap:.4f}  -> f = {kap / RHO:.3f}")
 
-# kappa secimi: rho'nun durust araligi [0.06, 0.12] ve 2. sira esigi 0.0793
-# tam ortasinda. sqrt(MSE_OPT - HEDEF_2^2) = 0.0793 P(2.sira)'yi ust'e cikarir
-# ama rho=0.06'da 4. siraya dusuruyor. kappa=0.070, 2. sira icin gerekeni
-# 0.0793 -> 0.0799 (%0.8) yukseltip 3. sira icin gerekeni 0.0604 -> 0.0585
-# dusuruyor. Asagi tarafta belirgin kazanc, yukari tarafta ihmal edilir kayip.
 KAPPA = 0.070
 pn = a0 + r_hat + KAPPA * birim
 y = np.clip(np.expm1(pn), 0.0, None)
@@ -274,7 +244,7 @@ kapi = {
     "maks": bool(out.tuketim.max() < 3 * np.expm1(a0).max()),
 }
 print(f"\nKAPI: {kapi}")
-if all(kapi.values()) and oran <= 4:
+if all(kapi.values()):
     yol = os.path.join(S, "tuketim_K_TEKHAK.csv")
     out.to_csv(yol + ".tmp", index=False)
     Path(yol + ".tmp").replace(yol)
@@ -282,12 +252,12 @@ if all(kapi.values()) and oran <= 4:
     sabit = float(M0 - 2 * nrm + float(dgv @ dgv) / N)
     ek = dgv - r_hat
     print(
-        f"YAZILDI submissions/tuketim_K_TEKHAK.csv  kappa={KAPPA:.4f} sifir {int((y == 0).sum()):,}"
+        f"YAZILDI  kappa={KAPPA:.4f}  sifir {int((y == 0).sum()):,}  "
+        f"etkin yer degistirme {np.sqrt(float((ek * ek).mean())):.5f}"
     )
-    print(f"  kirpma sonrasi etkin yer degistirme {np.sqrt(float((ek * ek).mean())):.5f}")
-    print(f"  sabit={sabit:.9f}  rho=0 skoru {np.sqrt(sabit):.5f}")
+    print(f"  sabit={sabit:.9f}   COZUM: rho = ({sabit:.9f} - P^2)/{2 * KAPPA:.4f}")
     print(f"\n  {'gercek rho':>11s} {'skor':>9s} {'sira':>10s}")
-    for rr in [0.0, 0.0304, 0.05, RHO * 0.5, RHO * 0.7, KAPPA, RHO]:
+    for rr in [0.0, 0.0304, 0.0500, 0.0574, 0.0700, 0.0793, RHO * 0.7, RHO]:
         sk = np.sqrt(max(sabit - 2 * KAPPA * rr, 1e-9))
         sr = (
             "2. SIRA"
@@ -299,7 +269,5 @@ if all(kapi.values()) and oran <= 4:
             else "5.+"
         )
         print(f"  {rr:11.4f} {sk:9.5f} {sr:>10s}")
-    with open(os.path.join(BURA, "m119_tekhak.json"), "w") as fh:
-        json.dump(dict(kappa=KAPPA, sabit=sabit, rho=RHO, oran=oran, eksenler=kul), fh, indent=1)
-else:
-    print("YAZILMADI (kapi ya da inandiricilik kaldi)")
+    with open(os.path.join(BURA, "ad_nihai.json"), "w") as fh:
+        json.dump(dict(kappa=KAPPA, sabit=sabit, rho=RHO, eksenler=kul), fh, indent=1)

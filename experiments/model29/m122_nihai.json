@@ -1,0 +1,21 @@
+{
+ "kappa": 0.07,
+ "sabit": 1.0069383848301543,
+ "rho": 0.16011700903212425,
+ "eksenler": [
+  "p_ilk_ofset*tanim_on3",
+  "p_pencere_payi:x_sv",
+  "tanim_on3:x_soguk",
+  "t_log_son60:ust25",
+  "asiri_sicak:x_ay",
+  "yas:x_sv",
+  "t_egim_sicaklik_ort",
+  "p_ilk_ofset*osm_direk_yogunlugu",
+  "t_log_son7:x_ufuk",
+  "t_log_p10:ust25",
+  "p_pencere_payi*asiri_sicak",
+  "asiri_sicak:x_soguk",
+  "cdd18:kare",
+  "t_yuk_faktoru:x_ufuk"
+ ]
+}
