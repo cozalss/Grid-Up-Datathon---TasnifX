@@ -385,6 +385,11 @@ def kur(te, a0, N, d):
 #: Iki sert kisitla kalibre edildi: LOO yeniden kurma hatasi 3.4e-04 ve
 #: gercekten alinmis 1.00115 skoru. 4.0 ve ustu ikinciyi ihlal ediyor.
 SIGMA_OLCEK = 1.5
+#: Kip tutma kapilari (docs/70). Olcerek secildi: alti yapilandirma arasinda
+#: bu ikisi gurultu altinda 60 cekilisin 60'inda kararli kaldi ve gercek
+#: nrm'yi yalnizca %0.7 degistirdi (daha sert 3-sigma varyanti %2.7 bozuyordu).
+W_TABAN = 1e-6  # w_i / w_max bunun altindaysa kip atilir
+ANLAM_SIGMA = 2.0  # c_i, sigma_i'nin bu kati kadar buyuk degilse kip atilir
 
 
 def L_gurultusu(V, N, *, tekrar=50, tohum=3):
@@ -432,8 +437,19 @@ def buzmeli_r_hat(V, L, G, N, *, sigma=None):
     sigma_i = np.sqrt(np.einsum("ij,jk,ki->i", U.T, np.diag(sigma**2), U))
     a = np.zeros(len(w))
     kazanc = 0.0
+    wmax = float(w[0]) if len(w) else 1.0
     for i in range(len(w)):
-        if w[i] <= 1e-12 or c[i] ** 2 <= 0.0:
+        # GORELI taban. Mutlak 1e-12 esigi yetersizdi: G'nin tekil degerleri
+        # arasinda 1.86e-12 var ve o esigin HEMEN ustunde kaliyordu. Gercek
+        # veride c/sigma=0.09 oldugu icin zarar gorunmuyordu, ama c gurultuyle
+        # sigma'yi gecince a>0 olup a*c/w patliyordu: bozulmus L ile 60
+        # cekilisin 20'sinde nrm 0.05'i asiyor, maks 8144 (gercek 0.0038).
+        if w[i] / wmax <= W_TABAN or c[i] ** 2 <= 0.0:
+            continue
+        # ANLAMLILIK KAPISI. Buzme tek basina yetmiyor: c^2 sansen sigma^2'yi
+        # az bir farkla gecerse a kucuk ama sifirdan buyuk cikar ve kucuk w'li
+        # kipte c/w yine patlar. 2 sigma sarti bunu keser.
+        if c[i] ** 2 <= ANLAM_SIGMA**2 * sigma_i[i] ** 2:
             continue
         lam2 = max(c[i] ** 2 - sigma_i[i] ** 2, 0.0)
         a[i] = lam2 / c[i] ** 2

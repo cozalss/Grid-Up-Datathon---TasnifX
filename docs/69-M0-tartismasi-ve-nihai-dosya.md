@@ -150,6 +150,39 @@ ic korelasyon   0.2784 -> 0.2846
   **40/40 işaret aynı** kaldı, büyüklükler ~%20 kaydı. CV'den yalnız işaret
   alındığı için bileşiğin yönü etkilenmiyor.
 
+**2.7 `buzmeli_r_hat` GÜRÜLTÜ ALTINDA PATLIYORDU — dokuzuncu hata.**
+Kip tablosunda `w = 1.86e-12, 2.5e-17, 1.25e-18, −4.2e-17` (sonuncusu negatif,
+sayısal artık). Koddaki koruma `w <= 1e-12` idi ve **1.856e-12 o eşiğin hemen
+üstünde** kalıyordu. Gerçek veride `c/σ = 0.09` olduğu için `a=0` ve zarar
+görünmüyordu — ama `c` gürültüyle `σ`'yı geçerse (şansın ~%50'si) `a>0` olup
+`a·c/w` patlıyor:
+
+```
+gercek nrm = 0.003772
+bozulmus L ile 60 cekilis:  medyan 0.0090   ort 561.8   maks 8144
+                            PATLAYAN (>0.05): 20/60
+```
+
+Altı yapılandırma ölçüldü:
+
+```
+kip   gercek nrm  tutulan kip  bozuk maks  patlak
+   A    0.003772           13        8144   20/60   <- MEVCUT
+   B    0.003772           13      0.1178    6/60   goreli w tabani 1e-8
+   C    0.003747            9      0.1177    5/60   B + 2 sigma
+   D    0.003672            8      0.0165    0/60   1e-8 + 3 sigma
+   E    0.003747            9      0.0165    0/60   1e-6 + 2 sigma  <- SECILEN
+   F    0.003672            8      0.0165    0/60   1e-6 + 3 sigma
+```
+
+**E seçildi:** patlama sıfır ve gerçek değeri yalnız %0.7 değiştiriyor
+(D/F %2.7 bozuyordu). Büzme tek başına yetmiyor — `c²` şansen `σ²`'yi az bir
+farkla geçerse `a` küçük ama sıfırdan büyük çıkar ve küçük `w`'li kipte `c/w`
+yine patlar; **2σ anlamlılık kapısı** bunu kesiyor.
+
+**Yan denetim:** plasebo kapısı 20 permütasyonla kuruluyordu; 100
+permütasyonla yeniden sınandı, **0/40 eksen düşüyor** — o kapı sağlam.
+
 ---
 
 ## 3. Eksen sayısı ölçülerek bulundu
@@ -179,16 +212,16 @@ yarısında sınanır — testin durumu tam budur), beş kesimin medyanı.
 ```
 submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
   40 eksen, hepsinde TAVAN DAYANIYOR (katsayi LB-capali, CV'ye degil)
-  rho_pred = 0.2433     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069901
-  sabit = 1.006856941   sifir tahmin 848
+  rho_pred = 0.2518     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069865
+  sabit = 1.006906082   sifir tahmin 1.207
 
-  COZUM:  rho = (1.006856941 - P*P) / 0.139802
+  COZUM:  rho = (1.006906082 - P*P) / 0.139731
 ```
 
 | gerçek `ρ` | skor | sıra |
 |---:|---:|---|
-| 0.2433 | 0.98633 | **2. SIRA** |
-| 0.1703 | 0.99149 | **2. SIRA** |
+| 0.2518 | 0.98576 | **2. SIRA** |
+| 0.1762 | 0.99110 | **2. SIRA** |
 | 0.0793 | 0.99788 | **2. SIRA** ← eşik |
 | 0.0700 | 0.99853 | 3. sıra |
 | 0.0574 | 0.99941 | 4. sıra |
@@ -196,17 +229,17 @@ submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
 | 0.0000 | 1.00341 | 5.+ |
 
 **Doğrulamalar:** işaret kararlılığı tek/çift gün **40/40**, zaman bölmesi
-**39/40**; trafo-bölmeli çapraz doğrulama tutma **0.902**, plasebo **z=+25.9**;
+de **40/40**; trafo-bölmeli çapraz doğrulama tutma **0.904**, plasebo **z=+31.6**;
 `rcond`-kırılgan eksen **2/40**.
 
-**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2433, yani gereken
-gerçekleşme oranı **%32.5**. Eşiğin üstünde ama **garanti değil** —
+**Dürüst duruş.** 2. sıra `ρ ≥ 0.0792` istiyor; öngörü 0.2518, yani gereken
+gerçekleşme oranı **%31.5**. Eşiğin üstünde ama **garanti değil** —
 bankaya alınabilecek güvenli bir 2. sıra yolu yok, bilinen en iyi optimumumuz
 1.000985 ve o da 4. sıra.
 
 ---
 
-## 5. Kalıcı kurallar 65–70
+## 5. Kalıcı kurallar 65–71
 
 **65.** `M0` bir özdeşlik DEĞİL etkin bir sabittir: `P` public %50'de ölçülür,
 `Q` tüm satırlarda hesaplanır. Taban gönderimin skoruna çekmek denklemin iki
@@ -237,3 +270,9 @@ olduğu belirtilmediği için iki farklı formülde kullanıldı.
 `rho_s = c'L` aynı kırılganlığı taşıyordu ve 40 eksenin 12'sinde katsayıyı
 5 kata kadar şişiriyordu. Geometri (izdüşüm) ile TAHMİN (gürültülü `L` ile
 çarpım) ayrılmalı: birincisi `pinv`, ikincisi büzme.
+
+**71.** Büzme tek başına sayısal sağlamlık vermez. `a_i = max(c²−σ²,0)/c²`
+katsayısı, `c` şansen `σ`'yı az bir farkla geçtiğinde küçük ama sıfırdan
+büyük çıkar; küçük `w`'li bir kipte `a·c/w` yine patlar. Gereken iki ek kapı:
+**göreli** özdeğer tabanı (mutlak eşik yanıltıcıdır) ve bir **anlamlılık**
+eşiği. Her ikisinin değeri, gürültü enjekte edilerek ölçülmelidir.
