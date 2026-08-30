@@ -1,0 +1,68 @@
+{
+  "aciklama": "2. sira ve 1. sira esiklerinin (liderlik tablosu skoru) zaman serisi ve 1 Eylul 2026 23:59 UTC (yarisma bitisi) icin dogrusal + ussel-sonumlu iki modelle tahmin. Kaynak: docs/72-DURUM-30agustos-2100.md (gecmis okumalar) + 2026-08-30 23:52 yerel (20:52 UTC) canli leaderboard cekimi.",
+  "olcum_zamani_UTC": "2026-08-30T20:52:00Z",
+  "yarisma_bitisi_UTC": "2026-09-01T23:59:00Z",
+
+  "rank2_esik_serisi": {
+    "birim": "gun, referans t0 = 2026-08-29 00:00 UTC",
+    "gozlemler": [
+      {"t_gun": 0.50, "zaman_UTC_tahmini": "2026-08-29 ~12:00", "skor": 0.99940, "kaynak": "docs/72 satir 34"},
+      {"t_gun": 1.2021, "zaman_UTC": "2026-08-30 04:51", "skor": 0.99790, "kaynak": "docs/72 satir 35 (30 Agu 07:51 yerel)"},
+      {"t_gun": 1.6014, "zaman_UTC": "2026-08-30 14:26", "skor": 0.99614, "kaynak": "docs/72 satir 36 (30 Agu 17:26 yerel)"},
+      {"t_gun": 1.7958, "zaman_UTC": "2026-08-30 19:06", "skor": 0.99556, "kaynak": "docs/72 satir 37 (30 Agu 22:06 yerel, Abdulbaki Bayir girdi)"},
+      {"t_gun": 1.8694, "zaman_UTC": "2026-08-30 20:52", "skor": 0.99556, "kaynak": "bu gorevin canli leaderboard cekimi -- ONCEKI OLCUMLE AYNI, kayma bu saatte durmus/yavaslamis"}
+    ],
+    "not": "Son iki gozlem ayni deger -- 1s46dk boyunca esik hareket etmedi. Bu, dogrusal modelin muhtemelen KOTUMSER (fazla dusuk) tahmin ureteceginin ilk isareti."
+  },
+
+  "rank1_esik_serisi": {
+    "birim": "gun, referans t0 = 2026-08-25 00:00 UTC",
+    "gozlemler": [
+      {"t_gun": 0.0125, "zaman_UTC": "2026-08-25 00:18", "skor": 1.00635, "kaynak": "docs/41,42"},
+      {"t_gun": 1.9917, "zaman_UTC": "2026-08-26 23:48", "skor": 0.99403, "kaynak": "docs/50"},
+      {"t_gun": 3.8333, "zaman_UTC": "2026-08-28 ~20:00 (gun sonu tahmini)", "skor": 0.99138, "kaynak": "docs/52 satir 533"},
+      {"t_gun": 4.3333, "zaman_UTC": "2026-08-29 ~08:00 (tahmini)", "skor": 0.99064, "kaynak": "docs/54-59 (29 Agustos kilavuzlari)"},
+      {"t_gun": 5.25, "zaman_UTC": "2026-08-30 ~06:00 (tahmini)", "skor": 0.99046, "kaynak": "docs/60,61 KESIN-KILAVUZ"},
+      {"t_gun": 5.75, "zaman_UTC": "2026-08-30 ~18:00 (tahmini)", "skor": 0.99009, "kaynak": "docs/62,63,68,72 (aksam 0.99046'dan indi)"},
+      {"t_gun": 5.8694, "zaman_UTC": "2026-08-30 20:52", "skor": 0.99009, "kaynak": "bu gorevin canli leaderboard cekimi -- ONCEKI OLCUMLE AYNI"}
+    ],
+    "not": "Ardisik farklar belirgin sekilde kuculuyor: -0.01232, -0.00265, -0.00074, -0.00018, -0.00037, 0.00000 -- ussel sonumlu (damped) davranisla tutarli."
+  },
+
+  "model_yontemi": {
+    "dogrusal": "y = a + b*t, en kucuk kareler; %80 tahmin araligi t-dagilimi ile (n-2 serbestlik derecesi).",
+    "ussel_sonumlu": "y = y_sonsuz + A*exp(-(t-t0)/tau); curve_fit ile (y_sonsuz, A, tau) kestirimi, tau in [0.05, 10] gun sinirlandirmasiyla (veri kismindaki egrilik zayif oldugunda yayilmayi onlemek icin). %80 araligi parametre kovaryansindan 20000 orneklik Monte Carlo yayilimla."
+  },
+
+  "rank2_tahmin_1eylul_2359UTC": {
+    "yatay_t_gun": 3.9993,
+    "dogrusal": {"a": 1.00105, "b": -0.002969, "nokta": 0.98918, "80pct_araligi": [0.98795, 0.99040]},
+    "ussel_sonumlu": {
+      "y_sonsuz": 0.96790, "A": 0.03169, "tau_gun": 10.0,
+      "nokta": 0.99023, "80pct_araligi": [0.98820, 0.99036],
+      "guvenilirlik_notu": "tau ust sinira (10 gun) yapisti -- veride (yalnizca ~1.4 gunluk pencere, 5 nokta) gorulur egrilik yok, model pratikte neredeyse dogrusala yakinsiyor. Aralik bu yuzden yapay biçimde dar; asagida verilen ZARF daha guvenilirdir."
+    },
+    "NIHAI_TAHMIN": {
+      "merkez": 0.98970,
+      "80pct_araligi_zarf": [0.98700, 0.99080],
+      "yontem": "iki modelin nokta tahminlerinin ortalamasi merkez; zarf, iki modelin araliklarinin birlesimini biraz genisleterek (ussel modelin yapay dar araligini telafi icin) olusturuldu."
+    }
+  },
+
+  "rank1_tahmin_1eylul_2359UTC": {
+    "yatay_t_gun": 7.9993,
+    "dogrusal": {"a": 1.002824, "b": -0.002468, "nokta": 0.98308, "80pct_araligi": [0.97760, 0.98857]},
+    "ussel_sonumlu": {
+      "y_sonsuz": 0.98989, "A": 0.01645, "tau_gun": 1.4608,
+      "nokta": 0.98996, "80pct_araligi": [0.98966, 0.99025],
+      "guvenilirlik_notu": "iyi kosullu fit -- tau sinirlarin icinde serbestce yakinsadi, veri acikca sonumlenen (deceleration) bir egri gosteriyor. Fiziksel olarak daha inandirici: rakip iyilesme hizi zamanla yavasliyor."
+    },
+    "NIHAI_TAHMIN": {
+      "merkez": 0.98720,
+      "80pct_araligi_zarf": [0.97760, 0.99025],
+      "yontem": "iki model 0.0069 farkla ayrisiyor (ussel sonumlu daha az kotumser). Merkez, ussel modele %60 / dogrusala %40 agirlik verilerek hesaplandi (0.6*0.98996+0.4*0.98308=0.98721); zarf iki modelin tam araliklarinin birlesimi -- gercek belirsizlik bir genislik degil, IKI SENARYO ARASINDAKI ANLASMAZLIK: (i) kayma tamamen duruyor/yavasliyor (ussel, ~0.990) vs (ii) rakipler sabit hizda iyilesmeye devam ediyor (dogrusal, ~0.983)."
+    }
+  },
+
+  "yorum": "Rank2 icin iki model birbirine yakin (~0.987-0.991 zarfi, merkez ~0.9897) -- rakip Abdulbaki Bayir'in 22:06'da girisinden sonra 1s46dk esik sabit kaldi, bu kisa-vadeli durma ussel modeli biraz destekliyor ama veri kisitli. Rank1 icin belirsizlik cok daha buyuk: dogrusal model rakibin (Grid Grinders) hala sabit hizda ilerledigini varsayarak ~0.983'e iner, ussel-sonumlu model ise yavaslamanin gercek oldugunu varsayarak ~0.990 civarinda duracagini soyler. Gozlenen ardisik farklarin kuculme deseni (özellikle son 3 olcumde -0.00018/-0.00037/0.00000) ussel modeli biraz daha guvenilir kilar, ama kesinlik yok."
+}

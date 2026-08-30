@@ -36,11 +36,43 @@ YUV = 5e-6 / np.sqrt(3.0)
 TAVAN = 1.95
 
 with open(os.path.join(M29, "m148_demet.json"), encoding="utf-8") as fh:
-    ONG = np.array(json.load(fh)["rho_k_tahmin"], dtype=float)
+    _D = json.load(fh)
+ONG = np.array(_D["rho_k_tahmin"], dtype=float)
 B = len(ONG)
 
+# ZATEN URETILMIS sondalarin kappa'si DONDURULUR. Dosya diskte duruyor ve
+# sabit/kappa_etkin m148_demet.json'a yazildi; buradan farkli bir kappa
+# yazarsak cozum formulu dosyayla UYUSMAZ ve olculen rho YANLIS cikar.
+DONUK = {}
+for _s in _D.get("sondalar", []):
+    DONUK[int(_s["sonda"]) - 1] = float(_s["kappa"])
+if DONUK:
+    print(
+        f"donduruldu (zaten uretilmis): {sorted(DONUK)} -> "
+        f"{[round(DONUK[i], 4) for i in sorted(DONUK)]}"
+    )
+
 rng = np.random.default_rng(23)
-mu, sd = np.log(0.57), (np.log(1.26) - np.log(0.17)) / (2 * 1.6449)
+
+# --- |c| ONSELI, VARSA OLCUMLE GUNCELLENIR --------------------------------
+# ONEMLI: 1. sonda yalnizca blok 1'in rho'sunu olcmez, |c|'YI DE OLCER:
+#     |c| = 1.95 * rho_1_olculen / ongorulen_1
+# |c| tum bloklari AYNI oranda olcekledigi icin, D1 geldikten sonra kalan
+# bloklarin kappa'si COK daha dar bir belirsizlikle secilebilir. Onsel
+# %90 GA [0.17, 1.26] -- yedi kat genislik; olcumden sonra bu daralir.
+#
+# Kullanim: D1'in LB skoru gelince m148 rho_1'i cozer; asagidaki degeri
+# elle gir (ya da C_OLCULEN ortam degiskeniyle ver) ve bu betigi TEKRAR kos,
+# sonra m148'i tekrar kos. Kalan bloklarin kappa'si guncellenir.
+_c_olc = os.environ.get("C_OLCULEN")
+if _c_olc:
+    c_mid = float(_c_olc)
+    sd = 0.15  # olcumden sonra kalan belirsizlik (LB yuvarlamasi + sabit hatasi)
+    print(f"|c| OLCULDU: {c_mid:.3f} (sigma_log {sd})")
+else:
+    c_mid, sd = 0.57, (np.log(1.26) - np.log(0.17)) / (2 * 1.6449)
+    print(f"|c| ONSEL: medyan {c_mid}, %90 GA [0.17, 1.26]")
+mu = np.log(c_mid)
 c = np.exp(rng.normal(mu, sd, 200000))  # (S,)
 RHO = np.outer(c, ONG) / TAVAN  # (S, B) gercek rho ornekleri
 
@@ -69,6 +101,13 @@ for k in range(B):
     P_KAZA = 0.10
     amac = -nihai_kayip + P_KAZA * yedek_ort
     i = int(np.argmax(amac))
+    if k in DONUK:  # uretilmis sonda: kappa'sina DOKUNMA
+        SEC.append(DONUK[k])
+        print(
+            f"{k + 1:5d} {ONG[k]:10.4f} {np.median(r):11.4f} {DONUK[k]:8.3f} "
+            f"{'':>11s} {'':>12s} {'DONUK (uretilmis)':>13s}"
+        )
+        continue
     SEC.append(float(ADAY[i]))
     print(
         f"{k + 1:5d} {ONG[k]:10.4f} {np.median(r):11.4f} {ADAY[i]:8.3f} "

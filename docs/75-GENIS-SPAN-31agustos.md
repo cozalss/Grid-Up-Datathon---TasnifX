@@ -144,18 +144,54 @@ reddedilen deger 11.8 idi, guvenli bolgede.
 | 0.81 | 0.04028 | **0.98069** |
 | 1.00 | 0.06139 | 0.96986 |
 
-**Bitisteki tahmini esige karsi olasiliklar:**
+**Bitisteki tahmini esige karsi olasiliklar (MODEL A ile):**
 
-| | eski (dar span) | **yeni (genis span)** |
+| | eski (dar span) | yeni (genis span) |
 |---|---|---|
-| medyan skor | 0.99773 | **0.99101** |
-| P(1. sira) | %12.0 | **%39.6** |
-| P(2. sira) | %15.6 | **%46.0** |
-| P(ilk uc) | %69.9 | **%92.4** |
+| medyan skor | 0.99773 | 0.99101 |
+| P(1. sira) | %12.0 | %39.6 |
+| P(2. sira) | %15.6 | %46.0 |
+| P(ilk uc) | %69.9 | %92.4 |
 
-Bu sayilar blok bolmesinin kazancini **YOK SAYAR** (muhafazakar):
-bolme yalnizca goreli agirliklandirmamiz yanlissa kazandirir. Yani
-**alt sinirdir**.
+### ⚠ BU SAYILAR HENUZ DOGRULANMADI — iki rakip model var
+
+Yukaridaki tablo **Model A**'ya dayanir: `gerceklesen rho = |c| * ||BETA|| / 1.95`,
+yani eksen eklemek dogrudan `rho`'yu buyutur.
+
+**Model B (doyum)** ise buna karsi cikiyor. Yarim kalan bir blok-disi olcum
+(`n01_K_asiri_uyum.json`) su egriyi verdi:
+
+| K (eksen) | ongorulen rho | **gerceklesen rho** | oran |
+|---|---|---|---|
+| 10 | 0.137 | 0.126 | 0.92 |
+| 25 | 0.201 | **0.149** | 0.74 |
+| 50 | 0.278 | 0.123 | 0.44 |
+| 63 | 0.300 | 0.124 | 0.41 |
+
+Yani gerceklesen korelasyon `K ~ 25`'te **doyuyor**; daha fazla eksen
+yalnizca TAHMINI sisiriyor. Bu dogruysa 136 eksene genisleme `rho`'yu
+artirmaz.
+
+**IKI MODEL MEDYANDA ANLASIYOR** (`n13_iki_model.py`):
+
+| model | medyan rho | medyan skor | P(1.) | P(2.) | P(ilk 3) |
+|---|---|---|---|---|---|
+| A (\|c\| carpani) | 0.141 | 0.99101 | %39.6 | %46.0 | %92.4 |
+| B (doyum) | 0.130 | 0.99249 | %20.0 | %23.4 | **%99.8** |
+
+Anlasmazlik **ust kuyrukta**: doyum dogruysa 1. sira olasiligi coker ama
+ilk uc neredeyse kesinlesir. **Her iki modelde de en kotu durum ~1.00101
+(saf span), yani bugunku 1.00115 yedegimizden IYI — plan asagi yonlu
+korumalidir.**
+
+Karar `n09_K_karari.json` ile verilecek. Sonuca gore `K_AZAMI` ortam
+degiskeniyle eksen sayisi tek komutla kirpilir.
+
+**Doyum dogrulanirsa tasarim sonucu:** darbogaz eksen sayisi degil
+AGIRLIKLANDIRMA hatasidir. m148'in blok bolmesi tam da onu onarir
+(bloklar arasi agirligi LB secer). O durumda **blok sayisini 4'ten 5'e
+cikarmak** cok daha degerli hale gelir -- yedek gonderim hakki harcanarak.
+Bu da olculuyor.
 
 ---
 
