@@ -300,6 +300,25 @@ for kayit in TARAMA + [{"eksen": a, "_yeni": True} for a in YENI_EKSENLER]:
         f"{'EVET':>6s} {np.sqrt(float((duz * duz).mean())):8.4f}"
     )
 
+# --- K_AZAMI: kabul edilen eksen sayisini kirp (n11_eksen_secimi.json).
+# Varsayilan 25; K_AZAMI=0 kirpmayi kapatir.
+_KA = int(os.environ.get("K_AZAMI", "25"))
+if _KA and len(kul) > _KA:
+    print(
+        f"\nK_AZAMI={_KA}: {len(kul)} eksenin ilk {_KA}'i tutuluyor "
+        f"(n11: K=25'te gerceklesen rho %34 daha yuksek)"
+    )
+    kul = kul[:_KA]
+    KAT_LISTE = KAT_LISTE[:_KA]
+    RHO_CV_LISTE = RHO_CV_LISTE[:_KA]
+    YENI_MASKE = YENI_MASKE[:_KA]
+    AILE_LISTE = AILE_LISTE[:_KA]
+    ONCEKI = ONCEKI[:_KA]
+    # duz (bilesik) YENIDEN kurulur -- kirpilan eksenlerin katkisi cikar
+    duz = np.zeros(N)
+    for _i in range(_KA):
+        duz = duz + KAT_LISTE[_i] * ONCEKI[_i]
+
 Q = float((duz * duz).mean())
 birim = duz / np.sqrt(Q)
 RHO = float(np.sqrt(Q))
@@ -433,6 +452,34 @@ def _blok(m):
 
 
 HIPOTEZ = {k: _blok(_HAM[k]) for k in _SIRA}
+
+# --- UYARLANABILIR 5. YON (docs/77) --------------------------------------
+# UYARLANABILIR=<blok_no> verilirse o blogun UST YARISI (kendi |KATS|
+# medyaninin ustundeki eksenler) 5. yon olarak eklenir. Gram-Schmidt bu
+# yonu GD_<blok_no>'ye diklestirecegi icin olculen sey blogun KENDISI
+# degil, blok ICINDEKI dagilimdir.
+_UY = os.environ.get("UYARLANABILIR")
+if _UY:
+    _en = int(_UY)
+    if not 1 <= _en <= len(_SIRA):
+        raise SystemExit(f"DUR: UYARLANABILIR={_en} ama {len(_SIRA)} blok var.")
+    _ad = _SIRA[_en - 1]
+    _idx = np.flatnonzero(_HAM[_ad])
+    _ort = float(np.median(np.abs(KATS[_idx])))
+    _ust = _idx[np.abs(KATS[_idx]) > _ort]
+    if len(_ust) < 3:
+        raise SystemExit(
+            f"DUR: blok {_en} ({_ad}) bolunemiyor -- ust yaride {len(_ust)} eksen var, "
+            f"en az 3 gerekli."
+        )
+    _mu = np.zeros(len(kul), dtype=bool)
+    _mu[_ust] = True
+    HIPOTEZ[f"{_ad}/ust-yari"] = _blok(_mu)
+    print(
+        f"\nUYARLANABILIR: blok {_en} ({_ad}) ikiye bolundu -> ust yari "
+        f"({len(_ust)}/{len(_idx)} eksen) 5. yon olarak eklendi.\n"
+        f"  n06_kappa.py TEKRAR KOSULMALI (blok sayisi {len(_SIRA)} -> {len(_SIRA) + 1})."
+    )
 BETA = np.zeros(N)
 for i in range(len(U)):
     BETA = BETA + KATS[i] * U[i]

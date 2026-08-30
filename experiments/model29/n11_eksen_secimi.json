@@ -1,0 +1,686 @@
+{
+ "aciklama": "m148'in eksen secimi ve agirliklandirmasinin BLOK-DISI sinavi. SONUC: agirlik kipini degistirmenin anlamli faydasi YOK; anlamli olan tek degisiklik EKSEN SAYISINI KESMEK (K=136 -> K=25). Uygulama: m148'in eksen dongusune 'toplam kabul edilen eksen sayisi 25'e ulasinca dur' kosulu eklenir; KATS formulu (isaret(rho_cv)*1.95*|rho_s|) AYNEN KALIR.",
+ "olcum_duzeni": {
+  "gecerli_vekil": "yaz25 icinde zaman bolmesi (Nis-May <-> Haz-Tem), iki yon ortalamasi",
+  "reddedilen_vekil": "gorevin onerdigi 'yaz25'te sec, guz25+kis26'da olc' duzeni GECERSIZ: rho_s (test uzayi) ile blok korelasyonunun isaret uyumu yaz25=0.969 (kor +0.834), guz25=0.488 (+0.184), kis26=0.302 (-0.426). guz25/kis26 test ile ayni yonu gostermiyor; orada secim yapmak TERS yone goturur.",
+  "onyukleme": "trafo (tanim) kumesi onyuklemesi, 80 kume, B=4000"
+ },
+ "K_taramasi_a_m148": {
+  "5": {
+   "n_eksen": [
+    5,
+    5
+   ],
+   "rho": 0.10332873113283751,
+   "rho_ao": [
+    0.07097853459977412,
+    0.14474085767736494
+   ],
+   "fark_136": -0.019287652925681825,
+   "fark_136_ao": [
+    -0.05821741051061878,
+    0.024961933295733783
+   ],
+   "yuzde": -15.730078059125187,
+   "p_iyi": 0.2475
+  },
+  "8": {
+   "n_eksen": [
+    8,
+    8
+   ],
+   "rho": 0.10244669271835222,
+   "rho_ao": [
+    0.07602398923030322,
+    0.14051791202169842
+   ],
+   "fark_136": -0.02016969134016712,
+   "fark_136_ao": [
+    -0.04985665529863721,
+    0.01960536336816541
+   ],
+   "yuzde": -16.449425984166215,
+   "p_iyi": 0.206
+  },
+  "10": {
+   "n_eksen": [
+    10,
+    10
+   ],
+   "rho": 0.13293821091649238,
+   "rho_ao": [
+    0.09526699077686823,
+    0.16856158424887902
+   ],
+   "fark_136": 0.010321826857973046,
+   "fark_136_ao": [
+    -0.029090971639657643,
+    0.047451950923302684
+   ],
+   "yuzde": 8.417983401832252,
+   "p_iyi": 0.718
+  },
+  "13": {
+   "n_eksen": [
+    13,
+    13
+   ],
+   "rho": 0.15272098311135737,
+   "rho_ao": [
+    0.11194686087173222,
+    0.1935634064969701
+   ],
+   "fark_136": 0.030104599052838035,
+   "fark_136_ao": [
+    -0.012864745736574186,
+    0.07092282389962495
+   ],
+   "yuzde": 24.5518568207577,
+   "p_iyi": 0.926
+  },
+  "17": {
+   "n_eksen": [
+    17,
+    17
+   ],
+   "rho": 0.15913691748854047,
+   "rho_ao": [
+    0.12291627870367788,
+    0.19559750725968542
+   ],
+   "fark_136": 0.03652053343002114,
+   "fark_136_ao": [
+    0.0007914356288109383,
+    0.07200029018158817
+   ],
+   "yuzde": 29.78438298473352,
+   "p_iyi": 0.97675
+  },
+  "20": {
+   "n_eksen": [
+    20,
+    20
+   ],
+   "rho": 0.15696480969253515,
+   "rho_ao": [
+    0.1255411809417838,
+    0.1899504650306672
+   ],
+   "fark_136": 0.034348425634015814,
+   "fark_136_ao": [
+    0.0027860123812815172,
+    0.06519265076023968
+   ],
+   "yuzde": 28.012916787386946,
+   "p_iyi": 0.983
+  },
+  "25": {
+   "n_eksen": [
+    25,
+    25
+   ],
+   "rho": 0.16418531613453602,
+   "rho_ao": [
+    0.13589971891257477,
+    0.19324110681430426
+   ],
+   "fark_136": 0.04156893207601668,
+   "fark_136_ao": [
+    0.014886890257162812,
+    0.06826243512755616
+   ],
+   "yuzde": 33.90161306353455,
+   "p_iyi": 1.0
+  },
+  "30": {
+   "n_eksen": [
+    30,
+    30
+   ],
+   "rho": 0.14560828645091115,
+   "rho_ao": [
+    0.12145386035215273,
+    0.1695653478877155
+   ],
+   "fark_136": 0.022991902392391808,
+   "fark_136_ao": [
+    0.004805158794525444,
+    0.041005227829233014
+   ],
+   "yuzde": 18.751084994823202,
+   "p_iyi": 0.99375
+  },
+  "40": {
+   "n_eksen": [
+    40,
+    40
+   ],
+   "rho": 0.14511976942840166,
+   "rho_ao": [
+    0.12045625172491475,
+    0.1695667838756485
+   ],
+   "fark_136": 0.02250338536988232,
+   "fark_136_ao": [
+    0.0073991557315167345,
+    0.03864081444295762
+   ],
+   "yuzde": 18.352674108496345,
+   "p_iyi": 0.99975
+  },
+  "50": {
+   "n_eksen": [
+    40,
+    50
+   ],
+   "rho": 0.13722480373973406,
+   "rho_ao": [
+    0.11489944307501133,
+    0.1589681087214825
+   ],
+   "fark_136": 0.014608419681214721,
+   "fark_136_ao": [
+    0.004741568112351865,
+    0.02488190253310955
+   ],
+   "yuzde": 11.913921449716518,
+   "p_iyi": 0.99825
+  },
+  "60": {
+   "n_eksen": [
+    40,
+    60
+   ],
+   "rho": 0.13052273536128953,
+   "rho_ao": [
+    0.10983198220860158,
+    0.1506538434084426
+   ],
+   "fark_136": 0.00790635130277019,
+   "fark_136_ao": [
+    -0.001011484076629862,
+    0.01665103838637997
+   ],
+   "yuzde": 6.448038215673397,
+   "p_iyi": 0.957
+  },
+  "80": {
+   "n_eksen": [
+    40,
+    80
+   ],
+   "rho": 0.1227239127848588,
+   "rho_ao": [
+    0.10361564925205938,
+    0.14179957942501448
+   ],
+   "fark_136": 0.00010752872633945643,
+   "fark_136_ao": [
+    -0.00864235067245452,
+    0.00816186058604558
+   ],
+   "yuzde": 0.0876952351556361,
+   "p_iyi": 0.517
+  },
+  "100": {
+   "n_eksen": [
+    40,
+    100
+   ],
+   "rho": 0.1342208896621095,
+   "rho_ao": [
+    0.11027655712133591,
+    0.15878483944166039
+   ],
+   "fark_136": 0.011604505603590151,
+   "fark_136_ao": [
+    -0.0005467155554519987,
+    0.026351463018298507
+   ],
+   "yuzde": 9.464074228491226,
+   "p_iyi": 0.9655
+  },
+  "136": {
+   "n_eksen": [
+    40,
+    136
+   ],
+   "rho": 0.12261638405851934,
+   "rho_ao": [
+    0.10213262810763746,
+    0.14318464158214597
+   ],
+   "fark_136": 0.0,
+   "fark_136_ao": [
+    0.0,
+    0.0
+   ],
+   "yuzde": 0.0,
+   "p_iyi": 0.0
+  }
+ },
+ "en_iyi_K": 25,
+ "agirlik_kipleri": {
+  "a_m148": {
+   "rho": 0.16418531613453602,
+   "rho_ao": [
+    0.13589971891257477,
+    0.19324110681430426
+   ],
+   "fark": 0.0,
+   "fark_ao": [
+    0.0,
+    0.0
+   ],
+   "yuzde": 0.0,
+   "p_iyi": 0.0
+  },
+  "esit": {
+   "rho": 0.165062197091972,
+   "rho_ao": [
+    0.1381965629217564,
+    0.19365468880696332
+   ],
+   "fark": 0.0008768809574359882,
+   "fark_ao": [
+    -0.002331203401289043,
+    0.0049151721170743404
+   ],
+   "yuzde": 0.5340800128054437,
+   "p_iyi": 0.644
+  },
+  "b_rho_cv": {
+   "rho": 0.14783828349177935,
+   "rho_ao": [
+    0.1238123988484995,
+    0.1724459465520656
+   ],
+   "fark": -0.016347032642756665,
+   "fark_ao": [
+    -0.026582944832440735,
+    -0.005318638785185079
+   ],
+   "yuzde": -9.95645227455155,
+   "p_iyi": 0.0025
+  },
+  "e_guven": {
+   "rho": 0.1477739226574129,
+   "rho_ao": [
+    0.12376166946341925,
+    0.17232616076396368
+   ],
+   "fark": -0.016411393477123115,
+   "fark_ao": [
+    -0.026699848675462393,
+    -0.005290424854929432
+   ],
+   "yuzde": -9.995652390543476,
+   "p_iyi": 0.0025
+  },
+  "i_ters_var": {
+   "rho": 0.1503599309357967,
+   "rho_ao": [
+    0.1314438205646417,
+    0.16896259644405387
+   ],
+   "fark": -0.013825385198739326,
+   "fark_ao": [
+    -0.031718558661483646,
+    0.005309749648961211
+   ],
+   "yuzde": -8.420597848963904,
+   "p_iyi": 0.07025
+  },
+  "c_buzme": {
+   "rho": 0.15059445762389115,
+   "rho_ao": [
+    0.1259124098599188,
+    0.17607540547548747
+   ],
+   "fark": -0.013590858510644871,
+   "fark_ao": [
+    -0.021604849751151515,
+    -0.005122253447114313
+   ],
+   "yuzde": -8.277755179707002,
+   "p_iyi": 0.00175
+  },
+  "h_isaret_rho_s": {
+   "rho": 0.12508665191018076,
+   "rho_ao": [
+    0.09711208230169757,
+    0.15475604271237606
+   ],
+   "fark": -0.03909866422435526,
+   "fark_ao": [
+    -0.05504381416426276,
+    -0.024969362685465187
+   ],
+   "yuzde": -23.81373995243107,
+   "p_iyi": 0.0
+  }
+ },
+ "nihai_eksenler": [
+  {
+   "sira": 1,
+   "eksen": "p_ilk_ofset*osm_direk_yogunlugu",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.029664663833761408,
+   "rho_cv": 0.05849372605191452,
+   "KATS": 0.05784609447583475
+  },
+  {
+   "sira": 2,
+   "eksen": "asiri_sicak:x_ay",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.025819757919425704,
+   "rho_cv": 0.07598778603715567,
+   "KATS": 0.050348527942880125
+  },
+  {
+   "sira": 3,
+   "eksen": "p_ilk_ofset*tanim_on3",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.02395979731368141,
+   "rho_cv": -0.08367544230039164,
+   "KATS": -0.04672160476167875
+  },
+  {
+   "sira": 4,
+   "eksen": "cdd22_ort7:kare",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.023421619221643132,
+   "rho_cv": 0.11293892015681778,
+   "KATS": 0.04567215748220411
+  },
+  {
+   "sira": 5,
+   "eksen": "cdd22_ort14:kare",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.02293256833460767,
+   "rho_cv": 0.11937519290922133,
+   "KATS": 0.044718508252484954
+  },
+  {
+   "sira": 6,
+   "eksen": "cdd22:kare",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.022763535719758424,
+   "rho_cv": 0.09933274263998305,
+   "KATS": 0.044388894653528924
+  },
+  {
+   "sira": 7,
+   "eksen": "bitki_ortusu_orani:x_soguk",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": -0.02239047993033779,
+   "rho_cv": -0.07170597883568913,
+   "KATS": -0.043661435864158694
+  },
+  {
+   "sira": 8,
+   "eksen": "asiri_sicak:x_soguk",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.02214060652156313,
+   "rho_cv": 0.14964683743579338,
+   "KATS": 0.0431741827170481
+  },
+  {
+   "sira": 9,
+   "eksen": "cdd24:x_ay",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.021941034052089952,
+   "rho_cv": 0.08887189364316576,
+   "KATS": 0.04278501640157541
+  },
+  {
+   "sira": 10,
+   "eksen": "toprak_nem_ort:x_soguk",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": -0.021899201946288256,
+   "rho_cv": -0.13341707045705856,
+   "KATS": -0.0427034437952621
+  },
+  {
+   "sira": 11,
+   "eksen": "sicaklik_ort_ort3:ust10",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.021790688452036522,
+   "rho_cv": 0.1475118484112398,
+   "KATS": 0.04249184248147122
+  },
+  {
+   "sira": 12,
+   "eksen": "cdd24_ort7:ust10",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.021688712751969298,
+   "rho_cv": 0.14615765627453986,
+   "KATS": 0.04229298986634013
+  },
+  {
+   "sira": 13,
+   "eksen": "cdd22_ort14:ust10",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.021615693940556468,
+   "rho_cv": 0.14430832701650617,
+   "KATS": 0.04215060318408511
+  },
+  {
+   "sira": 14,
+   "eksen": "su_orani:x_soguk",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.02152784180111579,
+   "rho_cv": 0.057045999247687315,
+   "KATS": 0.04197929151217579
+  },
+  {
+   "sira": 15,
+   "eksen": "p_gun_sayisi:x_sv",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": -0.021486550755701963,
+   "rho_cv": -0.10830736698064106,
+   "KATS": -0.041898773973618825
+  },
+  {
+   "sira": 16,
+   "eksen": "vpd_ort:ust10",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.02121511168238786,
+   "rho_cv": 0.13481255841348827,
+   "KATS": 0.041369467780656324
+  },
+  {
+   "sira": 17,
+   "eksen": "sicaklik_max:ust10",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.02106015550371085,
+   "rho_cv": 0.14614472857083255,
+   "KATS": 0.04106730323223616
+  },
+  {
+   "sira": 18,
+   "eksen": "hissedilen_max:ust10",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.020781222933051253,
+   "rho_cv": 0.1434606580913535,
+   "KATS": 0.04052338471944994
+  },
+  {
+   "sira": 19,
+   "eksen": "vpd_ort:kare",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.020599189483940353,
+   "rho_cv": 0.07323485884473802,
+   "KATS": 0.04016841949368369
+  },
+  {
+   "sira": 20,
+   "eksen": "nufus:x_soguk",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.020163484165575864,
+   "rho_cv": 0.050000962141576295,
+   "KATS": 0.03931879412287293
+  },
+  {
+   "sira": 21,
+   "eksen": "hissedilen_max:ust25",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.01999070762797313,
+   "rho_cv": 0.15709471210730916,
+   "KATS": 0.0389818798745476
+  },
+  {
+   "sira": 22,
+   "eksen": "t_kayma:ust25",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": -0.01998238612151589,
+   "rho_cv": 0.06103886923662366,
+   "KATS": 0.03896565293695598
+  },
+  {
+   "sira": 23,
+   "eksen": "sicaklik_ort:ust25",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.019373193707160792,
+   "rho_cv": 0.15613074240354657,
+   "KATS": 0.037777727728963546
+  },
+  {
+   "sira": 24,
+   "eksen": "sicaklik_min:ust10",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.019028571416853452,
+   "rho_cv": 0.12179955613910648,
+   "KATS": 0.03710571426286423
+  },
+  {
+   "sira": 25,
+   "eksen": "ulusal_gunluk:kare",
+   "yeni": false,
+   "aile": "m121_taban",
+   "rho_s": 0.018940026403248388,
+   "rho_cv": 0.0739160153045341,
+   "KATS": 0.036933051486334356
+  }
+ ],
+ "nihai_KATS": [
+  0.05784609447583475,
+  0.050348527942880125,
+  -0.04672160476167875,
+  0.04567215748220411,
+  0.044718508252484954,
+  0.044388894653528924,
+  -0.043661435864158694,
+  0.0431741827170481,
+  0.04278501640157541,
+  -0.0427034437952621,
+  0.04249184248147122,
+  0.04229298986634013,
+  0.04215060318408511,
+  0.04197929151217579,
+  -0.041898773973618825,
+  0.041369467780656324,
+  0.04106730323223616,
+  0.04052338471944994,
+  0.04016841949368369,
+  0.03931879412287293,
+  0.0389818798745476,
+  0.03896565293695598,
+  0.037777727728963546,
+  0.03710571426286423,
+  0.036933051486334356
+ ],
+ "nihai_ongorulen_norm": 0.21409999233656132,
+ "uyarilar": [
+  "K=25 secimi olcum verisine bakilarak yapildi; ama egri GENIS: K=17..40 bandinin TAMAMI K=136 den anlamli olarak iyi (P(iyi)>=0.98). Kesin K degeri gurultu icinde, KESMEK gerektigi degil.",
+  "Iki yon de ayri ayri ayni yonu gosteriyor: Nis-May->Haz-Tem 0.1976 (K=25) vs 0.1668 (K=136); Haz-Tem->Nis-May 0.1308 vs 0.0784. TAM yaz25 uzerinde ic olcum de K=25..30 da tepe yapiyor (0.1813/0.1851 vs 0.1375).",
+  "BAGIMSIZ dogrulama: m148 in kendi kurulusunun TAM yaz25 uzerindeki gerceklesen rho su K=25 te 0.1813, K=132 de 0.1375. Ongorulen ||BETA|| ise 0.2141 -> 0.4788 buyuyor. Yani eksen eklemek ONGORUYU sisiriyor, GERCEKLESEN rho yu DUSURUYOR.",
+  "D1 (tuketim_D1_demet.csv) ZATEN uretildi ve GD[0] ona capali. Bu kesim GERIYE donuk uygulanamaz; yalnizca HENUZ URETILMEMIS sonda yonleri icin gecerlidir. m148 in demet plani yeniden turetilirse GD[0] kayar ve olculen rho_1 YANLIS YONE atfedilir.",
+  "Havuz m148 in 136 ekseninin 132 sini yeniden uretiyor (havuz ust siniri: m121 den test-kapisini gecen ilk 120, m144 ten 303/329). Ilk 25 eksen bu ust sinirdan ETKILENMEZ.",
+  "Buradaki rho degerleri BLOK olcegindedir (CARPAN=0.798 uygulanmis). Test uzerinde ayni mutlak degerin gerceklesecegi IDDIA EDILMIYOR; iddia yontemler ARASI siralamadir."
+ ],
+ "yon_bazinda_K": {
+  "5": [
+   0.147,
+   0.0597
+  ],
+  "10": [
+   0.1728,
+   0.0931
+  ],
+  "13": [
+   0.1996,
+   0.1058
+  ],
+  "17": [
+   0.1909,
+   0.1274
+  ],
+  "20": [
+   0.1901,
+   0.1238
+  ],
+  "25": [
+   0.1976,
+   0.1308
+  ],
+  "30": [
+   0.1768,
+   0.1144
+  ],
+  "40": [
+   0.1668,
+   0.1234
+  ],
+  "60": [
+   0.1668,
+   0.0942
+  ],
+  "100": [
+   0.1668,
+   0.1016
+  ],
+  "136": [
+   0.1668,
+   0.0784
+  ]
+ },
+ "tam_yaz25_ic_rho": {
+  "5": 0.1106,
+  "10": 0.1258,
+  "13": 0.145,
+  "17": 0.1666,
+  "20": 0.1671,
+  "25": 0.1813,
+  "30": 0.1851,
+  "40": 0.1725,
+  "60": 0.1525,
+  "100": 0.1478,
+  "136": 0.1375
+ },
+ "takma_talimati": "m148_demet_plani.py icindeki eksen dongusune tek satir: kabul edilen eksen sayisi 25 e ulasinca dongu BITER (mevcut AZAMI_EKSEN=40 kapisi m121 e ozeldir; gereken TOPLAM kabul sayisi uzerine bir kapidir). KATS formulu, kapilar ve sira AYNEN KALIR. Secilen 25 eksen ve KATS degerleri nihai_eksenler / nihai_KATS alanlarindadir."
+}
