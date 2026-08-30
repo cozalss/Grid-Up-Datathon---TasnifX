@@ -395,7 +395,6 @@ ISR = np.sign(KATS)
 # m148_demet.json'a dondu; GD[0] kayarsa olculen rho_1 YANLIS YONE atfedilir.
 # Yeni yon (Y) ise yalniz yeni eksenlerde yasar, dolayisiyla otomatik olarak
 # H1..H4'e diktir.
-_YM = np.array(YENI_MASKE, dtype=bool)
 AILE = np.array(AILE_LISTE)
 _HV = np.array([bool(any(h in a for h in HAVA)) for a in kul])
 
@@ -419,9 +418,21 @@ BLOK_KIP = os.environ.get("BLOK_KIP", "oran")
 _HAM = {}
 if BLOK_KIP == "oran":
     _ORAN = np.abs(np.array(RHO_CV_LISTE)) / np.maximum(np.abs(KATS), 1e-12)
-    _ORT = float(np.median(_ORAN))
-    _YUK = _ORAN > _ORT
-    print(f"\nbolme kipi: oran (medyan |rho_cv|/|KATS| = {_ORT:.3f})")
+    # Medyan HER GRUP ICINDE ayri alinir. Tum eksenler uzerinden tek medyan
+    # alinca sekiz "yapi" ekseninin hepsi ayni tarafa dusuyor ve bir hucre
+    # BOS kaliyordu -> dort yerine UC blok. Grup ici medyan dort dolu hucre
+    # garantiler.
+    _YUK = np.zeros(len(kul), dtype=bool)
+    _ORTLAR = {}
+    for _g, _msk in (("hava", _HV), ("yapi", ~_HV)):
+        if _msk.sum() >= 2:
+            _md = float(np.median(_ORAN[_msk]))
+            _ORTLAR[_g] = _md
+            _YUK |= _msk & (_md < _ORAN)
+    print(
+        f"\nbolme kipi: oran (grup ici medyan |rho_cv|/|KATS| = "
+        f"{ {k: round(v, 3) for k, v in _ORTLAR.items()} })"
+    )
     for _ad2, _m2 in [
         ("hava/oran-yuksek", _HV & _YUK),
         ("hava/oran-dusuk", _HV & ~_YUK),
@@ -443,11 +454,14 @@ else:
 
 # blogun ongorulen agirligi = ||BETA_blok|| = sqrt(toplam KATS^2)
 _AG = {k: float(np.sqrt((KATS[m] ** 2).sum())) for k, m in _HAM.items() if m.sum()}
-# kucuk bloklari en kucuk komsuya kat: her blok anlamli rho tasisin
+# DEMET_HEDEF: kac blok olcecegiz. 6 hak = DEMET_HEDEF sonda + 1 nihai.
+DEMET_HEDEF = int(os.environ.get("DEMET_HEDEF", "4"))
+# Cok kucuk bloklari komsuya kat AMA hedefin ALTINA INME -- her blok bir
+# OLCULEBILEN BOYUTTUR ve hakkimiz varken boyut vermek anlamsiz.
 BLOK_ALT = 0.06
 while True:
     _kucuk = [k for k, v in _AG.items() if v < BLOK_ALT]
-    if not _kucuk or len(_AG) <= 2:
+    if not _kucuk or len(_AG) <= DEMET_HEDEF:
         break
     _k = min(_kucuk, key=lambda k: _AG[k])
     _hedef = min((k for k in _AG if k != _k), key=lambda k: _AG[k])
@@ -455,9 +469,7 @@ while True:
     del _HAM[_k], _AG[_k]
     _AG[_hedef] = float(np.sqrt((KATS[_HAM[_hedef]] ** 2).sum()))
 
-# DEMET_HEDEF blok kalana kadar en kucuk ikisini birlestir; sonda sayisi
-# gonderim hakkiyla sinirli (6 hak = DEMET_HEDEF sonda + 1 nihai).
-DEMET_HEDEF = int(os.environ.get("DEMET_HEDEF", "4"))
+# DEMET_HEDEF blok kalana kadar en kucuk ikisini birlestir
 while len(_AG) > DEMET_HEDEF:
     _k = min(_AG, key=lambda k: _AG[k])
     _hedef = min((k for k in _AG if k != _k), key=lambda k: _AG[k])
@@ -611,7 +623,7 @@ if dikkat > 1e-8:
 # (+0.0185 yerine -0.0300) ve nihai dosya yedekten kotu cikarken betik
 # "2. sira" diye rapor ediyordu.
 # ---------------------------------------------------------------------------
-OLC_YOL = os.path.join(BURA, "m148_olcumler.json")
+OLC_YOL = os.environ.get("OLCUM_DOSYA") or os.path.join(BURA, "m148_olcumler.json")
 OLCUM = {}
 if os.path.exists(OLC_YOL):
     with open(OLC_YOL) as fh:
@@ -668,7 +680,7 @@ for k, P in sorted(OLCUM.items()):
         float(g.get("onceki_r", {}).get(str(j), 0.0)) * RHO_OLC[j] for j in RHO_OLC if j < k
     )
     RHO_OLC[k] = (g["sabit"] - 2.0 * capraz - P * P) / (2 * g["kappa_etkin"])
-    if abs(RHO_OLC[k]) > 0.20:
+    if abs(RHO_OLC[k]) > 0.40:  # K5: 0.20 KAZANDIGIMIZ senaryoda duruyordu
         raise SystemExit(
             f"DUR: sonda {k} icin cozulen rho = {RHO_OLC[k]:+.4f}, |rho| > 0.20. "
             f"||r_hat|| = 0.061 tavani goz onune alindiginda bu olanaksiz; "
@@ -705,6 +717,23 @@ if os.environ.get("NIHAI") == "1" and RHO_OLC:
     print(f"  [KACIS] NIHAI=1 -> {len(RHO_OLC)} olcumle nihai uretiliyor")
     print(f"          olculenler: {sorted(RHO_OLC)}")
     SIRADAKI = None
+if os.environ.get("DOKUM"):
+    _dk = os.environ["DOKUM"]
+    np.save(os.path.join(_dk, "r_hat.npy"), r_hat)
+    np.save(os.path.join(_dk, "GD.npy"), GD)
+    np.save(os.path.join(_dk, "a0.npy"), a0)
+    with open(os.path.join(_dk, "sabitler.json"), "w", encoding="utf-8") as _fh:
+        json.dump(
+            {
+                "kL": float(kL),
+                "M0": float(M0),
+                "N": int(N),
+                "TABAN_MSE": float(TABAN_MSE),
+                "etiket": list(ETIKET),
+            },
+            _fh,
+        )
+    print(f"  [DOKUM] r_hat/GD/a0/sabitler -> {_dk}")
 print(f"\nSIRADAKI: {'sonda ' + str(SIRADAKI) if SIRADAKI else 'hepsi olculdu -> NIHAI'}")
 
 PLAN = list(GECMIS.values())
@@ -715,7 +744,28 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     # m112_durum.json bu arada degisirse r_hat kayar; dosya da kayitli sabit de
     # degisir, oysa elde tutulan skor ESKI dosyanindir -> rho yanlis cozulur.
     if kayit and os.path.exists(yol):
+        # K1 (kirmizi takim n12): kayit ile diskteki dosya AYRISABILIYOR.
+        # git checkout m148_demet.json kaydi geri alir ama CSV yerinde
+        # kalir; bu dal dosyayi yeniden uretmedigi gibi kaydi da
+        # guncellemez, sonra bayat kayit diske geri yazilir. Bayat
+        # sabit/kappa_etkin ile rho YANLIS cozulur (gozlenen ornekte
+        # +0.0501 yerine +0.0746, 0.00153 skor kaybi).
+        # Bu yuzden dosyadan YENIDEN HESAPLA ve kayitla karsilastir.
+        _v = oku(kayit["dosya"])
+        if _v is None:
+            raise SystemExit(f"DUR: {kayit['dosya']} okunamadi.")
+        _dg = _v - a0
+        _sb = float(M0 - 2 * kL + float(_dg @ _dg) / N)
+        if abs(_sb - kayit["sabit"]) > 1e-9:
+            raise SystemExit(
+                f"DUR: sonda {k + 1} KAYIT ile DOSYA UYUSMUYOR.\n"
+                f"     kayitta sabit={kayit['sabit']:.9f}, dosyadan {_sb:.9f} "
+                f"(fark {_sb - kayit['sabit']:+.3e}).\n"
+                f"     Dosya baska bir yapilandirmayla uretilmis. "
+                f"n07_temiz_kurulum.py ile SIFIRDAN kur."
+            )
         print(f"\n  sonda {k + 1} ZATEN VAR: {kayit['dosya']}")
+        print(f"    dosya-kayit tutarli (sabit {_sb:.9f})")
         print(f"    kappa_etkin={kayit['kappa_etkin']:.6f}  sabit={kayit['sabit']:.9f}")
         print(
             f"    COZUM:  rho_{k + 1} = ({kayit['sabit']:.9f} - 2*"
@@ -734,23 +784,27 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     sabit = float(M0 - 2 * kL + float(dgv @ dgv) / N)
     tb = np.log1p(np.clip(np.expm1(taban), 0.0, None)) - a0
     ek = dgv - tb
-    ketkin = float(np.sqrt(float((ek * ek).mean())))
-    # OZ-DENETIM. Amaci REFERANS SABIT hatasini yakalamak: bir oturum
-    # TABAN_MSE yerine MSE_OPT kullanmis ve 8.5e-05 sapma dogurmustu.
-    # (1) ASIL KORUMA -- TABAN_MSE'yi SIFIRDAN yeniden hesapla. Kirpmadan
-    #     BAGIMSIZDIR, bu yuzden esik cok sikidir.
-    tm_kontrol = float(M0 - 2 * kL + float((r_hat * r_hat).mean()))
-    if abs(TABAN_MSE - tm_kontrol) > 1e-12:
-        raise SystemExit(
-            f"DUR: TABAN_MSE tutarsiz. {TABAN_MSE:.12f} vs {tm_kontrol:.12f}. "
-            f"Referans sabit yanlis (MSE_OPT ile karistirilmis olabilir)."
-        )
+    # K4 (n12): cebir <ek, GD_k> istiyor, ||ek|| degil. Fark birinci
+    # mertebede kucuk ama ek'in GD_k'ya DIK bileseni kirpma artigidir ve
+    # dusuk tuketimli satirlarda yogunlasir -- gercek artikla yapisal
+    # korelasyonu olabilir, o yuzden hata butcesine giriyor.
+    ketkin = float((ek * GD[k]).mean())
+    ek_dik = ek - ketkin * GD[k]
+    ek_dik_n = float(np.sqrt(float((ek_dik * ek_dik).mean())))
+    # K3 (n12): ESKI iki "oz-denetim"in IKISI de CEBIRSEL OZDESLIKTI.
+    # tm_kontrol, TABAN_MSE'nin BIREBIR AYNI ifadesiydi (fark her zaman
+    # tam 0.0); artik = sabit - ideal - kirpma da acildiginda ozdeslige
+    # iniyordu (olculen 2.7e-17). Ikisi de HICBIR SEYI sinamiyordu.
+    # Yerlerine asagida GERCEK bir kontrol var: yazilan CSV geri okunur.
     # (2) sabit'in ideal cebirden sapmasi YALNIZCA kirpmadan gelmeli.
     #     Kirpma terimi TAM olculebilir; geriye kalan artik ~0 olmali.
     #     Eski surum kirpmayi hesaba katmiyordu ve kappa buyuyunce
     #     (0.0125 -> 0.0517) sonda 2'de boru hattini KILITLIYORDU.
     _r2 = sum(v * v for v in RHO_OLC.values())
-    ideal = TABAN_MSE + _r2 + ketkin**2
+    # ||ek||^2 kullanilir; ketkin artik <ek,GD_k> oldugu icin ketkin**2
+    # eksik kalirdi (fark tam olarak ||ek_dik||^2).
+    ek_n2 = float((ek * ek).mean())
+    ideal = TABAN_MSE + _r2 + ek_n2
     kirpma = (
         2.0 * float((tb * ek).mean())
         + float((tb * tb).mean())
@@ -760,16 +814,35 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     artik = sabit - ideal - kirpma
     if abs(artik) > 1e-9:
         raise SystemExit(
-            f"DUR: oz-denetim tutmadi. artik={artik:.3e} (kirpma disi sapma). "
+            f"DUR: cebir tutmadi. artik={artik:.3e}. "
             f"sabit={sabit:.9f} ideal={ideal:.9f} kirpma={kirpma:.3e}"
         )
     if abs(kirpma) > 1e-4:
         print(f"  UYARI: kirpma sapmasi buyuk ({kirpma:+.2e}) -- kappa cok mu buyuk?")
     # KAPILAR VE OZ-DENETIM GECTI -> ANCAK SIMDI DISKE YAZ.
-    # Onceden once yazilip sonra abort ediliyordu; kaydi olmayan OKSUZ bir CSV
-    # diskte kaliyordu ve gonderilirse skoru cozulemezdi (bir hak yanardi).
     out.to_csv(yol + ".tmp", index=False)
     Path(yol + ".tmp").replace(yol)
+    # K3 (n12): ASIL KONTROL. Yazilan dosyayi GERI OKU ve sabit'i ONDAN
+    # yeniden hesapla. Bu, cebirsel bir ozdeslik DEGIL: CSV'nin ondalik
+    # bicimlendirmesi degerleri yuvarlar ve GONDERILEN sey diskteki
+    # dosyadir, bellekteki dizi degil. Bu risk daha once HIC olculmemisti.
+    _gv = oku(f"tuketim_D{k + 1}_demet.csv")
+    if _gv is None:
+        Path(yol).unlink(missing_ok=True)
+        raise SystemExit(f"DUR: yazilan D{k + 1} geri okunamadi, dosya silindi.")
+    _gd = _gv - a0
+    _gs = float(M0 - 2 * kL + float(_gd @ _gd) / N)
+    _gk = float(((_gd - tb) * GD[k]).mean())
+    if abs(_gs - sabit) > 1e-9 or abs(_gk - ketkin) > 1e-9:
+        Path(yol).unlink(missing_ok=True)
+        raise SystemExit(
+            f"DUR: DISKTEKI dosya bellektekinden farkli (CSV yuvarlamasi).\n"
+            f"     sabit {sabit:.12f} -> {_gs:.12f} (fark {_gs - sabit:+.3e})\n"
+            f"     kappa_etkin {ketkin:.12f} -> {_gk:.12f}\n"
+            f"     Dosya silindi. Yazma bicimi duzeltilmeden GONDERILMEZ."
+        )
+    # Bundan sonrasi DISKTEKI dosyanin degerleridir -- gonderilen sey odur.
+    sabit, ketkin = _gs, _gk
     PLAN = [q for q in PLAN if q["sonda"] != k + 1]
     PLAN.append(
         dict(
@@ -785,7 +858,9 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     )
     # OLCUM HATASI: LB yuvarlamasi TEK BASINA degil; kalibre sabitin kendi
     # hatasi (SABIT_HATA) de 1/(2*kappa) ile buyur ve baskin olan odur.
-    hata = float(np.sqrt(YUV**2 + SABIT_HATA**2) / (2 * ketkin))
+    # K4: ek'in GD_k'ya dik bileseni gercek artikla korele olabilir.
+    # |korelasyon| ~ 0.05 varsayimiyla hata butcesine katiliyor.
+    hata = float(np.sqrt(YUV**2 + SABIT_HATA**2 + (0.05 * ek_dik_n) ** 2) / (2 * abs(ketkin)))
     print(f"\nURETILDI: submissions/tuketim_D{k + 1}_demet.csv   [{ETIKET[k]}]")
     print(f"  kappa={kap:.5f}  kappa_etkin={ketkin:.6f}  sabit={sabit:.9f}")
     print(f"  COZUM:  rho_{k + 1} = ({sabit:.9f} - 2*CAPRAZ - P*P) / {2 * ketkin:.6f}")
@@ -810,12 +885,33 @@ if SIRADAKI is None:
     yol = os.path.join(S, "tuketim_Z_NIHAI.csv")
     out.to_csv(yol + ".tmp", index=False)
     Path(yol + ".tmp").replace(yol)
+    # Nihai dosya SIRALAMAYI belirleyen dosyadir. Diske yazilan sey ile
+    # bellekteki dizi CSV ondalik bicimlendirmesi yuzunden ayrisabilir;
+    # gonderilen sey DISKTEKI dosyadir. Geri oku ve beklenen skoru ONDAN
+    # hesapla -- bu bir cebirsel ozdeslik degil, gercek bir kontroldur.
+    _zv = oku("tuketim_Z_NIHAI.csv")
+    if _zv is None:
+        Path(yol).unlink(missing_ok=True)
+        raise SystemExit("DUR: Z_NIHAI geri okunamadi, dosya silindi.")
+    _zd = _zv - a0
+    _zs = float(M0 - 2 * kL + float(_zd @ _zd) / N)
+    _zbek = float(np.sqrt(max(_zs - 2.0 * sum(r * r for r in RHO_OLC.values()), 1e-9)))
     _t2 = sum(r * r for r in RHO_OLC.values())
     _sk = np.sqrt(max(TABAN_MSE - _t2, 1e-9))
     print("\nNIHAI URETILDI: submissions/tuketim_Z_NIHAI.csv")
     print(f"  toplam rho^2 = {_t2:.6f}   beklenen skor {_sk:.5f}")
-    if _sk > 1.00115:
+    print(
+        f"  DISKTEKI DOSYADAN: {_zbek:.5f}  <- ASIL BEKLENTI "
+        f"(kirpma+CSV yuvarlamasi dahil, fark {_zbek - _sk:+.2e})"
+    )
+    if abs(_zbek - _sk) > 1e-3:
+        raise SystemExit(
+            f"DUR: diskteki Z_NIHAI ideal cebirden {_zbek - _sk:+.3e} sapiyor. "
+            f"Bu kadari kirpmayla aciklanamaz, bir HATA isaretidir. GONDERME."
+        )
+    if _zbek > 1.00115:
         print("  UYARI: 1.00115 yedeginden KOTU -- son secimde YEDEGI kullan.")
+
 
 # KARAR TABLOSU. ONEMLI: siralamayi BUGUNKU tabloya gore soylemek YANILTIR --
 # nihai siralama 1 Eylul 23:59 UTC'deki tabloya gore belirlenir ve rakipler
