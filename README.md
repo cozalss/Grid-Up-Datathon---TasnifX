@@ -11,15 +11,15 @@ dersler var.
 
 ---
 
-## Durum (2026-08-28)
+## Durum (2026-08-30)
 
 | | |
 |---|---|
-| **Liderlik Tablosu** (2026-08-29 23:50) | **5. Sıra (TasnifX)**: `1.00284` · **1.** Grid Grinders `0.99009` · **2.** Atakan Aldemir `0.99940` (hedef) · **3.** Duo-Electra `1.00129` (21:32'de `1.00566`'dan atladı) · **4.** Tuna Deniz `1.00267` — 2. sıra için gereken kazanç `0,007046` |
+| **Liderlik Tablosu** (2026-08-30 05:00) | **3. Sıra (TasnifX)**: `1.00115` · **1.** Grid Grinders `0.99009` · **2.** Atakan Aldemir `0.99940` (hedef) · **4.** Ahmet B. ALTUNOK `1.00118` · **5.** Duo-Electra `1.00129`. **Bilinen ama gönderilmemiş optimum: `1.00052`** |
 | **28 Ağustos** | `v101` → `1.01614` (ıskaladı, `L`yi çözdü) · `v102 = v83 + 0.459·(v101−v83)` → **`1.00553`**, ön kayıtla 5 hanede birebir, 9.→2. sıra · `v109` → `1.01818` (CV türevli yönler `κ≈0`). Kota 3/3 kullanıldı |
 | **29 Ağustos SONUCU** | 3 hak: `m4` **1.04300** (öngörü 1.00 — YANILDI, aktarım `f=−0,42`) · `p51` prob **1.00946** · `m6` iki-yön optimum **1.00284** (öngörü 1.00292). `1.00553 → 1.00284`, **5.→3. sıra**. Bulgu: geri-test SICAK dedi, LB SOĞUK dedi (`κ_soğuk 0,337` vs `κ_sıcak 0,122`). Ayrıntı: [`docs/55`](docs/55-29-agustos-bilancosu.md) |
-| **📋 KESİN KILAVUZ** | **[`docs/62`](docs/62-TAM-TARAMA-ve-DONMUS-PLAN.md)** — DONMUŞ plan, docs/60+61in yerine geçer. Tek başına yeterli. Arka plan: [`docs/59`](docs/59-tam-durum-2026-08-29.md) |
-| **30 Ağu – 1 Eyl planı** | **9 hak = 8 eksen ölçümü + 1 saf optimum.** Sıra `y40 z2 sul` / `y46 y45 q1c` / `t3 p42 NİHAİ`. Sürücü: `python experiments/model29/m108_gun.py --baslat`, sonra her skor için `--skor <S>`. **Eşik: ölçülen `rho ≥ 0,010` ise 2. sıra menzilde** (`rho=0,015` → nihai `0,99881`); `rho ≈ 0` ise `1,00060`, 3. sıra. Ölçülmüş geçmiş ortanca `0,027`. **Geriye gitme riski %0.** Gerekçe ve geri çekilen tahminler: [`docs/62`](docs/62-TAM-TARAMA-ve-DONMUS-PLAN.md) §10 |
+| **📋 KESİN KILAVUZ** | **[`docs/63`](docs/63-30-agustos-bilancosu-ve-31-plani.md)** — 30 Ağustos bilançosu + 31 Ağustos planı, docs/62'nin yerine geçer |
+| **30 Ağu SONUCU** | 3 gönderim, **6. → 3. sıra**. `s3y40` 1.00177 (`rho`−0,0132) · `YP_seviye` **1.00115** (`rho`−0,0304, **tarihin rekorunun 3 katı**) · `K_yenibas` 1.00191 (`rho`−0,0027, hipotez ÇÖKTÜ). İki büyük bulgu: (1) `g7` büzülmüş span çözümüymüş, tam span `0,003872` açıklıyor (+0,00047 bedava); (2) **model harmanının tavanı hedefin altındaydı** — artımlı rekor `rho` 0,0177, gereken 0,0213. Yeni bilgi **yapısal eksenlerden** geliyor. Ayrıntı: [`docs/63`](docs/63-30-agustos-bilancosu-ve-31-plani.md) |
 | **⚠ Dış veri** | **SERBEST** — düzenleyici e-postayla teyit etti. Tek yükümlülük: notebook'ta kaynak+amaç+kullanım beyanı. İlk 20'nin notebook'u inceleniyor, son tarih **2 Eylül 13:00**. **YENİ (29 Ağu):** forumda "dış kaynak serbest" diyen düzenleyici mesajı (3517424) **silindi**; kısıtlayıcı 737242 ayakta. E-posta teyidi tek dayanak → **`.eml`/ekran görüntüsü olarak repoya konmalı.** Arşiv: `experiments/model29/forum_son.txt` |
 | **⚠ Final seçimi** | Yarışma sonunda **2 gönderim seçilmeli** (Kaggle arayüzü, tarayıcı — API'de yok). Seçilmezse en iyi public otomatik seçilir, ikinci slot boşa gider |
 | **1. sıra** | **ULAŞILAMIYOR** — gereken `Q·δ*² = 0.028257`, ölçülen en iyi `0.018500`. Nüfus büyütmek kapatmıyor (δ, Q'dan hızlı çürüyor). Varılabilecek yer `0.996–0.999` ile sağlam 2. sıra: [`docs/52`](docs/52-olu-trafo-curudu-ve-prob-kampanyasi-2026-08-28.md) §14.6 |

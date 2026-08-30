@@ -36,6 +36,8 @@ RCOND = 1e-6
 DURUM = os.path.join(BURA, "m112_durum.json")
 # LB'den dogrudan olculmus, olculmus_skorlar.json'da olmayan MODEL yonleri
 EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
+# Dosyaya dayali yapisal yonler (formulle degil, hazir CSV ile tanimli)
+DOSYA_YON = {"yenibaslangic": "tuketim_KES_yenibaslangic.csv"}
 
 
 def oku(f):
@@ -83,6 +85,15 @@ def yapisal_yonler(te, a0, tr_tanim):
         "haftasonu": hs,
         "seviye2_x_soguk": (sv**2) * soguk,
     }
+    # AJAN A'nin uc holdout'ta plasebo kontrollu dogruladigi TAM SEKIL:
+    # dogrusal buzme, |u|>1.5 doygun, soguk 4x, ufuk Nis .30 May 1.0 Haz 1.4 Tem 1.32
+    ufuk = pd.Series(ay).map({4: 0.30, 5: 1.00, 6: 1.40, 7: 1.32}).to_numpy()
+    w = (1.0 + 3.0 * soguk) * ufuk
+    w = w / w.mean()
+    Y["buzme_tam"] = -w * np.clip(sv, -1.5, 1.5)
+    Y["buzme_sade"] = -np.clip(sv, -1.5, 1.5)
+    Y["buzme_soguk"] = -(1.0 + 3.0 * soguk) / (1.0 + 3.0 * soguk).mean() * np.clip(sv, -1.5, 1.5)
+    Y["buzme_ufuk"] = -(ufuk / ufuk.mean()) * np.clip(sv, -1.5, 1.5)
     for b in bolge.value_counts().index[:4]:
         m = (bolge == b).to_numpy().astype(np.float64)
         Y[f"bolge_{b.split()[0][:6]}"] = m
@@ -116,7 +127,11 @@ def kur(te, a0, N, d):
     V0 = np.array(V).T
     G0 = (V0.T @ V0) / N
     for ad, Lp in d["yapisal"].items():
-        x = Y[ad]
+        if ad in DOSYA_YON:
+            xf = oku(DOSYA_YON[ad]) - a0
+            x = xf / np.sqrt(float((xf * xf).mean()))
+        else:
+            x = Y[ad]
         c, *_ = np.linalg.lstsq(G0, (V0.T @ x) / N, rcond=RCOND)
         xp = x - V0 @ c
         V.append(xp)
@@ -165,7 +180,7 @@ def main():
 
     if a.liste or not (a.aday or a.nihai):
         print(f"\n{'aday':>22s} {'Q_dik':>9s} {'span-disi':>10s} {'rho=0.03 kazanci':>17s}")
-        for ad, x in Y.items():
+        for ad, x in list(Y.items()) + [(k, None) for k in DOSYA_YON]:
             if ad in d["yapisal"]:
                 print(f"{ad:>22s}  [OLCULDU  L={d['yapisal'][ad]:+.6f}]")
                 continue

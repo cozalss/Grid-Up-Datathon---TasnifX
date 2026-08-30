@@ -1,13 +1,25 @@
 {
  "yapisal": {
-  "seviye": -0.024649
+  "seviye": -0.024649,
+  "yenibaslangic": -0.0025625827943891745
  },
- "bekleyen": {
-  "aday": "seviye_x_soguk",
-  "cikti": "tuketim_K_sv_soguk.csv",
-  "sabit": 1.0012739028561795,
-  "kappa": 0.02217636955951965,
-  "Q_dik": 0.4575110812651239
- },
- "gecmis": []
+ "bekleyen": null,
+ "gecmis": [
+  {
+   "aday": "yenibaslangic",
+   "skor": 1.00191,
+   "L": -0.0025625827943891745,
+   "rho": -0.00274745243820762
+  }
+ ],
+ "plan_31agustos": [
+  "buzme_tam",
+  "seviye_x_soguk",
+  "seviye_x_ay"
+ ],
+ "hazir_dosyalar": {
+  "buzme_tam": "tuketim_K_buzme_tam.csv",
+  "seviye_x_soguk": "tuketim_K_seviye_x_soguk.csv",
+  "seviye_x_ay": "tuketim_K_seviye_x_ay.csv"
+ }
 }
