@@ -263,10 +263,37 @@ bölmesi **39/40**; trafo-bölmeli çapraz doğrulama tutma **0.906**, plasebo
 **z=+33.9**; `rcond`-kırılgan eksen **2/40**; büzme gürültü altında **0/60**
 patlama.
 
-**Dürüst duruş.** 2. sıra `ρ ≥ 0.0987` istiyor; zaman-tutmasıyla düzeltilmiş
-taşınan tahminimiz **0.0956** — kıl payı YETMİYOR. 3. sıra (`ρ ≥ 0.0590`)
-rahat görünüyor. Hedef gün içinde sertleştiği için 2. sıra artık sabahkinden
-zor; **garanti değil.**
+**Dürüst duruş — ÖNCEKİ KARAMSAR DEĞERLENDİRME DÜZELTİLDİ.**
+
+Daha önce "taşınan `ρ` 0.0956, kıl payı yetmiyor" denmişti. O ölçüm YANLIŞ
+SORUYU soruyordu: ağırlıkları bloğun bir yarısında **fit edip** diğer yarıda
+sınıyordu. Ama katsayılarımız LB'den geliyor (`1.95·|rho_s|`), bloktan fit
+edilmiyor — dolayısıyla o fit/holdout oranı ilgisiz.
+
+Sabit LB katsayılarıyla ölçüldüğünde (`m130`) zaman aşınması **yok**:
+
+```
+   n  rho_pred  kor_tum   gun1-24   25-48   49-73   74-98  99-122     sd  GEC/TUM
+  16    0.1793   0.1954    0.1475  0.1736  0.1138  0.1361  0.2737  0.056    1.049
+  24    0.2109   0.2112    0.1545  0.1762  0.1521  0.1663  0.2832  0.049    1.064
+  40    0.2522   0.2125    0.1068  0.1591  0.1538  0.1671  0.3025  0.066    1.105
+```
+
+Korelasyon geç pencerede **daha yüksek** (oran 1.05–1.11) ve test tam da
+geç-ufuk durumu.
+
+Doğru çerçeve:
+
+```
+sqrt(sum rho_s^2) = 0.1293      <- SAF LB OLCUMU
+rho_pred = 1.95 * 0.1293 = 0.2522
+2. sira icin gereken rho = 0.0991  ->  c >= 0.767
+3. sira icin gereken rho = 0.0593  ->  c >= 0.459
+seviye'nin olctugu c = 1.95
+```
+
+2. sıra, ölçtüğümüz çarpanın **%39'unun** tutmasını istiyor. Yine de
+**garanti değil** — `c = 1.95` tek bir ölçümdür (n=1).
 
 ---
 
