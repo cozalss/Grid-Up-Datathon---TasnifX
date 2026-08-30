@@ -11,6 +11,11 @@
         "date": "2026-08-17",
         "scope": "8 artifacts, license + redistribution review",
         "outcome": "License and redistribution resolved for all 8. immutable stays false for the 5 live-API pulls; see immutable_semantics."
+      },
+      {
+        "date": "2026-08-30",
+        "scope": "EPIAS ulusal saatlik tuketim/uretim -- kunye eksigi kapatildi",
+        "outcome": "tuketim_saatlik.parquet URETIM MODELI GIRDISI oldugu halde kunyede yoktu (scripts/tuketim_model.py:558, ulusal_* bes oznitelik). Eklendi, model_girdisi=true. uretim_saatlik.parquet model_girdisi=false olarak eklendi."
       }
     ],
     "model_girdisi_semantigi": "model_girdisi=false: artifact YEREL ANALIZ ve PROVA icin kullanilabilir ama modele feature olarak BAGLANAMAZ. Kod duzeyinde gridup.uygunluk tarafindan zorlanir (tests/test_uygunluk_kapisi.py). Isaret yoksa varsayilan izinlidir."
@@ -554,6 +559,62 @@
           "ilce_key"
         ]
       }
+    },
+    {
+      "path": "data/external/epias/tuketim_saatlik.parquet",
+      "sha256": "2ea295a6329ea51b1b80fa3826c5e8a9223de81ff7df94a9e7dd138cf12c5eb5",
+      "license": "EPIAS-transparency-public",
+      "redistribution": "restricted",
+      "attribution": "EPIAS Seffaflik Platformu (seffaflik.epias.com.tr) -- Turkiye ULUSAL saatlik elektrik tuketimi (gercek zamanli tuketim serisi), 2020-01-01..2026-08-20.",
+      "verification": {
+        "basis": "platform-terms",
+        "reviewed_at": "2026-08-30",
+        "evidence": "EPIAS Seffaflik Platformu'ndan kayitli kullanici kimligiyle API uzerinden cekildi (scripts/fetch_epias_load.py). ULUSAL toplam seridir; yarisma hedefi olan trafo bazli tuketimin gecmisi DEGILDIR, dolayisiyla kesinti kayitlarindan farkli olarak model girdisi olmasinda sakinca gorulmemistir. Yeniden dagitim kosullari ayrica incelenmedigi icin redistribution=restricted ve Kaggle paketine KONMAZ. Seri test donemini (2026 Nisan-Temmuz) kapsar; bu, notebook'ta acikca beyan edilir."
+      },
+      "source": {
+        "uri": "https://seffaflik.epias.com.tr/electricity-service/v1/consumption/data/realtime-consumption",
+        "snapshot_ref": "2020-01-01 00:00 .. 2026-08-20 23:00, saatlik, 58176 satir",
+        "retrieved_at": "2026-08-21",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 58176,
+        "required_columns": [
+          "zaman",
+          "consumption"
+        ]
+      },
+      "model_girdisi": true,
+      "model_girdisi_gerekce": "scripts/tuketim_model.py::ulusal_ekle -- bes oznitelik uretir: ulusal_gunluk, ulusal_tepe, ulusal_tepe_orani, ulusal_yil_once (364 gun once, haftagunu hizali), ulusal_yillik_buyume. Amac: ulusal talep seviyesinin ve yillik buyumenin trafo bazli tahmine ortak zaman capasi olarak girmesi. Ulusal toplamdir, hedefin trafo bazli gecmisi degildir."
+    },
+    {
+      "path": "data/external/epias/uretim_saatlik.parquet",
+      "sha256": "40193def4355dc4cbcab8a7a20cc3927ce78fabfe85758c01482c43c1f0436a9",
+      "license": "EPIAS-transparency-public",
+      "redistribution": "restricted",
+      "attribution": "EPIAS Seffaflik Platformu (seffaflik.epias.com.tr) -- Turkiye ulusal saatlik elektrik URETIMI, kaynak kirilimli (dogalgaz, hidro, linyit, ruzgar, gunes vb.), 2020-01-01..2026-08-20.",
+      "verification": {
+        "basis": "platform-terms",
+        "reviewed_at": "2026-08-30",
+        "evidence": "tuketim_saatlik ile ayni cekimde alindi (scripts/fetch_epias_load.py). Uretim modeline BAGLANMADI; yalnizca kapsam denetimi (scripts/kapsam_deseni.py) ve kesif icin kullanildi."
+      },
+      "source": {
+        "uri": "https://seffaflik.epias.com.tr/electricity-service/v1/generation/data/realtime-generation",
+        "snapshot_ref": "2020-01-01 00:00 .. 2026-08-20 23:00, saatlik, 58176 satir",
+        "retrieved_at": "2026-08-21",
+        "immutable": false
+      },
+      "schema": {
+        "format": "parquet",
+        "min_rows": 58176,
+        "required_columns": [
+          "zaman",
+          "total"
+        ]
+      },
+      "model_girdisi": false,
+      "model_girdisi_gerekce": "Uretim boru hattinda hicbir oznitelige donusmuyor; yalnizca kesif ve kapsam denetiminde okundu."
     }
   ]
 }

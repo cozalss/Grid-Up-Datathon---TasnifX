@@ -204,6 +204,42 @@ def hedef996_yonleri(ozellikler, a0):
     return {ad: _standartla(yon, ad) for ad, yon in ham.items()}
 
 
+#: docs/67 -- ileri-zaman CV'de MEVSIM-KIRLI olmayan kesitsel kolonlar.
+#: Ham blok modelinin mevsim rampasi yanliligi a0'da YOK; bu yuzden mevsimsel
+#: eksenlerin CV korelasyonu LB'nin kendi span olcumune gore 11-15 kat sisik
+#: cikiyor. Asagidakilerde o oran 0.3-3.3, yani CV ile LB uyusuyor -- rekoru
+#: veren `seviye` de bu gruptaydi.
+KESITSEL_KOLONLAR = [
+    "id",
+    "t_yuk_faktoru",
+    "tarim_orani",
+    "yerlesim_orani",
+    "ilce_nufus_yogunlugu",
+    "t_log_ort",
+    "t_log_std",
+    "t_sifir_orani",
+    "guc_yuzdelik",
+    "tatil_agirligi",
+]
+
+
+def kesitsel_yonler(te, a0):
+    """Mevsim-kirli olmayan kesitsel yonler. Eksik degerler medyanla dolar."""
+    yol = os.path.join(KOK, "data/interim/deney/test.parquet")
+    ozellikler = pd.read_parquet(yol, columns=KESITSEL_KOLONLAR)
+    if len(ozellikler) != len(te) or not np.array_equal(ozellikler.id.values, te.id.values):
+        raise ValueError("kesitsel ozellikler ham test ile ayni sirada degil")
+    sv = _standartla(a0, "seviye")
+    Y = {}
+    for k in KESITSEL_KOLONLAR:
+        if k == "id":
+            continue
+        Y[f"k_{k}"] = _standartla(ozellikler[k].to_numpy(dtype=np.float64), k)
+    Y["k_seviye_x_yuk"] = _standartla(sv * Y["k_t_yuk_faktoru"], "seviye_x_yuk")
+    Y["k_seviye_x_tarim"] = _standartla(sv * Y["k_tarim_orani"], "seviye_x_tarim")
+    return Y
+
+
 def hedef996_paketi(te, a0, bilinen, gram):
     """Test ozelliklerinden hedef duzeltmeyi ve tek-haklik bilesik sondayi kur."""
     yol = os.path.join(KOK, "data/interim/deney/test.parquet")
@@ -375,6 +411,7 @@ def main():
 
     hedef_yonler, hedef_duzeltme, hedef_bilgi = hedef996_paketi(te, a0, V, G)
     Y.update(hedef_yonler)
+    Y.update(kesitsel_yonler(te, a0))
 
     if sum(bool(x) for x in (a.aday, a.nihai, a.rank2, a.hedef996)) > 1:
         raise SystemExit("--aday, --nihai, --rank2 ve --hedef996 birlikte kullanilamaz")
