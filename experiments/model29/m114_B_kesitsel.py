@@ -110,7 +110,7 @@ for o in DUR.get("olcumler", []):
 V, L = np.array(V).T, np.array(L)
 G = (V.T @ V) / N
 Gi = np.linalg.pinv(G, rcond=1e-6)  # DIKLESTIRME icin tam span
-r_hat, gercek_kazanc = buzmeli_r_hat(V, L, G, N)  # TABAN icin kip buzmesi
+r_hat, gercek_kazanc, kL = buzmeli_r_hat(V, L, G, N)  # TABAN icin kip buzmesi
 nrm = float((r_hat * r_hat).mean())
 MSE_OPT = M0 - gercek_kazanc
 print(f"buzmeli taban: gercek kazanc={gercek_kazanc:.6f} -> saf optimum {np.sqrt(MSE_OPT):.6f}")
@@ -161,7 +161,7 @@ gec = yol + ".tmp"
 out.to_csv(gec, index=False)
 Path(gec).replace(yol)
 dgv = np.log1p(out.tuketim.values) - a0
-sabit = float(M0 - 2 * nrm + float(dgv @ dgv) / N)
+sabit = float(M0 - 2 * kL + float(dgv @ dgv) / N)
 print(f"\nYAZILDI: submissions/{CIKTI}")
 print(f"  sifir tahmin {int((y == 0).sum()):,}  maks {out.tuketim.max():,.0f}")
 print(f"  sabit = {sabit:.9f}")

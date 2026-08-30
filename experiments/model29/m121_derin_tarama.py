@@ -71,7 +71,7 @@ for o in DUR.get("olcumler", []):
 V, L = np.array(V).T, np.array(L)
 G = (V.T @ V) / N
 Gi = np.linalg.pinv(G, rcond=1e-6)
-_, gercek = buzmeli_r_hat(V, L, G, N)
+_, gercek, kL = buzmeli_r_hat(V, L, G, N)
 print(f"saf optimum {np.sqrt(M0 - gercek):.6f}")
 
 tp = pd.read_parquet(os.path.join(DN, "test.parquet"))

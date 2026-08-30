@@ -85,7 +85,7 @@ for o in DUR.get("olcumler", []):
 V, L = np.array(V).T, np.array(L)
 G = (V.T @ V) / N
 Gi = np.linalg.pinv(G, rcond=1e-6)
-r_hat, gercek = buzmeli_r_hat(V, L, G, N)
+r_hat, gercek, kL = buzmeli_r_hat(V, L, G, N)
 nrm = float((r_hat * r_hat).mean())
 MSE_OPT = M0 - gercek
 print(f"saf optimum {np.sqrt(MSE_OPT):.6f}")
@@ -249,7 +249,7 @@ if all(kapi.values()):
     out.to_csv(yol + ".tmp", index=False)
     Path(yol + ".tmp").replace(yol)
     dgv = np.log1p(out.tuketim.values) - a0
-    sabit = float(M0 - 2 * nrm + float(dgv @ dgv) / N)
+    sabit = float(M0 - 2 * kL + float(dgv @ dgv) / N)
     ek = dgv - r_hat
     print(
         f"YAZILDI  kappa={KAPPA:.4f}  sifir {int((y == 0).sum()):,}  "

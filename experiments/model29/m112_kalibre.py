@@ -354,7 +354,7 @@ def kur(te, a0, N, d):
     V = np.array(V).T
     L = np.array(L)
     G = (V.T @ V) / N
-    r_hat, _ = buzmeli_r_hat(V, L, G, N)
+    r_hat, _, _ = buzmeli_r_hat(V, L, G, N)
     return r_hat, V, G, Y
 
 
@@ -391,6 +391,14 @@ def buzmeli_r_hat(V, L, G, N, *, sigma=None):
         a_i* = max(c_i^2 - sigma_i^2, 0) / c_i^2
     Kesme a_i'yi 0/1'e zorladigi icin bu kesin olarak daha iyidir; ayrica
     tekil kiplerin gurultuyu buyutmesini kendiliginden engeller.
+
+    Doner: (r_hat, beklenen_kazanc, kL) -- kL = <r, r_hat>/N = k'L.
+
+    DIKKAT (docs/69). Buzmeli cozumde  k'L != k'Gk = ||r_hat||^2 . Sondanin
+    sabitinde k'L kullanilmalidir:
+        S^2 = M0 - 2*k'L + Q_d - 2*kappa*rho
+    Buzmesiz pinv cozumunde k = G^-1 L oldugu icin ikisi esittir ve fark
+    gorunmez; buzme ile fark 1.2e-04 (skorda 6e-05) buyuklugundedir.
     """
     if sigma is None:
         sigma = L_gurultusu(V, N)
@@ -408,7 +416,7 @@ def buzmeli_r_hat(V, L, G, N, *, sigma=None):
         a[i] = lam2 / c[i] ** 2
         kazanc += lam2**2 / (c[i] ** 2 * w[i])
     katsayi = U @ (a * c / np.where(w > 1e-12, w, 1.0))
-    return V @ katsayi, float(kazanc)
+    return V @ katsayi, float(kazanc), float(katsayi @ L)
 
 
 def main():
