@@ -11,8 +11,8 @@ Liderlik tablosu (30 Agustos 20:23):
 
 | # | takim | skor |
 |---|---|---|
-| 1 | Grid Grinders | 0.99009 |
-| 2 | **Duo-Electra** | **0.99614** ← HEDEF |
+| 1 | **Grid Grinders** | **0.99009** ← ASIL HEDEF |
+| 2 | **Duo-Electra** | **0.99614** ← kabul edilebilir |
 | 3 | Berke Kuc | 0.99927 |
 | 4 | Atakan Aldemir | 0.99937 |
 | 5 | Ahmet Celik | 1.00047 |
@@ -21,9 +21,18 @@ Liderlik tablosu (30 Agustos 20:23):
 
 Bugun uc kez geciildik. Kota bugun bitti (3/3 kullanildi).
 
+> **HEDEF (kullanici, 30 Agustos 21:30):** ASIL AMAC **1. SIRA**.
+> 2. sira da kabul edilebilir. Gereken toplam rho^2:
+> 1. sira **0.02175**, 2. sira **0.00973**, 3. sira 0.00349.
+> 1. sira, 2. siranin **2.23 KATI** sinyal istiyor.
+
 **Kalan hak: 6.** 31 Agustos 03:00 (yerel) sifirlanir → 3 hak.
 1 Eylul 03:00 → 3 hak. Son siralamada **2 gonderim secilir, Kaggle
 IYISINI alir.**
+
+---
+
+Gonderim mekaniginin tam dokumu: 
 
 ---
 
