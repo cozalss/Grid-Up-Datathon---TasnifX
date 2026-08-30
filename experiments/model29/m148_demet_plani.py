@@ -926,7 +926,16 @@ _ESIK_BUGUN = [
     (1.000475, "5."),
     (1.000495, "6."),
 ]
-_ESIK_BITIS = [(0.9872, "1."), (0.9897, "2."), (0.99927, "3.")]
+# n17: 2. sira esigi 8 SAAT, 1. sira 24 SAAT hic degismedi -- kayma durdu.
+# n02'nin (kayma suruyor varsayimli) 0.9897 tahmini 0.99343'e tasindi.
+_EB = os.path.join(M29, "n17_esik_guncel.json")
+if os.path.exists(_EB):
+    with open(_EB, encoding="utf-8") as _fh:
+        _d17 = json.load(_fh)
+    _e2 = float(_d17["merkez"])
+    _ESIK_BITIS = [(_e2 - 0.0025, "1."), (_e2, "2."), (0.99927, "3.")]
+else:
+    _ESIK_BITIS = [(0.9872, "1."), (0.9897, "2."), (0.99927, "3.")]
 
 
 def _sira(sk, tablo):
@@ -942,7 +951,7 @@ print(
 for f in [0.0, 0.00349, 0.00973, 0.01690, 0.02253, 0.03000]:
     sk = np.sqrt(max(TABAN_MSE - f, 1e-9))
     print(f"{f:13.5f} {sk:11.5f}  {_sira(sk, _ESIK_BUGUN):>13s}  {_sira(sk, _ESIK_BITIS):>13s}")
-print("  (bitis tahmini: n02_esik_tahmini.json, 2. sira 0.9897 %80 GA [0.9870, 0.9908])")
+print(f"  (bitis tahmini: 2. sira {_ESIK_BITIS[1][0]:.5f}, kaynak n17_esik_guncel.json)")
 
 yaz_atomik(
     GECMIS_YOL,
