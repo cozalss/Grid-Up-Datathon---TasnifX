@@ -63,8 +63,28 @@ def _esik(ad):
     return float(d["merkez"]), rng.normal(float(d["merkez"]), (z[1] - z[0]) / (2 * 1.2816), S)
 
 
+# n17: 2. sira esigi 8 SAAT hic degismedi (1. sira 24 saattir sabit).
+# n02'nin dun geceki tahmini kaymanin SURECEGINI varsayiyordu; durgunluk
+# gozlemi merkezi 0.9897'den 0.99343'e TASIDI. Varsa n17 kullanilir.
+_N17 = os.path.join(M29, "n17_esik_guncel.json")
+
+
 ESIK1, e1 = _esik("rank1")
 ESIK2, e2 = _esik("rank2")
+if os.path.exists(_N17):
+    with open(_N17, encoding="utf-8") as fh:
+        _D17 = json.load(fh)
+    ESIK2 = float(_D17["merkez"])
+    _z = _D17["zarf"]
+    # zarf UC SENARYONUN aralikidir (dogrusal / ussel / tamamen durdu),
+    # bir guven araligi degil -- duzgun ornekleme icin ucgen dagilim.
+    e2 = rng.triangular(float(_z[0]), ESIK2, float(_z[1]), S)
+    # 1. sira 24 saattir sabit; onun da zarfini 2. siranin kaymasi kadar
+    # yukari tasiyoruz (n02'nin rank1 merkezi 0.9872 idi).
+    _kay = ESIK2 - float(E["rank2_tahmin_1eylul_2359UTC"]["NIHAI_TAHMIN"]["merkez"])
+    ESIK1 = ESIK1 + _kay
+    e1 = e1 + _kay
+    print(f"n17 kullanildi: 2. sira esigi {ESIK2:.5f} zarf {_z} (n02'ye gore {_kay:+.5f} kaydi)")
 # TUTARLILIK: 1. sira esigi 2. sira esiginden BUYUK OLAMAZ. Ikisini bagimsiz
 # ornekleyince 1. siranin genis zarfi (0.9776-0.99025) bazi orneklerde
 # 2. siranin uzerine cikiyordu ve P(1.) > P(2.) gibi OLANAKSIZ bir sonuc
