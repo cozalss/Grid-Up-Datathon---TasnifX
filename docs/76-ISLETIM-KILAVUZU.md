@@ -8,6 +8,22 @@ Komut kullaniciya verilir, kullanici calistirir.**
 
 ---
 
+## 0a. YAPILANDIRMA — ortam degiskenleri
+
+`m148_demet_plani.py` su ayarlarla kosar. **Hepsinin varsayilani dogrudur;
+elle vermek gerekmez.** Burada yalnizca ne oldugu yaziyor.
+
+| degisken | varsayilan | ne yapar |
+|---|---|---|
+| `K_AZAMI` | **25** | Kabul edilen eksen sayisini kirpar. `n11` K=25'te gerceklesen `rho`'nun K=136'dakinden **%34 yuksek** oldugunu olctu (%95 AO [+%12, +%56]). `0` kirpmayi kapatir. |
+| `BLOK_KIP` | **oran** | Blok bolmesi. `oran` = {hava, yapi} × {`\|rho_cv\|/\|KATS\|` yuksek, dusuk}. `aile` secenegi K=25'te yalnizca **iki** blok uretir (ilk 25 eksenin hepsi `m121_taban`), o yuzden kullanilmaz. |
+| `DEMET_HEDEF` | 4 | Blok sayisi. Degistirilirse `n06_kappa.py` TEKRAR kosulmali. |
+| `NIHAI` | — | `1` verilince sonda uretmeyi birakip `Z_NIHAI`'yi yazar. |
+| `UYARLANABILIR` | — | `<blok_no>` verilince o blogun ust yarisini 5. yon olarak ekler (bkz. docs/77). Blok sayisi degistigi icin `n06_kappa.py` TEKRAR kosulmali. |
+| `C_OLCULEN` | — | D1'den sonra olculen `\|c\|`; `n06_kappa.py`'ye verilir. |
+
+---
+
 ## 0. Her gun 03:00'ten (yerel) once — HAZIRLIK
 
 ```bash

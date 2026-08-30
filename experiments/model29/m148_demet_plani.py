@@ -399,18 +399,47 @@ _YM = np.array(YENI_MASKE, dtype=bool)
 AILE = np.array(AILE_LISTE)
 _HV = np.array([bool(any(h in a for h in HAVA)) for a in kul])
 
-# --- AILE BLOKLARI ---------------------------------------------------------
-# Once anlamli aileler, sonra buyuk olanlar hava/yapisal diye ikiye bolunur.
-# Etiket -> bu bloga giren eksenlerin maskesi.
+# --- BLOKLAR ---------------------------------------------------------------
+# NEDEN IKI KIP: K_AZAMI=25 ile kesince ilk 25 eksenin HEPSI m121_taban
+# cikiyor (H_carpim40'in |rho_s|'leri daha kucuk, kesimin altinda kaliyor).
+# O zaman "aile" bolmesi yalnizca IKI blok uretir ve 6 gonderim hakkinin
+# olcum kapasitesi bosa gider. Bu yuzden ikinci bir bolme kipi gerekli.
+#
+#   aile : {m121_taban, H_carpim40} x {hava, yapi}
+#          Ikinci ayrim KOKEN. Yalnizca genis span (K buyuk) icin anlamli.
+#   oran : {hava, yapi} x {oran yuksek, oran dusuk}
+#          oran = |rho_cv| / |KATS|. Agirliklandirma belirsizligini DOGRUDAN
+#          hedge eder: KATS = 1.95*|rho_s| ile agirliklandiriyoruz ama
+#          rho_cv (yaz25'te DOGRUDAN olculen) rakip tahmindir ve n10 1.95'i
+#          disladi (P(|c| >= 1.95) = 0.0004). Iki agirliklandirma ayri
+#          bloklara duserse hangisinin dogru oldugunu LB KENDISI secer.
+#          hava/yapi ayrimi korunur (m141 bu iki ailenin ayri davrandigini
+#          olctu). K=25'te dort dengeli blok verir.
+BLOK_KIP = os.environ.get("BLOK_KIP", "oran")
 _HAM = {}
-for _f in sorted(set(AILE_LISTE)):
-    _m = np.equal(AILE, _f)  # ruff SIM300: AILE buyuk harfli, sabit sanilyor
-    if _f in ("m121_taban", "H_carpim40"):
-        # buyuk aileler: hava vs yapisal olarak ayrilir
-        _HAM[f"{_f}/hava"] = _m & _HV
-        _HAM[f"{_f}/yapi"] = _m & ~_HV
-    else:
-        _HAM[_f] = _m
+if BLOK_KIP == "oran":
+    _ORAN = np.abs(np.array(RHO_CV_LISTE)) / np.maximum(np.abs(KATS), 1e-12)
+    _ORT = float(np.median(_ORAN))
+    _YUK = _ORAN > _ORT
+    print(f"\nbolme kipi: oran (medyan |rho_cv|/|KATS| = {_ORT:.3f})")
+    for _ad2, _m2 in [
+        ("hava/oran-yuksek", _HV & _YUK),
+        ("hava/oran-dusuk", _HV & ~_YUK),
+        ("yapi/oran-yuksek", ~_HV & _YUK),
+        ("yapi/oran-dusuk", ~_HV & ~_YUK),
+    ]:
+        if _m2.sum():
+            _HAM[_ad2] = _m2
+else:
+    print("\nbolme kipi: aile")
+    for _f in sorted(set(AILE_LISTE)):
+        _m = np.equal(AILE, _f)  # ruff SIM300: AILE buyuk harfli, sabit sanilyor
+        if _f in ("m121_taban", "H_carpim40"):
+            # buyuk aileler: hava vs yapisal diye ikiye ayrilir
+            _HAM[f"{_f}/hava"] = _m & _HV
+            _HAM[f"{_f}/yapi"] = _m & ~_HV
+        else:
+            _HAM[_f] = _m
 
 # blogun ongorulen agirligi = ||BETA_blok|| = sqrt(toplam KATS^2)
 _AG = {k: float(np.sqrt((KATS[m] ** 2).sum())) for k, m in _HAM.items() if m.sum()}
