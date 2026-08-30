@@ -336,7 +336,7 @@ for i in range(len(U)):
 
 print()
 print(f"{'hipotez':>18s} {'eksen':>6s} {'artakalan':>10s} {'ongorulen rho_k':>16s}")
-G, RHO_K, ETIKET = [], [], []
+GD, RHO_K, ETIKET = [], [], []
 for ad, ag in HIPOTEZ.items():
     v = np.zeros(N)
     for i in range(len(U)):
@@ -345,46 +345,65 @@ for ad, ag in HIPOTEZ.items():
     if n0 < 1e-12:
         continue
     v = v / n0
-    for g in G:
+    for g in GD:
         v = v - float((v * g).mean()) * g
     n1 = float(np.sqrt(float((v * v).mean())))
     if n1 < 0.05:
         print(f"{ad:>18s} {int((ag > 0).sum()):6d} {n1:10.3f}  ATLANDI (onceki yone cok yakin)")
         continue
     v = v / n1
-    G.append(v)
-    # H1 disindaki yonler HEDGE'''dir: onlar icin ongoru YOK (BETA tamamen
-    # H1 boyunca uzandigi icin dik bilesenleri sifir cikar). Sondanin kendi
-    # skoru onemsiz -- onemli olan OLCUM -- bu yuzden kappa TEKDUZE secilir:
-    # her yone ongorulen toplamin esit payi. Olcum hassasiyeti her halukarda
-    # 1e-4'ten iyi.
+    GD.append(v)
     RHO_K.append(abs(float((BETA * v).mean())))
     ETIKET.append(ad)
     print(f"{ad:>18s} {int((ag > 0).sum()):6d} {n1:10.3f} {RHO_K[-1]:16.4f}")
-G = np.array(G)
+GD = np.array(GD)
 RHO_K = np.array(RHO_K)
-DEMET = len(G)
-# TAVAN DUZELTMESI (m145 denetimi). 1.95 tek bir deneyden geliyordu; dort
-# bagimsiz yol |c| ~ 0.7 diyor (%90 araligi [0.3, 1.3]). Net kazanc
-# 2*a*rho - a^2 asimetriktir: c_gercek=0.7 iken a=1.95 kullanmak kazanci
-# NEGATIFE cevirir (hicbir sey yapmamaktan kotu), ama a=0.8 kullanmak
-# c_gercek=1.95 ciksa bile POZITIF kalir. Bu yuzden kappa 0.8/1.95 ile
-# olceklenir. Olcum hassasiyeti yine de 1e-4'ten iyi kalir.
-C_TAVAN = 0.8
-KAPPA_K = np.full(DEMET, (C_TAVAN / 1.95) * float(RHO) / np.sqrt(DEMET))
-gruplar = [[] for _ in range(DEMET)]
+DEMET = len(GD)
+
+# ---------------------------------------------------------------------------
+# KAPPA SECIMI (m150 optimizasyonu).
+#
+# Denge: nihaiye maliyet olcum_hatasi^2 (kappa ile AZALIR) vs sondanin kendi
+# kaybi kappa^2 - 2*kappa*mu_k (kappa ile ARTAR, hak biterse odenir).
+#   yon 1 (H1): mu_1 = 0.0565, kappa* = 0.0566 -> mevcut 0.0517 zaten isabetli
+#   yon 2-4   : mu_k ~ 0 (BETA tamamen H1 boyunca), kappa* = 0.0125
+# Hedge yonlerinde eski tekduze 0.0517, her biri o sonda elde kalan son dosya
+# olursa ~0.0004 skor kaybettiriyordu.
+#
+# ALT SINIR NEDEN 0.0125: olcum hatasi yalnizca LB yuvarlamasi degildir.
+# sabit icindeki (M0 - 2*kL) OLCULMUS degil KALIBRE edilmis bir sabittir;
+# m112'nin LOO'suna gore ort |hata| = 1.72e-04. Bu da 1/(2*kappa) ile buyur.
+# ---------------------------------------------------------------------------
+SABIT_HATA = 1.72e-4  # m112 LOO: kalibre sabitin kendi hatasi
+KAPPA_K = np.full(DEMET, 0.0125)
+KAPPA_K[0] = 0.05174190699701174  # D1 GONDERILDI/URETILDI -- ASLA DEGISTIRME
 print()
 print(f"{DEMET} dik yon kuruldu. sqrt(toplam rho_k^2) = {np.sqrt((RHO_K**2).sum()):.4f}")
-dikkat = np.abs(G @ G.T / N - np.eye(DEMET)).max()
+dikkat = np.abs(GD @ GD.T / N - np.eye(DEMET)).max()
 print(f"demetlerin dikligi: en buyuk sapma {dikkat:.2e}  (0 olmali)")
+if dikkat > 1e-8:
+    raise SystemExit(f"DUR: demetler dik degil (sapma {dikkat:.2e})")
 
 # ---------------------------------------------------------------------------
 # KUMULATIF URETIM. Sondalar sirayla gonderilir; her sonucun ardindan bu betik
 # TEKRAR kosulur ve bir SONRAKI dosyayi uretir.
 #   m148_olcumler.json  ->  {"1": 0.99612, "2": 1.00034, ...}   (LB skorlari)
-#   rho_k = (sabit_k - P^2) / (2*kappa_etkin_k)
-#   bir sonraki sondanin TABANI = span_opt + toplam_{olculen} rho_j G_j
-# Hak biterse elde kalan son dosya TUM onceki kazanimlari tasir.
+#
+# COZUM FORMULU (m150 buldu, m153 sentetik gercekle dogruladi):
+#   d = r_hat + toplam_{j<k} r_j GD_j + kappa GD_k
+#   P^2 = M0 - 2<r,d> + Q(d),  <r,r_hat> = kL,  <r,GD_j> = rho_j
+#   sabit = M0 - 2*kL + Q(d)
+#   =>  P^2 = sabit - 2*CAPRAZ - 2*kappa*rho_k,  CAPRAZ = toplam_{j<k} r_j*rho_j
+#
+# DIKKAT -- CAPRAZ terim toplam(rho_j^2) DEGILDIR: tabana giren r_j (o an
+# elimizdeki cozum) ile gercek rho_j ancak duzeltme BASTAN uygulanirsa esittir.
+# Bu yuzden her sondanin kaydina tabana giren r_j'ler YAZILIR ve capraz
+# onlarla hesaplanir. Bir skor sonradan duzeltilirse yalniz bu surum ayakta
+# kalir. (m153: bozuk kosuda S_onceki 0.002850 iken gercek capraz 0.001947'ydi.)
+#
+# Bu terim DUSTUGU icin eski surum sonda 2'de ISARETI BILE TERS cozuyordu
+# (+0.0185 yerine -0.0300) ve nihai dosya yedekten kotu cikarken betik
+# "2. sira" diye rapor ediyordu.
 # ---------------------------------------------------------------------------
 OLC_YOL = os.path.join(BURA, "m148_olcumler.json")
 OLCUM = {}
@@ -397,58 +416,111 @@ if os.path.exists(GECMIS_YOL):
     with open(GECMIS_YOL) as fh:
         GECMIS = {d["sonda"]: d for d in json.load(fh).get("sondalar", [])}
 
+
+def kapilar(cerceve):
+    """Her uretilen dosya AYNI kapilardan gecer -- Z_NIHAI dahil."""
+    return {
+        "satir": len(cerceve) == 714688,
+        "id": bool((cerceve.id.values == ss.iloc[:, 0].values).all()),
+        "NaN": int(cerceve.tuketim.isna().sum()) == 0,
+        "negatif": int((cerceve.tuketim < 0).sum()) == 0,
+        "sonlu": bool(np.isfinite(cerceve.tuketim.values).all()),
+        "maks": bool(cerceve.tuketim.max() < 3 * np.expm1(a0).max()),
+    }
+
+
+def yaz_atomik(yol, veri):
+    """Kesinti olursa gonderilmis sondalarin sabit/kappa_etkin'i KAYBOLMASIN."""
+    with open(yol + ".tmp", "w") as fh:
+        json.dump(veri, fh, indent=1)
+    Path(yol + ".tmp").replace(yol)
+
+
+# --- olculen sondalardan rho_k'yi COZ (capraz terim dahil) ---
 RHO_OLC = {}
 for k, P in sorted(OLCUM.items()):
     g = GECMIS.get(k)
     if not g:
-        print(f"  UYARI: sonda {k} icin kayit yok, atlandi")
-        continue
-    RHO_OLC[k] = (g["sabit"] - P * P) / (2 * g["kappa_etkin"])
+        raise SystemExit(
+            f"DUR: sonda {k} icin kayit yok. Onu atlamak bir GONDERIM HAKKINI "
+            f"bosa harcar. m148_demet.json'u kontrol et."
+        )
+    if not 0.90 < P < 1.20:
+        raise SystemExit(
+            f"DUR: sonda {k} icin girilen skor {P} makul araligin (0.90, 1.20) "
+            f"disinda. Ondalik kaymis ya da yanlis sayi girilmis olabilir."
+        )
+    capraz = sum(
+        float(g.get("onceki_r", {}).get(str(j), 0.0)) * RHO_OLC[j] for j in RHO_OLC if j < k
+    )
+    RHO_OLC[k] = (g["sabit"] - 2.0 * capraz - P * P) / (2 * g["kappa_etkin"])
+    if abs(RHO_OLC[k]) > 0.20:
+        raise SystemExit(
+            f"DUR: sonda {k} icin cozulen rho = {RHO_OLC[k]:+.4f}, |rho| > 0.20. "
+            f"||r_hat|| = 0.061 tavani goz onune alindiginda bu olanaksiz; "
+            f"skor yanlis girilmis ya da dosya degismis olabilir."
+        )
 
 if RHO_OLC:
     print("\nOLCULEN rho_k:")
     for k, r in sorted(RHO_OLC.items()):
+        tah = RHO_K[k - 1]
+        oran = f"{r / tah:+.2f}" if abs(tah) > 1e-9 else "  -  "
         print(
-            f"  demet {k}: P={OLCUM[k]:.5f} -> rho_k = {r:+.5f}   "
-            f"tahmin {RHO_K[k - 1]:+.4f}   gerceklesme {r / RHO_K[k - 1]:+.2f}"
+            f"  demet {k} ({ETIKET[k - 1]:>16s}): P={OLCUM[k]:.5f} -> "
+            f"rho_k = {r:+.6f}   tahmin {tah:+.4f}   gerceklesme {oran}"
         )
     _t2 = sum(r * r for r in RHO_OLC.values())
-    print(
-        f"  toplam rho^2 = {_t2:.6f}  -> su anki nihai skor "
-        f"{np.sqrt(max(TABAN_MSE - _t2, 1e-9)):.5f}"
-    )
+    _sk = np.sqrt(max(TABAN_MSE - _t2, 1e-9))
+    print(f"  toplam rho^2 = {_t2:.6f}  ->  su anki nihai skor {_sk:.5f}")
+    if _sk > 1.00115:
+        print("  UYARI: su anki nihai, 1.00115 yedeginden KOTU. Yedegi koru.")
 
+# --- taban: saf span + olculen demetlerin katkisi ---
 taban = a0 + r_hat.copy()
-for k, r in RHO_OLC.items():
-    taban = taban + r * G[k - 1]
+ONCEKI_R = {}
+for k, r in sorted(RHO_OLC.items()):
+    taban = taban + r * GD[k - 1]
+    ONCEKI_R[str(k)] = float(r)
 
 SIRADAKI = next((k for k in range(1, DEMET + 1) if k not in RHO_OLC), None)
 print(f"\nSIRADAKI: {'sonda ' + str(SIRADAKI) if SIRADAKI else 'hepsi olculdu -> NIHAI'}")
 
 PLAN = list(GECMIS.values())
 for k in [SIRADAKI - 1] if SIRADAKI else []:
-    kap = float(KAPPA_K[k])
-    y = np.clip(np.expm1(taban + kap * G[k]), 0.0, None)
-    out = pd.DataFrame({"id": te.id.values, "tuketim": y})
-    if not all(
-        [
-            len(out) == 714688,
-            bool((out.id.values == ss.iloc[:, 0].values).all()),
-            int(out.tuketim.isna().sum()) == 0,
-            int((out.tuketim < 0).sum()) == 0,
-            bool(np.isfinite(out.tuketim.values).all()),
-            bool(out.tuketim.max() < 3 * np.expm1(a0).max()),
-        ]
-    ):
-        print(f"  sonda {k + 1}: KAPI KALDI")
-        continue
     yol = os.path.join(S, f"tuketim_D{k + 1}_demet.csv")
+    kayit = GECMIS.get(k + 1)
+    # ZATEN URETILMIS DOSYAYI YENIDEN URETME: olculmus_skorlar.json ya da
+    # m112_durum.json bu arada degisirse r_hat kayar; dosya da kayitli sabit de
+    # degisir, oysa elde tutulan skor ESKI dosyanindir -> rho yanlis cozulur.
+    if kayit and os.path.exists(yol):
+        print(f"\n  sonda {k + 1} ZATEN VAR: {kayit['dosya']}")
+        print(f"    kappa_etkin={kayit['kappa_etkin']:.6f}  sabit={kayit['sabit']:.9f}")
+        print(
+            f"    COZUM:  rho_{k + 1} = ({kayit['sabit']:.9f} - P*P) / "
+            f"{2 * kayit['kappa_etkin']:.6f}"
+        )
+        print("    Yeniden uretilmedi. Skoru m148_olcumler.json'a yazip tekrar kos.")
+        break
+    kap = float(KAPPA_K[k])
+    y = np.clip(np.expm1(taban + kap * GD[k]), 0.0, None)
+    out = pd.DataFrame({"id": te.id.values, "tuketim": y})
+    kp = kapilar(out)
+    if not all(kp.values()):
+        raise SystemExit(f"DUR: sonda {k + 1} KAPI KALDI -> {kp}")
     out.to_csv(yol + ".tmp", index=False)
     Path(yol + ".tmp").replace(yol)
     dgv = np.log1p(out.tuketim.values) - a0
     sabit = float(M0 - 2 * kL + float(dgv @ dgv) / N)
     ek = dgv - (np.log1p(np.clip(np.expm1(taban), 0.0, None)) - a0)
     ketkin = float(np.sqrt(float((ek * ek).mean())))
+    # OZ-DENETIM (m152): sabit = TABAN_MSE + toplam r_j^2 + kappa_etkin^2
+    bek = TABAN_MSE + sum(v * v for v in RHO_OLC.values()) + ketkin**2
+    if abs(sabit - bek) > 1e-5:
+        raise SystemExit(
+            f"DUR: oz-denetim tutmadi. sabit={sabit:.9f} beklenen={bek:.9f} "
+            f"fark={sabit - bek:.2e}. Referans sabit yanlis olabilir."
+        )
     PLAN = [q for q in PLAN if q["sonda"] != k + 1]
     PLAN.append(
         dict(
@@ -459,56 +531,72 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
             sabit=sabit,
             rho_k_tahmin=float(RHO_K[k]),
             yon=ETIKET[k],
+            onceki_r=dict(ONCEKI_R),  # capraz terim icin ZORUNLU
         )
     )
-    print(f"\nURETILDI: submissions/tuketim_D{k + 1}_demet.csv")
+    # OLCUM HATASI: LB yuvarlamasi TEK BASINA degil; kalibre sabitin kendi
+    # hatasi (SABIT_HATA) de 1/(2*kappa) ile buyur ve baskin olan odur.
+    hata = float(np.sqrt(YUV**2 + SABIT_HATA**2) / (2 * ketkin))
+    print(f"\nURETILDI: submissions/tuketim_D{k + 1}_demet.csv   [{ETIKET[k]}]")
     print(f"  kappa={kap:.5f}  kappa_etkin={ketkin:.6f}  sabit={sabit:.9f}")
-    print(f"  COZUM:  rho_{k + 1} = ({sabit:.9f} - P*P) / {2 * ketkin:.6f}")
+    print(f"  COZUM:  rho_{k + 1} = ({sabit:.9f} - 2*CAPRAZ - P*P) / {2 * ketkin:.6f}")
     print(
-        f"  olcum hatasi {YUV / max(ketkin, 1e-12):.2e}   "
-        f"rho=0 ise {np.sqrt(max(sabit, 1e-9)):.5f}, "
-        f"tahmin tutarsa {np.sqrt(max(sabit - 2 * ketkin * KAPPA_K[k], 1e-9)):.5f}"
+        f"          CAPRAZ = {sum(float(ONCEKI_R.get(str(j), 0.0)) * RHO_OLC[j] for j in RHO_OLC):.9f}"
+    )
+    print(
+        f"  olcum hatasi {hata:.2e}   (yuvarlama {YUV / (2 * ketkin):.2e} + "
+        f"kalibre sabit {SABIT_HATA / (2 * ketkin):.2e})"
+    )
+    print(
+        f"  rho_{k + 1}=0 ise skor {np.sqrt(max(sabit, 1e-9)):.5f}   |   "
+        f"rho_{k + 1}=kappa ise {np.sqrt(max(sabit - 2 * ketkin * kap, 1e-9)):.5f}"
     )
 
 if SIRADAKI is None:
     y = np.clip(np.expm1(taban), 0.0, None)
     out = pd.DataFrame({"id": te.id.values, "tuketim": y})
+    kp = kapilar(out)
+    if not all(kp.values()):
+        raise SystemExit(f"DUR: Z_NIHAI KAPI KALDI -> {kp}")
     yol = os.path.join(S, "tuketim_Z_NIHAI.csv")
     out.to_csv(yol + ".tmp", index=False)
     Path(yol + ".tmp").replace(yol)
     _t2 = sum(r * r for r in RHO_OLC.values())
+    _sk = np.sqrt(max(TABAN_MSE - _t2, 1e-9))
     print("\nNIHAI URETILDI: submissions/tuketim_Z_NIHAI.csv")
-    print(f"  beklenen skor {np.sqrt(max(TABAN_MSE - _t2, 1e-9)):.5f}")
+    print(f"  toplam rho^2 = {_t2:.6f}   beklenen skor {_sk:.5f}")
+    if _sk > 1.00115:
+        print("  UYARI: 1.00115 yedeginden KOTU -- son secimde YEDEGI kullan.")
 
 print(f"\n{'toplam rho^2':>13s} {'nihai skor':>11s}  sira")
-for f in [0.0, 0.1, 0.25, 0.5, 1.0]:
-    t2 = f * float((RHO_K**2).sum())
-    sk = np.sqrt(max(TABAN_MSE - t2, 1e-9))
+for f in [0.0, 0.00349, 0.00973, 0.02175]:
+    sk = np.sqrt(max(TABAN_MSE - f, 1e-9))
     sr = (
         "1. SIRA"
-        if sk < 0.99009
+        if sk < 0.990095
         else "2. SIRA"
-        if sk < 0.99614
+        if sk < 0.996145
         else "3. sira"
-        if sk < 0.99927
+        if sk < 0.999275
         else "4. sira"
-        if sk < 0.99937
+        if sk < 0.999375
         else "5. sira"
-        if sk < 1.00049
-        else "6.+"
+        if sk < 1.000475
+        else "6. sira"
+        if sk < 1.000495
+        else "7.+"
     )
-    print(f"{t2:13.5f} {sk:11.5f}  {sr}")
+    print(f"{f:13.5f} {sk:11.5f}  {sr}")
 
-with open(GECMIS_YOL, "w") as fh:
-    json.dump(
-        dict(
-            taban_mse=TABAN_MSE,
-            demet=DEMET,
-            rho_k_tahmin=RHO_K.tolist(),
-            yuvarlama=YUV,
-            sondalar=sorted(PLAN, key=lambda q: q["sonda"]),
-        ),
-        fh,
-        indent=1,
-    )
+yaz_atomik(
+    GECMIS_YOL,
+    dict(
+        taban_mse=TABAN_MSE,
+        demet=DEMET,
+        rho_k_tahmin=RHO_K.tolist(),
+        yuvarlama=YUV,
+        sabit_hata=SABIT_HATA,
+        sondalar=sorted(PLAN, key=lambda q: q["sonda"]),
+    ),
+)
 print("\n-> m148_demet.json    HICBIR GONDERIM YAPILMADI.")
