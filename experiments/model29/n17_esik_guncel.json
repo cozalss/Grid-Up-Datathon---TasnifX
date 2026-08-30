@@ -19,16 +19,22 @@
   [
    2.1771,
    0.99556
+  ],
+  [
+   2.25,
+   0.99556
   ]
  ],
  "bitis_t": 3.9993,
- "dogrusal": 0.9920558004650102,
- "ussel": 0.9927733942019592,
+ "dogrusal": 0.9921824216232262,
+ "ussel": 0.9928412009703167,
  "durdu": 0.99556,
- "merkez": 0.9934299775071342,
+ "merkez": 0.989442145842449,
  "zarf": [
-  0.9920558004650102,
+  0.9831824216232262,
   0.99556
  ],
- "not": "8 saat degisim yok; 1. sira 24 saattir sabit"
+ "sicrama_p": 0.45,
+ "sicrama_buyuklugu": 0.009,
+ "not": "2. sira 12 saattir sabit; Grid Grinders 31 Agu 06:00'da 0.99009 -> 0.98110 sicradi (1. sira artik menzil disi)"
 }

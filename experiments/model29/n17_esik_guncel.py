@@ -42,8 +42,24 @@ GOZ2 = [
     (1.3271, 0.99790),  # 30 Agu 07:51
     (1.7264, 0.99614),  # 30 Agu 17:26
     (1.9208, 0.99556),  # 30 Agu 22:06
-    (2.1771, 0.99556),  # 31 Agu 04:15  YENI
+    (2.1771, 0.99556),  # 31 Agu 04:15
+    (2.2500, 0.99556),  # 31 Agu 06:00  -- 12 SAATTIR degismedi
 ]
+
+# --- SICRAMA RISKI --------------------------------------------------------
+# 31 Agu 06:00'da Grid Grinders TEK GONDERIMDE 0.99009 -> 0.98110 sicradi
+# (-0.00899). Bu, 2. sira esigini DOGRUDAN etkilemez (zaten 1. sirdaydilar)
+# ama SICRAMANIN MUMKUN oldugunu kanitliyor: 2. ve 3. siradakiler
+# (Abdulbaki 0.99556, Duo-Electra 0.99573) ayni seyi yapabilir.
+#
+# Iki yonlu bilgi:
+#   + 2. sira esigi 12 SAATTIR sabit  -> durgunluk senaryosu guclendi
+#   - gozlenmis bir sicrama var       -> alt kuyruk agirlasti
+#
+# Egri uydurma bu ikinci etkiyi GOREMEZ (duz bir seri gorur). Bu yuzden
+# sicrama ayri bir kalem olarak ekleniyor.
+SICRAMA_P = 0.45  # iki rakip, kalan ~1.7 gun, gozlenmis bir ornek
+SICRAMA_BUY = 0.009  # Grid Grinders'in gozlenen sicramasi
 BITIS = 3.9993  # 1 Eylul 23:59 UTC
 
 t = np.array([a for a, _ in GOZ2])
@@ -91,9 +107,17 @@ print(f"{'tamamen durdu':>28s} {durdu:24.5f}")
 # ama son gun sicramasi da gercek bir risk (bu gece bir rakip 0.0014
 # sicradi). Agirliklar: dogrusal %25, ussel %45, durdu %30.
 merkez = 0.25 * dog + 0.45 * us + 0.30 * durdu
-alt, ust = min(dog, us, durdu), max(dog, us, durdu)
-print(f"\n{'AGIRLIKLI MERKEZ':>28s} {merkez:24.5f}")
+# SICRAMA: egri uydurma gozlenmemis bir sicramayi ONGOREMEZ. Beklenen
+# etkiyi ayri ekliyoruz ve zarfin ALT ucunu sicramali senaryoya aciyoruz.
+sicramali = merkez - SICRAMA_BUY
+merkez_s = (1 - SICRAMA_P) * merkez + SICRAMA_P * sicramali
+alt = min(dog, us, durdu) - SICRAMA_BUY
+ust = max(dog, us, durdu)
+print(f"\n{'egri merkezi (sicramasiz)':>28s} {merkez:24.5f}")
+print(f"{'sicrama olursa':>28s} {sicramali:24.5f}   (p={SICRAMA_P})")
+print(f"{'SICRAMA DAHIL MERKEZ':>28s} {merkez_s:24.5f}")
 print(f"{'zarf':>28s} {f'[{alt:.5f}, {ust:.5f}]':>24s}")
+merkez = merkez_s
 
 print("\nn02'nin (dun gece) tahmini 0.9897 [0.9870, 0.9908] idi.")
 print(f"Sekiz saatlik durgunluk sonrasi merkez {merkez:.5f}'e KAYDI --")
@@ -115,7 +139,10 @@ with open(os.path.join(M29, "n17_esik_guncel.json"), "w", encoding="utf-8") as f
             "durdu": durdu,
             "merkez": float(merkez),
             "zarf": [float(alt), float(ust)],
-            "not": "8 saat degisim yok; 1. sira 24 saattir sabit",
+            "sicrama_p": SICRAMA_P,
+            "sicrama_buyuklugu": SICRAMA_BUY,
+            "not": "2. sira 12 saattir sabit; Grid Grinders 31 Agu 06:00'da "
+            "0.99009 -> 0.98110 sicradi (1. sira artik menzil disi)",
         },
         fh,
         indent=1,

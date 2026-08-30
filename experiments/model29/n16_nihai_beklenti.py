@@ -79,12 +79,16 @@ if os.path.exists(_N17):
     # zarf UC SENARYONUN aralikidir (dogrusal / ussel / tamamen durdu),
     # bir guven araligi degil -- duzgun ornekleme icin ucgen dagilim.
     e2 = rng.triangular(float(_z[0]), ESIK2, float(_z[1]), S)
-    # 1. sira 24 saattir sabit; onun da zarfini 2. siranin kaymasi kadar
-    # yukari tasiyoruz (n02'nin rank1 merkezi 0.9872 idi).
-    _kay = ESIK2 - float(E["rank2_tahmin_1eylul_2359UTC"]["NIHAI_TAHMIN"]["merkez"])
-    ESIK1 = ESIK1 + _kay
-    e1 = e1 + _kay
-    print(f"n17 kullanildi: 2. sira esigi {ESIK2:.5f} zarf {_z} (n02'ye gore {_kay:+.5f} kaydi)")
+    # 1. SIRA: n02'nin egri tahminini KULLANMA -- lider 31 Agu 06:00'da
+    # 0.99009'dan 0.98110'a SICRADI (tek gonderimde -0.00899). Gozlenen
+    # deger tahminden iyidir. Bitiste daha da iyilesebilirler; kalan
+    # ~1.7 gunde bir sicrama daha olasiligini p=0.35 aliyoruz.
+    LIDER = 0.98110
+    _sic = rng.random(S) < 0.35
+    e1 = np.where(_sic, LIDER - rng.uniform(0.002, 0.009, S), LIDER)
+    ESIK1 = float(np.median(e1))
+    print(f"n17 kullanildi: 2. sira esigi {ESIK2:.5f} zarf [{_z[0]:.5f}, {_z[1]:.5f}]")
+    print(f"1. sira GOZLENEN lider skoru {LIDER:.5f} (sicrama sonrasi), medyan esik {ESIK1:.5f}")
 # TUTARLILIK: 1. sira esigi 2. sira esiginden BUYUK OLAMAZ. Ikisini bagimsiz
 # ornekleyince 1. siranin genis zarfi (0.9776-0.99025) bazi orneklerde
 # 2. siranin uzerine cikiyordu ve P(1.) > P(2.) gibi OLANAKSIZ bir sonuc
@@ -132,6 +136,22 @@ for ad, rho in [
         f"{100 * SON[ad]['P_1']:6.1f}% {100 * SON[ad]['P_2']:6.1f}% "
         f"{100 * SON[ad]['P_3']:7.1f}%"
     )
+
+# --- ESIK SENARYOLARINA AYRISTIRMA ---------------------------------------
+# Tek bir P(2.) yuzdesi yaniltici: sayinin buyuk kismi ESIK varsayimindan
+# geliyor, skorumuzdan degil. Uc esik senaryosunu ACIKCA ayiralim.
+print("\nESIK SENARYOSUNA GORE P(2. sira):")
+print(f"{'esik senaryosu':>34s} {'esik':>9s} {'gereken rho':>12s} {'taban':>7s} {'ust':>7s}")
+for _ad, _e in [
+    ("2. sira 12 saattir SABIT kalirsa", 0.99556),
+    ("egri tahmini (sicramasiz)", 0.99349),
+    ("bir rakip 0.009 SICRARSA", 0.98449),
+]:
+    _ger = float(np.sqrt(max(TABAN_MSE - _e * _e, 0)))
+    _pb = float((np.sqrt(np.maximum(TABAN_MSE - rho_B**2, 1e-9)) <= _e).mean())
+    _pa = float((np.sqrt(np.maximum(TABAN_MSE - rho_A**2, 1e-9)) <= _e).mean())
+    print(f"{_ad:>34s} {_e:9.5f} {_ger:12.4f} {100 * _pb:6.1f}% {100 * _pa:6.1f}%")
+print("  (taban = Yol B / CARPAN capasi, ust = Yol A / |c| capasi)")
 
 print("\n  En kotu durum 1.00101 (saf span) -- bugunku 1.00115 yedegimizden IYI.")
 print("  ILK SONDA GELINCE bu tablo yeniden kurulacak: olculen rho_1,")
