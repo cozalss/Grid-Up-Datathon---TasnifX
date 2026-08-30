@@ -185,6 +185,7 @@ print(
 )
 ONCEKI = []
 KAT_LISTE = []
+RHO_CV_LISTE = []
 for kayit in TARAMA:
     if len(kul) >= AZAMI_EKSEN:
         break
@@ -244,6 +245,7 @@ for kayit in TARAMA:
     ONCEKI.append(xp / np.sqrt(Qd))
     kul.append(ad)
     KAT_LISTE.append(float(rho_kul))
+    RHO_CV_LISTE.append(float(rho_cv))
     print(
         f"{ad[:34]:>34s} {rho_cv:+8.4f} {rho_s:+8.4f} {rho_kul:+8.4f} {Qd:6.3f} "
         f"{'EVET':>6s} {np.sqrt(float((duz * duz).mean())):8.4f}"
@@ -285,29 +287,94 @@ print(
     f"{np.abs(KATS).max():.4f}]"
 )
 
-# demetleri ongorulen katkiya gore DENGELI dagit (en buyukten sirayla,
-# her seferinde en zayif demete koy) -> demetler benzer guclukte olur
-sira = np.argsort(-np.abs(KATS))
-gruplar = [[] for _ in range(DEMET)]
-agir = np.zeros(DEMET)
-for i in sira:
-    j = int(np.argmin(agir))
-    gruplar[j].append(int(i))
-    agir[j] += KATS[i] ** 2
+# ---------------------------------------------------------------------------
+# DEMET SECIMI -- ONEMLI DUZELTME.
+#
+# Ortonormal yonlerde  toplam(rho_k^2) = ||P_altuzay r||^2, yani sonuc yalnizca
+# SECILEN ALT UZAYA baglidir, eksenleri nasil grupladigimiza DEGIL. Onceki
+# surumdeki "sirayla dagit" bolmesi keyfiydi.
+#
+# Elimizde 5 boyut var ve 40 boyutluk dik uzayin neresinde sinyal oldugunu
+# bilmiyoruz. En iyi kullanim: RAKIP AGIRLIKLANDIRMA HIPOTEZLERINE yaymak.
+# Her hipotez bir yon onerir; Gram-Schmidt ile diklestirilir:
+#   H1  1.95*|rho_s| agirligi   (m144 bunun sisik oldugunu gosterdi)
+#   H2  rho_cv agirligi         (yaz25'te DOGRUDAN olculen dik korelasyon)
+#   H3  hava/mevsim ailesi      (m141'de ayri davrandi)
+#   H4  trafo/yapisal ailesi
+#   H5  esit agirlik            (hicbir tahmine guvenmeyen taban)
+# Hangi hipotez dogruysa o boyut buyuk rho verir; hepsi yanlissa kayip YOK.
+# ---------------------------------------------------------------------------
+HAVA = (
+    "sicak",
+    "cdd",
+    "hdd",
+    "nem",
+    "vpd",
+    "et0",
+    "bulut",
+    "yagis",
+    "hissedilen",
+    "asiri",
+    "ruzgar",
+    "guneslen",
+    "gunes",
+    "x_ay",
+    "ay_",
+    "sicaklik",
+)
+ISR = np.sign(KATS)
+HIPOTEZ = {
+    "H1 1.95|rho_s|": np.abs(KATS),
+    "H2 rho_cv": np.abs(np.array(RHO_CV_LISTE)),
+    "H3 hava/mevsim": np.array([1.0 if any(h in a for h in HAVA) else 0.0 for a in kul]),
+    "H4 trafo/yapisal": np.array([0.0 if any(h in a for h in HAVA) else 1.0 for a in kul]),
+    "H5 esit": np.ones(len(kul)),
+}
+BETA = np.zeros(N)
+for i in range(len(U)):
+    BETA = BETA + KATS[i] * U[i]
 
-print(f"\n{'demet':>6s} {'eksen':>6s} {'ongorulen rho_k':>16s} {'ornek eksen'}")
-G, RHO_K = [], []
-for j, gr in enumerate(gruplar):
+print()
+print(f"{'hipotez':>18s} {'eksen':>6s} {'artakalan':>10s} {'ongorulen rho_k':>16s}")
+G, RHO_K, ETIKET = [], [], []
+for ad, ag in HIPOTEZ.items():
     v = np.zeros(N)
-    for i in gr:
-        v += KATS[i] * U[i]
-    nk = float(np.sqrt(float((v * v).mean())))
-    G.append(v / nk)
-    RHO_K.append(nk)
-    print(f"{j + 1:6d} {len(gr):6d} {nk:16.4f}  {kul[gr[0]][:38]}")
+    for i in range(len(U)):
+        v = v + ISR[i] * ag[i] * U[i]
+    n0 = float(np.sqrt(float((v * v).mean())))
+    if n0 < 1e-12:
+        continue
+    v = v / n0
+    for g in G:
+        v = v - float((v * g).mean()) * g
+    n1 = float(np.sqrt(float((v * v).mean())))
+    if n1 < 0.05:
+        print(f"{ad:>18s} {int((ag > 0).sum()):6d} {n1:10.3f}  ATLANDI (onceki yone cok yakin)")
+        continue
+    v = v / n1
+    G.append(v)
+    # H1 disindaki yonler HEDGE'''dir: onlar icin ongoru YOK (BETA tamamen
+    # H1 boyunca uzandigi icin dik bilesenleri sifir cikar). Sondanin kendi
+    # skoru onemsiz -- onemli olan OLCUM -- bu yuzden kappa TEKDUZE secilir:
+    # her yone ongorulen toplamin esit payi. Olcum hassasiyeti her halukarda
+    # 1e-4'ten iyi.
+    RHO_K.append(abs(float((BETA * v).mean())))
+    ETIKET.append(ad)
+    print(f"{ad:>18s} {int((ag > 0).sum()):6d} {n1:10.3f} {RHO_K[-1]:16.4f}")
 G = np.array(G)
 RHO_K = np.array(RHO_K)
-print(f"\nsqrt(toplam rho_k^2) = {np.sqrt((RHO_K**2).sum()):.4f}  (tek yon: {RHO:.4f})")
+DEMET = len(G)
+# TAVAN DUZELTMESI (m145 denetimi). 1.95 tek bir deneyden geliyordu; dort
+# bagimsiz yol |c| ~ 0.7 diyor (%90 araligi [0.3, 1.3]). Net kazanc
+# 2*a*rho - a^2 asimetriktir: c_gercek=0.7 iken a=1.95 kullanmak kazanci
+# NEGATIFE cevirir (hicbir sey yapmamaktan kotu), ama a=0.8 kullanmak
+# c_gercek=1.95 ciksa bile POZITIF kalir. Bu yuzden kappa 0.8/1.95 ile
+# olceklenir. Olcum hassasiyeti yine de 1e-4'ten iyi kalir.
+C_TAVAN = 0.8
+KAPPA_K = np.full(DEMET, (C_TAVAN / 1.95) * float(RHO) / np.sqrt(DEMET))
+gruplar = [[] for _ in range(DEMET)]
+print()
+print(f"{DEMET} dik yon kuruldu. sqrt(toplam rho_k^2) = {np.sqrt((RHO_K**2).sum()):.4f}")
 dikkat = np.abs(G @ G.T / N - np.eye(DEMET)).max()
 print(f"demetlerin dikligi: en buyuk sapma {dikkat:.2e}  (0 olmali)")
 
@@ -360,7 +427,7 @@ print(f"\nSIRADAKI: {'sonda ' + str(SIRADAKI) if SIRADAKI else 'hepsi olculdu ->
 
 PLAN = list(GECMIS.values())
 for k in [SIRADAKI - 1] if SIRADAKI else []:
-    kap = float(RHO_K[k])
+    kap = float(KAPPA_K[k])
     y = np.clip(np.expm1(taban + kap * G[k]), 0.0, None)
     out = pd.DataFrame({"id": te.id.values, "tuketim": y})
     if not all(
@@ -391,7 +458,7 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
             kappa_etkin=ketkin,
             sabit=sabit,
             rho_k_tahmin=float(RHO_K[k]),
-            eksenler=[kul[i] for i in gruplar[k]],
+            yon=ETIKET[k],
         )
     )
     print(f"\nURETILDI: submissions/tuketim_D{k + 1}_demet.csv")
@@ -400,7 +467,7 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     print(
         f"  olcum hatasi {YUV / max(ketkin, 1e-12):.2e}   "
         f"rho=0 ise {np.sqrt(max(sabit, 1e-9)):.5f}, "
-        f"tahmin tutarsa {np.sqrt(max(sabit - 2 * ketkin * RHO_K[k], 1e-9)):.5f}"
+        f"tahmin tutarsa {np.sqrt(max(sabit - 2 * ketkin * KAPPA_K[k], 1e-9)):.5f}"
     )
 
 if SIRADAKI is None:

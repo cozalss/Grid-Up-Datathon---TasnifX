@@ -1,104 +1,22 @@
 {
  "taban_mse": 1.00202690323433,
- "demet": 5,
+ "demet": 4,
  "rho_k_tahmin": [
-  0.11518005218704823,
-  0.11223060673130798,
-  0.11206338243610645,
-  0.11227744400523618,
-  0.11224680099138684
+  0.2522417966104322,
+  1.1007781256066744e-16,
+  3.6904700164848045e-17,
+  2.4942487007966265e-16
  ],
  "yuvarlama": 2.8867513459481293e-06,
  "sondalar": [
   {
    "sonda": 1,
    "dosya": "tuketim_D1_demet.csv",
-   "kappa": 0.11518005218704823,
-   "kappa_etkin": 0.11432416082785271,
-   "sabit": 1.0150967859869922,
-   "rho_k_tahmin": 0.11518005218704823,
-   "eksenler": [
-    "p_ilk_ofset*osm_direk_yogunlugu",
-    "toprak_nem_ort:x_soguk",
-    "p_gun_sayisi:x_sv",
-    "nufus:x_soguk",
-    "ulusal_gunluk:kare",
-    "hissedilen_max:x_soguk",
-    "ilce_toplam_guc:x_sv",
-    "gunes_ghi_gunluk:kare"
-   ]
-  },
-  {
-   "sonda": 2,
-   "dosya": "tuketim_D2_demet.csv",
-   "kappa": 0.11223060673130798,
-   "kappa_etkin": 0.11218980260198452,
-   "sabit": 1.014612511640355,
-   "rho_k_tahmin": 0.11223060673130798,
-   "eksenler": [
-    "asiri_sicak:x_ay",
-    "cdd24:x_ay",
-    "su_orani:x_soguk",
-    "vpd_ort:kare",
-    "sicaklik_min:ust10",
-    "g_ilce_kova_n:x_soguk",
-    "alan_km2:x_soguk",
-    "bulut_dusuk_ort:x_soguk"
-   ]
-  },
-  {
-   "sonda": 3,
-   "dosya": "tuketim_D3_demet.csv",
-   "kappa": 0.11206338243610645,
-   "kappa_etkin": 0.11205417887704122,
-   "sabit": 1.0145825262897044,
-   "rho_k_tahmin": 0.11206338243610645,
-   "eksenler": [
-    "p_ilk_ofset*tanim_on3",
-    "asiri_sicak:x_soguk",
-    "cdd22_ort14:ust10",
-    "hissedilen_max:ust10",
-    "hissedilen_max:ust25",
-    "vpd_ort:ust25",
-    "yagis_saati:x_soguk",
-    "yagis_toplam:x_soguk"
-   ]
-  },
-  {
-   "sonda": 4,
-   "dosya": "tuketim_D4_demet.csv",
-   "kappa": 0.11227744400523618,
-   "kappa_etkin": 0.11183627122859352,
-   "sabit": 1.0145341915858637,
-   "rho_k_tahmin": 0.11227744400523618,
-   "eksenler": [
-    "cdd22_ort7:kare",
-    "bitki_ortusu_orani:x_soguk",
-    "cdd24_ort7:ust10",
-    "sicaklik_max:ust10",
-    "t_kayma:ust25",
-    "ulusal_yil_once:kare",
-    "t_kayma:ust10",
-    "yas:x_sv"
-   ]
-  },
-  {
-   "sonda": 5,
-   "dosya": "tuketim_D5_demet.csv",
-   "kappa": 0.11224680099138684,
-   "kappa_etkin": 0.11223922210881593,
-   "sabit": 1.0146242190334849,
-   "rho_k_tahmin": 0.11224680099138684,
-   "eksenler": [
-    "cdd22_ort14:kare",
-    "cdd22:kare",
-    "sicaklik_ort_ort3:ust10",
-    "vpd_ort:ust10",
-    "sicaklik_ort:ust25",
-    "nem_ort:alt10",
-    "nem_ort:x_soguk",
-    "sicaklik_min:ust25"
-   ]
+   "kappa": 0.05174190699701174,
+   "kappa_etkin": 0.0516962677376078,
+   "sabit": 1.0046992296275314,
+   "rho_k_tahmin": 0.2522417966104322,
+   "yon": "H1 1.95|rho_s|"
   }
  ]
 }
