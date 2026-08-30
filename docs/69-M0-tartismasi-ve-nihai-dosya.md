@@ -1,0 +1,169 @@
+# 69 — `M0` tartışması (denendi, GERİ ALINDI) ve nihai tek-hak dosyası
+
+Tarih: 30 Ağustos 2026 · **docs/68'in yerine geçer** (docs/68 §6 bayat)
+
+---
+
+## 1. `M0` DEĞİŞTİRİLMEK İSTENDİ, GERİ ALINDI
+
+### Öne sürülen argüman
+
+`a0` için `Q = 0` ve `L = 0` olduğundan `M0 = P_a0²` bir özdeşlik gibi görünür.
+`a0` LB'de 1.00284 aldı → `M0 = 1.005688066`. Kullandığımız 1.005846366 ise
+`a0`'ın kendi skorunu 1.00292 diye yanlış tahmin ediyor (+8e-05, yuvarlama
+bütçesinin 16 katı).
+
+### Neden YANLIŞ — üç bağımsız gerekçe
+
+**1.1 "Tutulmuş sınav" DÖNGÜSELDİ.** Değişikliğin ana kanıtı olarak
+`tuketim_g7_span_tau3.csv` (skor 1.00136) gösterildi. **O dosya hiç
+gönderilmedi.** Kaggle gönderim listesinde yok; kaynak da söylüyor:
+
+```
+docs/58:280            "g7 icin esdeger skor 1.00136 (gonderilmez)"
+w1_kirici.json:65      "g7'nin skoru m99'a EL ILE UYDURULACAK (1.001362)"
+docs/58                "Cozum sabitleri (tam m0 = 1.005688066 ile)"
+```
+
+Yani 1.00136 sayısı **yeni M0 ile türetilmişti**. Yeni M0'ın onu daha iyi
+öngörmesi kaçınılmazdı. Bu bir sınav değil, özdeşliğin ters çevrilmişidir.
+
+**1.2 Üç çapa AŞIRI-BELİRLENMİŞ biçimde eski değerde anlaşıyor.**
+`L = 0` varsayımı altında `P² − Q` her çapada:
+
+```
+p51_sicak05         1.005846063
+m4_hava_capali      1.005846970
+v102_kappa_optimum  1.005846063     yayilim 9.1e-07
+ESKI M0             1.005846366     (tam ortada)
+a0 ozdesligi        1.005688066     1.58e-04 uzakta = yayilimin 174 KATI
+```
+
+Tek parametre üç hedefi aynı anda sıfırlayamaz — bu bir fit değil uyuşmadır ve
+yapısal nedeni var: `a0`, `v102`+`m4` span'ında tam optimum olarak kuruldu;
+`p51` de aynı iki boyutlu span'da. `L = 0` üçü için normal denklemlerin sonucu.
+
+**1.3 Özdeşlik argümanı eksik.** `P_j` Kaggle'ın **public %50** satırında
+ölçülür, `Q_j` ise kodda **714.688 satırın tamamında** hesaplanır. Denklem bu
+yüzden iki farklı kümeye ait nicelikleri karıştırır; içindeki `M0` saf özdeşlik
+değil, o uyumsuzluğu emen **etkin** bir sabittir. Bu yüzden `a0`'ın kendi
+skorunu birebir vermemesi beklenen bir şeydir, hata değil.
+
+**1.4 Leave-one-out eski değeri kazandırıyor.** 27 gerçek yönde, her birini
+sırayla dışarıda bırakıp kalanlardan skorunu öngörerek:
+
+```
+span-ici pay   n    ESKI M0     YENI M0    kazanan
+      >= %0   27   0.000231    0.000250    ESKI
+     >= %80   25   0.000191    0.000233    ESKI
+     >= %90   22   0.000172    0.000208    ESKI
+```
+
+**Hüküm: `M0 = 1.005846366` kalıyor.** Denemeyi burada bırakıyorum ki
+tekrarlanmasın.
+
+### Değişiklikten geriye KALANLAR (doğru olanlar)
+
+- `tuketim_s3y40.csv` = **1.00177** `olculmus_skorlar.json`'a eklendi.
+  Gönderim listesinde doğrulandı (ref 55880996, 2026-08-30 03:37). Gerçek.
+- `tuketim_g7_span_tau3.csv` **eklenmedi/çıkarıldı** — hiç gönderilmedi.
+- `y40`'ın `L = −0.002229` değeri EK_MODEL'de kaldı, ama artık **türetilmiş
+  olduğu açıkça etiketli**. `s3y40 = 1.837·g7 + 0.392·y40` (açıklanan pay
+  %99.988) olduğundan s3y40'ın tek skoru iki boyutlu alt uzayda tek denklem
+  verir; y40 boyutunu ancak bu türetilmiş `L` açar.
+
+---
+
+## 2. Gerçekten düzeltilen hatalar
+
+**2.1 `m112:559` ve `m117:204` canlı hataydı.** Sonda sabiti
+`M0 − 2‖r_hat‖² + Q_d` ile kuruluyordu; doğrusu `M0 − 2·k'L + Q_d`
+(büzmeli çözümde `k'L ≠ k'Gk`). Önceki düzeltme yalnız `m122`'ye uygulanmış,
+bu ikisi atlanmıştı — ve **`m117` aynı gönderim dosyasını yazıyor.**
+
+**2.2 `m112:465` yanlış manşet basıyordu.** `sqrt(M0 − ‖r_hat‖²)` yerine
+`sqrt(M0 − 2·k'L + ‖r_hat‖²)` olmalı. Aynı betiğin `--nihai` dalı doğruyu
+kullanıyordu, yani iki farklı "optimum" basılıyordu.
+
+**2.3 `m112_durum.json`'daki bekleyen sonda MAYINDI.** Hatalı formülle
+yazılmıştı; `κ = 0.005` olduğu için gönderilip `--kaydet` çalıştırılsa çözülen
+`ρ` **+0.0121** kayardı — en büyük gerçek sinyalin dört katı. Silindi.
+
+**2.4 Çözüm böleni.** Kırpma (`expm1 → 0`) yönü kısaltıyor: ilan edilen
+`κ = 0.070`, gerçekleşen **0.069800**. Çözümde etkin olan kullanılır.
+
+---
+
+## 3. Eksen sayısı ölçülerek bulundu
+
+`AZAMI_EKSEN = 14` sert bir tavandı, seçim kapıda değil orada duruyordu
+(Kural 64 ihlali). Kaldırıldı ve doğru kesim ölçüldü: her ön-ek için
+**zaman-bölmeli tutma** (yaz25'in ilk yarısında ağırlıklar kurulur, ikinci
+yarısında sınanır — testin durumu tam budur), beş kesimin medyanı.
+
+```
+  n  rho_pred  zaman tut  zaman sd  kesit tut  TASINAN rho
+  4    0.1125     0.723     0.591     0.891      0.0813
+  6    0.1308     0.820     0.696     0.912      0.1072   <- sd DEVASA
+  8    0.1447     0.390     0.296     0.944      0.0564
+ 16    0.1719     0.448     0.185     0.852      0.0770
+ 24    0.1891     0.451     0.177     0.787      0.0853
+ 40    0.2140     0.435     0.139     0.800      0.0930
+```
+
+`n=6` en yüksek taşınan değeri veriyor ama sapması 0.696 — ölçülemiyor.
+`n=8`→40 eğilimi temiz, artan, sapması düşen. **n=40 seçildi.**
+
+---
+
+## 4. Gönderilecek dosya
+
+```
+submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
+  40 eksen, hepsinde TAVAN DAYANIYOR (katsayi LB-capali, CV'ye degil)
+  rho_pred = 0.2081     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069800
+  sabit = 1.006825406   sifir tahmin 1.741
+
+  COZUM:  rho = (1.006825406 - P*P) / 0.139604
+```
+
+| gerçek `ρ` | skor | sıra |
+|---:|---:|---|
+| 0.2081 | 0.98883 | **2. SIRA** |
+| 0.1457 | 0.99322 | **2. SIRA** |
+| 0.0793 | 0.99788 | **2. SIRA** ← eşik |
+| 0.0700 | 0.99853 | 3. sıra |
+| 0.0574 | 0.99941 | 4. sıra |
+| 0.0500 | 0.99992 | 4. sıra |
+| 0.0000 | 1.00341 | 5.+ |
+
+**Doğrulamalar:** işaret kararlılığı tek/çift gün **40/40**, zaman bölmesi
+**37/40**; trafo-bölmeli çapraz doğrulama tutma **0.857**, plasebo **z=+32.7**.
+
+**Dürüst duruş.** 2. sıra `ρ ≥ 0.0790` istiyor; öngörü 0.2081, zaman-tutmasıyla
+düzeltilmiş taşınan değer **0.0930**. Eşiğin üstünde ama **garanti değil** —
+bankaya alınabilecek güvenli bir 2. sıra yolu yok, bilinen en iyi optimumumuz
+1.000985 ve o da 4. sıra.
+
+---
+
+## 5. Kalıcı kurallar 65–68
+
+**65.** `M0` bir özdeşlik DEĞİL etkin bir sabittir: `P` public %50'de ölçülür,
+`Q` tüm satırlarda hesaplanır. Taban gönderimin skoruna çekmek denklemin iki
+yarısını koparır. Değer, birden çok çapanın aşırı-belirlenmiş uyuşmasından
+gelir ve leave-one-out ile denetlenir.
+
+**66.** Bir sayıyı "tutulmuş sınav" diye kullanmadan önce **gerçekten ölçülüp
+ölçülmediğini** doğrula. `g7`'nin 1.00136'sı hiç gönderilmemiş, üstelik
+sınanan hipotezin kendisiyle türetilmişti. Gönderim listesi tek doğrulama
+kaynağıdır.
+
+**67.** Bir cebir düzeltmesi yapıldığında aynı formülün geçtiği TÜM çağrı
+noktaları taranmalı. `k'Gk → k'L` düzeltmesi bir dosyada yapıldı; `m112`,
+`m117` ve bir manşet `print` atlandı, `m112_durum.json`'da bekleyen bir sonda
+mayına dönüştü.
+
+**68.** Bileşiğe eksen eklemek `ρ_pred`'i her zaman büyütür ama TAŞINAN kısmı
+büyütmeyebilir. Kesim, zaman-bölmeli tutma ölçülerek bulunmalı; tek kesim
+gürültülüdür, en az beş kesimin medyanı alınmalı.

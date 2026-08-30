@@ -15,13 +15,7 @@
    "skor": 1.00191
   }
  ],
- "bekleyen": {
-  "aday": "hedef996_bilesik",
-  "cikti": "tuketim_K_PROBE_TARGET996.csv",
-  "sabit": 1.0010605914108708,
-  "kappa": 0.00500029011261634,
-  "Q_dik": 0.9998839650525223
- },
+ "bekleyen": null,
  "gecmis": [
   {
    "aday": "yenibaslangic",
@@ -44,5 +38,8 @@
   "seviye_x_ay_sondasi": "tuketim_K_PROBE_seviye_x_ay.csv",
   "hedef996_cv": "tuketim_K_TARGET996_CV.csv",
   "hedef996_sondasi": "tuketim_K_PROBE_TARGET996.csv"
- }
+ },
+ "notlar": [
+  "2026-08-30: 'bekleyen' (hedef996_bilesik) SILINDI. sabit'i hatali formulle (k'Gk yerine k'L) hesaplanmisti; kappa=0.005 oldugu icin cozulen rho +0.0121 kayardi -- olculmus en buyuk sinyalin (0.0304) dort kati. Yeniden uretilmeli."
+ ]
 }

@@ -29,11 +29,11 @@ AO = os.path.join(KOK, "data/interim/aile_onbellek")
 S = os.path.join(KOK, "submissions")
 M29 = os.path.join(KOK, "experiments/model29")
 BURA = os.path.dirname(os.path.abspath(__file__))
-M0, TABAN = 1.005846366, "tuketim_m6_ikiyon.csv"
-EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
+TABAN = "tuketim_m6_ikiyon.csv"  # M0 m112den gelir (docs/69)
+EK_MODEL = {}  # bosaltildi (docs/69): s3y40 kendi skoruyla Gram'da
 HEDEF_SOGUK, CARPAN, TAVAN = 0.222, 0.798, 1.95
 sys.path.insert(0, M29)
-from m112_kalibre import L_gurultusu, buzmeli_r_hat  # noqa: E402
+from m112_kalibre import M0, L_gurultusu, buzmeli_r_hat  # noqa: E402
 
 te = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"))
 IDS = te.id.values
@@ -78,7 +78,7 @@ for o in DUR.get("olcumler", []):
 V, L = np.array(V).T, np.array(L)
 G = (V.T @ V) / N
 Gi = np.linalg.pinv(G, rcond=1e-6)
-r_hat, gercek = buzmeli_r_hat(V, L, G, N)
+r_hat, gercek, kL = buzmeli_r_hat(V, L, G, N)
 MSE_OPT = M0 - gercek
 sigL = L_gurultusu(V, N)
 print(f"saf optimum {np.sqrt(MSE_OPT):.6f}   ort sigma_L {sigL.mean():.3e}")

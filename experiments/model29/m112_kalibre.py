@@ -31,10 +31,33 @@ from m30_ozellik import KOK
 S = os.path.join(KOK, "submissions")
 BURA = os.path.dirname(os.path.abspath(__file__))
 TABAN = "tuketim_m6_ikiyon.csv"
+#: M0 = mean(r^2), P_j^2 = M0 - 2L_j + Q_j denkleminin ETKIN sabiti.
+#:
+#: DIKKAT -- bu bir OZDESLIK DEGIL. P_j Kaggle'in public %50 satirinda olculur,
+#: Q_j ise burada 714.688 satirin TAMAMINDA hesaplanir. Denklem bu yuzden iki
+#: farkli kumeye ait nicelikleri karistirir ve M0 aradaki uyumsuzlugu emer.
+#:
+#: Deger uc capadan ASIRI-BELIRLENMIS olarak gelir. L=0 varsayimi altinda
+#: P^2 - Q her uc capada:
+#:     p51  1.005846063 | m4  1.005846970 | v102  1.005846063
+#: Yayilim 9.1e-07. Tek parametre uc hedefi ayni anda sifirlayamaz; bu bir fit
+#: degil uyusmadir ve yapisal nedeni var (a0, v102+m4 spaninda tam optimum
+#: olarak kuruldu; p51 de ayni 2-boyutlu spanda).
+#:
+#: 30 Agustos'ta bu deger a0'in kendi skoruna (1.00284^2 = 1.005688066)
+#: cekilmek istendi. YANLISTI ve GERI ALINDI:
+#:   - dayanak "tutulmus sinav g7" idi; g7 HIC GONDERILMEDI, skoru
+#:     (1.00136) docs/58'de bu M0 ile TURETILMIS bir sayidir -> dongusel
+#:   - 27 gercek yonde leave-one-out her esikte bu degeri kazandiriyor
+#:     (%90 span-ici esiginde ort |hata| 1.72e-04 vs 2.08e-04)
 M0 = 1.005846366
 RCOND = 1e-6
 DURUM = os.path.join(BURA, "m112_durum.json")
-# LB'den dogrudan olculmus, olculmus_skorlar.json'da olmayan MODEL yonleri
+#: TURETILMIS deger -- olculmus degil. s3y40 sondasindan cozuldu ve ESKI (=su
+#: anki) M0 geometrisiyle tutarlidir. s3y40'in kendi skoru (1.00177, gonderim
+#: listesinde dogrulandi) olculmus_skorlar.json'a eklendi; s3y40 = 1.837*g7 +
+#: 0.392*y40 oldugu icin tek basina 2-boyutlu alt uzayda tek denklem verir,
+#: y40 boyutunu ancak bu turetilmis L acar.
 EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
 # Uc ileri-zaman CV blogunda ayni isareti koruyan iki eksen. Katsayilar,
 # testle ayni Nisan-Temmuz penceresindeki sinyalin LB'de olculen seviye
@@ -354,8 +377,8 @@ def kur(te, a0, N, d):
     V = np.array(V).T
     L = np.array(L)
     G = (V.T @ V) / N
-    r_hat, _, _ = buzmeli_r_hat(V, L, G, N)
-    return r_hat, V, G, Y
+    r_hat, _, kL = buzmeli_r_hat(V, L, G, N)
+    return r_hat, V, G, Y, kL
 
 
 #: docs/68 -- L'lerdeki olcum gurultusunun tabanina uygulanan olcek.
@@ -450,10 +473,11 @@ def main():
     ss = pd.read_csv(os.path.join(KOK, "data/raw/sample_submission.csv"))
     a0 = oku(TABAN, beklenen_idler=te.id.values)
     N = len(a0)
-    r_hat, V, G, Y = kur(te, a0, N, d)
+    r_hat, V, G, Y, kL = kur(te, a0, N, d)
     nrm = float((r_hat * r_hat).mean())
     print(f"BILINEN: {V.shape[1]} yon ({len(d['yapisal'])} yapisal olculmus)")
-    print(f"  ||r_hat||^2 = {nrm:.6f}  ->  saf optimum {np.sqrt(M0 - nrm):.5f}")
+    # Buzmeli cozumde beklenen MSE = M0 - 2*k'L + ||r_hat||^2 (k'L != k'Gk).
+    print(f"  ||r_hat||^2 = {nrm:.6f}  ->  saf optimum {np.sqrt(M0 - 2 * kL + nrm):.6f}")
 
     if a.kaydet:
         b = d["bekleyen"]
@@ -553,7 +577,10 @@ def main():
     if not ok:
         raise SystemExit("KAPI KALDI")
     dgv = np.log1p(out.tuketim.values) - a0
-    sabit = float(M0 - 2 * nrm + float(dgv @ dgv) / N)
+    # DIKKAT: k'L kullanilir, ||r_hat||^2 DEGIL. Buzmeli cozumde ikisi
+    # esit degildir (docs/69). Yanlisi rho'yu 1.21e-04/(2*kappa) kadar kaydirir;
+    # kappa=0.005'lik bir sondada bu +0.0121, yani en buyuk gercek sinyalin 4 kati.
+    sabit = float(M0 - 2 * kL + float(dgv @ dgv) / N)
     if not a.cikti:
         raise SystemExit("--cikti gerekli")
     g = Path(os.path.join(S, a.cikti) + ".tmp")

@@ -15,6 +15,7 @@ PLASEBO: trafo etiketlerini karistir -> capraz kor 0'a inmeli.
 
 import json
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -24,8 +25,9 @@ DN = os.path.join(KOK, "data/interim/deney")
 AO = os.path.join(KOK, "data/interim/aile_onbellek")
 S = os.path.join(KOK, "submissions")
 M29 = os.path.join(KOK, "experiments/model29")
+sys.path.insert(0, M29)
 BURA = os.path.dirname(os.path.abspath(__file__))
-M0, TABAN = 1.005846366, "tuketim_m6_ikiyon.csv"
+TABAN = "tuketim_m6_ikiyon.csv"  # M0 m112den gelir (docs/69)
 HEDEF_SOGUK, CARPAN, TAVAN = 0.222, 0.798, 1.95
 
 with open(os.path.join(BURA, "m122_nihai.json")) as fh:

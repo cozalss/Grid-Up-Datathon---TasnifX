@@ -21,15 +21,16 @@ import pandas as pd
 
 KOK = r"c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
 sys.path.insert(0, os.path.join(KOK, "src"))
-sys.path.insert(0, os.path.join(KOK, "scripts"))
+sys.path.insert(0, os.path.join(KOK, "experiments/model29"))
+from m112_kalibre import M0  # noqa: E402
 
 S = os.path.join(KOK, "submissions")
 DN = os.path.join(KOK, "data/interim/deney")
 AO = os.path.join(KOK, "data/interim/aile_onbellek")
 M29 = os.path.join(KOK, "experiments/model29")
 BURA = os.path.dirname(os.path.abspath(__file__))
-M0, RCOND, TABAN = 1.005846366, 1e-6, "tuketim_m6_ikiyon.csv"
-EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
+RCOND, TABAN = 1e-6, "tuketim_m6_ikiyon.csv"
+EK_MODEL = {}  # bosaltildi (docs/69): s3y40 kendi skoruyla Gram'da
 HEDEF_SOGUK = 0.222
 
 te = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"))

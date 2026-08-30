@@ -19,6 +19,7 @@ belirler. Kucuk s_i'li kipler gurultuyu buyutur.
 
 import json
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -26,9 +27,12 @@ import pandas as pd
 KOK = r"c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
 S = os.path.join(KOK, "submissions")
 M29 = os.path.join(KOK, "experiments/model29")
+sys.path.insert(0, M29)
+from m112_kalibre import M0  # noqa: E402
+
 BURA = os.path.dirname(os.path.abspath(__file__))
-M0, TABAN = 1.005846366, "tuketim_m6_ikiyon.csv"
-EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
+TABAN = "tuketim_m6_ikiyon.csv"  # M0 m112den gelir (docs/69)
+EK_MODEL = {}  # bosaltildi (docs/69): s3y40 kendi skoruyla Gram'da
 
 te = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"))
 IDS = te.id.values

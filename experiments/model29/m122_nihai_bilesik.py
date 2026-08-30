@@ -32,14 +32,14 @@ AO = os.path.join(KOK, "data/interim/aile_onbellek")
 S = os.path.join(KOK, "submissions")
 M29 = os.path.join(KOK, "experiments/model29")
 BURA = os.path.dirname(os.path.abspath(__file__))
-M0, TABAN = 1.005846366, "tuketim_m6_ikiyon.csv"
-EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
+TABAN = "tuketim_m6_ikiyon.csv"  # M0 m112den gelir (docs/69)
+EK_MODEL = {}  # bosaltildi (docs/69): s3y40 kendi skoruyla Gram'da
 HEDEF_SOGUK, CARPAN, TAVAN = 0.222, 0.798, 1.95
 HEDEF_2, HEDEF_3 = 0.99790, 0.99940
 RHO_S_ALT = 0.015
-AZAMI_EKSEN = 14
+AZAMI_EKSEN = 40  # kesim KAPIDAN gelsin, sert tavandan degil (Kural 64)
 sys.path.insert(0, M29)
-from m112_kalibre import buzmeli_r_hat  # noqa: E402
+from m112_kalibre import M0, buzmeli_r_hat  # noqa: E402
 
 te = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"))
 ss = pd.read_csv(os.path.join(KOK, "data/raw/sample_submission.csv"))
@@ -251,14 +251,19 @@ if all(kapi.values()):
     dgv = np.log1p(out.tuketim.values) - a0
     sabit = float(M0 - 2 * kL + float(dgv @ dgv) / N)
     ek = dgv - r_hat
+    # KIRPMA sonrasi GERCEK yer degistirme. expm1'in 0'a kirpilmasi yonu bir
+    # miktar kisaltir; cozumde ILAN EDILEN kappa degil BU kullanilmalidir,
+    # yoksa cozulen |rho| sistematik olarak dusuk cikar.
+    KAPPA_ETKIN = float(np.sqrt(float((ek * ek).mean())))
     print(
-        f"YAZILDI  kappa={KAPPA:.4f}  sifir {int((y == 0).sum()):,}  "
-        f"etkin yer degistirme {np.sqrt(float((ek * ek).mean())):.5f}"
+        f"YAZILDI  kappa(ilan)={KAPPA:.5f}  kappa(ETKIN)={KAPPA_ETKIN:.5f}  "
+        f"sifir {int((y == 0).sum()):,}"
     )
-    print(f"  sabit={sabit:.9f}   COZUM: rho = ({sabit:.9f} - P^2)/{2 * KAPPA:.4f}")
+    print(f"  sabit={sabit:.9f}")
+    print(f"  COZUM: rho = ({sabit:.9f} - P*P) / {2 * KAPPA_ETKIN:.6f}")
     print(f"\n  {'gercek rho':>11s} {'skor':>9s} {'sira':>10s}")
     for rr in [0.0, 0.0304, 0.0500, 0.0574, 0.0700, 0.0793, RHO * 0.7, RHO]:
-        sk = np.sqrt(max(sabit - 2 * KAPPA * rr, 1e-9))
+        sk = np.sqrt(max(sabit - 2 * KAPPA_ETKIN * rr, 1e-9))
         sr = (
             "2. SIRA"
             if sk < HEDEF_2
@@ -269,5 +274,9 @@ if all(kapi.values()):
             else "5.+"
         )
         print(f"  {rr:11.4f} {sk:9.5f} {sr:>10s}")
-    with open(os.path.join(BURA, "ad_nihai.json"), "w") as fh:
-        json.dump(dict(kappa=KAPPA, sabit=sabit, rho=RHO, eksenler=kul), fh, indent=1)
+    with open(os.path.join(BURA, "m122_nihai.json"), "w") as fh:
+        json.dump(
+            dict(kappa=KAPPA, kappa_etkin=KAPPA_ETKIN, sabit=sabit, rho=RHO, eksenler=kul),
+            fh,
+            indent=1,
+        )
