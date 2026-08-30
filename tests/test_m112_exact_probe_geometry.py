@@ -9,7 +9,11 @@ import pytest
 MODEL29 = Path(__file__).resolve().parents[1] / "experiments" / "model29"
 sys.path.insert(0, str(MODEL29))
 
-from m112_kalibre import gonderim_olcumu  # noqa: E402
+from m112_kalibre import (  # noqa: E402
+    gonderim_olcumlerini_ekle,
+    gonderim_olcumu,
+    onsele_dayali_duzeltme,
+)
 
 
 def test_gonderim_olcumu_leaderboard_skorunu_birebir_yeniden_kurar() -> None:
@@ -32,3 +36,46 @@ def test_gonderim_olcumu_satir_sayisi_uyusmazligini_reddeder() -> None:
             1.0,
             m0=1.0,
         )
+
+
+def test_kayitli_gonderimler_soyut_yon_yerine_dosyanin_kendisini_kullanir() -> None:
+    taban = np.array([0.2, 0.4, 0.8], dtype=np.float64)
+    gonderilen = np.array([0.5, 0.1, 0.9], dtype=np.float64)
+    yonler: list[np.ndarray] = []
+    ic_carpimlar: list[float] = []
+    olcumler = [{"aday": "seviye", "dosya": "probe.csv", "skor": 0.91}]
+
+    gonderim_olcumlerini_ekle(
+        taban,
+        yonler,
+        ic_carpimlar,
+        olcumler,
+        okuyucu=lambda _: gonderilen,
+        m0=1.2,
+    )
+
+    assert len(yonler) == 1
+    assert yonler[0] == pytest.approx(gonderilen - taban)
+    yeniden_kurulan = 1.2 + np.mean(yonler[0] ** 2) - 2.0 * ic_carpimlar[0]
+    assert np.sqrt(yeniden_kurulan) == pytest.approx(0.91, abs=1e-12)
+
+
+def test_onsel_duzeltmesi_yeni_yonleri_sirayla_diklestirir() -> None:
+    bilinen = np.array([[1.0], [-1.0], [1.0], [-1.0]])
+    gram = bilinen.T @ bilinen / len(bilinen)
+    adaylar = {
+        "ay": np.array([1.0, 1.0, -1.0, -1.0]),
+        "haftasonu": np.array([1.0, -1.0, -1.0, 1.0]),
+    }
+
+    duzeltme, bilgi = onsele_dayali_duzeltme(
+        adaylar,
+        bilinen,
+        gram,
+        [("ay", 0.03), ("haftasonu", -0.02)],
+        len(bilinen),
+    )
+
+    assert [satir["aday"] for satir in bilgi] == ["ay", "haftasonu"]
+    assert np.mean(duzeltme * bilinen[:, 0]) == pytest.approx(0.0, abs=1e-12)
+    assert np.mean(duzeltme**2) == pytest.approx(0.03**2 + 0.02**2, abs=1e-12)

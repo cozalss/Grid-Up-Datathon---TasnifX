@@ -3,7 +3,25 @@
   "seviye": -0.024649,
   "yenibaslangic": -0.0025625827943891745
  },
- "bekleyen": null,
+ "olcumler": [
+  {
+   "aday": "seviye",
+   "dosya": "tuketim_YP_seviye.csv",
+   "skor": 1.00115
+  },
+  {
+   "aday": "yenibaslangic",
+   "dosya": "tuketim_K_yenibas.csv",
+   "skor": 1.00191
+  }
+ ],
+ "bekleyen": {
+  "aday": "seviye_x_ay",
+  "cikti": "tuketim_K_PROBE_seviye_x_ay.csv",
+  "sabit": 1.001065410152843,
+  "kappa": 0.005245907896004393,
+  "Q_dik": 0.9084450986626701
+ },
  "gecmis": [
   {
    "aday": "yenibaslangic",
@@ -13,13 +31,13 @@
   }
  ],
  "plan_31agustos": [
-  "buzme_tam",
-  "seviye_x_soguk",
-  "seviye_x_ay"
+  "seviye_x_ay",
+  "ay",
+  "nihai"
  ],
  "hazir_dosyalar": {
-  "buzme_tam": "tuketim_K_buzme_tam.csv",
-  "seviye_x_soguk": "tuketim_K_seviye_x_soguk.csv",
-  "seviye_x_ay": "tuketim_K_seviye_x_ay.csv"
+  "exact_banka": "tuketim_K_EXACT_BANKA.csv",
+  "rank2_onsel": "tuketim_K_RANK2_ONSEL.csv",
+  "seviye_x_ay_sondasi": "tuketim_K_PROBE_seviye_x_ay.csv"
  }
 }

@@ -36,8 +36,10 @@ RCOND = 1e-6
 DURUM = os.path.join(BURA, "m112_durum.json")
 # LB'den dogrudan olculmus, olculmus_skorlar.json'da olmayan MODEL yonleri
 EK_MODEL = {"tuketim_y40_sota_temiz.csv": -0.002229}
-# Dosyaya dayali yapisal yonler (formulle degil, hazir CSV ile tanimli)
-DOSYA_YON = {"yenibaslangic": "tuketim_KES_yenibaslangic.csv"}
+# Uc ileri-zaman CV blogunda ayni isareti koruyan iki eksen. Katsayilar,
+# testle ayni Nisan-Temmuz penceresindeki sinyalin LB'de olculen seviye
+# sinyaline oranlanip yaklasik %35 buzulmus halidir.
+RANK2_ONSEL = (("seviye_x_ay", -0.030), ("ay", 0.035))
 
 
 def oku(f):
@@ -57,11 +59,45 @@ def gonderim_olcumu(taban, tahmin, skor, *, m0=M0):
     return yon, ic_carpim
 
 
+def gonderim_olcumlerini_ekle(taban, yonler, ic_carpimlar, olcumler, *, okuyucu=oku, m0=M0):
+    """Durumdaki gercek gonderimleri soyut yonleri yeniden kurmadan Gram'a ekle."""
+    for olcum in olcumler:
+        yon, ic_carpim = gonderim_olcumu(taban, okuyucu(olcum["dosya"]), olcum["skor"], m0=m0)
+        yonler.append(yon)
+        ic_carpimlar.append(ic_carpim)
+
+
+def onsele_dayali_duzeltme(adaylar, bilinen, gram, katsayilar, n):
+    """Adaylari bilinen spana ve birbirine diklestirip onsel duzeltme kur."""
+    bilinen = np.asarray(bilinen, dtype=np.float64)
+    gram = np.asarray(gram, dtype=np.float64)
+    duzeltme = np.zeros(n, dtype=np.float64)
+    bilgi = []
+    for aday, katsayi in katsayilar:
+        x = np.asarray(adaylar[aday], dtype=np.float64)
+        c, *_ = np.linalg.lstsq(gram, (bilinen.T @ x) / n, rcond=RCOND)
+        xp = x - bilinen @ c
+        q_dik = float((xp * xp).mean())
+        if q_dik < 1e-4:
+            raise ValueError(f"{aday}: dik bilesen cok kucuk ({q_dik:.2e})")
+        birim = xp / np.sqrt(q_dik)
+        duzeltme += float(katsayi) * birim
+        bilgi.append({"aday": aday, "katsayi": float(katsayi), "Q_dik": q_dik})
+        bilinen = np.column_stack([bilinen, birim])
+        gram = (bilinen.T @ bilinen) / n
+    return duzeltme, bilgi
+
+
 def durum_yukle():
     if os.path.exists(DURUM):
         return json.load(open(DURUM))
     # seviye 2026-08-30'da olculdu: skor 1.00115
-    return {"yapisal": {"seviye": -0.024649}, "bekleyen": None, "gecmis": []}
+    return {
+        "yapisal": {"seviye": -0.024649},
+        "olcumler": [{"aday": "seviye", "dosya": "tuketim_YP_seviye.csv", "skor": 1.00115}],
+        "bekleyen": None,
+        "gecmis": [],
+    }
 
 
 def durum_kaydet(d):
@@ -132,21 +168,12 @@ def kur(te, a0, N, d):
     for f, Lj in EK_MODEL.items():
         V.append(oku(f) - a0)
         L.append(Lj)
-    # olculmus YAPISAL yonler: ham hallerini ekle, L'leri dik bilesende olculdu
+    # Yapisal adaylar yalnizca yeni sonda uretmek icin yeniden kurulur. Olculmus
+    # sondalar Gram'a gonderilen CSV'nin kendisiyle eklenir; boylece yon tanimi
+    # sonradan degisse bile gorulen LB skoru birebir yeniden uretilir.
     tr = pd.read_csv(os.path.join(KOK, "data/raw/train.csv"), usecols=["tanim"])
     Y = yapisal_yonler(te, a0, set(tr.tanim.unique()))
-    V0 = np.array(V).T
-    G0 = (V0.T @ V0) / N
-    for ad, Lp in d["yapisal"].items():
-        if ad in DOSYA_YON:
-            xf = oku(DOSYA_YON[ad]) - a0
-            x = xf / np.sqrt(float((xf * xf).mean()))
-        else:
-            x = Y[ad]
-        c, *_ = np.linalg.lstsq(G0, (V0.T @ x) / N, rcond=RCOND)
-        xp = x - V0 @ c
-        V.append(xp)
-        L.append(Lp)  # dik bilesende olculen L
+    gonderim_olcumlerini_ekle(a0, V, L, d.get("olcumler", []))
     V = np.array(V).T
     L = np.array(L)
     G = (V.T @ V) / N
@@ -161,6 +188,7 @@ def main():
     ap.add_argument("--cikti")
     ap.add_argument("--liste", action="store_true")
     ap.add_argument("--nihai", action="store_true")
+    ap.add_argument("--rank2", action="store_true")
     ap.add_argument("--kaydet")
     ap.add_argument("--skor", type=float)
     a = ap.parse_args()
@@ -184,14 +212,19 @@ def main():
         print(f"\n{a.kaydet}: skor {a.skor} -> L = {L:+.6f}  rho = {rho:+.4f}  kazanc {rho**2:.3e}")
         d["yapisal"][a.kaydet] = L
         d["gecmis"].append(dict(aday=a.kaydet, skor=a.skor, L=L, rho=rho))
+        d.setdefault("olcumler", []).append({"aday": a.kaydet, "dosya": b["cikti"], "skor": a.skor})
         d["bekleyen"] = None
         durum_kaydet(d)
         print("KAYDEDILDI. Yeni taban icin --liste calistir.")
         return
 
-    if a.liste or not (a.aday or a.nihai):
+    if sum(bool(x) for x in (a.aday, a.nihai, a.rank2)) > 1:
+        raise SystemExit("--aday, --nihai ve --rank2 birlikte kullanilamaz")
+
+    if a.liste or not (a.aday or a.nihai or a.rank2):
         print(f"\n{'aday':>22s} {'Q_dik':>9s} {'span-disi':>10s} {'rho=0.03 kazanci':>17s}")
-        for ad, x in list(Y.items()) + [(k, None) for k in DOSYA_YON]:
+        dosya_adaylari = [(o["aday"], None) for o in d.get("olcumler", []) if o["aday"] not in Y]
+        for ad, x in list(Y.items()) + dosya_adaylari:
             if ad in d["yapisal"]:
                 print(f"{ad:>22s}  [OLCULDU  L={d['yapisal'][ad]:+.6f}]")
                 continue
@@ -202,7 +235,16 @@ def main():
         print(f"\nolculen yapisal: {json.dumps(d['yapisal'], indent=1)}")
         return
 
-    if a.nihai:
+    if a.rank2:
+        duzeltme, bilgi = onsele_dayali_duzeltme(Y, V, G, RANK2_ONSEL, N)
+        p = a0 + r_hat + duzeltme
+        etiket = "RANK2 ONSEL (kontrollu agresif)"
+        kap, Qd, xp = 0.0, 0.0, None
+        print(f"\n{etiket}:")
+        for satir in bilgi:
+            print(f"  {satir['aday']:18s} beta={satir['katsayi']:+.4f} Q_dik={satir['Q_dik']:.4f}")
+        print(f"  sifir-sinyal geometri maliyeti = {float((duzeltme * duzeltme).mean()):.6f}")
+    elif a.nihai:
         p = a0 + r_hat
         etiket = "NIHAI (saf optimum)"
         kap, Qd, xp = 0.0, 0.0, None
@@ -248,6 +290,8 @@ def main():
     print(f"YAZILDI submissions/{a.cikti}")
     if a.nihai:
         print(f"BEKLENEN SKOR {np.sqrt(sabit):.5f}  (tum L'ler olculmus)")
+    elif a.rank2:
+        print("HEDEF: seviye_x_ay rho<=-0.035 ve ay rho>=+0.040 ise 2. sira asilir")
     else:
         d["bekleyen"] = dict(aday=a.aday, cikti=a.cikti, sabit=sabit, kappa=kap, Q_dik=Qd)
         durum_kaydet(d)
