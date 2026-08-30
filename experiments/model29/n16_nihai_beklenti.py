@@ -1,0 +1,135 @@
+"""NIHAI BEKLENTI -- artik her kalem OLCULDU. n13/n14'un yerini alir.
+
+n14'te "blok kazanci" OLCULMEMIS bir onseldi (cos^2 ~ U(0.35,0.95)).
+n09 onu OLCTU. Onsel iyi kalibre cikti (ima ettigi rho kazanci 1.03-1.69,
+medyan ~1.28; olculen 1.271) ama artik tahmine gerek yok.
+
+OLCULEN KALEMLER
+  |c| = 0.434, %90 GA [0.184, 0.798]        n10, LB'nin 29 olcumu, LOO
+  K orani (B=1, K=25 / K=136) = 1.391       n09  (0.1427 / 0.1026)
+  Blok kazanci (B=4 / B=1, K=25) = 1.271    n09  (0.1814 / 0.1427)
+  CARPAN (blok korelasyonu -> LB rho) = 0.798   m148, n=1 KALIBRASYON
+
+IKI BAGIMSIZ YOL, IKI FARKLI CEVAP -- ikisini de veriyoruz:
+
+  YOL A (|c| capasi, LB'ye dayali):
+      rho_LB = |c| * ||BETA_136|| / 1.95 * K_orani * blok_kazanci
+             = |c| * 0.4832 / 1.95 * 1.391 * 1.271  =  |c| * 0.4382
+      |c| = 0.434 -> rho = 0.190
+
+  YOL B (CARPAN capasi, blok olcumune dayali):
+      rho_LB = 0.1814 * 0.798 = 0.145
+
+Fark iki kata yakin ve KAPATILAMIYOR. Sebebi acik: CARPAN = 0.798 m148'in
+kendi belgesinde "n=1 kalibrasyon" diye niteleniyor, |c| = 0.434 ise 19
+noktalik bir LOO'dan geliyor ama GONDERIM FARKI yonlerinde olculdu (dik
+paylari kucuk, en yuksek 0.344) -- bizim demet yonlerimizin dik payi ~1.
+
+MUHAFAZAKAR OLAN YOL B'DIR; taban senaryo olarak onu aliyoruz ve YOL A'yi
+ust senaryo olarak gosteriyoruz. GERCEK KALIBRASYON ILK SONDA OLCULDUGUNDE
+YAPILACAK -- o zaman iki yoldan hangisinin dogru oldugu da anlasilacak.
+"""
+
+import json
+import os
+
+import numpy as np
+
+KOK = r"c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
+M29 = os.path.join(KOK, "experiments/model29")
+TABAN_MSE = 1.00202690323433
+S = 400000
+
+BETA_136 = 0.4832
+K_ORANI = 1.391  # n09: B=1'de K=25 / K=136
+BLOK_KAZANCI = 1.271  # n09: K=25'te B=4 / B=1
+RHO_BLOK_B4 = 0.1814  # n09: K=25, B=4, blok korelasyon birimi
+CARPAN = 0.798
+
+rng = np.random.default_rng(7)
+
+with open(os.path.join(M29, "n10_c_carpani.json"), encoding="utf-8") as fh:
+    _C = json.load(fh)["c_nihai"]
+C_MID, (C_LO, C_HI) = float(_C["nokta"]), (float(x) for x in _C["ga90"])
+C_LO, C_HI = (float(x) for x in _C["ga90"])
+
+with open(os.path.join(M29, "n02_esik_tahmini.json"), encoding="utf-8") as fh:
+    E = json.load(fh)
+
+
+def _esik(ad):
+    d = E[f"{ad}_tahmin_1eylul_2359UTC"]["NIHAI_TAHMIN"]
+    z = [float(x) for x in d["80pct_araligi_zarf"]]
+    return float(d["merkez"]), rng.normal(float(d["merkez"]), (z[1] - z[0]) / (2 * 1.2816), S)
+
+
+ESIK1, e1 = _esik("rank1")
+ESIK2, e2 = _esik("rank2")
+# TUTARLILIK: 1. sira esigi 2. sira esiginden BUYUK OLAMAZ. Ikisini bagimsiz
+# ornekleyince 1. siranin genis zarfi (0.9776-0.99025) bazi orneklerde
+# 2. siranin uzerine cikiyordu ve P(1.) > P(2.) gibi OLANAKSIZ bir sonuc
+# veriyordu. Siralama zorlanir.
+e1 = np.minimum(e1, e2)
+
+# YOL A: |c| capasi
+c = np.exp(rng.normal(np.log(C_MID), (np.log(C_HI) - np.log(C_LO)) / (2 * 1.6449), S))
+rho_A = c * BETA_136 / 1.95 * K_ORANI * BLOK_KAZANCI
+# YOL B: CARPAN capasi. n09'un B=4 olcumu %90 GA vermedi; iki bolme yonu
+# 0.1478 (temiz) ile 0.1814 (ortalama) arasinda ayrisiyordu -> o araligi
+# belirsizlik olarak kullaniyoruz.
+rb = rng.uniform(0.1478, 0.1814, S) * CARPAN
+rho_B = rb
+
+print(f"|c|           = {C_MID:.3f}  %90 GA [{C_LO:.3f}, {C_HI:.3f}]   (n10 OLCULDU)")
+print(f"K orani B=1   = {K_ORANI}   (n09 OLCULDU)")
+print(f"blok kazanci  = {BLOK_KAZANCI}   (n09 OLCULDU; n14'un onseli 1.28 idi)")
+print(f"CARPAN        = {CARPAN}   (m148, n=1 KALIBRASYON -- zayif halka)")
+print(f"esikler       : 1. sira {ESIK1:.5f}   2. sira {ESIK2:.5f}  (n02 TAHMIN)\n")
+
+print(
+    f"{'senaryo':>34s} {'medyan rho':>11s} {'medyan skor':>12s} "
+    f"{'P(1.)':>7s} {'P(2.)':>7s} {'P(ilk3)':>8s}"
+)
+SON = {}
+for ad, rho in [
+    ("YOL B (CARPAN) -- TABAN", rho_B),
+    ("YOL A (|c|)    -- UST", rho_A),
+    ("KARISIM %50/%50", np.where(rng.random(S) < 0.5, rho_A, rho_B)),
+]:
+    t2 = np.minimum(rho**2, TABAN_MSE - 1e-6)
+    sk = np.sqrt(np.maximum(TABAN_MSE - t2, 1e-9))
+    SON[ad] = {
+        "medyan_rho": float(np.median(rho)),
+        "medyan_skor": float(np.median(sk)),
+        "p10": float(np.quantile(sk, 0.10)),
+        "p90": float(np.quantile(sk, 0.90)),
+        "P_1": float((sk <= e1).mean()),
+        "P_2": float((sk <= e2).mean()),
+        "P_3": float((sk <= 0.99927).mean()),
+    }
+    print(
+        f"{ad:>34s} {np.median(rho):11.4f} {np.median(sk):12.5f} "
+        f"{100 * SON[ad]['P_1']:6.1f}% {100 * SON[ad]['P_2']:6.1f}% "
+        f"{100 * SON[ad]['P_3']:7.1f}%"
+    )
+
+print("\n  En kotu durum 1.00101 (saf span) -- bugunku 1.00115 yedegimizden IYI.")
+print("  ILK SONDA GELINCE bu tablo yeniden kurulacak: olculen rho_1,")
+print("  YOL A ile YOL B arasindaki secimi de yapacak.")
+
+with open(os.path.join(M29, "n16_nihai_beklenti.json"), "w", encoding="utf-8") as fh:
+    json.dump(
+        {
+            "c": [C_MID, C_LO, C_HI],
+            "K_orani": K_ORANI,
+            "blok_kazanci": BLOK_KAZANCI,
+            "rho_blok_B4": RHO_BLOK_B4,
+            "carpan": CARPAN,
+            "esik_1": ESIK1,
+            "esik_2": ESIK2,
+            "senaryolar": SON,
+        },
+        fh,
+        indent=1,
+    )
+print("\n-> n16_nihai_beklenti.json")
