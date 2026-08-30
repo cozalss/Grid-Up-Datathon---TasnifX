@@ -90,7 +90,7 @@ yazılmıştı; `κ = 0.005` olduğu için gönderilip `--kaydet` çalıştırı
 `ρ` **+0.0121** kayardı — en büyük gerçek sinyalin dört katı. Silindi.
 
 **2.4 Çözüm böleni.** Kırpma (`expm1 → 0`) yönü kısaltıyor: ilan edilen
-`κ = 0.070`, gerçekleşen **0.069800**. Çözümde etkin olan kullanılır.
+`κ = 0.070`, gerçekleşen **0.069782**. Çözümde etkin olan kullanılır.
 
 ---
 
@@ -124,7 +124,7 @@ submissions/tuketim_K_TEKHAK.csv        tum kapilar gecti
   rho_pred = 0.2081     kappa(ilan) = 0.070   kappa(ETKIN) = 0.069782
   sabit = 1.006835337   sifir tahmin 1.934
 
-  COZUM:  rho = (1.006825406 - P*P) / 0.139565
+  COZUM:  rho = (1.006835337 - P*P) / 0.139565
 ```
 
 | gerçek `ρ` | skor | sıra |
