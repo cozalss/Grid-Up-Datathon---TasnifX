@@ -66,6 +66,32 @@ Sonra:
 Betik `rho_1`'i cozer, `submissions/tuketim_D2_demet.csv`'yi uretir ve
 guncel beklentiyi basar. Bunu her sonda icin tekrarla (D1…D4).
 
+#### D1'IN SKORU TEK BASINA HER SEYI SOYLER
+
+`m148_demet.json`'a gore H2–H4'un ongorusu **sifir**; toplam `rho_s`'in
+tamami H1'de. Yani `rho_1 = |c| * 0.1294` ve **D1'in skoru dogrudan `|c|`
+carpanini olcer** — iki gundur tahmin etmeye calistigimiz sayiyi.
+
+| senaryo | \|c\| | rho_1 | **D1'in verecegi skor** |
+|---|---|---|---|
+| sinyal yok | 0.00 | 0.0000 | **1.00235** |
+| SENARYO D (n=5) | 0.39 | 0.0505 | 0.99974 |
+| \|c\| nokta tahmini | 0.57 | 0.0738 | 0.99854 |
+| SENARYO G (n=17) | 0.63 | 0.0815 | 0.99813 |
+| 2. sira esigi | 0.76 | 0.0987 | **0.99725** |
+| **1. SIRA esigi** | **1.14** | 0.1475 | **0.99471** |
+
+**KARAR KURALI:**
+
+- `P1 <= 0.99725` → 2. sira **kesin**, 1. sira menzilde. Zincire devam.
+- `0.99725 < P1 < 1.00235` → sinyal var ama zayif. Zincire devam,
+  3. sira hedefle.
+- `P1 >= 1.00235` → sinyal yok. **Demeti birak**, kalan haklari harcama,
+  son secimde `tuketim_YP_seviye.csv` (1.00115) korunur.
+
+1. sirayi hedeflemenin **ek maliyeti yok**: ayni 4 sonda hem 2. hem 1.
+sirayi acar, fark yalnizca beklentidedir.
+
 ### Adim 3 — Dort yon de olculunce
 
 Betik `submissions/tuketim_Z_NIHAI.csv` uretir. **Asil gonderim budur.**
@@ -175,8 +201,46 @@ verir; **hepsi yanlissa kayip yok.**
       0.03181     0.98499  1. SIRA
 ```
 
-En iyi carpan tahmini `abs(c) ~ 0.7` ile beklenen: **3. sira**, 2. sira kil
-payi yukarida. Ama artik tahmin etmiyoruz, **olcuyoruz**.
+### `c` carpani — nihai hukum (m149)
+
+**`|c| = 0.57`, %90 araligi `[0.17, 1.26]`.**
+
+| sira | gereken rho^2 | gereken \|c\| | olasilik |
+|---|---|---|---|
+| **1. SIRA** | 0.02175 | 1.140 | **%8** |
+| 2. sira | 0.00973 | 0.762 | **%26** |
+| 3. sira | 0.00349 | 0.456 | **%66** |
+
+**`1.95` COKTU — olcum hatasi degil, BAYAT PAYDA.** `docs/69`'daki
+`rho_s = 0.0156` o gunku **daha kucuk span** ile hesaplanmisti. Bugunku tam
+span ile ayni dosyada `rho_s = 0.0616` (4 kat buyuk); `rho_dik = -0.0272`
+ise docs'taki -0.0304 ile ayni. Oran dogrudan **1.95 → 0.44**. Demet
+yonlerimizin `rho_s`'i de bugunku `r_hat`'ten geldigi icin dogru payda
+bugunkudur. **1.95 artik aralikta sifir agirliklidir.**
+
+**m145'in "dort bagimsiz yolu" bagimsiz degilmis** — dordu de ayni 17 LOO
+noktasinin fonksiyonu, bootstrap korelasyonu 0.94. Yayilim hata payina
+**eklenmeli**, cikarilmamali.
+
+**Iki referans sinifi (yeni bulgu).** LOO'nun "dik" yonleri span'in
+**icindedir**; dik payi %1 olan bir eksende olculen sey gercek dik sinyal
+degil, `r_hat`'in uyum artiginin buyutulmus halidir (dusuk dik payli 7
+eksende `|rho_dik|` neredeyse sabit: 0.027–0.030). Demet yonlerimiz ise
+span'in **disindadir**.
+
+- **SENARYO G** (tum 17 eksen): `|c| = 0.625` [0.48, 0.85]
+- **SENARYO D** (yalniz yeni boyut acanlar, n=5): `|c| = 0.390` [0.13, 1.42]
+
+Nihai aralik ikisinin esit agirlikli karisimi. Gercek belirsizlik bir
+genislik degil, **bir ikilik**.
+
+**`sigma_L` veri tarafindan sinirlandi (bagimsiz dorduncu delil).**
+`sigma_L = 2.27e-04` dogru olsaydi dik artiklarin sacilimi gozlenenden 1.9
+kat buyuk olurdu ve havuzlanmis tahminci `c^2 < 0` verirdi — olanaksiz.
+**`sigma_L <= 1.2e-04`.** Bu, m134'un yuvarlama bulgusunu destekler.
+
+**Masa basinda daraltacak yol kalmadi** — elde bagimsiz ikinci olcum kumesi
+yok. Bundan sonrasi **olcumle** gelir; ilk olcum D1'dir.
 
 ---
 
