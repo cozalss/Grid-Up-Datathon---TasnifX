@@ -1,0 +1,43 @@
+{
+ "rho_s_bilesik": 0.10979487179487181,
+ "taban_mse": 1.00202690323433,
+ "yedek": 1.00115,
+ "saf_span": 1.0010129385948665,
+ "satirlar": [
+  {
+   "c": 0.184,
+   "kaynak": "n10 %90 GA ALT ucu",
+   "rho": 0.020202256410256414,
+   "skor": 1.000809058747104,
+   "sira": "kucuk kazanc"
+  },
+  {
+   "c": 0.434,
+   "kaynak": "n10 nokta tahmini (n=19, farkli ne",
+   "rho": 0.04765097435897436,
+   "skor": 0.9998781365131305,
+   "sira": "kucuk kazanc"
+  },
+  {
+   "c": 0.798,
+   "kaynak": "n10 %90 GA UST ucu",
+   "rho": 0.08761630769230772,
+   "skor": 0.9971711417107381,
+   "sira": "3.-4."
+  },
+  {
+   "c": 1.32,
+   "kaynak": "CARPAN 0.798'in ima ettigi",
+   "rho": 0.14492923076923078,
+   "skor": 0.990465759783229,
+   "sira": "2. sira"
+  },
+  {
+   "c": 1.986,
+   "kaynak": "seviye ekseni (n=1, DOGRU nesne)",
+   "rho": 0.2180526153846154,
+   "skor": 0.9769749025221984,
+   "sira": "1. SIRA"
+  }
+ ]
+}
