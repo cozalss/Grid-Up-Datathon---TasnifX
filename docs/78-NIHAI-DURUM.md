@@ -167,3 +167,30 @@ Adim adim komutlar **docs/76**'da. Ozet:
 7. Tarayicidan 2 secim: `Z_NIHAI` + `YP_seviye`
 
 **ONAY OLMADAN HICBIR GONDERIM YAPILMAZ.**
+
+---
+
+## 8. SON KONTROL — kappa TUM `|c|` ARALIGINDA SAGLAM
+
+`n06` kappa'yi `|c| = 0.434` onseliyle secti. Ama `n18`/`n19` gosterdi ki
+`|c|` 0.184 ile 1.986 arasinda olabilir. Kappa o aralikta bozuluyor mu?
+
+| `\|c\|` | `rho_1` | `sigma(rho_1)` | goreli | `sigma(\|c\|)` | D1 skoru |
+|---|---|---|---|---|---|
+| 0.184 | 0.0123 | 0.00443 | %36.0 | 0.066 | 1.00120 |
+| 0.434 | 0.0290 | 0.00443 | %15.3 | 0.066 | 1.00061 |
+| 0.798 | 0.0533 | 0.00443 | %8.3 | 0.066 | 0.99976 |
+| 1.320 | 0.0881 | 0.00443 | %5.0 | 0.066 | 0.99854 |
+| 1.986 | 0.1326 | 0.00443 | %3.3 | 0.066 | 0.99698 |
+
+**Sonuc: DEGISIKLIK GEREKMIYOR.**
+
+- `sigma(|c|) = 0.066` her durumda ayni. Iki capa (0.434 ve 1.986) arasinda
+  1.55 fark var, yani **23 sigma** -- D1 ikisini kesin ayirir.
+- Toplam olcum kaybi `9.26e-05`, 2. sira icin gereken `0.01129`'un
+  **%0.82'si**. Ihmal edilebilir.
+- En kotu durumda (|c| = 0.184) D1'in kendi skoru 1.00120, yani yedegimizden
+  (1.00115) az kotu. Ama D1 bir SONDADIR, secilecek dosya degil; yedek
+  isaretli kaldigi surece bu bir kayip degildir.
+
+Bu, acik kalan son operasyonel soruydu.
