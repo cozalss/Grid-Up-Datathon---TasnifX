@@ -143,9 +143,9 @@ for ad, rho in [
 print("\nESIK SENARYOSUNA GORE P(2. sira):")
 print(f"{'esik senaryosu':>34s} {'esik':>9s} {'gereken rho':>12s} {'taban':>7s} {'ust':>7s}")
 for _ad, _e in [
-    ("2. sira 12 saattir SABIT kalirsa", 0.99556),
-    ("egri tahmini (sicramasiz)", 0.99349),
-    ("bir rakip 0.009 SICRARSA", 0.98449),
+    ("esik BUGUNKU yerinde kalirsa", 0.99536),
+    ("egri tahmini (sicramasiz)", 0.99282),
+    ("bir rakip 0.009 daha SICRARSA", 0.98382),
 ]:
     _ger = float(np.sqrt(max(TABAN_MSE - _e * _e, 0)))
     _pb = float((np.sqrt(np.maximum(TABAN_MSE - rho_B**2, 1e-9)) <= _e).mean())

@@ -43,7 +43,8 @@ GOZ2 = [
     (1.7264, 0.99614),  # 30 Agu 17:26
     (1.9208, 0.99556),  # 30 Agu 22:06
     (2.1771, 0.99556),  # 31 Agu 04:15
-    (2.2500, 0.99556),  # 31 Agu 06:00  -- 12 SAATTIR degismedi
+    (2.2500, 0.99556),  # 31 Agu 06:00  -- 12 saattir degismemisti
+    (2.2917, 0.99536),  # 31 Agu 07:00  Duo-Electra 0.99573 -> 0.99536
 ]
 
 # --- SICRAMA RISKI --------------------------------------------------------
@@ -58,7 +59,12 @@ GOZ2 = [
 #
 # Egri uydurma bu ikinci etkiyi GOREMEZ (duz bir seri gorur). Bu yuzden
 # sicrama ayri bir kalem olarak ekleniyor.
-SICRAMA_P = 0.45  # iki rakip, kalan ~1.7 gun, gozlenmis bir ornek
+# GUNCELLEME 07:00: sicrama SEYREK DEGIL, SIK. Son ~7 saatte ilk 12'de
+# UC sicrama gozlendi: Grid Grinders -0.00899, Tuna Deniz -0.00381
+# (1.00267 -> 0.99886, 12. siradan 4.'ye), Ahmet Bugrahan -0.00143.
+# Ayrica 12 saatlik durgunluk BITTI: Duo-Electra 0.99573 -> 0.99536.
+# Kalan ~41 saatte bu hizin surmesi bekleniyor.
+SICRAMA_P = 0.70  # gozlenen taban hiz: 3 sicrama / 7 saat, kalan 41 saat
 SICRAMA_BUY = 0.009  # Grid Grinders'in gozlenen sicramasi
 BITIS = 3.9993  # 1 Eylul 23:59 UTC
 
@@ -106,7 +112,9 @@ print(f"{'tamamen durdu':>28s} {durdu:24.5f}")
 # Agirlikli merkez: 8 saatlik durgunluk ussel/durdu senaryolarini destekliyor
 # ama son gun sicramasi da gercek bir risk (bu gece bir rakip 0.0014
 # sicradi). Agirliklar: dogrusal %25, ussel %45, durdu %30.
-merkez = 0.25 * dog + 0.45 * us + 0.30 * durdu
+# 07:00 GUNCELLEMESI: durgunluk bitti ve sicramalar sik. Agirlik
+# dogrusal (kayma suruyor) senaryosuna KAYDIRILDI: %45 / %35 / %20.
+merkez = 0.45 * dog + 0.35 * us + 0.20 * durdu
 # SICRAMA: egri uydurma gozlenmemis bir sicramayi ONGOREMEZ. Beklenen
 # etkiyi ayri ekliyoruz ve zarfin ALT ucunu sicramali senaryoya aciyoruz.
 sicramali = merkez - SICRAMA_BUY
