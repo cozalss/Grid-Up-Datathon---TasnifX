@@ -1,0 +1,105 @@
+{
+ "n_egitim": 101323,
+ "n_yaz": 20633,
+ "ozellik": 112,
+ "agac": 600,
+ "ic_secim": {
+  "150": 0.5631,
+  "300": 0.567,
+  "600": 0.5776
+ },
+ "auc_yaz25_soguk": 0.6087,
+ "q_ort": 0.0213,
+ "gercek_oran": 0.04,
+ "taban_soguk": 1.43592,
+ "kalibrasyon": [
+  {
+   "kova": 0,
+   "n": 17419,
+   "q_ort": 0.0035,
+   "gercek": 0.035,
+   "p_ort": 6.538,
+   "kare_pay": 0.767
+  },
+  {
+   "kova": 1,
+   "n": 1541,
+   "q_ort": 0.0314,
+   "gercek": 0.0571,
+   "p_ort": 6.57,
+   "kare_pay": 0.0937
+  },
+  {
+   "kova": 2,
+   "n": 685,
+   "q_ort": 0.0709,
+   "gercek": 0.0905,
+   "p_ort": 6.003,
+   "kare_pay": 0.063
+  },
+  {
+   "kova": 3,
+   "n": 499,
+   "q_ort": 0.1402,
+   "gercek": 0.1042,
+   "p_ort": 6.369,
+   "kare_pay": 0.0515
+  },
+  {
+   "kova": 4,
+   "n": 175,
+   "q_ort": 0.2527,
+   "gercek": 0.04,
+   "p_ort": 6.022,
+   "kare_pay": 0.013
+  },
+  {
+   "kova": 5,
+   "n": 125,
+   "q_ort": 0.4431,
+   "gercek": 0.024,
+   "p_ort": 6.06,
+   "kare_pay": 0.006
+  },
+  {
+   "kova": 6,
+   "n": 171,
+   "q_ort": 0.5751,
+   "gercek": 0.0117,
+   "p_ort": 6.371,
+   "kare_pay": 0.0035
+  },
+  {
+   "kova": 7,
+   "n": 16,
+   "q_ort": 0.7232,
+   "gercek": 0.0,
+   "p_ort": 6.613,
+   "kare_pay": 0.0001
+  },
+  {
+   "kova": 8,
+   "n": 2,
+   "q_ort": 0.9154,
+   "gercek": 1.0,
+   "p_ort": 6.697,
+   "kare_pay": 0.0021
+  }
+ ],
+ "duzeltme": {
+  "carpansal_g=0.25": 1.45301,
+  "carpansal_g=0.5": 1.48006,
+  "carpansal_g=0.75": 1.51106,
+  "carpansal_g=1.0": 1.54287,
+  "carpansal_g=1.5": 1.60359
+ },
+ "gamma_dis_secim": {
+  "gamma": 0.0,
+  "dis_taban": 1.90615,
+  "dis_duzeltilmis": 1.90615
+ },
+ "SECILEN": {
+  "gamma": 0.0,
+  "yaz25_soguk_rmsle": 1.43592
+ }
+}

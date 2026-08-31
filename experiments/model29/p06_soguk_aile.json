@@ -1,0 +1,95 @@
+{
+ "yaz25": {
+  "n": 20633,
+  "uye": 15,
+  "hepsi": 1.43592,
+  "cat": 1.57584,
+  "xgb": 1.46086,
+  "lgbm": 1.40001,
+  "cat+lgbm": 1.44823,
+  "xgb+lgbm": 1.41954,
+  "cat+xgb": 1.47345,
+  "kahin_dogrusal": 1.38417,
+  "kahin_katsayi": [
+   -0.551,
+   0.052,
+   -0.079,
+   1.133
+  ],
+  "kahin_simpleks": {
+   "rmsle": 1.40001,
+   "w": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  }
+ },
+ "guz25": {
+  "n": 39405,
+  "uye": 15,
+  "hepsi": 1.60821,
+  "cat": 1.6988,
+  "xgb": 1.60989,
+  "lgbm": 1.60313,
+  "cat+lgbm": 1.6173,
+  "xgb+lgbm": 1.5977,
+  "cat+xgb": 1.63184,
+  "kahin_dogrusal": 1.59489,
+  "kahin_katsayi": [
+   0.122,
+   0.034,
+   0.359,
+   0.601
+  ],
+  "kahin_simpleks": {
+   "rmsle": 1.59715,
+   "w": [
+    0.05,
+    0.35,
+    0.6
+   ]
+  }
+ },
+ "kis26": {
+  "n": 61918,
+  "uye": 9,
+  "hepsi": 1.90615,
+  "cat": 1.83864,
+  "xgb": 1.97579,
+  "lgbm": 2.00527,
+  "cat+lgbm": 1.88736,
+  "xgb+lgbm": 1.97563,
+  "cat+xgb": 1.8805,
+  "kahin_dogrusal": 1.81028,
+  "kahin_katsayi": [
+   1.441,
+   0.84,
+   -0.049,
+   0.021
+  ],
+  "kahin_simpleks": {
+   "rmsle": 1.83864,
+   "w": [
+    1.0,
+    0.0,
+    0.0
+   ]
+  }
+ },
+ "SIZINTISIZ": {
+  "aile": [
+   "cat",
+   "xgb",
+   "lgbm"
+  ],
+  "dis_agirlik": [
+   0.75,
+   0.0,
+   0.25
+  ],
+  "dis_rmsle": 1.77736,
+  "yaz25_taban": 1.43592,
+  "yaz25_dis_agirlikla": 1.50308
+ }
+}

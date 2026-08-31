@@ -1,12 +1,10 @@
 {
  "baslik": "p19 -- SOGUK CATBOOST iyilestirme (URETIM harmani = YALNIZ CAT)",
  "tarih": "2026-08-31",
- "durum": "ON-KAYIT YAZILDI, OLCUM BASLAMADI",
-
+ "durum": "KAMPANYA KAPANDI -- 2026-08-31 22:45, butun olcumler bitti",
  "00_ON_KAYIT": {
   "yazildi": "olcum yapilmadan ONCE, hicbir p19_*.npy uretilmeden",
   "GEREKCE": "Bu projenin butun soguk calismasi (p06, p11_b_lgbm, p14 huber) cat+xgb+lgbm ESIT harman uzerinde olculdu. Ama tm.REJIM_AYARLARI['soguk']['agirlik'] = {'cat': 1.0} -- URETIM GONDERIMINDE SOGUK TARAF YALNIZ CATBOOST. Esit harman uretimde karsiligi olmayan bir nesnedir. p19 olcutu URETIM olcutudur: soguk tahmin = cat tekil.",
-
   "OLCUT": {
    "soguk_tahmin": "yalniz cat (uretim harmani). Cok tohumlu ise LOG UZAYINDA tohum ortalamasi (uretim hatti da oyle).",
    "metrik": "np.clip(np.expm1(log_tahmin), 0, None) -> tm.rmsle  (uretim olcutu)",
@@ -15,27 +13,44 @@
    "PG_HAKIM": "ayrica PG=(75,90] kovasinda ayri olcum (testin soguklarinin %82,3'u orada)",
    "KARAR": "AGIRLIKLI olcume gore. Ham olcum yalnizca raporlanir."
   },
-
   "TABAN": "data/interim/deney/soguk_tahmin_{blok}.npz anahtari '{tohum}_cat'. p19_a_soguk_cat.py --aday TABAN ile YENIDEN uretilip BIREBIR dogrulanacak (esik 1e-9). Dogrulama gecmezse tezgah gecersizdir ve is DURDURULUR.",
-
-  "BLOKLAR": ["yaz25", "guz25", "kis26"],
-
-  "ADAYLAR_oncelik1_kayip": ["huber_a02", "huber_a05", "huber_a10", "huber_a20",
-                             "huber_a40", "l1 (MAE)", "quantile_05", "mape"],
-  "ADAYLAR_oncelik2_tau": ["tau240", "tau480", "tau960", "tau1920"],
-  "ADAYLAR_oncelik3_hp": ["hp_l2r10", "hp_rs4", "hp_lr03_it400", "hp_mdl50",
-                          "hp_bt10", "hp_derin6", "hp_derin8"],
-
+  "BLOKLAR": [
+   "yaz25",
+   "guz25",
+   "kis26"
+  ],
+  "ADAYLAR_oncelik1_kayip": [
+   "huber_a02",
+   "huber_a05",
+   "huber_a10",
+   "huber_a20",
+   "huber_a40",
+   "l1 (MAE)",
+   "quantile_05",
+   "mape"
+  ],
+  "ADAYLAR_oncelik2_tau": [
+   "tau240",
+   "tau480",
+   "tau960",
+   "tau1920"
+  ],
+  "ADAYLAR_oncelik3_hp": [
+   "hp_l2r10",
+   "hp_rs4",
+   "hp_lr03_it400",
+   "hp_mdl50",
+   "hp_bt10",
+   "hp_derin6",
+   "hp_derin8"
+  ],
   "TAU_YAPISAL_UYARI": "SOGUK uzman ek_koken=False, yani egitim cercevesi YALNIZCA dar egitim setidir (yaz25 2025-04..07, guz25 2025-08..11, kis26 2025-12..2026-03). Hedef blok disarida birakilinca: yaz25 icin egitim satirlarinin HEPSI GELECEKTE (guz25+kis26) -> w=exp(-max(kesim-tarih,0)/TAU)=1, tau ETKISIZ. guz25 icin yalniz yaz25 gecmiste (yarim etki). Yalniz kis26'da tam etki var. Bu yuzden tau soguk tarafta BLOK-DISI DOGRULANAMAZ; olculur ve raporlanir ama tek basina hukum tasiyamaz.",
-
   "ASAMA_PLANI": {
    "asama1_eleme": "tohum 1000, uc blok, oncelik-1 kayip adaylari + TABAN. Hayatta kalma olcutu: AGIRLIKLI soguk RMSLE'de TABAN'i uc bloktan EN AZ IKISINDE yenmek.",
    "asama2_hukum": "Hayatta kalan en fazla 3 aday: tohum 1001,1002 x uc blok. Tam tablo (aday x blok x tohum x olcut).",
    "asama3": "zaman kalirsa oncelik-2 (tau) ve oncelik-3 (hp)."
   },
-
   "BLOK_DISI_SECIM_PROSEDURU": "Hedef blok h icin aday puani = SUM_{b != h} [ agirlikli soguk MSE(aday,b) / agirlikli soguk MSE(TABAN,b) ]. En kucuk puanli aday secilir (TABAN dahil yarisir). Sonra o adayin h'deki kazanci OLCULUR VE NE CIKARSA RAPORLANIR. Hedef bloktan hicbir bilgi kullanilmaz. 'Dis bloklardan hemfikir olani sec' YAPILMAZ -- p06'yi kiran kusur oydu.",
-
   "KAPI": {
    "a": "kazanc AGIRLIKLI olcumde pozitif",
    "b": "kazanc PG(75,90] kovasinda pozitif",
@@ -44,9 +59,1128 @@
    "e": "trafo-kumeli onyukleme (500 tur, agirlikli olcut) GA95 alt siniri > 0 veya pozitif_oran >= 0.90",
    "hukum": "a,b,c saglanmazsa KAZANC YOKTUR. d ve e zayifsa kazanc SARTLI bildirilir."
   },
-
   "KULLANILMAYAN_KURAL": "'0.02 tasima bandi' KULLANILMIYOR -- p_kalici/p17_band.json'da curutuldu. Tasima orani icin muhafazakar nokta tahmin 0.5.",
-
   "YASAK": "Test tahmini URETILMEYECEK. Kaggle gonderimi YOK. submissions/ altina yazilmayacak."
+ },
+ "01_ENVANTER": {
+  "kosan_isler": "p19_s1_A/B/C (asama-1 kayiplar + ilk hp) ve p19_s2_D/E/F (hp + tohum tekrari) HEPSI BITTI",
+  "TABAN_dogrulama": "p19_a --aday TABAN uretim npz'si ile BIREBIR: yaz25 t1000, yaz25 t1001, guz25 t1000, kis26 t1000 -> maxabs = 0.000e+00. TEZGAH GECERLI.",
+  "TABAN_tamamlama": "yaz25 t1002, guz25 t1001/1002, kis26 t1001/1002 icin TABAN yeniden egitilmedi; uretim npz'sinin '{tohum}_cat' anahtarindan dogrudan yazildi (birebir ozdeslik dort noktada kanitlandigi icin mesru).",
+  "olculen_aday_sayisi": 14,
+  "coken_adaylar": "yaz25'te hp_l2r10 / hp_rs4 / hp_lr03_it400 CatBoostError 'bad allocation', hp_mdl50 MemoryError. AYNI adaylar guz25 ve kis26'da sorunsuz kostu -> makine bellek darligi, aday kusuru degil. hp_mdl50 hicbir blokta yok.",
+  "tau_izgarasi": "OLCULMEDI. On-kayittaki TAU_YAPISAL_UYARI tau'nun soguk tarafta yaz25 icin ETKISIZ, guz25 icin yarim etkili -- yani BLOK-DISI DOGRULANAMAZ oldugunu zaten saptamisti. Hukum tasiyamayacak olcume zaman harcanmadi."
+ },
+ "02_TAM_TABLO_uretim_olcutu_cat_tekil": {
+  "olcut": "kohort-agirlikli soguk RMSLE kazanci, pozitif = TABAN'dan IYI. pg = PG(75,90] kovasi; bil = test bilesimi (0.2216 soguk).",
+  "taban_seviye": {
+   "yaz25": {
+    "tohum": [
+     1000,
+     1001,
+     1002
+    ],
+    "ham": 1.57454,
+    "agr": 1.44564,
+    "pg": 1.37069,
+    "pg_agr": 1.41614,
+    "bilesim_ham": 1.02544,
+    "bilesim_agr": 0.98248
+   },
+   "guz25": {
+    "tohum": [
+     1000,
+     1001,
+     1002
+    ],
+    "ham": 1.69729,
+    "agr": 1.38127,
+    "pg": 1.33982,
+    "pg_agr": 1.22814,
+    "bilesim_ham": 1.06942,
+    "bilesim_agr": 0.96336
+   },
+   "kis26": {
+    "tohum": [
+     1000,
+     1001,
+     1002
+    ],
+    "ham": 1.83864,
+    "agr": 1.72363,
+    "pg": 1.62206,
+    "pg_agr": 1.6562,
+    "bilesim_ham": 1.08329,
+    "bilesim_agr": 1.04054
+   }
+  },
+  "kazanclar": {
+   "hp_bt10": {
+    "yaz25": {
+     "nt": 1,
+     "ham": 0.0,
+     "agr": 0.0,
+     "pg": 0.0,
+     "bil": 0.0,
+     "oy_agr": 0.0,
+     "oy_pg": 0.0,
+     "oy_agr_ga95": [
+      0.0,
+      0.0
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.0
+     }
+    }
+   },
+   "hp_derin6": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.03065,
+     "agr": -0.02093,
+     "pg": -0.04489,
+     "bil": -0.00688,
+     "oy_agr": 0.066,
+     "oy_pg": 0.008,
+     "oy_agr_ga95": [
+      -0.06104,
+      0.00793
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.02093
+     }
+    }
+   },
+   "hp_derin8": {
+    "yaz25": {
+     "nt": 3,
+     "ham": 0.03924,
+     "agr": 0.03971,
+     "pg": 0.05336,
+     "bil": 0.01285,
+     "oy_agr": 1.0,
+     "oy_pg": 0.998,
+     "oy_agr_ga95": [
+      0.02678,
+      0.06526
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.04976,
+      "1001": 0.02818,
+      "1002": 0.03946
+     }
+    },
+    "guz25": {
+     "nt": 3,
+     "ham": 0.01138,
+     "agr": 0.0086,
+     "pg": 0.01907,
+     "bil": 0.00273,
+     "oy_agr": 0.8,
+     "oy_pg": 0.912,
+     "oy_agr_ga95": [
+      -0.01006,
+      0.02626
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.01906,
+      "1001": -0.00189,
+      "1002": 0.0071
+     }
+    },
+    "kis26": {
+     "nt": 3,
+     "ham": -0.00833,
+     "agr": -0.01163,
+     "pg": -0.01187,
+     "bil": -0.00428,
+     "oy_agr": 0.044,
+     "oy_pg": 0.08,
+     "oy_agr_ga95": [
+      -0.02404,
+      0.00245
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.0248,
+      "1001": -0.0054,
+      "1002": -0.01048
+     }
+    }
+   },
+   "hp_l2r10": {
+    "guz25": {
+     "nt": 1,
+     "ham": -0.00011,
+     "agr": 0.01916,
+     "pg": 0.00869,
+     "bil": 0.00606,
+     "oy_agr": 0.772,
+     "oy_pg": 0.706,
+     "oy_agr_ga95": [
+      -0.02239,
+      0.06942
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.01916
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": -0.00154,
+     "agr": -0.01428,
+     "pg": -0.01918,
+     "bil": -0.00524,
+     "oy_agr": 0.03,
+     "oy_pg": 0.064,
+     "oy_agr_ga95": [
+      -0.03277,
+      0.00033
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.01428
+     }
+    }
+   },
+   "hp_lr03_it400": {
+    "guz25": {
+     "nt": 1,
+     "ham": -0.00162,
+     "agr": 0.00343,
+     "pg": -0.0048,
+     "bil": 0.00109,
+     "oy_agr": 0.58,
+     "oy_pg": 0.426,
+     "oy_agr_ga95": [
+      -0.03552,
+      0.04439
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.00343
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": 0.00389,
+     "agr": -0.01085,
+     "pg": -0.01301,
+     "bil": -0.00398,
+     "oy_agr": 0.08,
+     "oy_pg": 0.084,
+     "oy_agr_ga95": [
+      -0.02745,
+      0.0025
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.01085
+     }
+    }
+   },
+   "hp_rs4": {
+    "guz25": {
+     "nt": 1,
+     "ham": -0.01479,
+     "agr": -0.00056,
+     "pg": -0.02947,
+     "bil": -0.00018,
+     "oy_agr": 0.506,
+     "oy_pg": 0.218,
+     "oy_agr_ga95": [
+      -0.06782,
+      0.06307
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.00056
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": 0.00715,
+     "agr": -0.00995,
+     "pg": -0.00292,
+     "bil": -0.00365,
+     "oy_agr": 0.228,
+     "oy_pg": 0.41,
+     "oy_agr_ga95": [
+      -0.03419,
+      0.01393
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.00995
+     }
+    }
+   },
+   "huber_a02": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.09203,
+     "agr": -0.11264,
+     "pg": -0.11386,
+     "bil": -0.0376,
+     "oy_agr": 0.004,
+     "oy_pg": 0.006,
+     "oy_agr_ga95": [
+      -0.22654,
+      -0.02594
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.11264
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": 0.01484,
+     "agr": 0.0508,
+     "pg": 0.1261,
+     "bil": 0.0185,
+     "oy_agr": 0.982,
+     "oy_pg": 1.0,
+     "oy_agr_ga95": [
+      0.00282,
+      0.11167
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.0508
+     }
+    }
+   },
+   "huber_a05": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.07164,
+     "agr": -0.10004,
+     "pg": -0.09328,
+     "bil": -0.03332,
+     "oy_agr": 0.052,
+     "oy_pg": 0.042,
+     "oy_agr_ga95": [
+      -0.20172,
+      0.01495
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.10004
+     }
+    },
+    "guz25": {
+     "nt": 1,
+     "ham": -0.1214,
+     "agr": -0.04875,
+     "pg": -0.15139,
+     "bil": -0.01563,
+     "oy_agr": 0.328,
+     "oy_pg": 0.116,
+     "oy_agr_ga95": [
+      -0.22113,
+      0.12049
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.04875
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": 0.00418,
+     "agr": 0.04575,
+     "pg": 0.12838,
+     "bil": 0.01668,
+     "oy_agr": 0.94,
+     "oy_pg": 1.0,
+     "oy_agr_ga95": [
+      -0.00716,
+      0.12386
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.04575
+     }
+    }
+   },
+   "huber_a10": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.04032,
+     "agr": -0.05759,
+     "pg": -0.04789,
+     "bil": -0.01905,
+     "oy_agr": 0.188,
+     "oy_pg": 0.222,
+     "oy_agr_ga95": [
+      -0.13932,
+      0.04575
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.05759
+     }
+    },
+    "guz25": {
+     "nt": 1,
+     "ham": -0.09509,
+     "agr": -0.01793,
+     "pg": -0.11073,
+     "bil": -0.00571,
+     "oy_agr": 0.474,
+     "oy_pg": 0.198,
+     "oy_agr_ga95": [
+      -0.19678,
+      0.146
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.01793
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": 0.01077,
+     "agr": 0.05593,
+     "pg": 0.13378,
+     "bil": 0.02036,
+     "oy_agr": 0.992,
+     "oy_pg": 1.0,
+     "oy_agr_ga95": [
+      0.0099,
+      0.12429
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.05593
+     }
+    }
+   },
+   "huber_a20": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.02447,
+     "agr": -0.04505,
+     "pg": -0.04929,
+     "bil": -0.01487,
+     "oy_agr": 0.232,
+     "oy_pg": 0.102,
+     "oy_agr_ga95": [
+      -0.1125,
+      0.02845
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.04505
+     }
+    },
+    "guz25": {
+     "nt": 1,
+     "ham": -0.05389,
+     "agr": 0.02445,
+     "pg": -0.05399,
+     "bil": 0.00773,
+     "oy_agr": 0.68,
+     "oy_pg": 0.308,
+     "oy_agr_ga95": [
+      -0.13057,
+      0.16616
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.02445
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": 0.0216,
+     "agr": 0.06248,
+     "pg": 0.1282,
+     "bil": 0.02273,
+     "oy_agr": 1.0,
+     "oy_pg": 1.0,
+     "oy_agr_ga95": [
+      0.02209,
+      0.11836
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.06248
+     }
+    }
+   },
+   "huber_a40": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.00647,
+     "agr": -0.01554,
+     "pg": -0.00267,
+     "bil": -0.0051,
+     "oy_agr": 0.356,
+     "oy_pg": 0.492,
+     "oy_agr_ga95": [
+      -0.06026,
+      0.0418
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.01554
+     }
+    },
+    "guz25": {
+     "nt": 1,
+     "ham": -0.00033,
+     "agr": 0.07524,
+     "pg": 0.04306,
+     "bil": 0.02353,
+     "oy_agr": 0.976,
+     "oy_pg": 0.874,
+     "oy_agr_ga95": [
+      0.00073,
+      0.16394
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.07524
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": 0.01154,
+     "agr": 0.03347,
+     "pg": 0.06137,
+     "bil": 0.01222,
+     "oy_agr": 1.0,
+     "oy_pg": 1.0,
+     "oy_agr_ga95": [
+      0.01363,
+      0.05778
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.03347
+     }
+    }
+   },
+   "l1": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.06769,
+     "agr": -0.10725,
+     "pg": -0.10037,
+     "bil": -0.03576,
+     "oy_agr": 0.052,
+     "oy_pg": 0.048,
+     "oy_agr_ga95": [
+      -0.20931,
+      0.015
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.10725
+     }
+    },
+    "guz25": {
+     "nt": 1,
+     "ham": -0.1205,
+     "agr": -0.04729,
+     "pg": -0.15166,
+     "bil": -0.01516,
+     "oy_agr": 0.332,
+     "oy_pg": 0.112,
+     "oy_agr_ga95": [
+      -0.22376,
+      0.11843
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.04729
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": -0.00374,
+     "agr": 0.03879,
+     "pg": 0.12099,
+     "bil": 0.01415,
+     "oy_agr": 0.9,
+     "oy_pg": 1.0,
+     "oy_agr_ga95": [
+      -0.01828,
+      0.11736
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.03879
+     }
+    }
+   },
+   "mape": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.05834,
+     "agr": -0.09378,
+     "pg": -0.09653,
+     "bil": -0.03121,
+     "oy_agr": 0.058,
+     "oy_pg": 0.05,
+     "oy_agr_ga95": [
+      -0.18571,
+      0.01634
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.09378
+     }
+    },
+    "guz25": {
+     "nt": 1,
+     "ham": -0.10517,
+     "agr": -0.04034,
+     "pg": -0.15088,
+     "bil": -0.01291,
+     "oy_agr": 0.352,
+     "oy_pg": 0.108,
+     "oy_agr_ga95": [
+      -0.20337,
+      0.11482
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.04034
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": -0.00305,
+     "agr": 0.0379,
+     "pg": 0.12502,
+     "bil": 0.01383,
+     "oy_agr": 0.876,
+     "oy_pg": 1.0,
+     "oy_agr_ga95": [
+      -0.02542,
+      0.1209
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.0379
+     }
+    }
+   },
+   "quantile_05": {
+    "yaz25": {
+     "nt": 1,
+     "ham": -0.06769,
+     "agr": -0.10725,
+     "pg": -0.10037,
+     "bil": -0.03576,
+     "oy_agr": 0.052,
+     "oy_pg": 0.048,
+     "oy_agr_ga95": [
+      -0.20931,
+      0.015
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.10725
+     }
+    },
+    "guz25": {
+     "nt": 1,
+     "ham": -0.1205,
+     "agr": -0.04729,
+     "pg": -0.15166,
+     "bil": -0.01516,
+     "oy_agr": 0.332,
+     "oy_pg": 0.112,
+     "oy_agr_ga95": [
+      -0.22376,
+      0.11843
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.04729
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "ham": -0.00374,
+     "agr": 0.03879,
+     "pg": 0.12099,
+     "bil": 0.01415,
+     "oy_agr": 0.9,
+     "oy_pg": 1.0,
+     "oy_agr_ga95": [
+      -0.01828,
+      0.11736
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.03879
+     }
+    }
+   }
+  },
+  "npz_cat_tohum_gurultusu_agr_std": {
+   "yaz25": 0.01359,
+   "guz25": 0.01356,
+   "kis26": 0.00957
+  },
+  "blok_disi_secim": {
+   "yaz25": {
+    "secilen": "huber_a40",
+    "hedefte_agr": -0.01554,
+    "hedefte_bil": -0.0051,
+    "hedefte_oy": 0.356
+   },
+   "guz25": {
+    "secilen": "hp_derin8",
+    "hedefte_agr": 0.0086,
+    "hedefte_bil": 0.00273,
+    "hedefte_oy": 0.8
+   },
+   "kis26": {
+    "secilen": "huber_a40",
+    "hedefte_agr": 0.03347,
+    "hedefte_bil": 0.01222,
+    "hedefte_oy": 1.0
+   }
+  }
+ },
+ "03_HUKUM_soguk_cat": {
+  "SORU": "Soguk cat'ta URETIM tabanini (depth=7, RMSE) gecen bir yapilandirma VAR MI?",
+  "CEVAP": "KAYIP FONKSIYONU tarafinda YOK. HIPERPARAMETRE tarafinda tek sartli aday: depth=8. Ama gercek uretim harmani artik 3/1/1 oldugu icin etkisi pratikte SIFIR.",
+  "kayip_fonksiyonlari_KAPANDI": {
+   "olculenler": "huber delta 0.2/0.5/1.0/2.0/4.0, l1 (MAE), Quantile(0.5), MAPE",
+   "desen": "HEPSI yaz25'te belirgin NEGATIF (agr -0.016 .. -0.113). kis26'da pozitif gorunuyorlar (tek tohum) ama isaret yaz25 ile CELISKILI.",
+   "l1_ve_quantile05_ozdes": "CatBoost'ta MAE ve Quantile(alpha=0.5) BIREBIR ayni cikti verdi (beklenen).",
+   "blok_disi_kanit": "yaz25 hedefinde dis iki blok huber_a40'i seciyor -> yaz25'te -0.0155 agr, onyukleme P(+)=0.356. Durust secim KAYBEDIYOR.",
+   "yaz25_neden_onemli": "Test donemi 2026-04..07; yaz25 = 2025-04..07 teste MEVSIMSEL olarak denk gelen tek bloktur ve butun kayip fonksiyonlari tam orada kaybettiriyor."
+  },
+  "hp_derin8_TEK_HAYATTA_KALAN": {
+   "3_tohum_x_3_blok": {
+    "yaz25": {
+     "nt": 3,
+     "ham": 0.03924,
+     "agr": 0.03971,
+     "pg": 0.05336,
+     "bil": 0.01285,
+     "oy_agr": 1.0,
+     "oy_pg": 0.998,
+     "oy_agr_ga95": [
+      0.02678,
+      0.06526
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.04976,
+      "1001": 0.02818,
+      "1002": 0.03946
+     }
+    },
+    "guz25": {
+     "nt": 3,
+     "ham": 0.01138,
+     "agr": 0.0086,
+     "pg": 0.01907,
+     "bil": 0.00273,
+     "oy_agr": 0.8,
+     "oy_pg": 0.912,
+     "oy_agr_ga95": [
+      -0.01006,
+      0.02626
+     ],
+     "tohum_bazli_agr": {
+      "1000": 0.01906,
+      "1001": -0.00189,
+      "1002": 0.0071
+     }
+    },
+    "kis26": {
+     "nt": 3,
+     "ham": -0.00833,
+     "agr": -0.01163,
+     "pg": -0.01187,
+     "bil": -0.00428,
+     "oy_agr": 0.044,
+     "oy_pg": 0.08,
+     "oy_agr_ga95": [
+      -0.02404,
+      0.00245
+     ],
+     "tohum_bazli_agr": {
+      "1000": -0.0248,
+      "1001": -0.0054,
+      "1002": -0.01048
+     }
+    }
+   },
+   "seviye": {
+    "yaz25": {
+     "TABAN": {
+      "tohum": [
+       1000,
+       1001,
+       1002
+      ],
+      "ham": 1.57454,
+      "agr": 1.44564,
+      "pg": 1.37069,
+      "pg_agr": 1.41614,
+      "bilesim_ham": 1.02544,
+      "bilesim_agr": 0.98248
+     },
+     "derin8": {
+      "tohum": [
+       1000,
+       1001,
+       1002
+      ],
+      "ham": 1.53529,
+      "agr": 1.40593,
+      "pg": 1.31732,
+      "pg_agr": 1.37364,
+      "bilesim_ham": 1.01217,
+      "bilesim_agr": 0.96963
+     }
+    },
+    "guz25": {
+     "TABAN": {
+      "tohum": [
+       1000,
+       1001,
+       1002
+      ],
+      "ham": 1.69729,
+      "agr": 1.38127,
+      "pg": 1.33982,
+      "pg_agr": 1.22814,
+      "bilesim_ham": 1.06942,
+      "bilesim_agr": 0.96336
+     },
+     "derin8": {
+      "tohum": [
+       1000,
+       1001,
+       1002
+      ],
+      "ham": 1.6859,
+      "agr": 1.37267,
+      "pg": 1.32076,
+      "pg_agr": 1.21656,
+      "bilesim_ham": 1.06542,
+      "bilesim_agr": 0.96063
+     }
+    },
+    "kis26": {
+     "TABAN": {
+      "tohum": [
+       1000,
+       1001,
+       1002
+      ],
+      "ham": 1.83864,
+      "agr": 1.72363,
+      "pg": 1.62206,
+      "pg_agr": 1.6562,
+      "bilesim_ham": 1.08329,
+      "bilesim_agr": 1.04054
+     },
+     "derin8": {
+      "tohum": [
+       1000,
+       1001,
+       1002
+      ],
+      "ham": 1.84697,
+      "agr": 1.73527,
+      "pg": 1.63393,
+      "pg_agr": 1.66819,
+      "bilesim_ham": 1.08642,
+      "bilesim_agr": 1.04481
+     }
+    }
+   },
+   "KAPILAR": {
+    "a_agirlikli_pozitif": "yaz25 +0.0397 EVET | guz25 +0.0086 EVET | kis26 -0.0116 HAYIR",
+    "b_PG_pozitif": "yaz25 +0.0534 EVET | guz25 +0.0191 EVET | kis26 -0.0119 HAYIR",
+    "c_en_az_2_blok": "GECTI (2/3)",
+    "d_tohum_1->3": "yaz25 +0.0498 -> +0.0397 AYAKTA (3/3 tohum pozitif); guz25 +0.0191 -> +0.0086 ZAYIFLADI (t1001 -0.0019, 2/3); kis26 3/3 tohum NEGATIF",
+    "e_onyukleme": "yaz25 P(+)=1.000 GA95 [+0.027,+0.065] GECTI; guz25 P(+)=0.800 GA95 [-0.010,+0.026] GECMEDI; kis26 P(+)=0.044 TERS"
+   },
+   "hukum": "SARTLI KAZANC. a,b,c gecti; e yalniz yaz25'te gecti. LEHTE: tek net blok yaz25 -- teste mevsimsel olarak denk gelen blok. ALEYHTE: kis26 uc tohumda da negatif; guz25 kazanci (0.0086) npz cat tohum gurultusu std'sinin (0.0136) ALTINDA.",
+   "buyukluk": {
+    "test_bilesimi_kazanc": {
+     "yaz25": 0.01285,
+     "guz25": 0.00273,
+     "kis26": -0.00428
+    },
+    "uc_blok_ort": 0.00377,
+    "cat_TEKIL_harmanda_LB_beklentisi_tasima_0.5": 0.0019,
+    "gereken_LB_kazanci": 0.00559
+   }
+  },
+  "digerleri": {
+   "hp_derin6": "yaz25 -0.0209 -- ters yon; derinlik ARTISI dogru yon",
+   "hp_bt10": "bagging_temperature=1.0 yaz25'te TABAN ile BIREBIR AYNI (agr farki 0.00000) -- CatBoost varsayilani zaten 1.0, parametre ETKISIZ. Devir belgesindeki 'muhtemelen parametre etkisiz' tahmini DOGRULANDI.",
+   "hp_l2r10": "guz25 +0.0192 / kis26 -0.0143 -- isaret celiskili, yaz25 bellek yuzunden olculemedi",
+   "hp_rs4": "guz25 -0.0006 / kis26 -0.0100 -- YOK",
+   "hp_lr03_it400": "guz25 +0.0034 / kis26 -0.0109 -- YOK"
+  }
+ },
+ "04_SORU5_311_harmaninda_lgbm_huber": {
+  "SORU": "p20/p21 adayi soguk harmani 3/1/1'e (cat 0.6 / xgb 0.2 / lgbm 0.2) donduruyor. lgbm uyesini HUBER yapmak bilesik soguk RMSLE'yi ne yapar?",
+  "yontem": "EGITIM YOK. B = 0.6*cat + 0.2*xgb + 0.2*lgbm(L2) vs C1 = ayni ama lgbm HUBER. Girdiler data/interim/deney/soguk_tahmin_{blok}.npz ve scratchpad p11b_*.npy. Ortak tohum kumesi, kohort-agirlikli olcut, trafo-kumeli onyukleme (500).",
+  "denetim": "p11b_{blok}_{tohum}_TABAN.npy npz'nin '{tohum}_lgbm' anahtariyla birebir mi diye assert edildi (esik 1e-5) -- uc blokta da GECTI, yani p11b tezgahi npz ile ayni nesneyi uretiyor.",
+  "SONUC_alpha_1.0": {
+   "blok": {
+    "yaz25": -0.00376,
+    "guz25": 0.00701,
+    "kis26": 0.00808
+   },
+   "ort": 0.00378,
+   "pozitif_blok": 2,
+   "not_": "bilesim_agr = test bilesimi RMSLE kazanci (B_311_std - C_311_huber), pozitif = huber IYI"
+  },
+  "SONUC_alpha_0.5": {
+   "blok": {
+    "yaz25": -0.00522,
+    "guz25": 0.01021,
+    "kis26": 0.0129
+   },
+   "ort": 0.00596,
+   "pozitif_blok": 2,
+   "not_": "bilesim_agr = test bilesimi RMSLE kazanci (B_311_std - C_311_huber), pozitif = huber IYI"
+  },
+  "blok_detay": {
+   "huber": {
+    "yaz25": {
+     "nt": 4,
+     "agr": -0.01182,
+     "pg": -0.00952,
+     "bil": -0.00376,
+     "oy": 0.362,
+     "tohum_bazli_agr": {
+      "1000": -0.00327,
+      "1001": -0.01355,
+      "1002": -0.01934,
+      "1003": -0.01082
+     }
+    },
+    "guz25": {
+     "nt": 2,
+     "agr": 0.02253,
+     "pg": 0.01232,
+     "bil": 0.00701,
+     "oy": 0.998,
+     "tohum_bazli_agr": {
+      "1000": 0.02872,
+      "1001": 0.01808
+     }
+    },
+    "kis26": {
+     "nt": 1,
+     "agr": 0.022,
+     "pg": 0.03021,
+     "bil": 0.00808,
+     "oy": 1.0,
+     "tohum_bazli_agr": {
+      "1000": 0.022
+     }
+    }
+   },
+   "huber_a05": {
+    "yaz25": {
+     "nt": 4,
+     "agr": -0.0164,
+     "pg": -0.03166,
+     "bil": -0.00522,
+     "oy": 0.252,
+     "tohum_bazli_agr": {
+      "1000": -0.01019,
+      "1001": -0.02149,
+      "1002": -0.01974,
+      "1003": -0.0134
+     }
+    },
+    "guz25": {
+     "nt": 2,
+     "agr": 0.03288,
+     "pg": 0.0147,
+     "bil": 0.01021,
+     "oy": 0.94,
+     "tohum_bazli_agr": {
+      "1000": 0.03746,
+      "1001": 0.03007
+     }
+    },
+    "kis26": {
+     "nt": 2,
+     "agr": 0.03514,
+     "pg": 0.05772,
+     "bil": 0.0129,
+     "oy": 1.0,
+     "tohum_bazli_agr": {
+      "1000": 0.03846,
+      "1001": 0.0338
+     }
+    }
+   }
+  },
+  "CEVAP": "KISMEN GERI GELIYOR, AMA YETERSIZ. 3/1/1'de lgbm payi 0.2 (esit harmanda 1/3 idi), bu yuzden p14'un kazanci ~0.6 katina iniyor: a=1.0 -> bilesim ort +0.0037 (2/3 blok), a=0.5 -> +0.0060 (2/3 blok). ISARET DESENI DEGISMEDI: yaz25 hala NEGATIF (a=1.0 -0.0039, a=0.5 -0.0052) ve yaz25 teste mevsimsel olarak denk gelen bloktur. p14'un olctugu 'her eklenen tohum kazanci asagi ceker' yanliligi da gecerli (guz25 n=2, kis26 n=1-2 tohum -- sayilar SISTEMATIK IYIMSER)."
+ },
+ "05_EK_KESIF_311_uye_degisimleri": {
+  "etiket": "KESIF -- p19 on-kayit DISI, ayni agirlikli rig ile",
+  "yapilar": "B = 3/1/1 std (p21 adayi) | C1 = lgbm->huber(a=1.0) | C2 = cat->depth8 | C3 = ikisi birden",
+  "toplama": {
+   "C1_lgbm_huber": {
+    "blok": {
+     "yaz25": -0.00387,
+     "guz25": 0.00701,
+     "kis26": 0.00808
+    },
+    "ort": 0.00374,
+    "pozitif_blok": 2
+   },
+   "C2_cat_derin8": {
+    "blok": {
+     "yaz25": 0.0064,
+     "guz25": 0.00037,
+     "kis26": -0.00515
+    },
+    "ort": 0.00054,
+    "pozitif_blok": 2
+   },
+   "C3_ikisi": {
+    "blok": {
+     "yaz25": 0.00239,
+     "guz25": 0.0076,
+     "kis26": 0.00272
+    },
+    "ort": 0.00424,
+    "pozitif_blok": 3
+   }
+  },
+  "blok_detay": {
+   "C1_lgbm_huber": {
+    "yaz25": {
+     "agr": -0.01217,
+     "pg": -0.00865,
+     "bil": -0.00387,
+     "oy": 0.362
+    },
+    "guz25": {
+     "agr": 0.02253,
+     "pg": 0.01232,
+     "bil": 0.00701,
+     "oy": 0.998
+    },
+    "kis26": {
+     "agr": 0.022,
+     "pg": 0.03021,
+     "bil": 0.00808,
+     "oy": 1.0
+    }
+   },
+   "C2_cat_derin8": {
+    "yaz25": {
+     "agr": 0.02029,
+     "pg": 0.02531,
+     "bil": 0.0064,
+     "oy": 1.0
+    },
+    "guz25": {
+     "agr": 0.00118,
+     "pg": 0.00679,
+     "bil": 0.00037,
+     "oy": 0.532
+    },
+    "kis26": {
+     "agr": -0.01396,
+     "pg": -0.01539,
+     "bil": -0.00515,
+     "oy": 0.004
+    }
+   },
+   "C3_ikisi": {
+    "yaz25": {
+     "agr": 0.00756,
+     "pg": 0.01613,
+     "bil": 0.00239,
+     "oy": 0.72
+    },
+    "guz25": {
+     "agr": 0.02443,
+     "pg": 0.02006,
+     "bil": 0.0076,
+     "oy": 1.0
+    },
+    "kis26": {
+     "agr": 0.0074,
+     "pg": 0.01384,
+     "bil": 0.00272,
+     "oy": 0.748
+    }
+   }
+  },
+  "C3_UYARISI": "C3'un 3/3 blokta pozitif gorunmesi DORT YAPI ARASINDAN TAM VERIYLE SECILDI. Ustelik C3 kis26'da pozitif cikiyor cunku C1 (+0.0081) ile C2 (-0.0052) birbirini DENGELIYOR -- ortak bir mekanizma degil, aritmetik tesadduf.",
+  "DURUST_BLOK_DISI_SECIM": {
+   "yaz25": {
+    "secilen": "C1_lgbm_huber",
+    "puan": {
+     "B_std": 2.0,
+     "C1_lgbm_huber": 1.94152,
+     "C2_cat_derin8": 2.01436,
+     "C3_ikisi": 1.95539
+    },
+    "hedefte": {
+     "agr": -0.01217,
+     "pg": -0.00865,
+     "bil": -0.00387,
+     "oy": 0.362
+    }
+   },
+   "guz25": {
+    "secilen": "C3_ikisi",
+    "puan": {
+     "B_std": 2.0,
+     "C1_lgbm_huber": 1.99269,
+     "C2_cat_derin8": 1.98672,
+     "C3_ikisi": 1.98049
+    },
+    "hedefte": {
+     "agr": 0.02443,
+     "pg": 0.02006,
+     "bil": 0.0076,
+     "oy": 1.0
+    }
+   },
+   "kis26": {
+    "secilen": "C3_ikisi",
+    "puan": {
+     "B_std": 2.0,
+     "C1_lgbm_huber": 1.98452,
+     "C2_cat_derin8": 1.96884,
+     "C3_ikisi": 1.95288
+    },
+    "hedefte": {
+     "agr": 0.0074,
+     "pg": 0.01384,
+     "bil": 0.00272,
+     "oy": 0.748
+    }
+   }
+  },
+  "durust_sonuc": {
+   "bloklar": [
+    -0.00387,
+    0.0076,
+    0.00272
+   ],
+   "ort": 0.00215,
+   "pozitif": 2,
+   "n": 3
+  },
+  "HUKUM": "Her hedef blok icin secim YALNIZ dis iki bloga bakilarak yapilinca bilesim kazanci ort +0.00215, 2/3 blok pozitif, yaz25 NEGATIF (-0.0039). Tasima orani 0.5 ile LB karsiligi ~0.001 -- gereken 0.00559'un besde biri. p21 adayinin USTUNE ONERILMEZ."
+ },
+ "06_NET_HUKUM": {
+  "1": "SOGUK CAT'TA URETIM TABANINI GECEN BIR KAYIP FONKSIYONU YOKTUR. huber (5 alfa), MAE, Quantile(0.5), MAPE olculdu; hepsi teste mevsimsel denk gelen yaz25 blogunda belirgin kaybettiriyor. YOL KAPANDI.",
+  "2": "Hiperparametre tarafinda depth=8 SARTLI bir kazanctir: cat-tekil olcutte yaz25 +0.0397 agr (3/3 tohum, onyukleme P(+)=1.000), guz25 +0.0086 (gurultu tabaninin altinda), kis26 -0.0116 (3/3 tohum negatif). Uc blok ortalama test bilesimi kazanci +0.0038.",
+  "3": "ANCAK URETIM ARTIK CAT-TEKIL DEGIL. p20/p21 adayi soguk harmani 3/1/1 yapiyor, cat payi 0.6. depth=8'in 3/1/1 ICINDE olculmus etkisi: yaz25 +0.0064, guz25 +0.0004, kis26 -0.0052, ORT +0.0005 -- PRATIKTE SIFIR.",
+  "4": "Soru 5: 3/1/1'de lgbm->huber GERI GELIYOR ama kucuk (ort +0.0037 a=1.0 / +0.0060 a=0.5, 2/3 blok, yaz25 NEGATIF). Dort yapi uzerinde durust blok-disi secimle ort +0.00215.",
+  "5": "KAMPANYA KAPANIYOR. p19'dan gonderime girecek bir degisiklik CIKMADI. p20/p21 adayi (p20_harman_ESKI_3_1_1_V1_seviyesiz.csv) oldugu gibi kalir.",
+  "tek_sart": "Baska hicbir sey bulunamaz ve 3. gonderim hakki bosta kalirsa 3/1/1 + lgbm-huber(a=0.5) yuksek varyansli bir ek bahis olarak DUSUNULEBILIR; ama yaz25 negatifligi teste mevsimsel olarak en yakin bloktaki ters isarettir ve bu ONERILMEZ."
+ },
+ "07_URETILEN_DOSYALAR": {
+  "scratchpad_json": [
+   "p19_b_olc.json",
+   "p19_c_harman.json",
+   "p19_d_kirmizi.json",
+   "p19_e_311_lgbm_huber.json",
+   "p19_f_311_bilesim.json",
+   "p19_g_blokdisi.json"
+  ],
+  "scratchpad_npy": "p19_{blok}_{tohum}_{aday}.npy -- soguk satirlarin log tahminleri",
+  "p_kalici_betikler": [
+   "p19_a_soguk_cat.py",
+   "p19_b_olc.py",
+   "p19_c_harman.py",
+   "p19_d_kirmizi.py",
+   "p19_e_311_lgbm_huber.py",
+   "p19_f_311_bilesim.py",
+   "p19_g_blokdisi.py"
+  ],
+  "YASAK_UYULDU": "Test tahmini uretilmedi, Kaggle gonderimi yapilmadi, submissions/ altina yazilmadi, commit yapilmadi."
  }
 }

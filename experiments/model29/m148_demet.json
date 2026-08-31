@@ -1,24 +1,34 @@
 {
  "taban_mse": 1.00202690323433,
- "demet": 4,
+ "demet": 2,
  "rho_k_tahmin": [
-  0.1301804507000752,
-  0.11623402619791726,
-  0.09040310416159174,
-  0.08490457517596557
+  0.17540614806437363,
+  0.16339841270438177
  ],
  "yuvarlama": 2.8867513459481293e-06,
  "sabit_hata": 0.000172,
  "sondalar": [
   {
    "sonda": 1,
-   "dosya": "tuketim_D1_demet.csv",
-   "kappa": 0.035,
-   "kappa_etkin": 0.034998139284967714,
-   "sabit": 1.003251716083274,
-   "rho_k_tahmin": 0.1301804507000752,
-   "yon": "hava/oran-dusuk",
+   "dosya": "tuketim_Y1_demet.csv",
+   "kappa": 0.085,
+   "kappa_etkin": 0.08488771534769614,
+   "sabit": 1.009235198974136,
+   "rho_k_tahmin": 0.17540614806437363,
+   "yon": "yapi/oran-dusuk",
    "onceki_r": {}
+  },
+  {
+   "sonda": 2,
+   "dosya": "tuketim_Y2_demet.csv",
+   "kappa": 0.08,
+   "kappa_etkin": 0.0798511330717697,
+   "sabit": 1.008780236792501,
+   "rho_k_tahmin": 0.16339841270438177,
+   "yon": "yapi/oran-yuksek",
+   "onceki_r": {
+    "1": 0.01935720652084503
+   }
   }
  ]
 }

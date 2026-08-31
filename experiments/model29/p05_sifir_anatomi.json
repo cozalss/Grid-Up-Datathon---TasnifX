@@ -1,0 +1,248 @@
+{
+ "yaz25_sifir_satirlar": {
+  "n": 14913,
+  "kare_pay": 0.3118,
+  "p_medyan": 0.118,
+  "p_ort": 0.829,
+  "p_kucuk_1_orani": 0.8298,
+  "kare_pay_p_kucuk_1": 0.0047,
+  "kare_pay_p_buyuk_4": 0.2792,
+  "n_p_buyuk_4": 1212,
+  "q_medyan_p_buyuk_4": 0.0253
+ },
+ "q_kovalari": [
+  {
+   "kova": "[0.00,0.02)",
+   "blok": "yaz25",
+   "n": 246154,
+   "gercek_sifir_orani": 0.003,
+   "p_ort": 6.698,
+   "y_ort": 6.838,
+   "en_iyi_ofset": 0.141,
+   "kare_pay": 0.5988
+  },
+  {
+   "kova": "[0.00,0.02)",
+   "blok": "dis",
+   "n": 652436,
+   "gercek_sifir_orani": 0.0,
+   "p_ort": 6.753,
+   "y_ort": 6.764,
+   "en_iyi_ofset": 0.011,
+   "kare_pay": 0.3549
+  },
+  {
+   "kova": "[0.02,0.05)",
+   "blok": "yaz25",
+   "n": 6409,
+   "gercek_sifir_orani": 0.0434,
+   "p_ort": 6.351,
+   "y_ort": 6.412,
+   "en_iyi_ofset": 0.062,
+   "kare_pay": 0.0694
+  },
+  {
+   "kova": "[0.02,0.05)",
+   "blok": "dis",
+   "n": 44460,
+   "gercek_sifir_orani": 0.0229,
+   "p_ort": 6.169,
+   "y_ort": 6.585,
+   "en_iyi_ofset": 0.416,
+   "kare_pay": 0.142
+  },
+  {
+   "kova": "[0.05,0.10)",
+   "blok": "yaz25",
+   "n": 5579,
+   "gercek_sifir_orani": 0.0687,
+   "p_ort": 6.299,
+   "y_ort": 6.333,
+   "en_iyi_ofset": 0.034,
+   "kare_pay": 0.0661
+  },
+  {
+   "kova": "[0.05,0.10)",
+   "blok": "dis",
+   "n": 30912,
+   "gercek_sifir_orani": 0.068,
+   "p_ort": 6.184,
+   "y_ort": 6.419,
+   "en_iyi_ofset": 0.235,
+   "kare_pay": 0.1799
+  },
+  {
+   "kova": "[0.10,0.20)",
+   "blok": "yaz25",
+   "n": 1894,
+   "gercek_sifir_orani": 0.122,
+   "p_ort": 5.847,
+   "y_ort": 5.996,
+   "en_iyi_ofset": 0.149,
+   "kare_pay": 0.0294
+  },
+  {
+   "kova": "[0.10,0.20)",
+   "blok": "dis",
+   "n": 10672,
+   "gercek_sifir_orani": 0.1564,
+   "p_ort": 6.059,
+   "y_ort": 5.679,
+   "en_iyi_ofset": -0.38,
+   "kare_pay": 0.1104
+  },
+  {
+   "kova": "[0.20,0.35)",
+   "blok": "yaz25",
+   "n": 339,
+   "gercek_sifir_orani": 0.4159,
+   "p_ort": 3.576,
+   "y_ort": 3.362,
+   "en_iyi_ofset": -0.214,
+   "kare_pay": 0.0095
+  },
+  {
+   "kova": "[0.20,0.35)",
+   "blok": "dis",
+   "n": 990,
+   "gercek_sifir_orani": 0.3808,
+   "p_ort": 4.708,
+   "y_ort": 2.834,
+   "en_iyi_ofset": -1.873,
+   "kare_pay": 0.0205
+  },
+  {
+   "kova": "[0.35,0.50)",
+   "blok": "yaz25",
+   "n": 222,
+   "gercek_sifir_orani": 0.2432,
+   "p_ort": 4.255,
+   "y_ort": 4.292,
+   "en_iyi_ofset": 0.037,
+   "kare_pay": 0.005
+  },
+  {
+   "kova": "[0.35,0.50)",
+   "blok": "dis",
+   "n": 283,
+   "gercek_sifir_orani": 0.5406,
+   "p_ort": 2.808,
+   "y_ort": 0.998,
+   "en_iyi_ofset": -1.81,
+   "kare_pay": 0.0049
+  },
+  {
+   "kova": "[0.50,0.65)",
+   "blok": "yaz25",
+   "n": 197,
+   "gercek_sifir_orani": 0.4416,
+   "p_ort": 3.947,
+   "y_ort": 3.682,
+   "en_iyi_ofset": -0.265,
+   "kare_pay": 0.0078
+  },
+  {
+   "kova": "[0.50,0.65)",
+   "blok": "dis",
+   "n": 326,
+   "gercek_sifir_orani": 0.635,
+   "p_ort": 2.691,
+   "y_ort": 0.676,
+   "en_iyi_ofset": -2.015,
+   "kare_pay": 0.0071
+  },
+  {
+   "kova": "[0.65,0.80)",
+   "blok": "yaz25",
+   "n": 353,
+   "gercek_sifir_orani": 0.5581,
+   "p_ort": 3.596,
+   "y_ort": 3.374,
+   "en_iyi_ofset": -0.221,
+   "kare_pay": 0.007
+  },
+  {
+   "kova": "[0.65,0.80)",
+   "blok": "dis",
+   "n": 941,
+   "gercek_sifir_orani": 0.7407,
+   "p_ort": 1.804,
+   "y_ort": 0.828,
+   "en_iyi_ofset": -0.975,
+   "kare_pay": 0.0197
+  },
+  {
+   "kova": "[0.80,0.90)",
+   "blok": "yaz25",
+   "n": 482,
+   "gercek_sifir_orani": 0.612,
+   "p_ort": 1.54,
+   "y_ort": 1.987,
+   "en_iyi_ofset": 0.447,
+   "kare_pay": 0.0277
+  },
+  {
+   "kova": "[0.80,0.90)",
+   "blok": "dis",
+   "n": 1262,
+   "gercek_sifir_orani": 0.9002,
+   "p_ort": 1.483,
+   "y_ort": 0.128,
+   "en_iyi_ofset": -1.355,
+   "kare_pay": 0.014
+  },
+  {
+   "kova": "[0.90,0.95)",
+   "blok": "yaz25",
+   "n": 404,
+   "gercek_sifir_orani": 0.5965,
+   "p_ort": 1.9,
+   "y_ort": 2.701,
+   "en_iyi_ofset": 0.801,
+   "kare_pay": 0.0293
+  },
+  {
+   "kova": "[0.90,0.95)",
+   "blok": "dis",
+   "n": 962,
+   "gercek_sifir_orani": 0.9927,
+   "p_ort": 2.528,
+   "y_ort": 0.02,
+   "en_iyi_ofset": -2.509,
+   "kare_pay": 0.0191
+  },
+  {
+   "kova": "[0.95,1.00)",
+   "blok": "yaz25",
+   "n": 12896,
+   "gercek_sifir_orani": 0.9509,
+   "p_ort": 0.216,
+   "y_ort": 0.33,
+   "en_iyi_ofset": 0.114,
+   "kare_pay": 0.1498
+  },
+  {
+   "kova": "[0.95,1.00)",
+   "blok": "dis",
+   "n": 20564,
+   "gercek_sifir_orani": 1.0,
+   "p_ort": 0.998,
+   "y_ort": 0.0,
+   "en_iyi_ofset": -0.998,
+   "kare_pay": 0.1275
+  }
+ ],
+ "yaz25_q_ust_0.5": {
+  "n": 14332,
+  "gercek_sifir": 0.9129,
+  "canli_ort_y": 6.583,
+  "n_canli": 1249
+ },
+ "sifir_trafo_profili": {
+  "tam_olu_trafo": 189,
+  "kismi_sifir_trafo": 101,
+  "hic_sifir_yok": 2601
+ },
+ "kismi_sifir_kare_pay": 0.2142,
+ "tam_olu_kare_pay": 0.0967
+}

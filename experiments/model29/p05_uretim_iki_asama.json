@@ -1,0 +1,317 @@
+{
+ "sizinti_kontrolu": "p05: IKI ASAMALI AYRISTIRMA -- URETIM boru hattinda, IKI BLOKTA olculmus.\n\np03_uretim_iki_asama.py yalnizca yaz25'te olcuyor. Burada ayni kurulus\nBLOK BLOK tekrarlanir (yaz25 ve guz25), cunku p01'in dersi sudur: bir\nduzeltme tek blokta kazandirip digerinde KAYBETTIREBILIR. Ayrica ilce-ici\ntanim_num-komsu seviyesi ozelligi (c varyanti) eklenir.\n\nKURULUS (her degerlendirme blogu B icin)\n  taban pb(B) = uretim hattinin B blogundaki tahmini\n       (aile_onbellek/B_{tohum}_{alg}_uretim.npy sicak satirlar icin,\n        soguk_tahmin_B.npz soguk satirlar icin -- m148_demet_plani ile ayni)\n  egitim  = DIGER iki blogun satirlari\n  (a) (1-P0) * pb\n  (b) (1-P0) * ppos      ppos: YALNIZ pozitif satirlarda huber regresyon\n  (c) (b) + ilce-ici komsu seviyesi ozelligi\n  (b2)/(c2) harman: (1-P0) * (w*ppos + (1-w)*pb)\n\nSIZINTI KONTROLU\n  * Degerlendirme blogunun (ornegin yaz25) HEDEFI hicbir modelde etiket\n    olarak kullanilmaz; modeller yalnizca diger bloklarin satirlarinda\n    egitilir. Erken durdurma YOK (sabit tur sayisi), kalibrasyon sabiti YOK.\n  * KIMLIK sutunlari (tanim_num, tanim_on2..5) ELENIR: guz25/kis26\n    satirlarinin t_* ozetleri yaz25 donemini kapsar; kimlikle birlestiginde\n    model \"bu trafo yaz25'te suydu\" ezberleyebilirdi.\n  * Komsu ozelligi de yalnizca t_log_ort (blogun KENDI kesim oncesi ozeti)\n    uzerinden hesaplanir; degerlendirme blogunun hedefi girmez.\n  * TEST vektorunde egitim = TUM egitim bloklari (yaz25 dahil) -- orada\n    yaz25 gecmis, sizinti degil.",
+ "yaz25": {
+  "n": 274929,
+  "soguk_pay": 0.0750484670587679,
+  "uretim_tabani": {
+   "duz": 0.8668532532259553,
+   "test_agirlikli": 0.9796055162273316,
+   "soguk": 1.4359151168648066,
+   "sicak": 0.8031875554912884
+  },
+  "P0_ort": 0.0516621067718598,
+  "gercek_sifir": 0.054243095490108355,
+  "egitim_sifir": 0.03780531232980016,
+  "a_carpim": {
+   "duz": 0.8814153127179618,
+   "test_agirlikli": 1.0031154275377854,
+   "soguk": 1.4901231539725446,
+   "sicak": 0.8122589686821615
+  },
+  "b_huber": {
+   "duz": 0.9557873096357815,
+   "test_agirlikli": 1.124690534216102,
+   "soguk": 1.7678601682639374,
+   "sicak": 0.8567782303495529
+  },
+  "b_ham_ppos": {
+   "duz": 1.314911544595944,
+   "test_agirlikli": 1.3907827648262934,
+   "soguk": 1.7381328593103622,
+   "sicak": 1.2744226996930375
+  },
+  "b2_harman_w0.25": {
+   "duz": 0.8917275702327789,
+   "test_agirlikli": 1.0187912636136627,
+   "soguk": 1.5241909341509259,
+   "sicak": 0.8192687205567184
+  },
+  "b2_harman_w0.5": {
+   "duz": 0.9077697025205735,
+   "test_agirlikli": 1.044803986830907,
+   "soguk": 1.5837293835807262,
+   "sicak": 0.8290943785488903
+  },
+  "b2_harman_w0.75": {
+   "duz": 0.9292450018142725,
+   "test_agirlikli": 1.0804072182334847,
+   "soguk": 1.6660099891694613,
+   "sicak": 0.8416373259194211
+  },
+  "d_delta_ham": {
+   "duz": 1.2880770218478774,
+   "test_agirlikli": 1.3356062346952051,
+   "soguk": 1.5633448201770501,
+   "sicak": 1.2631140234607554
+  },
+  "d_delta_carpim": {
+   "duz": 0.9074553304068609,
+   "test_agirlikli": 1.030052751392537,
+   "soguk": 1.5226862303670987,
+   "sicak": 0.8379536415462568
+  },
+  "d_delta_carpim_w0.5": {
+   "duz": 0.8851573014414962,
+   "test_agirlikli": 1.001628599916506,
+   "soguk": 1.471974169286388,
+   "sicak": 0.8193127458514639
+  },
+  "d_delta_carpim_w1.0": {
+   "duz": 0.9074553304068609,
+   "test_agirlikli": 1.030052751392537,
+   "soguk": 1.5226862303670987,
+   "sicak": 0.8379536415462568
+  },
+  "delta_ort": 0.23403131830419713,
+  "delta_std": 0.9473334904743803,
+  "c_komsu": {
+   "duz": 0.947702301672824,
+   "test_agirlikli": 1.1158706597372328,
+   "soguk": 1.7556830487070776,
+   "sicak": 0.8490652886332646
+  },
+  "c_ham_ppos": {
+   "duz": 1.2912863931904404,
+   "test_agirlikli": 1.368945682824393,
+   "soguk": 1.7227196993954084,
+   "sicak": 1.2497654589254854
+  },
+  "c2_harman_w0.5": {
+   "duz": 0.9021539450230126,
+   "test_agirlikli": 1.0402431289336018,
+   "soguk": 1.5818198986553997,
+   "sicak": 0.822738808767611
+  },
+  "kazanclar": {
+   "a_carpim": {
+    "duz": -0.014562059492006507,
+    "test_agirlikli": -0.023509911310453768,
+    "soguk": -0.05420803710773803,
+    "sicak": -0.009071413190873123
+   },
+   "b_huber": {
+    "duz": -0.08893405640982621,
+    "test_agirlikli": -0.14508501798877038,
+    "soguk": -0.3319450513991309,
+    "sicak": -0.05359067485826452
+   },
+   "b_ham_ppos": {
+    "duz": -0.44805829136998876,
+    "test_agirlikli": -0.41117724859896176,
+    "soguk": -0.30221774244555566,
+    "sicak": -0.47123514420174906
+   },
+   "b2_harman_w0.25": {
+    "duz": -0.024874317006823632,
+    "test_agirlikli": -0.03918574738633107,
+    "soguk": -0.08827581728611933,
+    "sicak": -0.016081165065430003
+   },
+   "b2_harman_w0.5": {
+    "duz": -0.04091644929461824,
+    "test_agirlikli": -0.06519847060357531,
+    "soguk": -0.14781426671591968,
+    "sicak": -0.025906823057601946
+   },
+   "b2_harman_w0.75": {
+    "duz": -0.0623917485883172,
+    "test_agirlikli": -0.10080170200615313,
+    "soguk": -0.23009487230465475,
+    "sicak": -0.03844977042813269
+   },
+   "d_delta_ham": {
+    "duz": -0.4212237686219221,
+    "test_agirlikli": -0.3560007184678735,
+    "soguk": -0.12742970331224357,
+    "sicak": -0.459926467969467
+   },
+   "d_delta_carpim": {
+    "duz": -0.04060207718090558,
+    "test_agirlikli": -0.05044723516520544,
+    "soguk": -0.08677111350229216,
+    "sicak": -0.03476608605496845
+   },
+   "d_delta_carpim_w0.5": {
+    "duz": -0.01830404821554088,
+    "test_agirlikli": -0.022023083689174383,
+    "soguk": -0.03605905242158136,
+    "sicak": -0.016125190360175456
+   },
+   "d_delta_carpim_w1.0": {
+    "duz": -0.04060207718090558,
+    "test_agirlikli": -0.05044723516520544,
+    "soguk": -0.08677111350229216,
+    "sicak": -0.03476608605496845
+   },
+   "c_komsu": {
+    "duz": -0.08084904844686869,
+    "test_agirlikli": -0.13626514350990115,
+    "soguk": -0.31976793184227104,
+    "sicak": -0.045877733141976185
+   },
+   "c_ham_ppos": {
+    "duz": -0.42443313996448506,
+    "test_agirlikli": -0.3893401665970615,
+    "soguk": -0.2868045825306018,
+    "sicak": -0.446577903434197
+   },
+   "c2_harman_w0.5": {
+    "duz": -0.035300691797057304,
+    "test_agirlikli": -0.060637612706270216,
+    "soguk": -0.14590478179059319,
+    "sicak": -0.019551253276322567
+   }
+  }
+ },
+ "OZET": {
+  "SONUC": "KAZANC YOK. Iki asamali ayristirma URETIM boru hattinda hicbir varyantta kazandirmadi; en iyi varyant bile test-bilesiminde -0.022 kaybettiriyor. GONDERILECEK DOSYA URETILMEDI.",
+  "gereken_esik": {
+   "gorevdeki_esik": 0.006,
+   "olculen_en_iyi_varyant_kazanci_test_agirlikli": -0.02202
+  },
+  "uretim_tabani_yaz25": {
+   "duz": 0.8668532532259553,
+   "test_agirlikli": 0.9796055162273316,
+   "soguk": 1.4359151168648066,
+   "sicak": 0.8031875554912884
+  },
+  "not_taban": "m148_demet_plani.py 95-113 ile ayni birlestirme; iki bagimsiz betikte (p03_uretim, p05_uretim) ayni sayi cikti: duz 0.86685, test-bilesimi 0.97961. LB'deki 1.00284 (m6_ikiyon, M0 tabani) ile tutarli -- ofset ~ +0.023.",
+  "varyantlar_kazanc_test_agirlikli": {
+   "(a) uretim x (1-P0)": -0.02351,
+   "(b) siniflandirici x yalniz-pozitif huber regresyon": -0.14509,
+   "(b) ayni, l2 amac (p03 olcumu)": -0.14971,
+   "(c) (b) + ilce-ici idnum-komsu seviyesi": -0.13627,
+   "(b2) harman w=0.25 uretim tabaniyla": -0.03919,
+   "(d) delta-tasima (1-P0)*(pb + (ppos-pall))": -0.05045,
+   "(d) delta-tasima yarim agirlik w=0.5": -0.02202,
+   "(esik) P0>0.95 olan satirlari sifirla": -0.00616,
+   "(esik) P0>0.99 olan satirlari sifirla (KAHIN esik secimi)": -0.00229
+  },
+  "en_iyi_varyantin_kirilimi": {
+   "ad": "(d) delta-tasima w=0.5",
+   "sonuc": {
+    "duz": 0.8851573014414962,
+    "test_agirlikli": 1.001628599916506,
+    "soguk": 1.471974169286388,
+    "sicak": 0.8193127458514639
+   },
+   "kazanc": {
+    "duz": -0.0183,
+    "test_agirlikli": -0.02202,
+    "soguk": -0.03606,
+    "sicak": -0.01613
+   }
+  },
+  "TESHIS": {
+   "1_ikiz_sinav_KARAR_VERICI": {
+    "kurulus": "Ayni model sinifi (tek lgbm), ayni uretim oznitelikleri, ayni egitim bloklari: tek asamali vs iki asamali.",
+    "tek_asamali_huber": {
+     "duz": 0.9540629286015262,
+     "test_agirlikli": 1.14205849017864,
+     "soguk": 1.8413480840482348,
+     "sicak": 0.8420142492166632
+    },
+    "tek_asamali_l1": {
+     "duz": 0.93578843866224,
+     "test_agirlikli": 1.1096287882078493,
+     "soguk": 1.7645931531039627,
+     "sicak": 0.8331305678428993
+    },
+    "iki_asamali_huber": {
+     "duz": 0.9557873096357815,
+     "test_agirlikli": 1.124690534216102,
+     "soguk": 1.7678601682639374,
+     "sicak": 0.8567782303495529
+    },
+    "fikrin_ikiz_kazanci_vs_huber": {
+     "duz": -0.0017243810342553179,
+     "test_agirlikli": 0.01736795596253793,
+     "soguk": 0.07348791578429736,
+     "sicak": -0.01476398113288968
+    },
+    "fikrin_ikiz_kazanci_vs_l1": {
+     "duz": -0.01999887097354147,
+     "test_agirlikli": -0.015061746008252719,
+     "soguk": -0.00326701515997474,
+     "sicak": -0.02364766250665362
+    },
+    "yorum": "Fikir TEK MODEL seviyesinde GERCEKTEN calisiyor: huber ikizine gore test-bilesiminde +0.0174, soguklarda +0.0735. Ama p03'un kendi tabani olan l1 ikizine gore -0.0151 KAYBETTIRIYOR. Daha onemlisi: en iyi TEK MODEL (l1, 1.10963 agirlikli) uretim demetinden (0.97961) 0.130 GERIDE. Fikrin tum ikiz kazanci (0.017) bu acigin sekizde biri. Yani fikir ZAYIF TABANI onaran bir yama; uretim hatti o hatayi zaten yapmiyor."
+   },
+   "2_p03_tezgahi_ile_karsilastirma": {
+    "tezgah_tek_asamali_l1": {
+     "rmsle": 1.0000858509232167,
+     "soguk": 1.8479704346670136,
+     "sicak": 0.8967825082261246,
+     "test_agirlikli": 1.1759158051479994
+    },
+    "tezgah_iki_asamali_huber": {
+     "rmsle": 0.9632964751921667,
+     "soguk": 1.8626722165579237,
+     "sicak": 0.8495389621772164,
+     "test_agirlikli": 1.153524488488472
+    },
+    "uretim_hatti": {
+     "duz": 0.8668532532259553,
+     "test_agirlikli": 0.9796055162273316,
+     "soguk": 1.4359151168648066,
+     "sicak": 0.8031875554912884
+    },
+    "yorum": "Tezgahin iki-asamali SONUCU (sicak 0.8495, soguk 1.8627) hala uretim hattinin TABANINDAN kotu (sicak 0.8032, soguk 1.4359). Yani tezgahtaki +0.0224'luk kazanc, uretim hattinin cok asagisindaki bir noktadan yukari cikmaktir; uretim seviyesinde harcanacak bir hata birikimi kalmamis."
+   },
+   "3_neden_carpan_kaybettiriyor": {
+    "uretim_genel_sapma_yaz25": -0.13562148007594566,
+    "uretim_sifir_satirda_ortalama_tahmin": 0.829111047285682,
+    "tezgah_sifir_satirda_ortalama_sapma": 0.8588,
+    "yorum": "Uretim tahmini zaten E[log1p y] (sifirlar DAHIL) tahmin ediyor ve ortalama sapmasi -0.136, yani ZATEN ASAGI yanli. (1-P0) ile carpmak bu asagi yanliligi ~%5 daha buyutuyor: sifir olmayan %94.6 satirda kayip, sifirlarda kazanctan buyuk. Carpani yumusatmak da kurtarmiyor: (1-P0)^0.25 bile -0.0024."
+   },
+   "4_sifir_ele_alisinin_TAVANI": {
+    "kahin_gercek_sifirlari_sifirla": {
+     "duz": 0.719100996490376,
+     "test_agirlikli": 0.7582600215886659,
+     "soguk": 0.9387449224088613,
+     "sicak": 0.6982557499363291
+    },
+    "kahin_kazanc": {
+     "duz": 0.14775225673557935,
+     "test_agirlikli": 0.2213454946386657,
+     "soguk": 0.49717019445594524,
+     "sicak": 0.10493180555495929
+    },
+    "siniflandirici_AUC": 0.9883615371798319,
+    "en_iyi_KAHIN_esik_kazanci_agirlikli": -0.002286511456967677,
+    "yorum": "Sifir satirlari uretim hatasinin %31'i ve mukemmel bir sifir dedektoru test-bilesiminde 0.221 kazandirirdi. AMA elimizdeki siniflandirici AUC 0.988 / esik 0.99'da kesinlik 0.971 olmasina ragmen KAHIN esik secimiyle bile KAYBETTIRIYOR: log uzayinda yanlis sifirlanan bir gercek tuketici ~48 birim kare hata getirirken dogru sifirlanan bir satir ~4.3 birim kazandiriyor. Karli olmak icin kesinlik ~%99.5 uzeri gerekiyor. Bu, sifir yolunun kapali oldugunun sayisal ifadesi."
+   },
+   "5_soguk_trafolar": {
+    "uretim_soguk_rmsle": 1.4359151168648066,
+    "uretim_sicak_rmsle": 0.8031875554912884,
+    "soguk_pay_yaz25": 0.0750484670587679,
+    "test_soguk_pay": 0.222,
+    "en_iyi_varyantin_soguk_kazanci": -0.03606,
+    "P0_soguk_ortalama": 0.015455305011631962,
+    "P0_sicak_ortalama": 0.054619581463768774,
+    "gercek_sifir_orani_soguk": 0.040032956913681965,
+    "gercek_sifir_orani_sicak": 0.055396073866675055,
+    "yorum": "Soguklarda hicbir varyant kazandirmadi (hepsi negatif). Siniflandirici sogukta P0=0.0155 tahmin ediyor, gercek sifir orani 0.0400 -- gecmisi olmayan trafoda sifir olasiligi OGRENILEBILIR degil, model sistematik olarak dusuk tahmin ediyor. Ustelik carpani soguklarda uygulamak en cok orada kaybettiriyor (a: -0.054). Ilce-ici komsu seviyesi de soguklari duzeltmedi (c: -0.320)."
+   }
+  },
+  "sizinti_kontrolu": "p05: IKI ASAMALI AYRISTIRMA -- URETIM boru hattinda, IKI BLOKTA olculmus.\n\np03_uretim_iki_asama.py yalnizca yaz25'te olcuyor. Burada ayni kurulus\nBLOK BLOK tekrarlanir (yaz25 ve guz25), cunku p01'in dersi sudur: bir\nduzeltme tek blokta kazandirip digerinde KAYBETTIREBILIR. Ayrica ilce-ici\ntanim_num-komsu seviyesi ozelligi (c varyanti) eklenir.\n\nKURULUS (her degerlendirme blogu B icin)\n  taban pb(B) = uretim hattinin B blogundaki tahmini\n       (aile_onbellek/B_{tohum}_{alg}_uretim.npy sicak satirlar icin,\n        soguk_tahmin_B.npz soguk satirlar icin -- m148_demet_plani ile ayni)\n  egitim  = DIGER iki blogun satirlari\n  (a) (1-P0) * pb\n  (b) (1-P0) * ppos      ppos: YALNIZ pozitif satirlarda huber regresyon\n  (c) (b) + ilce-ici komsu seviyesi ozelligi\n  (b2)/(c2) harman: (1-P0) * (w*ppos + (1-w)*pb)\n\nSIZINTI KONTROLU\n  * Degerlendirme blogunun (ornegin yaz25) HEDEFI hicbir modelde etiket\n    olarak kullanilmaz; modeller yalnizca diger bloklarin satirlarinda\n    egitilir. Erken durdurma YOK (sabit tur sayisi), kalibrasyon sabiti YOK.\n  * KIMLIK sutunlari (tanim_num, tanim_on2..5) ELENIR: guz25/kis26\n    satirlarinin t_* ozetleri yaz25 donemini kapsar; kimlikle birlestiginde\n    model \"bu trafo yaz25'te suydu\" ezberleyebilirdi.\n  * Komsu ozelligi de yalnizca t_log_ort (blogun KENDI kesim oncesi ozeti)\n    uzerinden hesaplanir; degerlendirme blogunun hedefi girmez.\n  * TEST vektorunde egitim = TUM egitim bloklari (yaz25 dahil) -- orada\n    yaz25 gecmis, sizinti degil.",
+  "betikler": [
+   "p05_uretim_iki_asama.py",
+   "p05_ikiz_sinav.py",
+   "p05_sifir_tavani.py",
+   "p05_teshis.py",
+   "p03_uretim_iki_asama.py (kardes ajan, ayni taban)"
+  ],
+  "TAVSIYE": "Bu yolu KAPAT. Iki asamali ayristirma uretim hattina hicbir sey eklemiyor; kazanc tezgahin zayif tabanina ozgu. Elde 1.00115 bankada dururken bu fikirden uretilecek bir dosya LB'de yaklasik 1.005-1.15 arasi CIKARDI (test-bilesimi kaybi 0.022-0.145 + ~0.023 ofset). GONDERILMEMELI."
+ }
+}

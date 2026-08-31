@@ -1,0 +1,130 @@
+{
+ "taban": {
+  "rmsle": 0.86685,
+  "rmsle_test_bilesimi": 0.97932
+ },
+ "duzeltmeler": {
+  "D1_kuresel_ofset": {
+   "rmsle": 0.86681,
+   "kazanc": 4e-05,
+   "rmsle_test_bilesimi": 0.97928,
+   "kazanc_test_bilesimi": 4e-05,
+   "parametre": {
+    "a": 0.00026
+   }
+  },
+  "D2_ufuk_ofset": {
+   "rmsle": 0.87002,
+   "kazanc": -0.00316,
+   "rmsle_test_bilesimi": 0.98256,
+   "kazanc_test_bilesimi": -0.00324,
+   "parametre": {
+    "tablo": [
+     -0.032,
+     0.0063,
+     0.0029,
+     -0.0029,
+     0.0245,
+     0.03,
+     0.0487,
+     -0.0151,
+     -0.0091,
+     -0.008,
+     -0.0075,
+     0.0023,
+     -0.0301
+    ]
+   }
+  },
+  "D3_afin_seviye": {
+   "rmsle": 0.86558,
+   "kazanc": 0.00127,
+   "rmsle_test_bilesimi": 0.97869,
+   "kazanc_test_bilesimi": 0.00062,
+   "parametre": {
+    "alfa": 0.00026,
+    "beta": -0.00653,
+    "p_ort": 6.5056
+   }
+  },
+  "D4_sifir_riski": {
+   "rmsle": 0.91198,
+   "kazanc": -0.04513,
+   "rmsle_test_bilesimi": 1.0213,
+   "kazanc_test_bilesimi": -0.04198,
+   "parametre": {
+    "tablo": [
+     0.0079,
+     0.3902,
+     0.1674,
+     -0.2749,
+     -1.1654,
+     -1.3191,
+     -2.6495,
+     -0.9455,
+     -1.3755,
+     -2.5698,
+     -0.9661
+    ],
+    "yaz_sifir_orani": 0.0542,
+    "dis_sifir_orani": 0.0378,
+    "auc_yaz": null
+   }
+  },
+  "D5_sifir_arti_ufuk": {
+   "rmsle": 0.91775,
+   "kazanc": -0.0509,
+   "rmsle_test_bilesimi": 1.02673,
+   "kazanc_test_bilesimi": -0.04741,
+   "parametre": {
+    "ufuk_tablo": [
+     -0.0022,
+     0.0341,
+     0.0288,
+     0.0198,
+     0.0421,
+     0.0332,
+     0.0473,
+     -0.0194,
+     -0.0195,
+     -0.0237,
+     -0.0235,
+     -0.0129,
+     -0.0524
+    ]
+   }
+  },
+  "D6_hepsi": {
+   "rmsle": 0.89201,
+   "kazanc": -0.02516,
+   "rmsle_test_bilesimi": 1.01107,
+   "kazanc_test_bilesimi": -0.03175,
+   "parametre": {
+    "alfa": -0.0,
+    "beta": -0.06181
+   }
+  }
+ },
+ "tavan_sizintili_teshis": {
+  "trafo_sabiti": {
+   "rmsle": 0.57725,
+   "kazanc": 0.2896
+  },
+  "gun_sabiti": {
+   "rmsle": 0.83214,
+   "kazanc": 0.03471
+  },
+  "ay_sabiti": {
+   "rmsle": 0.83473,
+   "kazanc": 0.03213
+  },
+  "ufuk_sabiti": {
+   "rmsle": 0.83352,
+   "kazanc": 0.03333
+  },
+  "sifirlari_mukemmel_bil": {
+   "rmsle": 0.7191,
+   "kazanc": 0.14775
+  }
+ }
+}

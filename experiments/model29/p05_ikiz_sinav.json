@@ -1,0 +1,33 @@
+{
+ "aciklama": "p05 IKIZ SINAV: fikir URETIM OZNITELIKLERINDE hic tekrarliyor mu?\n\np03'un tezgahinda kiyas \"tek asamali TEK lgbm\" idi. Uretim hatti ise 9\nmodelli cat/xgb/lgbm demeti. Iki-asamalinin uretimde kaybetmesi iki ayri\nsebepten olabilir:\n  (i) fikir uretim ozniteliklerinde HIC calismiyor, ya da\n  (ii) fikir calisiyor ama tek-lgbm seviyesi demetin cok altinda kaliyor.\nAyirt etmek icin AYNI model sinifi ile ikiz kiyas yapilir:\n    tek asamali  : tum satirlarda huber lgbm            (pall)\n    iki asamali  : (1-P0) * yalniz-pozitif huber lgbm   (P0, ppos)\nIkisi de ayni oznitelik matrisinde, ayni tohumda, guz25+kis26'da egitilmis;\nyaz25 hedefi kullanilmamistir. P0/ppos p05_uretim_iki_asama.py'den gelir.",
+ "tek_asamali_huber": {
+  "duz": 0.9540629286015262,
+  "test_agirlikli": 1.14205849017864,
+  "soguk": 1.8413480840482348,
+  "sicak": 0.8420142492166632
+ },
+ "tek_asamali_l1": {
+  "duz": 0.93578843866224,
+  "test_agirlikli": 1.1096287882078493,
+  "soguk": 1.7645931531039627,
+  "sicak": 0.8331305678428993
+ },
+ "iki_asamali_huber": {
+  "duz": 0.9557873096357815,
+  "test_agirlikli": 1.124690534216102,
+  "soguk": 1.7678601682639374,
+  "sicak": 0.8567782303495529
+ },
+ "fikrin_ikiz_kazanci": {
+  "duz": -0.0017243810342553179,
+  "test_agirlikli": 0.01736795596253793,
+  "soguk": 0.07348791578429736,
+  "sicak": -0.01476398113288968
+ },
+ "fikrin_ikiz_kazanci_l1_tabana_gore": {
+  "duz": -0.01999887097354147,
+  "test_agirlikli": -0.015061746008252719,
+  "soguk": -0.00326701515997474,
+  "sicak": -0.02364766250665362
+ }
+}

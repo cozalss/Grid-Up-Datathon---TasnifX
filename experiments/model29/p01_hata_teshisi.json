@@ -1,0 +1,726 @@
+{
+ "ozet": {
+  "blok": "yaz25 (2025-04-01..07-31), test ufkunun mevsimsel ikizi",
+  "n": 274929,
+  "n_trafo": 2891,
+  "taban_rmsle": 0.86685,
+  "taban_rmsle_test_bilesimi": 0.97932,
+  "hukum": "Hata SISTEMATIK (kare hatanin %55,7'si trafo bazinda sabit kayma) ama TAHMIN ANINDA KESTIRILEMEZ. Denenen 20 duzeltmenin 19'u yaz25'te RMSLE'yi KOTULESTIRDI. Tek pozitif: dis-bloktan afin seviye kalibrasyonu +0,00127 (test bilesiminde +0,00062) -- 0,001'in ALTINDA, sisirilecek bir kazanc degil. yaz25'in kendi optimum buzme katsayisi beta=-0,03, LB'de olculen rho=-0,0304 ile birebir ayni: o yon ZATEN kullanilmis."
+ },
+ "en_buyuk_uc_kaynak": [
+  {
+   "sira": 1,
+   "ad": "ONGORULEMEYEN SIFIR (kesinti/kopma)",
+   "tanim": "gercek tuketim=0 ama tahmin log1p>4",
+   "n": 1212,
+   "satir_payi": 0.0044,
+   "kare_pay": 0.2792,
+   "ortalama_yanlilik": -6.757,
+   "not_": "tum sifir satirlar %5,4 satir / %31,2 kare hata; ama %83'u zaten p<1 tahmin ediliyor ve toplam kare hatanin yalnizca %0,47'sini tasiyor. Zarar bu 1.212 satirda yogunlasiyor ve sifir-siniflandirici (AUC 0,983) onlara q medyani 0,025 veriyor -- yani ONGORULEMEZ.",
+   "tavan_rmsle_kazanci": 0.14775,
+   "olculmus_en_iyi_duzeltme": -0.00936
+  },
+  {
+   "sira": 2,
+   "ad": "MEVSIMSEL/UFUK KAYMASI (Haziran-Temmuz)",
+   "tanim": "ay>=6 (ufkun son 2 ayi)",
+   "n": 143619,
+   "satir_payi": 0.5224,
+   "kare_pay": 0.7402,
+   "ortalama_yanlilik": 0.304,
+   "saf_yanlilik_kare_payi": 0.0713,
+   "aylik_yanlilik": {
+    "4": -0.045,
+    "5": -0.052,
+    "6": 0.199,
+    "7": 0.399
+   },
+   "not_": "Temmuz yanliligi +0,399, Nisan -0,045. Model yaz yukunu SISTEMATIK olarak AZ tahmin ediyor. UYARI: geri-test modeli guz25+kis26 ile egitildi, yani HIC YAZ GORMEDI; uretim modeli yaz25'i goruyor. Bu kaynak geri-testte ABARTILI. guz25/kis26'da ufuk kaymasi ters isaretli -- dis-blok duzeltmesi tasinmiyor.",
+   "tavan_rmsle_kazanci": 0.03333,
+   "olculmus_en_iyi_duzeltme": -0.00316
+  },
+  {
+   "sira": 3,
+   "ad": "TRAFO SEVIYE KAYMASI",
+   "tanim": "trafo bazinda sabit artik ortalamasi",
+   "kare_pay": 0.5566,
+   "kare_pay_sifirsiz": 0.6824,
+   "yuzde50_kare_hata_trafo_sayisi": 48,
+   "yuzde50_trafo_payi": 0.0166,
+   "yuzde80_kare_hata_trafo_sayisi": 310,
+   "kaliciligi_korelasyon": 0.5058,
+   "not_": "SISTEMATIK: ilk 30 gunun trafo kaymasi ile son 92 gunun kaymasi rho=0,51. Ama tahmin aninda kestirilemiyor: guz25/kis26 trafo kaymalarini buzerek tasimak yaz25'te 0,010-0,137 KAYBETTIRIYOR.",
+   "tavan_rmsle_kazanci": 0.2896,
+   "olculmus_en_iyi_duzeltme": -0.00961
+  }
+ ],
+ "olculen_duzeltmeler": {
+  "D1_kuresel_ofset": {
+   "kazanc": 4e-05,
+   "kazanc_test_bilesimi": 4e-05
+  },
+  "D2_ufuk_ofset": {
+   "kazanc": -0.00316,
+   "kazanc_test_bilesimi": -0.00324
+  },
+  "D3_afin_seviye": {
+   "kazanc": 0.00127,
+   "kazanc_test_bilesimi": 0.00062
+  },
+  "D4_sifir_riski": {
+   "kazanc": -0.04513,
+   "kazanc_test_bilesimi": -0.04198
+  },
+  "D5_sifir_arti_ufuk": {
+   "kazanc": -0.0509,
+   "kazanc_test_bilesimi": -0.04741
+  },
+  "D6_hepsi": {
+   "kazanc": -0.02516,
+   "kazanc_test_bilesimi": -0.03175
+  },
+  "S1_carpansal_(1-q)": {
+   "kazanc": -0.04632,
+   "kazanc_test_bilesimi": -0.09287
+  },
+  "S2_carpansal_gamma=0.6": {
+   "kazanc": -0.02892,
+   "kazanc_test_bilesimi": -0.05647
+  },
+  "S3_dogrusal_q": {
+   "kazanc": -0.03188,
+   "kazanc_test_bilesimi": -0.07336
+  },
+  "S4_dogrusal_q_sabitsiz": {
+   "kazanc": -0.0438,
+   "kazanc_test_bilesimi": -0.08701
+  },
+  "S5_sert_esik_t=0.30": {
+   "kazanc": -0.06944,
+   "kazanc_test_bilesimi": -0.13212
+  },
+  "S6_artik_yigin_lam=0.25": {
+   "kazanc": -0.00936,
+   "kazanc_test_bilesimi": -0.00875
+  },
+  "S6_artik_yigin_lam=0.5": {
+   "kazanc": -0.02526,
+   "kazanc_test_bilesimi": -0.02564
+  },
+  "S6_artik_yigin_lam=1.0": {
+   "kazanc": -0.07524,
+   "kazanc_test_bilesimi": -0.08213
+  },
+  "B1_yayilma_beta*0.5": {
+   "kazanc": -0.00049,
+   "kazanc_test_bilesimi": -0.00023
+  },
+  "B1_yayilma_beta*1.0": {
+   "kazanc": -0.00102,
+   "kazanc_test_bilesimi": -0.00049
+  },
+  "B2_yayilma_rejim_ayri": {
+   "kazanc": -0.01006,
+   "kazanc_test_bilesimi": -0.01723
+  },
+  "B3_gecmis_ort_harman_w=0.05": {
+   "kazanc": -0.00048,
+   "kazanc_test_bilesimi": -0.00036
+  },
+  "B3_gecmis_ort_harman_w=0.1": {
+   "kazanc": -0.00138,
+   "kazanc_test_bilesimi": -0.00103
+  },
+  "B3_gecmis_ort_harman_w=0.2": {
+   "kazanc": -0.00443,
+   "kazanc_test_bilesimi": -0.0033
+  },
+  "P1_kova_ofset_lam0.25": {
+   "kazanc": -0.0029,
+   "kazanc_test_bilesimi": -0.00177
+  },
+  "P1_kova_ofset_lam0.5": {
+   "kazanc": -0.00658,
+   "kazanc_test_bilesimi": -0.0042
+  },
+  "P1_kova_ofset_lam1.0": {
+   "kazanc": -0.01621,
+   "kazanc_test_bilesimi": -0.01101
+  },
+  "P2_yalniz_dusuk_lam0.5": {
+   "kazanc": -0.00817,
+   "kazanc_test_bilesimi": -0.00524
+  },
+  "P2_yalniz_dusuk_lam1.0": {
+   "kazanc": -0.01889,
+   "kazanc_test_bilesimi": -0.01265
+  }
+ },
+ "ek_kesitler": {
+  "dusuk_tahmin_p_kucuk_4": {
+   "satir_payi": 0.1177,
+   "kare_pay": 0.3684,
+   "yanlilik": 0.335
+  },
+  "soguk_trafolar": {
+   "satir_payi": 0.075,
+   "kare_pay": 0.2059,
+   "yanlilik": 0.1334,
+   "rmsle": 1.4359
+  },
+  "yeni_trafo_yas_30gun_alti": {
+   "satir_payi": 0.043,
+   "kare_pay": 0.1448,
+   "yanlilik": 0.0836
+  }
+ },
+ "tavanlar_sizintili": {
+  "trafo_sabiti": 0.2896,
+  "sifirlari_mukemmel_bil": 0.14775,
+  "ufuk_sabiti": 0.03333,
+  "ay_sabiti": 0.03213,
+  "gun_sabiti": 0.03471,
+  "kova_ofseti_p": 0.01783,
+  "buzme_beta": 0.00307
+ },
+ "uyarilar": [
+  "Geri-test modeli yaz25 blogunu HIC GORMEDI (blok_parcalari: hedef blok egitimden cikarilir). Uretim modeli test icin yaz25'i goruyor -> mevsimsel kayma gercek testte daha kucuk olmali.",
+  "yaz25'te soguk trafo payi %7,5, gercek testte %22,2. Agirliksiz RMSLE karsilastirmalari icin test-bilesimi agirlikli sutun da verildi.",
+  "yaz25'ten ONCE veri yok (ham train 2025-01-01 baslar), bu yuzden gercek testte kullanilabilecek 'onceki yil ayni mevsim' bilgisi geri-testte YOK."
+ ],
+ "betikler": [
+  "p01_hata_teshisi.py",
+  "p02_duzeltme.py",
+  "p03_bloklar.py",
+  "p04_sifir.py",
+  "p05_sifir_anatomi.py",
+  "p06_sistematik.py",
+  "p07_seviye.py",
+  "p08_dusuk_tahmin.py"
+ ],
+ "ayrintili_ayristirma": {
+  "meta": {
+   "n": 274929,
+   "n_trafo": 2891,
+   "sicak_model_sayisi": 9,
+   "soguk_model_sayisi": 15,
+   "tarih": [
+    "2025-04-01",
+    "2025-07-31"
+   ]
+  },
+  "taban": {
+   "rmsle": 0.86685,
+   "yanlilik": 0.13562,
+   "std": 0.85618,
+   "bias2_pay": 0.0245
+  },
+  "soguk": {
+   "kol": "soguk_mu",
+   "seviyeler": [
+    {
+     "seviye": "0",
+     "n": 254296,
+     "n_pay": 0.925,
+     "kare_pay": 0.7941,
+     "yanlilik": 0.1358,
+     "rmsle": 0.8032,
+     "bias2_pay": 0.0227
+    },
+    {
+     "seviye": "1",
+     "n": 20633,
+     "n_pay": 0.075,
+     "kare_pay": 0.2059,
+     "yanlilik": 0.1334,
+     "rmsle": 1.4359,
+     "bias2_pay": 0.0018
+    }
+   ]
+  },
+  "ay": {
+   "kol": "ay",
+   "seviyeler": [
+    {
+     "seviye": "4",
+     "n": 64048,
+     "n_pay": 0.233,
+     "kare_pay": 0.0899,
+     "yanlilik": -0.0447,
+     "rmsle": 0.5384,
+     "bias2_pay": 0.0006
+    },
+    {
+     "seviye": "5",
+     "n": 67262,
+     "n_pay": 0.2447,
+     "kare_pay": 0.1699,
+     "yanlilik": -0.0524,
+     "rmsle": 0.7224,
+     "bias2_pay": 0.0009
+    },
+    {
+     "seviye": "6",
+     "n": 67976,
+     "n_pay": 0.2472,
+     "kare_pay": 0.2904,
+     "yanlilik": 0.1986,
+     "rmsle": 0.9394,
+     "bias2_pay": 0.013
+    },
+    {
+     "seviye": "7",
+     "n": 75643,
+     "n_pay": 0.2751,
+     "kare_pay": 0.4499,
+     "yanlilik": 0.3989,
+     "rmsle": 1.1085,
+     "bias2_pay": 0.0583
+    }
+   ]
+  },
+  "ufuk": {
+   "kol": "ufuk_gun",
+   "seviyeler": [
+    {
+     "seviye": "(-0.001, 15.0]",
+     "n": 31857,
+     "n_pay": 0.1159,
+     "kare_pay": 0.0325,
+     "yanlilik": -0.0129,
+     "rmsle": 0.4592,
+     "bias2_pay": 0.0
+    },
+    {
+     "seviye": "(105.0, 122.0]",
+     "n": 41988,
+     "n_pay": 0.1527,
+     "kare_pay": 0.2629,
+     "yanlilik": 0.4347,
+     "rmsle": 1.1374,
+     "bias2_pay": 0.0384
+    },
+    {
+     "seviye": "(15.0, 30.0]",
+     "n": 32191,
+     "n_pay": 0.1171,
+     "kare_pay": 0.0573,
+     "yanlilik": -0.0761,
+     "rmsle": 0.6067,
+     "bias2_pay": 0.0009
+    },
+    {
+     "seviye": "(30.0, 45.0]",
+     "n": 32238,
+     "n_pay": 0.1173,
+     "kare_pay": 0.0637,
+     "yanlilik": -0.066,
+     "rmsle": 0.6392,
+     "bias2_pay": 0.0007
+    },
+    {
+     "seviye": "(45.0, 60.0]",
+     "n": 32820,
+     "n_pay": 0.1194,
+     "kare_pay": 0.1005,
+     "yanlilik": -0.0389,
+     "rmsle": 0.7953,
+     "bias2_pay": 0.0002
+    },
+    {
+     "seviye": "(60.0, 75.0]",
+     "n": 33116,
+     "n_pay": 0.1205,
+     "kare_pay": 0.1113,
+     "yanlilik": 0.1023,
+     "rmsle": 0.8332,
+     "bias2_pay": 0.0017
+    },
+    {
+     "seviye": "(75.0, 90.0]",
+     "n": 34695,
+     "n_pay": 0.1262,
+     "kare_pay": 0.1714,
+     "yanlilik": 0.2662,
+     "rmsle": 1.0104,
+     "bias2_pay": 0.0119
+    },
+    {
+     "seviye": "(90.0, 105.0]",
+     "n": 36024,
+     "n_pay": 0.131,
+     "kare_pay": 0.2002,
+     "yanlilik": 0.3519,
+     "rmsle": 1.0716,
+     "bias2_pay": 0.0216
+    }
+   ]
+  },
+  "seviye": {
+   "kol": "log1p(tuketim)",
+   "seviyeler": [
+    {
+     "seviye": "(-0.011, 0.7]",
+     "n": 15784,
+     "n_pay": 0.0574,
+     "kare_pay": 0.3233,
+     "yanlilik": -0.8287,
+     "rmsle": 2.0572,
+     "bias2_pay": 0.0525
+    },
+    {
+     "seviye": "(0.7, 2.0]",
+     "n": 1030,
+     "n_pay": 0.0037,
+     "kare_pay": 0.0062,
+     "yanlilik": -0.594,
+     "rmsle": 1.1187,
+     "bias2_pay": 0.0018
+    },
+    {
+     "seviye": "(2.0, 4.0]",
+     "n": 13048,
+     "n_pay": 0.0475,
+     "kare_pay": 0.0307,
+     "yanlilik": -0.1089,
+     "rmsle": 0.6976,
+     "bias2_pay": 0.0007
+    },
+    {
+     "seviye": "(4.0, 6.0]",
+     "n": 55699,
+     "n_pay": 0.2026,
+     "kare_pay": 0.1409,
+     "yanlilik": 0.115,
+     "rmsle": 0.723,
+     "bias2_pay": 0.0036
+    },
+    {
+     "seviye": "(6.0, 7.0]",
+     "n": 49770,
+     "n_pay": 0.181,
+     "kare_pay": 0.1125,
+     "yanlilik": 0.1944,
+     "rmsle": 0.6834,
+     "bias2_pay": 0.0091
+    },
+    {
+     "seviye": "(7.0, 8.0]",
+     "n": 73434,
+     "n_pay": 0.2671,
+     "kare_pay": 0.1515,
+     "yanlilik": 0.19,
+     "rmsle": 0.6529,
+     "bias2_pay": 0.0128
+    },
+    {
+     "seviye": "(8.0, 9.0]",
+     "n": 54684,
+     "n_pay": 0.1989,
+     "kare_pay": 0.0928,
+     "yanlilik": 0.2618,
+     "rmsle": 0.5922,
+     "bias2_pay": 0.0181
+    },
+    {
+     "seviye": "(9.0, 20.0]",
+     "n": 11480,
+     "n_pay": 0.0418,
+     "kare_pay": 0.1419,
+     "yanlilik": 0.701,
+     "rmsle": 1.5981,
+     "bias2_pay": 0.0273
+    }
+   ]
+  },
+  "tahmin_seviyesi": {
+   "kol": "tahmin log1p",
+   "seviyeler": [
+    {
+     "seviye": "(-5.001, 0.7]",
+     "n": 12373,
+     "n_pay": 0.045,
+     "kare_pay": 0.0935,
+     "yanlilik": 0.1257,
+     "rmsle": 1.2496,
+     "bias2_pay": 0.0009
+    },
+    {
+     "seviye": "(0.7, 2.0]",
+     "n": 3283,
+     "n_pay": 0.0119,
+     "kare_pay": 0.1289,
+     "yanlilik": 0.5968,
+     "rmsle": 2.8486,
+     "bias2_pay": 0.0057
+    },
+    {
+     "seviye": "(2.0, 4.0]",
+     "n": 16702,
+     "n_pay": 0.0608,
+     "kare_pay": 0.1459,
+     "yanlilik": 0.4378,
+     "rmsle": 1.3436,
+     "bias2_pay": 0.0155
+    },
+    {
+     "seviye": "(4.0, 6.0]",
+     "n": 61964,
+     "n_pay": 0.2254,
+     "kare_pay": 0.2124,
+     "yanlilik": 0.1925,
+     "rmsle": 0.8415,
+     "bias2_pay": 0.0111
+    },
+    {
+     "seviye": "(6.0, 7.0]",
+     "n": 51158,
+     "n_pay": 0.1861,
+     "kare_pay": 0.1367,
+     "yanlilik": 0.1297,
+     "rmsle": 0.7431,
+     "bias2_pay": 0.0042
+    },
+    {
+     "seviye": "(7.0, 8.0]",
+     "n": 73762,
+     "n_pay": 0.2683,
+     "kare_pay": 0.1492,
+     "yanlilik": 0.0555,
+     "rmsle": 0.6464,
+     "bias2_pay": 0.0011
+    },
+    {
+     "seviye": "(8.0, 9.0]",
+     "n": 49615,
+     "n_pay": 0.1805,
+     "kare_pay": 0.091,
+     "yanlilik": 0.0727,
+     "rmsle": 0.6156,
+     "bias2_pay": 0.0013
+    },
+    {
+     "seviye": "(9.0, 20.0]",
+     "n": 6072,
+     "n_pay": 0.0221,
+     "kare_pay": 0.0422,
+     "yanlilik": 0.0322,
+     "rmsle": 1.1989,
+     "bias2_pay": 0.0
+    }
+   ]
+  },
+  "sifir": {
+   "kol": "sifir_sinif",
+   "seviyeler": [
+    {
+     "seviye": "10+",
+     "n": 257208,
+     "n_pay": 0.9355,
+     "kare_pay": 0.6682,
+     "yanlilik": 0.1995,
+     "rmsle": 0.7326,
+     "bias2_pay": 0.0495
+    },
+    {
+     "seviye": "sifir",
+     "n": 14913,
+     "n_pay": 0.0542,
+     "kare_pay": 0.3118,
+     "yanlilik": -0.8291,
+     "rmsle": 2.0785,
+     "bias2_pay": 0.0496
+    },
+    {
+     "seviye": "0-1",
+     "n": 871,
+     "n_pay": 0.0032,
+     "kare_pay": 0.0115,
+     "yanlilik": -0.8223,
+     "rmsle": 1.6512,
+     "bias2_pay": 0.0029
+    },
+    {
+     "seviye": "1-10",
+     "n": 1937,
+     "n_pay": 0.007,
+     "kare_pay": 0.0085,
+     "yanlilik": -0.483,
+     "rmsle": 0.9499,
+     "bias2_pay": 0.0022
+    }
+   ]
+  },
+  "yas": {
+   "kol": "yas_gun",
+   "seviyeler": [
+    {
+     "seviye": "(-1.001, 30.0]",
+     "n": 11833,
+     "n_pay": 0.043,
+     "kare_pay": 0.1448,
+     "yanlilik": 0.0836,
+     "rmsle": 1.5901,
+     "bias2_pay": 0.0004
+    },
+    {
+     "seviye": "(180.0, 365.0]",
+     "n": 60371,
+     "n_pay": 0.2196,
+     "kare_pay": 0.3347,
+     "yanlilik": 0.4091,
+     "rmsle": 1.0702,
+     "bias2_pay": 0.0489
+    },
+    {
+     "seviye": "(30.0, 90.0]",
+     "n": 14599,
+     "n_pay": 0.0531,
+     "kare_pay": 0.0894,
+     "yanlilik": 0.0959,
+     "rmsle": 1.125,
+     "bias2_pay": 0.0006
+    },
+    {
+     "seviye": "(90.0, 180.0]",
+     "n": 188126,
+     "n_pay": 0.6843,
+     "kare_pay": 0.431,
+     "yanlilik": 0.0542,
+     "rmsle": 0.688,
+     "bias2_pay": 0.0027
+    }
+   ]
+  },
+  "trafo": {
+   "n_trafo": 2891,
+   "yuzde50_trafo": 48,
+   "yuzde50_trafo_pay": 0.0166,
+   "yuzde80_trafo": 310,
+   "en_kotu20": [
+    {
+     "tanim": "75010707",
+     "n": 121,
+     "kare_pay": 0.03812,
+     "yanlilik": 7.06
+    },
+    {
+     "tanim": "72240109",
+     "n": 122,
+     "kare_pay": 0.0329,
+     "yanlilik": -7.0
+    },
+    {
+     "tanim": "75080305",
+     "n": 122,
+     "kare_pay": 0.03217,
+     "yanlilik": 5.714
+    },
+    {
+     "tanim": "71640840",
+     "n": 122,
+     "kare_pay": 0.02949,
+     "yanlilik": -6.399
+    },
+    {
+     "tanim": "70121031",
+     "n": 122,
+     "kare_pay": 0.02315,
+     "yanlilik": -4.574
+    },
+    {
+     "tanim": "75141012",
+     "n": 122,
+     "kare_pay": 0.01956,
+     "yanlilik": 1.965
+    },
+    {
+     "tanim": "75020402",
+     "n": 122,
+     "kare_pay": 0.01879,
+     "yanlilik": -4.997
+    },
+    {
+     "tanim": "72640656",
+     "n": 73,
+     "kare_pay": 0.01614,
+     "yanlilik": -6.757
+    },
+    {
+     "tanim": "72540104",
+     "n": 62,
+     "kare_pay": 0.01467,
+     "yanlilik": -6.991
+    },
+    {
+     "tanim": "75090406",
+     "n": 122,
+     "kare_pay": 0.0136,
+     "yanlilik": 3.07
+    },
+    {
+     "tanim": "72640804",
+     "n": 122,
+     "kare_pay": 0.01181,
+     "yanlilik": 2.501
+    },
+    {
+     "tanim": "700540361",
+     "n": 103,
+     "kare_pay": 0.01107,
+     "yanlilik": 2.599
+    },
+    {
+     "tanim": "78240081",
+     "n": 122,
+     "kare_pay": 0.0107,
+     "yanlilik": 2.105
+    },
+    {
+     "tanim": "700642398",
+     "n": 122,
+     "kare_pay": 0.0106,
+     "yanlilik": 3.595
+    },
+    {
+     "tanim": "77140201",
+     "n": 122,
+     "kare_pay": 0.01035,
+     "yanlilik": 1.701
+    },
+    {
+     "tanim": "78330098",
+     "n": 122,
+     "kare_pay": 0.00957,
+     "yanlilik": -1.787
+    },
+    {
+     "tanim": "700623344",
+     "n": 122,
+     "kare_pay": 0.00956,
+     "yanlilik": 3.03
+    },
+    {
+     "tanim": "78330305",
+     "n": 78,
+     "kare_pay": 0.00951,
+     "yanlilik": -3.001
+    },
+    {
+     "tanim": "71430048",
+     "n": 63,
+     "kare_pay": 0.00931,
+     "yanlilik": -5.069
+    },
+    {
+     "tanim": "73130369",
+     "n": 122,
+     "kare_pay": 0.00853,
+     "yanlilik": 2.251
+    }
+   ],
+   "sabit_kayma_payi": 0.5566
+  },
+  "gun_ortak_sok_payi": 0.0785
+ }
+}

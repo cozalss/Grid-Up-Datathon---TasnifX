@@ -1,0 +1,92 @@
+{
+ "yaz25": {
+  "trafo": 678,
+  "sifir_satir": 826,
+  "trafo_tam_sifir": 60,
+  "trafo_hic_sifir_yok": 572,
+  "trafo_kismi": 46,
+  "tam_sifir_satir": 466,
+  "kismi_sifir_satir": 360
+ },
+ "guz25": {
+  "trafo": 1173,
+  "sifir_satir": 2230,
+  "trafo_tam_sifir": 86,
+  "trafo_hic_sifir_yok": 1069,
+  "trafo_kismi": 18,
+  "tam_sifir_satir": 1899,
+  "kismi_sifir_satir": 331
+ },
+ "kis26": {
+  "trafo": 1223,
+  "sifir_satir": 3241,
+  "trafo_tam_sifir": 55,
+  "trafo_hic_sifir_yok": 1151,
+  "trafo_kismi": 17,
+  "tam_sifir_satir": 3075,
+  "kismi_sifir_satir": 166
+ },
+ "yaz25_detay": {
+  "tam_sifir_trafo": 60,
+  "tam_sifir_satir": 466,
+  "kare_pay": 0.3774,
+  "tam_sifir_p_ort": 5.5255,
+  "tam_sifir_mukemmel_rmsle": 1.13301,
+  "tam_sifir_carpan_0.0": 1.13301,
+  "tam_sifir_carpan_0.2": 1.14667,
+  "tam_sifir_carpan_0.4": 1.18669,
+  "tam_sifir_carpan_0.6": 1.25054
+ },
+ "tam_sifir_profil": {
+  "guc": {
+   "tam_sifir": 400.0,
+   "digerleri": 400.0
+  },
+  "tanim_num": {
+   "tam_sifir": 77740207.5,
+   "digerleri": 78430024.0
+  },
+  "p_gun_sayisi": {
+   "tam_sifir": 3.0,
+   "digerleri": 37.0
+  },
+  "p_ilk_ofset": {
+   "tam_sifir": 73.0,
+   "digerleri": 84.0
+  },
+  "p_son_ofset": {
+   "tam_sifir": 94.5,
+   "digerleri": 121.0
+  },
+  "p_yayilma": {
+   "tam_sifir": 4.0,
+   "digerleri": 37.5
+  },
+  "p_doluluk": {
+   "tam_sifir": 1.0,
+   "digerleri": 1.0
+  },
+  "g_ilce_log_ort": {
+   "tam_sifir": 6.404,
+   "digerleri": 6.4
+  },
+  "g_ilce_kova_ort": {
+   "tam_sifir": 6.659,
+   "digerleri": 6.655
+  },
+  "yas": {
+   "tam_sifir": 0.0,
+   "digerleri": 5.5
+  },
+  "ilk_gun_mu": {
+   "tam_sifir": 1.0,
+   "digerleri": 0.0
+  }
+ },
+ "komsu_sifir_orani": {
+  "kapsam": 0.9951,
+  "korr_sf": -0.0237,
+  "ort_tam_sifir": 0.0767,
+  "ort_diger": 0.0881
+ }
+}

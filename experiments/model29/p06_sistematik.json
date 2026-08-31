@@ -1,0 +1,72 @@
+{
+ "taban": {
+  "rmsle": 0.86685,
+  "rmsle_test_bilesimi": 0.97932
+ },
+ "trafo_kaymasi_kaliciligi": {
+  "n_ortak": 2188,
+  "korelasyon_ilk30_son92": 0.5058
+ },
+ "ilk30_kayma_son92ye": {
+  "taban": 0.94426,
+  "duzeltilmis": 0.90509,
+  "kazanc": 0.03917
+ },
+ "dis_trafo_kaymasi_kis26_lam0.3": {
+  "rmsle": 0.87646,
+  "kazanc": -0.00961,
+  "kazanc_test_bilesimi": -0.00767
+ },
+ "dis_trafo_kaymasi_kis26_lam0.5": {
+  "rmsle": 0.88967,
+  "kazanc": -0.02282,
+  "kazanc_test_bilesimi": -0.01898
+ },
+ "dis_trafo_kaymasi_kis26_lam1.0": {
+  "rmsle": 0.94469,
+  "kazanc": -0.07784,
+  "kazanc_test_bilesimi": -0.0676
+ },
+ "dis_trafo_kaymasi_guz25_lam0.3": {
+  "rmsle": 0.89347,
+  "kazanc": -0.02662,
+  "kazanc_test_bilesimi": -0.02393
+ },
+ "dis_trafo_kaymasi_guz25_lam0.5": {
+  "rmsle": 0.91854,
+  "kazanc": -0.05169,
+  "kazanc_test_bilesimi": -0.04668
+ },
+ "dis_trafo_kaymasi_guz25_lam1.0": {
+  "rmsle": 1.0035,
+  "kazanc": -0.13665,
+  "kazanc_test_bilesimi": -0.12477
+ },
+ "dis_trafo_kaymasi_ikisi_lam0.3": {
+  "rmsle": 0.88639,
+  "kazanc": -0.01954,
+  "kazanc_test_bilesimi": -0.01729
+ },
+ "dis_trafo_kaymasi_ikisi_lam0.5": {
+  "rmsle": 0.90506,
+  "kazanc": -0.0382,
+  "kazanc_test_bilesimi": -0.0344
+ },
+ "dis_trafo_kaymasi_ikisi_lam1.0": {
+  "rmsle": 0.96944,
+  "kazanc": -0.10258,
+  "kazanc_test_bilesimi": -0.09505
+ },
+ "ayristirma": {
+  "kuresel_yanlilik": 0.0245,
+  "trafo_sabiti": 0.5566,
+  "gun_sabiti": 0.0785
+ },
+ "ayristirma_sifirsiz": {
+  "n": 260016,
+  "rmsle": 0.73944,
+  "kuresel_yanlilik": 0.0667,
+  "trafo_sabiti": 0.6824,
+  "gun_sabiti": 0.1476
+ }
+}

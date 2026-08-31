@@ -1,0 +1,82 @@
+{
+ "aday": {
+  "esit_(uretim)": [
+   0.3333333333333333,
+   0.3333333333333333,
+   0.3333333333333333
+  ],
+  "cat_yok": [
+   0.0,
+   0.5,
+   0.5
+  ],
+  "lgbm_agirlikli_.1.2.7": [
+   0.1,
+   0.2,
+   0.7
+  ],
+  "lgbm_agirlikli_.15.25.6": [
+   0.15,
+   0.25,
+   0.6
+  ],
+  "lgbm_.0.25.75": [
+   0.0,
+   0.25,
+   0.75
+  ],
+  "yalniz_lgbm": [
+   0.0,
+   0.0,
+   1.0
+  ],
+  "yalniz_cat": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "yaz25": {
+  "esit_(uretim)": 1.43592,
+  "cat_yok": 1.41954,
+  "lgbm_agirlikli_.1.2.7": 1.40835,
+  "lgbm_agirlikli_.15.25.6": 1.41331,
+  "lgbm_.0.25.75": 1.40697,
+  "yalniz_lgbm": 1.40001,
+  "yalniz_cat": 1.57584
+ },
+ "guz25": {
+  "esit_(uretim)": 1.60821,
+  "cat_yok": 1.5977,
+  "lgbm_agirlikli_.1.2.7": 1.59769,
+  "lgbm_agirlikli_.15.25.6": 1.59814,
+  "lgbm_.0.25.75": 1.59821,
+  "yalniz_lgbm": 1.60313,
+  "yalniz_cat": 1.6988
+ },
+ "kis26": {
+  "esit_(uretim)": 1.90615,
+  "cat_yok": 1.97563,
+  "lgbm_agirlikli_.1.2.7": 1.96292,
+  "lgbm_agirlikli_.15.25.6": 1.94789,
+  "lgbm_.0.25.75": 1.98678,
+  "yalniz_lgbm": 2.00527,
+  "yalniz_cat": 1.83864
+ },
+ "yaz25_toplam_test_bilesimi": {
+  "esit_(uretim)": 0.97932,
+  "cat_yok": 0.97401,
+  "lgbm_agirlikli_.1.2.7": 0.97041,
+  "lgbm_agirlikli_.15.25.6": 0.972,
+  "lgbm_.0.25.75": 0.96996,
+  "yalniz_lgbm": 0.96773,
+  "yalniz_cat": 1.02589
+ },
+ "onyukleme_lgbm_kazanci": {
+  "ort": 0.03591,
+  "std": 0.0152,
+  "alt2_5": 0.00714,
+  "ust97_5": 0.06573,
+  "pozitif_oran": 0.9925
+ }
+}

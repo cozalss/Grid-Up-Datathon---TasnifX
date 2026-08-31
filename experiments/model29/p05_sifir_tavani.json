@@ -1,0 +1,157 @@
+{
+ "aciklama": "p05: URETIM hattinda SIFIR ele alisinin TAVANI.\n\nSorular:\n  1) Kahin (oracle): gercek sifir satirlarinin tahminini 0 yapsak kazanc ne?\n     -> hicbir sifir-siniflandiricisinin asamayacagi TAVAN.\n  2) Elimizdeki siniflandirici (p03'un P0'i, guz25+kis26'da egitilmis) bu\n     tavana ne kadar yaklasiyor? AUC, esik taramasi (KAHIN esik secimi --\n     yani gercekte ulasilamaz, yalnizca TAVAN).\n  3) Yumusak buzme p = (1-P0)^g * pb: g'nin KAHIN degeriyle en iyi ne olur?\nHepsi TAVAN olcumu; yaz25 hedefi kullanildigi icin URETIME TASINAMAZ.\nAmac, kalan basligin buyuklugunu bilmek.",
+ "taban": {
+  "duz": 0.8668532532259553,
+  "test_agirlikli": 0.9796055162273316,
+  "soguk": 1.4359151168648066,
+  "sicak": 0.8031875554912884
+ },
+ "sifir_orani": 0.054243095490108355,
+ "sifir_orani_soguk": 0.040032956913681965,
+ "sifir_orani_sicak": 0.055396073866675055,
+ "kahin_sifirlari_sifirla": {
+  "duz": 0.719100996490376,
+  "test_agirlikli": 0.7582600215886659,
+  "soguk": 0.9387449224088613,
+  "sicak": 0.6982557499363291
+ },
+ "kahin_kazanc": {
+  "duz": 0.14775225673557935,
+  "test_agirlikli": 0.2213454946386657,
+  "soguk": 0.49717019445594524,
+  "sicak": 0.10493180555495929
+ },
+ "P0_auc": 0.9883615371798319,
+ "P0_ort": 0.05168036255257011,
+ "esik_taramasi_KAHIN": [
+  {
+   "esik": 0.3,
+   "n": 14443,
+   "kesinlik": 0.9161531537769162,
+   "anma": 0.8872795547508885,
+   "duz": 0.8900987066565601,
+   "test_agirlikli": 1.0337317118793166,
+   "soguk": 1.5910817826097998,
+   "sicak": 0.8069421613698077,
+   "kazanc_agirlikli": -0.054126195651984954
+  },
+  {
+   "esik": 0.5,
+   "n": 14090,
+   "kesinlik": 0.9259048970901348,
+   "anma": 0.8748072151813854,
+   "duz": 0.8804469434769416,
+   "test_agirlikli": 1.0084044764441142,
+   "soguk": 1.5154090410021324,
+   "sicak": 0.8073127019789879,
+   "kazanc_agirlikli": -0.028798960216782632
+  },
+  {
+   "esik": 0.7,
+   "n": 13652,
+   "kesinlik": 0.9350278347494873,
+   "anma": 0.855964594648964,
+   "duz": 0.8740585344279317,
+   "test_agirlikli": 0.9898176231321663,
+   "soguk": 1.4567196792606012,
+   "sicak": 0.8085721438173111,
+   "kazanc_agirlikli": -0.01021210690483465
+  },
+  {
+   "esik": 0.8,
+   "n": 13486,
+   "kesinlik": 0.9399377131840427,
+   "anma": 0.8499966472205458,
+   "duz": 0.8712665882977039,
+   "test_agirlikli": 0.9828932590991216,
+   "soguk": 1.4359151168648066,
+   "sicak": 0.8083338137090222,
+   "kazanc_agirlikli": -0.0032877428717900115
+  },
+  {
+   "esik": 0.9,
+   "n": 13220,
+   "kesinlik": 0.9456127080181543,
+   "anma": 0.8382619191309596,
+   "duz": 0.8711184247239497,
+   "test_agirlikli": 0.9827827916702848,
+   "soguk": 1.4359151168648066,
+   "sicak": 0.8081611535095321,
+   "kazanc_agirlikli": -0.003177275442953209
+  },
+  {
+   "esik": 0.95,
+   "n": 12868,
+   "kesinlik": 0.951274479328567,
+   "anma": 0.8208274659692886,
+   "duz": 0.8751194580741423,
+   "test_agirlikli": 0.9857681024564957,
+   "soguk": 1.4359151168648066,
+   "sicak": 0.8128210722942422,
+   "kazanc_agirlikli": -0.006162586229164102
+  },
+  {
+   "esik": 0.99,
+   "n": 11710,
+   "kesinlik": 0.9707941929974381,
+   "anma": 0.7622879366995239,
+   "duz": 0.8699233817887865,
+   "test_agirlikli": 0.9818920276842993,
+   "soguk": 1.4359151168648066,
+   "sicak": 0.8067682527048149,
+   "kazanc_agirlikli": -0.002286511456967677
+  }
+ ],
+ "gama_taramasi_KAHIN": [
+  {
+   "gama": 0.0,
+   "duz": 0.8668532532259553,
+   "test_agirlikli": 0.9796055162273316,
+   "soguk": 1.4359151168648066,
+   "sicak": 0.8031875554912884,
+   "kazanc_agirlikli": 0.0
+  },
+  {
+   "gama": 0.25,
+   "duz": 0.8678100884211353,
+   "test_agirlikli": 0.9819908792050959,
+   "soguk": 1.4430926793507866,
+   "sicak": 0.8032608894851702,
+   "kazanc_agirlikli": -0.0023853629777642604
+  },
+  {
+   "gama": 0.5,
+   "duz": 0.871932633425494,
+   "test_agirlikli": 0.9886233101251597,
+   "soguk": 1.4583589811797966,
+   "sicak": 0.8058462679826217,
+   "kazanc_agirlikli": -0.009017793897828086
+  },
+  {
+   "gama": 1.0,
+   "duz": 0.8792631432781082,
+   "test_agirlikli": 1.0030153518780305,
+   "soguk": 1.4964173154119316,
+   "sicak": 0.8087908828595501,
+   "kazanc_agirlikli": -0.023409835650698874
+  },
+  {
+   "gama": 2.0,
+   "duz": 0.891679575142282,
+   "test_agirlikli": 1.0294657911513514,
+   "soguk": 1.568830784912829,
+   "sicak": 0.8123458905583315,
+   "kazanc_agirlikli": -0.04986027492401979
+  },
+  {
+   "gama": 4.0,
+   "duz": 0.9120514628863423,
+   "test_agirlikli": 1.071563491907963,
+   "soguk": 1.6803000620363613,
+   "sicak": 0.8186857570530292,
+   "kazanc_agirlikli": -0.09195797568063147
+  }
+ ],
+ "sifir_satir_hata_payi": 0.3118412848290075,
+ "sifir_satir_ort_tahmin": 0.829111047285682
+}

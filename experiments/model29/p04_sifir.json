@@ -1,0 +1,66 @@
+{
+ "taban": {
+  "rmsle": 0.86685,
+  "rmsle_test_bilesimi": 0.97932
+ },
+ "q_auc": {
+  "dis": 0.9948,
+  "yaz": 0.9834
+ },
+ "q_kalibrasyon": {
+  "dis_ort_q": 0.0378,
+  "dis_gercek": 0.0378,
+  "yaz_ort_q": 0.0551,
+  "yaz_gercek": 0.0542
+ },
+ "duzeltmeler": {
+  "S1_carpansal_(1-q)": {
+   "rmsle": 0.91317,
+   "kazanc": -0.04632,
+   "rmsle_test_bilesimi": 1.07218,
+   "kazanc_test_bilesimi": -0.09287
+  },
+  "S2_carpansal_gamma=0.6": {
+   "rmsle": 0.89577,
+   "kazanc": -0.02892,
+   "rmsle_test_bilesimi": 1.03578,
+   "kazanc_test_bilesimi": -0.05647
+  },
+  "S3_dogrusal_q": {
+   "rmsle": 0.89873,
+   "kazanc": -0.03188,
+   "rmsle_test_bilesimi": 1.05268,
+   "kazanc_test_bilesimi": -0.07336
+  },
+  "S4_dogrusal_q_sabitsiz": {
+   "rmsle": 0.91066,
+   "kazanc": -0.0438,
+   "rmsle_test_bilesimi": 1.06632,
+   "kazanc_test_bilesimi": -0.08701
+  },
+  "S5_sert_esik_t=0.30": {
+   "rmsle": 0.9363,
+   "kazanc": -0.06944,
+   "rmsle_test_bilesimi": 1.11143,
+   "kazanc_test_bilesimi": -0.13212
+  },
+  "S6_artik_yigin_lam=0.25": {
+   "rmsle": 0.87621,
+   "kazanc": -0.00936,
+   "rmsle_test_bilesimi": 0.98806,
+   "kazanc_test_bilesimi": -0.00875
+  },
+  "S6_artik_yigin_lam=0.5": {
+   "rmsle": 0.89211,
+   "kazanc": -0.02526,
+   "rmsle_test_bilesimi": 1.00496,
+   "kazanc_test_bilesimi": -0.02564
+  },
+  "S6_artik_yigin_lam=1.0": {
+   "rmsle": 0.94209,
+   "kazanc": -0.07524,
+   "rmsle_test_bilesimi": 1.06145,
+   "kazanc_test_bilesimi": -0.08213
+  }
+ }
+}

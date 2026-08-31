@@ -1,0 +1,39 @@
+{
+ "yaz25": {
+  "n": 20633,
+  "p_ort": 6.5096,
+  "sabit": 6.6429,
+  "egim": 1.1516,
+  "taban": 1.43592,
+  "kahin_afin": 1.41339
+ },
+ "guz25": {
+  "n": 39405,
+  "p_ort": 6.0742,
+  "sabit": 6.1527,
+  "egim": 1.075,
+  "taban": 1.60821,
+  "kahin_afin": 1.60414
+ },
+ "kis26": {
+  "n": 61918,
+  "p_ort": 6.2311,
+  "sabit": 6.5584,
+  "egim": 0.651,
+  "taban": 1.90615,
+  "kahin_afin": 1.83845
+ },
+ "dis_fit": {
+  "p_ort": 6.1701,
+  "sabit": 6.4006,
+  "egim": 0.8266
+ },
+ "yaz25_uygulama": {
+  "tam_afin": 1.4874,
+  "yalniz_egim_b=0.827": 1.49288,
+  "yalniz_egim_b=1.05": 1.42699,
+  "yalniz_egim_b=1.1": 1.42156,
+  "yalniz_egim_b=1.15": 1.41967,
+  "taban": 1.43592
+ }
+}

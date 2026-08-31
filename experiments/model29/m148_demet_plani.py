@@ -196,6 +196,25 @@ PERM = [
     for _ in range(20)
 ]
 
+HAVA = (
+    "sicak",
+    "cdd",
+    "hdd",
+    "nem",
+    "vpd",
+    "et0",
+    "bulut",
+    "yagis",
+    "hissedilen",
+    "asiri",
+    "ruzgar",
+    "guneslen",
+    "gunes",
+    "x_ay",
+    "ay_",
+    "sicaklik",
+)
+
 duz = np.zeros(N)
 kul = []
 print(
@@ -237,6 +256,12 @@ for kayit in TARAMA + [{"eksen": a, "_yeni": True} for a in YENI_EKSENLER]:
     if not _yeni and len(kul) >= AZAMI_EKSEN:
         continue  # ilk 40'ta dur AMA yeni eksenlere devam et (eskiden break)
     ad = kayit["eksen"]
+    # LB KANITI (31 Agu, D1+D2): hava yonleri rho ~ 0 verdi
+    # (-0.0042 ve +0.0007, olcum hatasi 0.0025). SADECE_YAPISAL=1 verilince
+    # hava eksenleri hic denenmez -- boylece Q_dik butcesi yapisal eksenlere
+    # kalir ve DAHA COK yapisal eksen kapilardan gecer.
+    if os.environ.get("SADECE_YAPISAL") == "1" and any(h in ad for h in HAVA):
+        continue
     xt, xb = kur(ad)
     if xt is None or xb is None:
         continue
@@ -371,24 +396,6 @@ print(
 #   H5  esit agirlik            (hicbir tahmine guvenmeyen taban)
 # Hangi hipotez dogruysa o boyut buyuk rho verir; hepsi yanlissa kayip YOK.
 # ---------------------------------------------------------------------------
-HAVA = (
-    "sicak",
-    "cdd",
-    "hdd",
-    "nem",
-    "vpd",
-    "et0",
-    "bulut",
-    "yagis",
-    "hissedilen",
-    "asiri",
-    "ruzgar",
-    "guneslen",
-    "gunes",
-    "x_ay",
-    "ay_",
-    "sicaklik",
-)
 ISR = np.sign(KATS)
 # YENI EKSENLERI AYIRAN MASKE. H1..H4 yeni eksenlerde SIFIRLANIR ki
 # GD[0..3] BIREBIR AYNI kalsin -- D1 zaten uretildi ve sabit/kappa_etkin
@@ -734,11 +741,16 @@ if os.environ.get("DOKUM"):
             _fh,
         )
     print(f"  [DOKUM] r_hat/GD/a0/sabitler -> {_dk}")
+# DOSYA ONEKI: 31 Agu'da D1/D2 adlariyla ESKI yon kumesinden dosyalar
+# gonderildi (rho ~ 0 cikti). Yon kumesi yeniden kuruldugu icin yeni
+# sondalar AYRI ad tasimali; yoksa ayni adda iki farkli icerik olur ve
+# hem kayit/dosya tutarlilik kontrolu hem son secim adimi karisir.
+ONEK = os.environ.get("DOSYA_ONEKI", "D")
 print(f"\nSIRADAKI: {'sonda ' + str(SIRADAKI) if SIRADAKI else 'hepsi olculdu -> NIHAI'}")
 
 PLAN = list(GECMIS.values())
 for k in [SIRADAKI - 1] if SIRADAKI else []:
-    yol = os.path.join(S, f"tuketim_D{k + 1}_demet.csv")
+    yol = os.path.join(S, f"tuketim_{ONEK}{k + 1}_demet.csv")
     kayit = GECMIS.get(k + 1)
     # ZATEN URETILMIS DOSYAYI YENIDEN URETME: olculmus_skorlar.json ya da
     # m112_durum.json bu arada degisirse r_hat kayar; dosya da kayitli sabit de
@@ -826,7 +838,7 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     # yeniden hesapla. Bu, cebirsel bir ozdeslik DEGIL: CSV'nin ondalik
     # bicimlendirmesi degerleri yuvarlar ve GONDERILEN sey diskteki
     # dosyadir, bellekteki dizi degil. Bu risk daha once HIC olculmemisti.
-    _gv = oku(f"tuketim_D{k + 1}_demet.csv")
+    _gv = oku(f"tuketim_{ONEK}{k + 1}_demet.csv")
     if _gv is None:
         Path(yol).unlink(missing_ok=True)
         raise SystemExit(f"DUR: yazilan D{k + 1} geri okunamadi, dosya silindi.")
@@ -847,7 +859,7 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     PLAN.append(
         dict(
             sonda=k + 1,
-            dosya=f"tuketim_D{k + 1}_demet.csv",
+            dosya=f"tuketim_{ONEK}{k + 1}_demet.csv",
             kappa=kap,
             kappa_etkin=ketkin,
             sabit=sabit,
@@ -861,7 +873,7 @@ for k in [SIRADAKI - 1] if SIRADAKI else []:
     # K4: ek'in GD_k'ya dik bileseni gercek artikla korele olabilir.
     # |korelasyon| ~ 0.05 varsayimiyla hata butcesine katiliyor.
     hata = float(np.sqrt(YUV**2 + SABIT_HATA**2 + (0.05 * ek_dik_n) ** 2) / (2 * abs(ketkin)))
-    print(f"\nURETILDI: submissions/tuketim_D{k + 1}_demet.csv   [{ETIKET[k]}]")
+    print(f"\nURETILDI: submissions/tuketim_{ONEK}{k + 1}_demet.csv   [{ETIKET[k]}]")
     print(f"  kappa={kap:.5f}  kappa_etkin={ketkin:.6f}  sabit={sabit:.9f}")
     print(f"  COZUM:  rho_{k + 1} = ({sabit:.9f} - 2*CAPRAZ - P*P) / {2 * ketkin:.6f}")
     print(

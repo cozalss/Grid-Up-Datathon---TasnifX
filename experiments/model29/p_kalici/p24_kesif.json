@@ -1,0 +1,90 @@
+{
+ "test_sicak_satir": 556319,
+ "test_sicak_hucre": 181,
+ "test_pg_75_90_pay": 0.1483932779574309,
+ "bloklar": {
+  "yaz25": {
+   "n_sicak": 254296,
+   "n_trafo": 2213,
+   "sekil": "HEPSI OK (12/12)",
+   "gercek_sekil": [
+    254296
+   ],
+   "gercek_maxfark_log1p": 45631683.36388675,
+   "kohort": {
+    "blok_hucre": 173,
+    "kapsam_test_payi": 0.9928,
+    "tv_mesafesi": 0.152,
+    "ess_oran": 0.2453,
+    "w_max": 87.83,
+    "pg_75_90_pay": 0.0351
+   },
+   "aile_rmsle_t1000": {
+    "cat": 0.83313,
+    "xgb": 0.83069,
+    "lgbm": 0.843,
+    "sinir_agi": 0.84004
+   }
+  },
+  "guz25": {
+   "n_sicak": 280327,
+   "n_trafo": 2714,
+   "sekil": "HEPSI OK (12/12)",
+   "gercek_sekil": [
+    280327
+   ],
+   "gercek_maxfark_log1p": 45407212.56881808,
+   "kohort": {
+    "blok_hucre": 181,
+    "kapsam_test_payi": 0.9998,
+    "tv_mesafesi": 0.1636,
+    "ess_oran": 0.2318,
+    "w_max": 72.83,
+    "pg_75_90_pay": 0.0143
+   },
+   "aile_rmsle_t1000": {
+    "cat": 0.83612,
+    "xgb": 0.83831,
+    "lgbm": 0.84314,
+    "sinir_agi": 0.91536
+   }
+  },
+  "kis26": {
+   "n_sicak": 382158,
+   "n_trafo": 3417,
+   "sekil": "HEPSI OK (12/12)",
+   "gercek_sekil": [
+    382158
+   ],
+   "gercek_maxfark_log1p": 50403033.26443771,
+   "kohort": {
+    "blok_hucre": 182,
+    "kapsam_test_payi": 0.9985,
+    "tv_mesafesi": 0.1433,
+    "ess_oran": 0.2576,
+    "w_max": 93.8,
+    "pg_75_90_pay": 0.0139
+   },
+   "aile_rmsle_t1000": {
+    "cat": 0.76961,
+    "xgb": 0.77627,
+    "lgbm": 0.78799,
+    "sinir_agi": 0.91707
+   }
+  }
+ },
+ "soguk_npz_anahtar_ornek": [
+  "1000_cat",
+  "1000_lgbm",
+  "1000_xgb",
+  "1001_cat",
+  "1001_lgbm",
+  "1001_xgb",
+  "1002_cat",
+  "1002_lgbm",
+  "1002_xgb",
+  "1003_cat",
+  "1003_lgbm",
+  "1003_xgb"
+ ]
+}

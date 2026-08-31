@@ -1,0 +1,376 @@
+{
+ "yaz25": [
+  {
+   "kova": 1,
+   "gun_araligi": "<=2",
+   "n_satir": 29,
+   "n_trafo": 29,
+   "sifir_orani": 0.6207,
+   "p_ort": 5.865,
+   "y_ort": 2.424,
+   "rmsle": 4.6477,
+   "kare_pay": 0.0147
+  },
+  {
+   "kova": 2,
+   "gun_araligi": "<=3",
+   "n_satir": 34,
+   "n_trafo": 17,
+   "sifir_orani": 0.5588,
+   "p_ort": 5.88,
+   "y_ort": 2.616,
+   "rmsle": 4.549,
+   "kare_pay": 0.0165
+  },
+  {
+   "kova": 3,
+   "gun_araligi": "<=5",
+   "n_satir": 759,
+   "n_trafo": 195,
+   "sifir_orani": 0.0606,
+   "p_ort": 6.363,
+   "y_ort": 6.737,
+   "rmsle": 1.712,
+   "kare_pay": 0.0523
+  },
+  {
+   "kova": 4,
+   "gun_araligi": "<=8",
+   "n_satir": 123,
+   "n_trafo": 20,
+   "sifir_orani": 0.5041,
+   "p_ort": 6.559,
+   "y_ort": 3.625,
+   "rmsle": 4.759,
+   "kare_pay": 0.0655
+  },
+  {
+   "kova": 5,
+   "gun_araligi": "<=15",
+   "n_satir": 175,
+   "n_trafo": 17,
+   "sifir_orani": 0.0514,
+   "p_ort": 5.889,
+   "y_ort": 6.255,
+   "rmsle": 2.0284,
+   "kare_pay": 0.0169
+  },
+  {
+   "kova": 6,
+   "gun_araligi": "<=30",
+   "n_satir": 949,
+   "n_trafo": 42,
+   "sifir_orani": 0.1106,
+   "p_ort": 6.164,
+   "y_ort": 5.968,
+   "rmsle": 2.0366,
+   "kare_pay": 0.0925
+  },
+  {
+   "kova": 7,
+   "gun_araligi": "<=60",
+   "n_satir": 11038,
+   "n_trafo": 264,
+   "sifir_orani": 0.0169,
+   "p_ort": 6.827,
+   "y_ort": 7.161,
+   "rmsle": 1.1886,
+   "kare_pay": 0.3665
+  },
+  {
+   "kova": 8,
+   "gun_araligi": "<=100",
+   "n_satir": 5482,
+   "n_trafo": 75,
+   "sifir_orani": 0.0573,
+   "p_ort": 6.089,
+   "y_ort": 6.007,
+   "rmsle": 1.5809,
+   "kare_pay": 0.3221
+  },
+  {
+   "kova": 9,
+   "gun_araligi": ">100",
+   "n_satir": 2044,
+   "n_trafo": 19,
+   "sifir_orani": 0.0328,
+   "p_ort": 6.207,
+   "y_ort": 6.17,
+   "rmsle": 1.0494,
+   "kare_pay": 0.0529
+  }
+ ],
+ "guz25": [
+  {
+   "kova": 1,
+   "gun_araligi": "<=2",
+   "n_satir": 20,
+   "n_trafo": 20,
+   "sifir_orani": 0.35,
+   "p_ort": 5.905,
+   "y_ort": 3.698,
+   "rmsle": 3.6063,
+   "kare_pay": 0.0026
+  },
+  {
+   "kova": 2,
+   "gun_araligi": "<=3",
+   "n_satir": 38,
+   "n_trafo": 19,
+   "sifir_orani": 0.1053,
+   "p_ort": 6.097,
+   "y_ort": 5.409,
+   "rmsle": 2.0633,
+   "kare_pay": 0.0016
+  },
+  {
+   "kova": 3,
+   "gun_araligi": "<=5",
+   "n_satir": 150,
+   "n_trafo": 45,
+   "sifir_orani": 0.0867,
+   "p_ort": 6.143,
+   "y_ort": 6.157,
+   "rmsle": 1.726,
+   "kare_pay": 0.0044
+  },
+  {
+   "kova": 4,
+   "gun_araligi": "<=8",
+   "n_satir": 1318,
+   "n_trafo": 218,
+   "sifir_orani": 0.0865,
+   "p_ort": 5.988,
+   "y_ort": 6.011,
+   "rmsle": 1.8644,
+   "kare_pay": 0.045
+  },
+  {
+   "kova": 5,
+   "gun_araligi": "<=15",
+   "n_satir": 2817,
+   "n_trafo": 233,
+   "sifir_orani": 0.0902,
+   "p_ort": 6.074,
+   "y_ort": 6.009,
+   "rmsle": 1.7485,
+   "kare_pay": 0.0845
+  },
+  {
+   "kova": 6,
+   "gun_araligi": "<=30",
+   "n_satir": 2971,
+   "n_trafo": 131,
+   "sifir_orani": 0.1178,
+   "p_ort": 5.79,
+   "y_ort": 5.617,
+   "rmsle": 2.0225,
+   "kare_pay": 0.1193
+  },
+  {
+   "kova": 7,
+   "gun_araligi": "<=60",
+   "n_satir": 10326,
+   "n_trafo": 235,
+   "sifir_orani": 0.0445,
+   "p_ort": 6.064,
+   "y_ort": 6.238,
+   "rmsle": 1.5464,
+   "kare_pay": 0.2423
+  },
+  {
+   "kova": 8,
+   "gun_araligi": "<=100",
+   "n_satir": 18680,
+   "n_trafo": 243,
+   "sifir_orani": 0.0382,
+   "p_ort": 6.128,
+   "y_ort": 6.276,
+   "rmsle": 1.4266,
+   "kare_pay": 0.373
+  },
+  {
+   "kova": 9,
+   "gun_araligi": ">100",
+   "n_satir": 3085,
+   "n_trafo": 29,
+   "sifir_orani": 0.1024,
+   "p_ort": 6.09,
+   "y_ort": 5.853,
+   "rmsle": 2.0519,
+   "kare_pay": 0.1274
+  }
+ ],
+ "kis26": [
+  {
+   "kova": 1,
+   "gun_araligi": "<=2",
+   "n_satir": 19,
+   "n_trafo": 19,
+   "sifir_orani": 0.2105,
+   "p_ort": 5.411,
+   "y_ort": 4.5,
+   "rmsle": 2.9835,
+   "kare_pay": 0.0008
+  },
+  {
+   "kova": 2,
+   "gun_araligi": "<=3",
+   "n_satir": 670,
+   "n_trafo": 335,
+   "sifir_orani": 0.0239,
+   "p_ort": 6.054,
+   "y_ort": 6.167,
+   "rmsle": 1.515,
+   "kare_pay": 0.0068
+  },
+  {
+   "kova": 3,
+   "gun_araligi": "<=5",
+   "n_satir": 21,
+   "n_trafo": 6,
+   "sifir_orani": 0.0476,
+   "p_ort": 6.313,
+   "y_ort": 6.528,
+   "rmsle": 2.1365,
+   "kare_pay": 0.0004
+  },
+  {
+   "kova": 4,
+   "gun_araligi": "<=8",
+   "n_satir": 218,
+   "n_trafo": 35,
+   "sifir_orani": 0.1606,
+   "p_ort": 5.951,
+   "y_ort": 5.412,
+   "rmsle": 3.0306,
+   "kare_pay": 0.0089
+  },
+  {
+   "kova": 5,
+   "gun_araligi": "<=15",
+   "n_satir": 213,
+   "n_trafo": 24,
+   "sifir_orani": 0.0,
+   "p_ort": 6.107,
+   "y_ort": 6.682,
+   "rmsle": 1.1743,
+   "kare_pay": 0.0013
+  },
+  {
+   "kova": 6,
+   "gun_araligi": "<=30",
+   "n_satir": 2000,
+   "n_trafo": 90,
+   "sifir_orani": 0.0205,
+   "p_ort": 6.154,
+   "y_ort": 6.657,
+   "rmsle": 1.6562,
+   "kare_pay": 0.0244
+  },
+  {
+   "kova": 7,
+   "gun_araligi": "<=60",
+   "n_satir": 6628,
+   "n_trafo": 154,
+   "sifir_orani": 0.0718,
+   "p_ort": 6.107,
+   "y_ort": 6.267,
+   "rmsle": 1.9607,
+   "kare_pay": 0.1133
+  },
+  {
+   "kova": 8,
+   "gun_araligi": "<=100",
+   "n_satir": 24877,
+   "n_trafo": 312,
+   "sifir_orani": 0.0304,
+   "p_ort": 6.256,
+   "y_ort": 6.71,
+   "rmsle": 1.6993,
+   "kare_pay": 0.3193
+  },
+  {
+   "kova": 9,
+   "gun_araligi": ">100",
+   "n_satir": 27272,
+   "n_trafo": 248,
+   "sifir_orani": 0.0701,
+   "p_ort": 6.252,
+   "y_ort": 6.503,
+   "rmsle": 2.0807,
+   "kare_pay": 0.5248
+  }
+ ],
+ "test_soguk_dagilim": [
+  {
+   "kova": 1,
+   "n_satir": 6,
+   "n_trafo": 6,
+   "satir_pay": 0.0
+  },
+  {
+   "kova": 2,
+   "n_satir": 10,
+   "n_trafo": 5,
+   "satir_pay": 0.0001
+  },
+  {
+   "kova": 3,
+   "n_satir": 23,
+   "n_trafo": 6,
+   "satir_pay": 0.0001
+  },
+  {
+   "kova": 4,
+   "n_satir": 127,
+   "n_trafo": 21,
+   "satir_pay": 0.0008
+  },
+  {
+   "kova": 5,
+   "n_satir": 48,
+   "n_trafo": 5,
+   "satir_pay": 0.0003
+  },
+  {
+   "kova": 6,
+   "n_satir": 766,
+   "n_trafo": 33,
+   "satir_pay": 0.0048
+  },
+  {
+   "kova": 7,
+   "n_satir": 5555,
+   "n_trafo": 125,
+   "satir_pay": 0.0351
+  },
+  {
+   "kova": 8,
+   "n_satir": 147565,
+   "n_trafo": 1784,
+   "satir_pay": 0.9318
+  },
+  {
+   "kova": 9,
+   "n_satir": 4269,
+   "n_trafo": 39,
+   "satir_pay": 0.027
+  }
+ ],
+ "test_soguk_toplam": {
+  "satir": 158369,
+  "trafo": 2024
+ },
+ "kenarlar": [
+  1,
+  2,
+  3,
+  5,
+  8,
+  15,
+  30,
+  60,
+  100
+ ]
+}

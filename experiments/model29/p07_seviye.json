@@ -1,0 +1,57 @@
+{
+ "taban": {
+  "rmsle": 0.86685,
+  "rmsle_test_bilesimi": 0.97932
+ },
+ "beta_blok_basina": {
+  "guz25": -0.02839,
+  "kis26": 0.03893
+ },
+ "beta_dis_ortalama": 0.00527,
+ "beta_yaz25_optimum_sizintili": -0.03459,
+ "beta_sicak": 0.01903,
+ "beta_soguk": -0.13702,
+ "duzeltmeler": {
+  "B1_yayilma_beta*0.5": {
+   "rmsle": 0.86735,
+   "kazanc": -0.00049,
+   "rmsle_test_bilesimi": 0.97954,
+   "kazanc_test_bilesimi": -0.00023
+  },
+  "B1_yayilma_beta*1.0": {
+   "rmsle": 0.86787,
+   "kazanc": -0.00102,
+   "rmsle_test_bilesimi": 0.9798,
+   "kazanc_test_bilesimi": -0.00049
+  },
+  "B2_yayilma_rejim_ayri": {
+   "rmsle": 0.87691,
+   "kazanc": -0.01006,
+   "rmsle_test_bilesimi": 0.99655,
+   "kazanc_test_bilesimi": -0.01723
+  },
+  "B3_gecmis_ort_harman_w=0.05": {
+   "rmsle": 0.86734,
+   "kazanc": -0.00048,
+   "rmsle_test_bilesimi": 0.97968,
+   "kazanc_test_bilesimi": -0.00036
+  },
+  "B3_gecmis_ort_harman_w=0.1": {
+   "rmsle": 0.86824,
+   "kazanc": -0.00138,
+   "rmsle_test_bilesimi": 0.98035,
+   "kazanc_test_bilesimi": -0.00103
+  },
+  "B3_gecmis_ort_harman_w=0.2": {
+   "rmsle": 0.87128,
+   "kazanc": -0.00443,
+   "rmsle_test_bilesimi": 0.98262,
+   "kazanc_test_bilesimi": -0.0033
+  }
+ },
+ "beta_taramasi_tavan": {
+  "en_iyi_beta": -0.03,
+  "rmsle": 0.86378,
+  "kazanc": 0.00307
+ }
+}

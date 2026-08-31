@@ -1,0 +1,109 @@
+{
+ "taban_soguk": {
+  "n": 20633,
+  "trafo": 678,
+  "rmsle": 1.43592
+ },
+ "sifir_kesiti": [
+  {
+   "seviye": "sifir",
+   "n": 826,
+   "n_pay": 0.04,
+   "kare_pay": 0.5726,
+   "yanlilik": -5.0297,
+   "rmsle": 5.4306
+  },
+  {
+   "seviye": "100+",
+   "n": 17478,
+   "n_pay": 0.8471,
+   "kare_pay": 0.3361,
+   "yanlilik": 0.5018,
+   "rmsle": 0.9044
+  },
+  {
+   "seviye": "10-100",
+   "n": 2042,
+   "n_pay": 0.099,
+   "kare_pay": 0.0577,
+   "yanlilik": -0.6409,
+   "rmsle": 1.0966
+  },
+  {
+   "seviye": "0-10",
+   "n": 287,
+   "n_pay": 0.0139,
+   "kare_pay": 0.0336,
+   "yanlilik": -1.9366,
+   "rmsle": 2.2327
+  }
+ ],
+ "tavanlar_sizintili": {
+  "trafo_sabiti": 0.71962,
+  "trafo_ofseti_p_uzerine": 0.66256,
+  "sifirlari_mukemmel_bil": 0.93874,
+  "kuresel_ofset": 1.42971,
+  "afin_p": 1.41339
+ },
+ "trafo_sapmasi": {
+  "n_trafo": 677,
+  "std_b": 1.993,
+  "ort_b": -0.1211,
+  "korr": {
+   "guc": 0.0196,
+   "capa": 0.0388,
+   "pm": 0.1274,
+   "ilk": 0.1959,
+   "gun": 0.1422,
+   "yay": 0.0637,
+   "dol": 0.2039
+  }
+ },
+ "mevcut_grup_ozellikleri": {
+  "g_ilce_log_ort": {
+   "korr_y": 0.4216,
+   "korr_artik": 0.0405
+  },
+  "g_ilce_kova_ort": {
+   "korr_y": 0.4823,
+   "korr_artik": 0.0562
+  },
+  "g_kova_log_ort": {
+   "korr_y": 0.552,
+   "korr_artik": 0.0484
+  },
+  "tanim_num": {
+   "korr_y": -0.1805,
+   "korr_artik": -0.0044
+  }
+ },
+ "bloklar": {
+  "yaz25": {
+   "n": 20633,
+   "rmsle": 1.43592,
+   "yanlilik": 0.1334,
+   "sifir_pay": 0.04,
+   "p_ort": 6.5096,
+   "y_ort": 6.6429,
+   "std_artik": 1.4297
+  },
+  "guz25": {
+   "n": 39405,
+   "rmsle": 1.60821,
+   "yanlilik": 0.0785,
+   "sifir_pay": 0.0566,
+   "p_ort": 6.0742,
+   "y_ort": 6.1527,
+   "std_artik": 1.6063
+  },
+  "kis26": {
+   "n": 61918,
+   "rmsle": 1.90615,
+   "yanlilik": 0.3273,
+   "sifir_pay": 0.0523,
+   "p_ort": 6.2311,
+   "y_ort": 6.5584,
+   "std_artik": 1.8779
+  }
+ }
+}

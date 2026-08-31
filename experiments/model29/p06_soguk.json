@@ -1,0 +1,564 @@
+{
+ "gorev": "yaz25 soguk RMSLE 1,43592 -> <=1,4072 (toplam test-bilesimi kazanci >= 0,00579)",
+ "taban": {
+  "yaz25_soguk": 1.43592,
+  "yaz25_sicak": 0.80319,
+  "test_bilesimi": 0.97932,
+  "LB": 1.00115
+ },
+ "SONUC": {
+  "bulunan_kazanc": "SOGUK harmanda AILE AGIRLIGI",
+  "agirlik_cat_xgb_lgbm": [
+   0.05,
+   0.35,
+   0.6
+  ],
+  "secim_yeri": "guz25 soguk satirlari (tam izgara argmin) -- yaz25 hedefi KULLANILMADI",
+  "yaz25_soguk": 1.41269,
+  "yaz25_soguk_kazanc": 0.02323,
+  "test_bilesimi": 0.9718,
+  "test_bilesimi_kazanc": 0.00752,
+  "esik_gecildi_mi": true,
+  "beklenen_LB": 0.9935,
+  "beklenen_LB_gerekce": "1,00115 x (0,97180 / 0,97932); yaz25 test-bilesimi ile LB arasindaki carpansal orani sabit varsayar",
+  "onyukleme": {
+   "ort": 0.02312,
+   "std": 0.01086,
+   "ci95": [
+    0.00282,
+    0.04423
+   ],
+   "pozitif_oran": 0.984
+  },
+  "RISK": "kis26 soguk satirlari TERS yonu soyluyor (esit 1,90615 -> 1,94/1,97). Yani karar, test'in mevsimce yaz25+guz25'e kis26'dan daha yakin oldugu varsayimina dayanir (Kural 10 zaten bunu soyluyor). SICAK tarafta aile siralamasi UC BLOKTA DA ayni (xgb en iyi) -- yani bu bir blok artifakti degil, soguga OZGU bir kararsizlik."
+ },
+ "olculen_fikirler": {
+  "1_komsu_seviyesi": {
+   "durum": "REDDEDILDI",
+   "post_hoc_afin": {
+    "katsayi": [
+     -0.7679,
+     1.1628,
+     -0.0271
+    ],
+    "soguk_rmsle": 1.41587,
+    "yalniz_p_rmsle": 1.41615,
+    "uyari": "yaz25 uzerinde fit -- UST SINIR, uretimde kullanilamaz"
+   },
+   "uretim_hattinda_yeniden_egitim": {
+    "taban": {
+     "soguk_rmsle": 1.4052,
+     "tohumlar": [
+      1.42096,
+      1.40545,
+      1.4221
+     ]
+    },
+    "komsu": {
+     "soguk_rmsle": 1.54703,
+     "tohumlar": [
+      1.56471,
+      1.5321,
+      1.58964
+     ]
+    },
+    "kazanc": -0.14183
+   },
+   "yorum": "Uretim cercevesinde g_ilce_log_ort / g_ilce_kova_ort / g_kova_log_ort / tanim_num ZATEN var; komsu capasi ek bilgi tasimiyor. Kahin afin sinavda capa katsayisi -0,027 (etkisiz). Ozellik olarak modele konunca soguk RMSLE 1,40520 -> 1,54703 (-0,142): capanin ozet penceresi bloklar arasinda 90/212/334 gun oldugu icin dagilim kayiyor."
+  },
+  "2_rampa_egrisi": {
+   "durum": "REDDEDILDI",
+   "yorum": "kendi_gun = ufuk_gun - p_ilk_ofset kesitinde yanlilik SEKLI bloklar arasinda ISARET DEGISTIRIYOR (yaz25 1. gun -0,144; kis26 +0,345). Dis-blok ofseti uygulandiginda yaz25 soguk 1,43592 -> 1,43615/1,43813.",
+   "olcum": {
+    "duzeltme": {
+     "lam=0.25": 1.43615,
+     "lam=0.5": 1.4366,
+     "lam=1.0": 1.43813,
+     "taban": 1.43592
+    }
+   }
+  },
+  "3_toplu_giris": {
+   "durum": "TEZGAHTA KARSILIGI YOK",
+   "yorum": "Test'te 2026-05-11'de 1.326 trafo giriyor ve test soguk satirlarinin %93,2'si 61-100 gunluk pencereye sahip. yaz25'te en kalabalik giris gunu 2025-07-28 (177 trafo) ve blogun SONUNDA -- yani test'in baskin kohortunun yaz25'te dengi YOK. Bu, butun soguk olcumleri icin bir BILESIM UYARISIdir: 61-100 gun kovasinda ayri olculdu, ayni sonuc cikti (yaz25 esit 1,58661 -> 1,55826)."
+  },
+  "4_tahmin_penceresi_oznitelikleri": {
+   "durum": "ZATEN URETIMDE",
+   "yorum": "p_gun_sayisi, p_ilk_ofset, p_son_ofset, p_yayilma, p_doluluk, p_pencere_payi, ufuk_gun uretim cercevesinde MEVCUT (egitim.parquet). p02'nin w_gun/w_ilk/w_yayilma degiskenlerinin karsiligi bunlar."
+  },
+  "5_daha_iyi_seviye_capasi": {
+   "durum": "REDDEDILDI",
+   "dogal_soguk_uzman": {
+    "taban": 1.43592,
+    "yalniz_dogal": 1.88648,
+    "harman_w_ic": 1.53354,
+    "harman_w=0.1": 1.45566,
+    "harman_w=0.2": 1.4821,
+    "harman_w=0.3": 1.51489,
+    "harman_w=0.4": 1.55362,
+    "harman_w=0.5": 1.59785,
+    "harman_w=0.7": 1.70108,
+    "harman_w=1.0": 1.88648
+   },
+   "afin_kalibrasyon": {
+    "tam_afin": 1.4874,
+    "yalniz_egim_b=0.827": 1.49288,
+    "yalniz_egim_b=1.05": 1.42699,
+    "yalniz_egim_b=1.1": 1.42156,
+    "yalniz_egim_b=1.15": 1.41967,
+    "taban": 1.43592
+   },
+   "yorum": "Dogal (yapay maskelenmemis) soguk satirlarda egitilmis uzman yaz25 soguk 1,88648 -- uretimden cok kotu; dis-blokta secilen harman agirligi (w=0,35) yaz25'te 1,53354'e goturuyor. Soguga ozel afin kalibrasyonun EGIMI de bloklar arasi kararsiz (1,15 / 1,08 / 0,65)."
+  },
+  "6_soguga_ozel_sifir_siniflandirici": {
+   "durum": "REDDEDILDI",
+   "gerekce": "Soguk satirlarda sifirlar satirlarin %4'u ama KARE HATANIN %57,3'u (kahin: 1,43592 -> 0,93874). Uretimdeki P0 soguk tarafta anma=0 veriyor cunku t_* kolonlarina dayaniyor. Soguga OZEL bir q modeli (t_* haric 112 ozellik, guz25+kis26 soguk satirlarinda egitildi) AUC 0,58 (ic) / 0,61 (yaz25) -- ayirt edici degil. Kare hatanin %76,7'si en dusuk q kovasinda. Dis blokta secilen gamma = 0 (yani 'duzeltme yapma').",
+   "olcum": {
+    "auc_yaz25_soguk": 0.6087,
+    "ic_secim": {
+     "150": 0.5631,
+     "300": 0.567,
+     "600": 0.5776
+    },
+    "duzeltme": {
+     "carpansal_g=0.25": 1.45301,
+     "carpansal_g=0.5": 1.48006,
+     "carpansal_g=0.75": 1.51106,
+     "carpansal_g=1.0": 1.54287,
+     "carpansal_g=1.5": 1.60359
+    },
+    "SECILEN": {
+     "gamma": 0.0,
+     "yaz25_soguk_rmsle": 1.43592
+    }
+   }
+  }
+ },
+ "hata_anatomisi_soguk": {
+  "sifir_kesiti": [
+   {
+    "seviye": "sifir",
+    "n": 826,
+    "n_pay": 0.04,
+    "kare_pay": 0.5726,
+    "yanlilik": -5.0297,
+    "rmsle": 5.4306
+   },
+   {
+    "seviye": "100+",
+    "n": 17478,
+    "n_pay": 0.8471,
+    "kare_pay": 0.3361,
+    "yanlilik": 0.5018,
+    "rmsle": 0.9044
+   },
+   {
+    "seviye": "10-100",
+    "n": 2042,
+    "n_pay": 0.099,
+    "kare_pay": 0.0577,
+    "yanlilik": -0.6409,
+    "rmsle": 1.0966
+   },
+   {
+    "seviye": "0-10",
+    "n": 287,
+    "n_pay": 0.0139,
+    "kare_pay": 0.0336,
+    "yanlilik": -1.9366,
+    "rmsle": 2.2327
+   }
+  ],
+  "tavanlar_sizintili": {
+   "trafo_sabiti": 0.71962,
+   "trafo_ofseti_p_uzerine": 0.66256,
+   "sifirlari_mukemmel_bil": 0.93874,
+   "kuresel_ofset": 1.42971,
+   "afin_p": 1.41339
+  },
+  "trafo_sapmasi": {
+   "n_trafo": 677,
+   "std_b": 1.993,
+   "ort_b": -0.1211,
+   "korr": {
+    "guc": 0.0196,
+    "capa": 0.0388,
+    "pm": 0.1274,
+    "ilk": 0.1959,
+    "gun": 0.1422,
+    "yay": 0.0637,
+    "dol": 0.2039
+   }
+  }
+ },
+ "aile_olcumleri": {
+  "blok_bazli": {
+   "yaz25": {
+    "n": 20633,
+    "uye": 15,
+    "hepsi": 1.43592,
+    "cat": 1.57584,
+    "xgb": 1.46086,
+    "lgbm": 1.40001,
+    "cat+lgbm": 1.44823,
+    "xgb+lgbm": 1.41954,
+    "cat+xgb": 1.47345,
+    "kahin_dogrusal": 1.38417,
+    "kahin_katsayi": [
+     -0.551,
+     0.052,
+     -0.079,
+     1.133
+    ],
+    "kahin_simpleks": {
+     "rmsle": 1.40001,
+     "w": [
+      0.0,
+      0.0,
+      1.0
+     ]
+    }
+   },
+   "guz25": {
+    "n": 39405,
+    "uye": 15,
+    "hepsi": 1.60821,
+    "cat": 1.6988,
+    "xgb": 1.60989,
+    "lgbm": 1.60313,
+    "cat+lgbm": 1.6173,
+    "xgb+lgbm": 1.5977,
+    "cat+xgb": 1.63184,
+    "kahin_dogrusal": 1.59489,
+    "kahin_katsayi": [
+     0.122,
+     0.034,
+     0.359,
+     0.601
+    ],
+    "kahin_simpleks": {
+     "rmsle": 1.59715,
+     "w": [
+      0.05,
+      0.35,
+      0.6
+     ]
+    }
+   },
+   "kis26": {
+    "n": 61918,
+    "uye": 9,
+    "hepsi": 1.90615,
+    "cat": 1.83864,
+    "xgb": 1.97579,
+    "lgbm": 2.00527,
+    "cat+lgbm": 1.88736,
+    "xgb+lgbm": 1.97563,
+    "cat+xgb": 1.8805,
+    "kahin_dogrusal": 1.81028,
+    "kahin_katsayi": [
+     1.441,
+     0.84,
+     -0.049,
+     0.021
+    ],
+    "kahin_simpleks": {
+     "rmsle": 1.83864,
+     "w": [
+      1.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "SIZINTISIZ": {
+    "aile": [
+     "cat",
+     "xgb",
+     "lgbm"
+    ],
+    "dis_agirlik": [
+     0.75,
+     0.0,
+     0.25
+    ],
+    "dis_rmsle": 1.77736,
+    "yaz25_taban": 1.43592,
+    "yaz25_dis_agirlikla": 1.50308
+   }
+  },
+  "sicak_karsilastirmasi": {
+   "yaz25": {
+    "soguk_cat": 1.57584,
+    "sicak_cat": 0.81342,
+    "soguk_xgb": 1.46086,
+    "sicak_xgb": 0.80996,
+    "soguk_lgbm": 1.40001,
+    "sicak_lgbm": 0.81826
+   },
+   "guz25": {
+    "soguk_cat": 1.6988,
+    "sicak_cat": 0.82831,
+    "soguk_xgb": 1.60989,
+    "sicak_xgb": 0.81148,
+    "soguk_lgbm": 1.60313,
+    "sicak_lgbm": 0.8226
+   },
+   "kis26": {
+    "soguk_cat": 1.83864,
+    "sicak_cat": 0.75895,
+    "soguk_xgb": 1.97579,
+    "sicak_xgb": 0.75001,
+    "soguk_lgbm": 2.00527,
+    "sicak_lgbm": 0.76501
+   },
+   "yaz25_soguk_kesitler": {
+    "ay": [
+     {
+      "seviye": "4",
+      "n": 422,
+      "cat": 2.7736,
+      "xgb": 2.6955,
+      "lgbm": 2.6012,
+      "hepsi": 2.668
+     },
+     {
+      "seviye": "5",
+      "n": 1788,
+      "cat": 2.1496,
+      "xgb": 2.129,
+      "lgbm": 2.0748,
+      "hepsi": 2.0968
+     },
+     {
+      "seviye": "6",
+      "n": 5695,
+      "cat": 1.5696,
+      "xgb": 1.4984,
+      "lgbm": 1.4552,
+      "hepsi": 1.4681
+     },
+     {
+      "seviye": "7",
+      "n": 12728,
+      "cat": 1.4209,
+      "xgb": 1.2559,
+      "lgbm": 1.1835,
+      "hepsi": 1.2346
+     }
+    ],
+    "ufuk": [
+     {
+      "seviye": "(0, 30]",
+      "n": 422,
+      "cat": 2.7736,
+      "xgb": 2.6955,
+      "lgbm": 2.6012,
+      "hepsi": 2.668
+     },
+     {
+      "seviye": "(30, 60]",
+      "n": 1694,
+      "cat": 2.1717,
+      "xgb": 2.153,
+      "lgbm": 2.0953,
+      "hepsi": 2.1194
+     },
+     {
+      "seviye": "(60, 90]",
+      "n": 5434,
+      "cat": 1.5836,
+      "xgb": 1.5069,
+      "lgbm": 1.4707,
+      "hepsi": 1.4818
+     },
+     {
+      "seviye": "(90, 130]",
+      "n": 13083,
+      "cat": 1.4199,
+      "xgb": 1.2602,
+      "lgbm": 1.1858,
+      "hepsi": 1.2363
+     }
+    ],
+    "guc": [
+     {
+      "seviye": "(39.999, 160.0]",
+      "n": 5510,
+      "cat": 1.359,
+      "xgb": 1.098,
+      "lgbm": 1.026,
+      "hepsi": 1.124
+     },
+     {
+      "seviye": "(160.0, 400.0]",
+      "n": 6330,
+      "cat": 1.9399,
+      "xgb": 1.8275,
+      "lgbm": 1.7939,
+      "hepsi": 1.8191
+     },
+     {
+      "seviye": "(400.0, 1000.0]",
+      "n": 6319,
+      "cat": 1.5019,
+      "xgb": 1.4061,
+      "lgbm": 1.3265,
+      "hepsi": 1.3569
+     },
+     {
+      "seviye": "(1000.0, 1630.0]",
+      "n": 2474,
+      "cat": 1.0985,
+      "xgb": 1.2321,
+      "lgbm": 1.1287,
+      "hepsi": 1.101
+     }
+    ],
+    "ilce_kazanan_sayisi": {
+     "cat": 5,
+     "xgb": 9,
+     "lgbm": 29
+    },
+    "ilce_n": 43
+   }
+  },
+  "agirlik_izgarasi": {
+   "aday": {
+    "esit_(uretim)": [
+     0.3333333333333333,
+     0.3333333333333333,
+     0.3333333333333333
+    ],
+    "cat_yok": [
+     0.0,
+     0.5,
+     0.5
+    ],
+    "lgbm_agirlikli_.1.2.7": [
+     0.1,
+     0.2,
+     0.7
+    ],
+    "lgbm_agirlikli_.15.25.6": [
+     0.15,
+     0.25,
+     0.6
+    ],
+    "lgbm_.0.25.75": [
+     0.0,
+     0.25,
+     0.75
+    ],
+    "yalniz_lgbm": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "yalniz_cat": [
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "yaz25": {
+    "esit_(uretim)": 1.43592,
+    "cat_yok": 1.41954,
+    "lgbm_agirlikli_.1.2.7": 1.40835,
+    "lgbm_agirlikli_.15.25.6": 1.41331,
+    "lgbm_.0.25.75": 1.40697,
+    "yalniz_lgbm": 1.40001,
+    "yalniz_cat": 1.57584
+   },
+   "guz25": {
+    "esit_(uretim)": 1.60821,
+    "cat_yok": 1.5977,
+    "lgbm_agirlikli_.1.2.7": 1.59769,
+    "lgbm_agirlikli_.15.25.6": 1.59814,
+    "lgbm_.0.25.75": 1.59821,
+    "yalniz_lgbm": 1.60313,
+    "yalniz_cat": 1.6988
+   },
+   "kis26": {
+    "esit_(uretim)": 1.90615,
+    "cat_yok": 1.97563,
+    "lgbm_agirlikli_.1.2.7": 1.96292,
+    "lgbm_agirlikli_.15.25.6": 1.94789,
+    "lgbm_.0.25.75": 1.98678,
+    "yalniz_lgbm": 2.00527,
+    "yalniz_cat": 1.83864
+   },
+   "yaz25_toplam_test_bilesimi": {
+    "esit_(uretim)": 0.97932,
+    "cat_yok": 0.97401,
+    "lgbm_agirlikli_.1.2.7": 0.97041,
+    "lgbm_agirlikli_.15.25.6": 0.972,
+    "lgbm_.0.25.75": 0.96996,
+    "yalniz_lgbm": 0.96773,
+    "yalniz_cat": 1.02589
+   },
+   "onyukleme_lgbm_kazanci": {
+    "ort": 0.03591,
+    "std": 0.0152,
+    "alt2_5": 0.00714,
+    "ust97_5": 0.06573,
+    "pozitif_oran": 0.9925
+   }
+  }
+ },
+ "test_ciktisi": {
+  "w_yeni": [
+   0.05,
+   0.35,
+   0.6
+  ],
+  "w_esit": [
+   0.3333333333333333,
+   0.3333333333333333,
+   0.3333333333333333
+  ],
+  "tohum": [
+   1000,
+   1001,
+   1002
+  ],
+  "aile": [
+   "cat",
+   "xgb",
+   "lgbm"
+  ],
+  "n_test": 714688,
+  "n_soguk": 158369,
+  "aile_ort": {
+   "cat": 6.6996,
+   "xgb": 6.6661,
+   "lgbm": 6.6105
+  },
+  "delta_ort": -0.02432,
+  "delta_std": 0.20221,
+  "delta_mutlak_ort": 0.13348,
+  "cikti": "C:/Users/Cem/AppData/Local/Temp/claude/c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad"
+ },
+ "betikler": [
+  "p06_soguk_tani.py",
+  "p06_soguk_anatomi.py",
+  "p06_soguk_sifir.py",
+  "p06_soguk_pencere.py",
+  "p06_soguk_q.py",
+  "p06_soguk_dogal.py",
+  "p06_soguk_rampa.py",
+  "p06_soguk_yeniden.py",
+  "p06_soguk_aile.py",
+  "p06_soguk_aile2.py",
+  "p06_soguk_agirlik.py",
+  "p06_soguk_afin.py",
+  "p06_soguk_test.py",
+  "p06_ozet.py"
+ ],
+ "sizinti_denetimi": [
+  "yaz25 hedefi hicbir egitimde/ozellikte/kalibrasyonda kullanilmadi.",
+  "Aile agirligi guz25 soguk satirlarinda tam izgara ile secildi (yaz25 hedefi yok).",
+  "q modeli ve dogal-soguk uzmani guz25+kis26'da egitildi; trafo kumelerinin AYRIKLIGI assert ile denetlendi (yaz25-soguk bir trafonun Nis-Tem 2025'te satiri vardir, dolayisiyla guz25/kis26'da soguk olamaz).",
+  "Agac sayisi / gamma / harman agirligi gibi tum ayarlar dis bloklarin kendi ic bolunmesinden (guz25 -> kis26) secildi."
+ ]
+}

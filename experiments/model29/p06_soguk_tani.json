@@ -1,0 +1,48 @@
+{
+ "aciklama": "p06 tani: SOGUK satirlarda KOMSU SEVIYESI capasinin uretim hattinda degeri var mi?",
+ "taban": {
+  "yaz25_rmsle": 0.86685,
+  "test_bilesimi": 0.97932,
+  "soguk_rmsle": 1.43592,
+  "sicak_rmsle": 0.80319,
+  "soguk_satir": 20633,
+  "soguk_trafo": 678
+ },
+ "kapsam": {
+  "yaz25": {
+   "soguk_satir": 20633,
+   "capa_kapsami": 0.9951,
+   "soguk_rmsle": 1.43592
+  },
+  "guz25": {
+   "soguk_satir": 39405,
+   "capa_kapsami": 1.0,
+   "soguk_rmsle": 1.60821
+  },
+  "kis26": {
+   "soguk_satir": 61918,
+   "capa_kapsami": 1.0,
+   "soguk_rmsle": 1.90615
+  }
+ },
+ "iliski": {
+  "n": 20531,
+  "korr_capa_y": 0.3573,
+  "korr_capa_p": 0.4873,
+  "korr_capa_artik": 0.0561,
+  "korr_p_y": 0.7569,
+  "capa_ort": 5.9633,
+  "p_ort": 6.5097,
+  "y_ort": 6.6401
+ },
+ "oracle_afin": {
+  "katsayi": [
+   -0.7679,
+   1.1628,
+   -0.0271
+  ],
+  "soguk_rmsle": 1.41587,
+  "yalniz_p_rmsle": 1.41615,
+  "uyari": "yaz25 uzerinde fit -- UST SINIR, uretimde kullanilamaz"
+ }
+}
