@@ -9,22 +9,25 @@ Uygulama adimlari: **docs/76** · Karar agaci: **docs/77**
 
 ## 1. NEREDEYIZ
 
-Liderlik tablosu (31 Agustos 04:15):
+Liderlik tablosu (31 Agustos 09:15):
 
 | # | takim | skor |
 |---|---|---|
-| 1 | Grid Grinders | 0.99009 |
-| 2 | Abdulbaki Bayir | 0.99556 |
-| 3 | Duo-Electra | 0.99573 |
-| 4 | Berke Kus | 0.99927 |
-| 5 | Atakan Aldemir | 0.99937 |
-| 6 | Ahmet Bugrahan Altunok | 0.99975 |
-| 7 | Ahmet Celik | 0.99989 |
-| 8 | Saban Ozdogan | 1.00049 |
-| **9** | **TasnifX** | **1.00115** |
+| 1 | Grid Grinders | **0.98110** |
+| 2 | Duo-Electra | **0.99536** |
+| 3 | Abdulbaki Bayir | 0.99556 |
+| 4 | Tuna Deniz | 0.99886 |
+| 5 | Berke Kus | 0.99927 |
+| ... | | |
+| **10** | **TasnifX** | **1.00115** |
 
-**Esik DURDU.** 2. sira 30 Agu 20:09'dan beri (8 saat), 1. sira 30 Agu
-05:03'ten beri (24 saat) hic degismedi.
+**1. sira MENZIL DISI.** Grid Grinders 30 Agu 23:44'te tek gonderimde
+0.99009 -> 0.98110 sicradi. Bizim en iyimser senaryomuz 0.97697, yani
+teorik olarak mumkun ama yalnizca en ust `|c|` degerinde.
+
+**2. sira esigi 0.99536.** Sicramalar SEYREK DEGIL: son ~10 saatte ilk
+12'de dort sicrama (Grid Grinders -0.00899, Tuna Deniz -0.00381,
+Duo-Electra -0.00037, Ahmet Bugrahan -0.00143).
 
 ---
 
@@ -53,7 +56,7 @@ Demetlerin dikligi: en buyuk sapma **1.33e-15**.
 | `sigma_L` | **2.94e-06** | n10 — G'nin uc TAM SIFIR kipinde `u'L=0` olmak ZORUNDA |
 | K orani (B=1) | 1.391 | n09 — K=25 / K=136 |
 | blok kazanci | 1.271 | n09 — B=4 / B=1, K=25 |
-| bitis esigi (2.) | **0.99343** zarf [0.99206, 0.99556] | n17 — durgunluk hesaba katildi |
+| bitis esigi (2.) | **0.98674** zarf [0.98319, 0.99536] | n17 — sicrama riski dahil |
 
 ### Yikilan iki varsayim
 
@@ -87,27 +90,50 @@ yakalayan bolme, olcum yariminda statukonun ALTINA dusuyor. Bu bosluk
 
 ---
 
-## 5. BEKLENEN SONUC
+## 5. BEKLENEN SONUC — TEK BILINMEYENE INDI
 
-Iki capa var ve **celisiyorlar** — ikisi de veriliyor:
+`n18` ve `n19` gosterdi ki onceki "dort bagimsiz yol" aslinda **tek
+parametrenin dort degeri**. Cebir sadelesiyor:
 
-| senaryo | medyan rho | medyan skor | P(1.) | P(2.) | P(ilk uc) |
-|---|---|---|---|---|---|
-| **Yol B** (CARPAN=0.798, n=1 kalibrasyon) | 0.131 | **0.99236** | %34.4 | **%84.3** | **%100** |
-| **Yol A** (\|c\|=0.434, LB LOO) | 0.190 | 0.98284 | %72.1 | %84.4 | %99.6 |
-| karisim | 0.138 | 0.99141 | %53.2 | %84.4 | %99.8 |
+```
+gerceklesen rho_LB = |c| * rho_s(bilesik)
+rho_s(bilesik) = ||BETA|| / 1.95 = 0.2141 / 1.95 = 0.10979
+```
 
-**En kotu durum 1.00101** (saf span, hicbir sinyal tutmazsa) — bugunku
-1.00115 yedegimizden yine de iyi. **Plan asagi yonlu korumalidir.**
+`KATS[i] = 1.95*|rho_s_i|` oldugu icin `rho_s(bilesik)` DOGRUDAN bilinir.
+Geriye tek bilinmeyen kaliyor: **`|c|`**.
 
-### Bu sayilarin ZAYIF halkasi
+| `\|c\|` | kaynak | `rho` | NIHAI SKOR | siralama |
+|---|---|---|---|---|
+| 0.184 | n10 %90 GA alt uc | 0.0202 | 1.00081 | kucuk kazanc |
+| **0.434** | n10 nokta (n=19, **farkli nesne**) | 0.0477 | 0.99988 | kucuk kazanc |
+| 0.798 | n10 %90 GA ust uc | 0.0876 | 0.99717 | 3.-4. |
+| 1.320 | `CARPAN 0.798`'in ima ettigi | 0.1449 | 0.99047 | **2. sira** |
+| **1.986** | seviye ekseni (n=1, **dogru nesne**) | 0.2181 | 0.97697 | **1. SIRA** |
 
-`P(2.) = %84` buyuk olcude **esik tahmininden** geliyor, skorumuzdan
-degil. Rakipler son gun sicrayabilir — bu gece Ahmet Bugrahan 1.00118'den
-0.99975'e sicradi ve bizi 9. siraya dusurdu. Tepedeki durgunluk alttakinin
-durgunlugu demek DEGILDIR.
+### Iki capa, iki kusur — hicbiri digerini baskilamiyor
 
-**Ilk sonda Yol A / Yol B secimini tek atista yapacak.**
+- `|c| = 1.986` — **n=1** ama **DOGRU nesnede** olculdu (`seviye`, bir
+  OZNITELIK EKSENI; bizim demet yonlerimizle ayni turden).
+- `|c| = 0.434` — **n=19** ama **FARKLI nesnede** (gonderim FARKI yonleri).
+  `n10` kendi raporunda "oznitelik eksenlerine tasindigi GOSTERILMEMISTIR"
+  diye uyariyor.
+
+Biri kucuk ornek, digeri yanlis nesne. **4.6 kat ayrisiyorlar.**
+
+`n18`'in ek bulgusu: `CARPAN = 0.798`'in icinde `1.95` **gomulu**
+(`CARPAN = |c| * T`, seviye icin `1.9864 * 0.4016`). Yani `0.798`, `n10`'un
+reddettigi degeri tasiyor. Ayrica `m148`'in TAVAN kapisi da bagimsiz kanit
+TASIMIYOR: kapi `<=>` `T_j <= T(seviye)`, yani ayni n=1 kalibrasyonun tekrari.
+
+### DEGISMEYEN — asagi yonlu koruma
+
+**Her senaryoda skor `<= 1.00101 < 1.00115` (yedegimiz).** Gonderim hicbir
+durumda bir sey KAYBETTIRMEZ; ya kazandirir ya kazandirmaz.
+
+**D1 tam bu sayiyi olcer:** `|c| = 1.95 * rho_1 / 0.1302`, ve `sigma(|c|)
+= 0.066` -- iki capa arasinda 23 sigma var. **Tek gonderim, alti katlik
+belirsizligi kapatir.**
 
 ---
 
