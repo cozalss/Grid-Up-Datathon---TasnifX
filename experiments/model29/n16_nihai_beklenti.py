@@ -44,7 +44,23 @@ BETA_136 = 0.4832
 K_ORANI = 1.391  # n09: B=1'de K=25 / K=136
 BLOK_KAZANCI = 1.271  # n09: K=25'te B=4 / B=1
 RHO_BLOK_B4 = 0.1814  # n09: K=25, B=4, blok korelasyon birimi
-CARPAN = 0.798
+# CARPAN. n18 (31 Agu 08:30) bunu ACTI:
+#     CARPAN = rho_dik^LB/kor = (rho_dik/rho_s) * (rho_s/kor) = |c| * T
+# seviye ekseni icin |c| = 1.9864, T = 0.4016, carpim 0.7977 ~ 0.798.
+# YANI 0.798IN ICINDE 1.95 GOMULU -- ve n10 tam o degeri reddetmisti
+# (P(|c| >= 1.95) = 0.0004). Ustelik UC YOLUN UCU DE ayni |c| bacagina
+# dayaniyor: BAGIMSIZ KANIT SAYISI UCTEN BIRE dusuyor.
+#
+# IKI CAPA CELISIYOR ve hicbiri digerini baskilamiyor:
+#   |c| = 1.986  n=1   ama DOGRU nesnede (OZNITELIK EKSENI, seviye)
+#   |c| = 0.434  n=19  ama FARKLI nesnede (GONDERIM FARKI yonleri;
+#                      n10 kendisi oznitelik eksenlerine tasindigi
+#                      GOSTERILMEMISTIR diye uyariyor)
+# Biri kucuk ornek, digeri yanlis nesne. 4.6 kat ayrisiyorlar.
+# Kirilganlik kaniti: rho_s(seviye) belgelerde +0.0156 iken simdi -0.0153
+# (ISARET DONMUS) ve T(seviye) LOO da %11 foldda isaret degistiriyor.
+CARPAN = 0.798  # UST capa (|c|=1.986, n=1, dogru nesne)
+CARPAN_DUZ = 0.166  # ALT capa (|c|=0.434 ile duzeltilmis, n=19, farkli nesne)
 
 rng = np.random.default_rng(7)
 
@@ -128,6 +144,7 @@ print(
 )
 SON = {}
 for ad, rho in [
+    ("YOL Bd (CARPAN duz.) -- EN ALT", rng.uniform(0.1478, 0.1814, S) * CARPAN_DUZ),
     ("YOL C (|c| @ K=25)  -- ALT", rho_C),
     ("YOL B (CARPAN)      -- MERKEZ", rho_B),
     ("YOL A (|c| @ K=136) -- UST", rho_A),
