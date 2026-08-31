@@ -1,0 +1,86 @@
+{
+ "aciklama": "n20 -- |c| = |rho_dik|/|rho_s| OZNITELIK EKSENLERINDE olculdu",
+ "yontem": {
+  "rho_dik": "LB skorundan EXACT: L=(M0+Q-P^2)/2, sonra LOO span artigi",
+  "rho_s": "ayni eksenin span ici parcasi; TEMIZ span (eksenin kendi sondasi CIKARILMIS)",
+  "eksen_dogrulama": "gonderimin dik yonu ile eksenin dik yonu kosinusu"
+ },
+ "n_nokta": 2,
+ "neden_sadece_2": "Kaggle gonderim gecmisi (salt okuma) 30 satir / 29 dosya; bunlardan YALNIZ 2'si bir oznitelik ekseninin dik bileseni boyunca hareket eden sondadir (YP_seviye, K_yenibas). b1/b2/b3, b4/b5/b6, g7_span_tau3, q1*, YP_guc, YP_haftasonu, YP_seviye2, YP_bolge_*, K_PROBE_* dosyalari submissions/ altinda VAR ama LB'ye HIC GONDERILMEMIS; LB skoru olmadan rho_dik cozulemez.",
+ "noktalar": {
+  "seviye": {
+   "sonda": "tuketim_YP_seviye.csv",
+   "LB": 1.00115,
+   "kosinus_denetimi": 0.9943789891537126,
+   "rho_dik": -0.03030397529169965,
+   "rho_s_exact": 0.015499260162314937,
+   "rho_s_m148_buzmeli": 0.015910721939293694,
+   "c_exact": 1.9551885041184776,
+   "c_m148": 1.9046260381724012,
+   "dik_pay": 0.656,
+   "saglamlik": "YUKSEK",
+   "span_varyantlari": {
+    "TEMEL": 1.955188504118466,
+    "y40 (TURETILMIS L) CIKARILDI": 1.9550363657207208,
+    "s3y40 CIKARILDI": 1.9399601395248565,
+    "y40 + s3y40 CIKARILDI": 1.2465882480075343,
+    "yalniz LB'de OLCULMUSLER": 1.9550363657207208,
+    "en zayif 5 yon CIKARILDI": 1.9618477741784541
+   },
+   "L_gurultusu_90": [
+    1.8298507288853938,
+    2.086971703304286
+   ]
+  },
+  "yenibaslangic": {
+   "sonda": "tuketim_K_yenibas.csv",
+   "LB": 1.00191,
+   "eksen_dosyasi": "tuketim_KES_yenibaslangic.csv",
+   "kosinus_denetimi": 0.9982336011473025,
+   "rho_dik": -0.0025867768993670087,
+   "rho_s_exact": 0.0023729107817145136,
+   "rho_s_m148_buzmeli": -0.005819478691584918,
+   "c_exact": 1.0901281747719014,
+   "c_m148": 0.4445031997638447,
+   "dik_pay": 0.87,
+   "saglamlik": "DUSUK",
+   "zayiflik": "rho_dik SNR 3.1; rho_s tahminciye bagli, ISARET DONUYOR",
+   "span_varyantlari": {
+    "TEMEL": 1.0901281747719238,
+    "y40 (TURETILMIS L) CIKARILDI": 1.0975661237374996,
+    "s3y40 CIKARILDI": 0.9929005302604103,
+    "y40 + s3y40 CIKARILDI": 10.554581311169335,
+    "yalniz LB'de OLCULMUSLER": 1.0975661237374996,
+    "en zayif 5 yon CIKARILDI": 12.215554449708847
+   },
+   "L_gurultusu_90": [
+    0.5675331455659592,
+    1.55266057807848
+   ]
+  }
+ },
+ "b_buzme_koprusu": {
+  "medyan": 0.7920830765310041,
+  "kapi_gecen_medyan": 0.7934196052463458
+ },
+ "c_nokta_m148_paydasi": 0.9201154103269693,
+ "c_nokta_exact_payda": 1.4599335859311136,
+ "c_durust_aralik": [
+  0.4445031997638447,
+  1.9046260381724012
+ ],
+ "guven_araligi_uretilemedi": "n=2; t_{0.95,1}=6.31 araligi anlamsizca aciyor",
+ "skorlar": {
+  "KOTU  = nokta 2 (yenibaslangic)": 0.9998225106547365,
+  "MERKEZ = geometrik ortalama n=2": 0.9959021341560301,
+  "exact payda geo ort": 0.988095634710871,
+  "IYI   = nokta 1 (seviye)": 0.9789261924547322,
+  "[referans] n10 gonderim farklari": 0.9998781348957684,
+  "[referans] m148/m113 mevcut capa": 0.9769749008669204
+ },
+ "eski_capalar": {
+  "m148_m113": 1.986,
+  "n10_gonderim_farklari": 0.434
+ },
+ "hukum": "1.986 ve 0.434'un ayrismasi aritmetik hata DEGIL. 1.986 seviye ekseninde dogrulandi (1.905); elimizdeki TEK DIGER oznitelik ekseni ise 0.445 veriyor -- 0.434 capasiyla neredeyse ayni. Ayrisma EKSENLER ARASI GERCEK DEGISKENLIKTIR. 40 eksenlik bir demet icin beklenti eksenler arasi ortalamaya (0.92) capalanmali, en iyi tek eksene degil."
+}
