@@ -103,6 +103,18 @@ rho_A = c * BETA_136 / 1.95 * K_ORANI * BLOK_KAZANCI
 # belirsizlik olarak kullaniyoruz.
 rb = rng.uniform(0.1478, 0.1814, S) * CARPAN
 rho_B = rb
+# YOL C: |c| capasi ama K=25'te DOGRUDAN (n06_kappa.py'nin kullandigi yol).
+#   rho_LB = |c| * ||BETA_25|| / 1.95 * blok_kazanci
+# Yol A ile Yol C ARASINDAKI FARK, |c| formulunun hangi ||BETA||'da
+# capalandigidir. Formul dogrusaldir ama n09 dogrusalligi CURUTTU:
+#   ||BETA||  0.2141 -> 0.4788  (x2.24)
+#   realized  0.1427 -> 0.1026  (x0.72)
+# Yani realized ||BETA|| ile BUYUMUYOR, KUCULUYOR. O halde |c|'yi iki
+# ucdan birine uygulamak keyfidir ve ikisi 3 KAT farkli cevap verir.
+# Bu yuzden Yol A ve Yol C, |c| yaklasiminin BELIRSIZLIK SINIRLARIDIR,
+# ayri tahminler degil.
+BETA_25 = 0.2141
+rho_C = c * BETA_25 / 1.95 * BLOK_KAZANCI
 
 print(f"|c|           = {C_MID:.3f}  %90 GA [{C_LO:.3f}, {C_HI:.3f}]   (n10 OLCULDU)")
 print(f"K orani B=1   = {K_ORANI}   (n09 OLCULDU)")
@@ -116,9 +128,9 @@ print(
 )
 SON = {}
 for ad, rho in [
-    ("YOL B (CARPAN) -- TABAN", rho_B),
-    ("YOL A (|c|)    -- UST", rho_A),
-    ("KARISIM %50/%50", np.where(rng.random(S) < 0.5, rho_A, rho_B)),
+    ("YOL C (|c| @ K=25)  -- ALT", rho_C),
+    ("YOL B (CARPAN)      -- MERKEZ", rho_B),
+    ("YOL A (|c| @ K=136) -- UST", rho_A),
 ]:
     t2 = np.minimum(rho**2, TABAN_MSE - 1e-6)
     sk = np.sqrt(np.maximum(TABAN_MSE - t2, 1e-9))
@@ -141,17 +153,22 @@ for ad, rho in [
 # Tek bir P(2.) yuzdesi yaniltici: sayinin buyuk kismi ESIK varsayimindan
 # geliyor, skorumuzdan degil. Uc esik senaryosunu ACIKCA ayiralim.
 print("\nESIK SENARYOSUNA GORE P(2. sira):")
-print(f"{'esik senaryosu':>34s} {'esik':>9s} {'gereken rho':>12s} {'taban':>7s} {'ust':>7s}")
+print(
+    f"{'esik senaryosu':>34s} {'esik':>9s} {'gereken rho':>12s} {'alt':>7s} {'merkez':>7s} {'ust':>7s}"
+)
 for _ad, _e in [
     ("esik BUGUNKU yerinde kalirsa", 0.99536),
     ("egri tahmini (sicramasiz)", 0.99282),
     ("bir rakip 0.009 daha SICRARSA", 0.98382),
 ]:
     _ger = float(np.sqrt(max(TABAN_MSE - _e * _e, 0)))
+    _pc = float((np.sqrt(np.maximum(TABAN_MSE - rho_C**2, 1e-9)) <= _e).mean())
     _pb = float((np.sqrt(np.maximum(TABAN_MSE - rho_B**2, 1e-9)) <= _e).mean())
     _pa = float((np.sqrt(np.maximum(TABAN_MSE - rho_A**2, 1e-9)) <= _e).mean())
-    print(f"{_ad:>34s} {_e:9.5f} {_ger:12.4f} {100 * _pb:6.1f}% {100 * _pa:6.1f}%")
-print("  (taban = Yol B / CARPAN capasi, ust = Yol A / |c| capasi)")
+    print(
+        f"{_ad:>34s} {_e:9.5f} {_ger:12.4f} {100 * _pc:6.1f}% {100 * _pb:6.1f}% {100 * _pa:6.1f}%"
+    )
+print("  (alt = Yol C, merkez = Yol B / CARPAN, ust = Yol A)")
 
 print("\n  En kotu durum 1.00101 (saf span) -- bugunku 1.00115 yedegimizden IYI.")
 print("  ILK SONDA GELINCE bu tablo yeniden kurulacak: olculen rho_1,")
