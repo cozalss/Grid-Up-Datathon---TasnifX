@@ -1,0 +1,1629 @@
+{
+ "son_islem": "scripts/son_islem.py -- r' = ort + beta*(r-ort), YALNIZ soguk satirlarda",
+ "tohumlar": [
+  1000,
+  1001,
+  1002
+ ],
+ "harmanlar": {
+  "URETIM_cat": [
+   1.0,
+   0.0,
+   0.0
+  ],
+  "ESIT": [
+   0.3333333333333333,
+   0.3333333333333333,
+   0.3333333333333333
+  ],
+  "ESKI_3_1_1": [
+   0.6,
+   0.2,
+   0.2
+  ],
+  "CATSIZ_xgb_lgbm": [
+   0.0,
+   0.5,
+   0.5
+  ],
+  "yalniz_xgb": [
+   0.0,
+   1.0,
+   0.0
+  ],
+  "yalniz_lgbm": [
+   0.0,
+   0.0,
+   1.0
+  ]
+ },
+ "test_kohortu": {
+  "hucre_sayisi": 159,
+  "guc_medyan": 630.0,
+  "pg_75_90_pay": 0.8228883177894664,
+  "kova12_pay": 0.4010885968844913
+ },
+ "blok_kohort_kapsami": {
+  "yaz25": 0.9011,
+  "guz25": 0.925,
+  "kis26": 0.9994
+ },
+ "beta_blok_disi": {
+  "URETIM_cat": {
+   "ham": {
+    "yaz25": 0.9,
+    "guz25": 1.0,
+    "kis26": 1.0
+   },
+   "agr": {
+    "yaz25": 0.6,
+    "guz25": 0.9,
+    "kis26": 1.0
+   },
+   "pg": {
+    "yaz25": 0.9,
+    "guz25": 0.95,
+    "kis26": 1.0
+   }
+  },
+  "ESIT": {
+   "ham": {
+    "yaz25": 0.75,
+    "guz25": 0.9,
+    "kis26": 1.0
+   },
+   "agr": {
+    "yaz25": 0.6,
+    "guz25": 0.85,
+    "kis26": 1.0
+   },
+   "pg": {
+    "yaz25": 0.75,
+    "guz25": 1.0,
+    "kis26": 1.0
+   }
+  },
+  "ESKI_3_1_1": {
+   "ham": {
+    "yaz25": 0.85,
+    "guz25": 1.0,
+    "kis26": 1.0
+   },
+   "agr": {
+    "yaz25": 0.65,
+    "guz25": 0.95,
+    "kis26": 1.0
+   },
+   "pg": {
+    "yaz25": 0.9,
+    "guz25": 1.0,
+    "kis26": 1.0
+   }
+  },
+  "CATSIZ_xgb_lgbm": {
+   "ham": {
+    "yaz25": 0.55,
+    "guz25": 0.75,
+    "kis26": 1.0
+   },
+   "agr": {
+    "yaz25": 0.5,
+    "guz25": 0.7,
+    "kis26": 0.9
+   },
+   "pg": {
+    "yaz25": 0.6,
+    "guz25": 0.8,
+    "kis26": 1.0
+   }
+  },
+  "yalniz_xgb": {
+   "ham": {
+    "yaz25": 0.55,
+    "guz25": 0.7,
+    "kis26": 1.0
+   },
+   "agr": {
+    "yaz25": 0.5,
+    "guz25": 0.7,
+    "kis26": 0.9
+   },
+   "pg": {
+    "yaz25": 0.6,
+    "guz25": 0.8,
+    "kis26": 1.0
+   }
+  },
+  "yalniz_lgbm": {
+   "ham": {
+    "yaz25": 0.5,
+    "guz25": 0.7,
+    "kis26": 1.0
+   },
+   "agr": {
+    "yaz25": 0.5,
+    "guz25": 0.65,
+    "kis26": 0.85
+   },
+   "pg": {
+    "yaz25": 0.6,
+    "guz25": 0.75,
+    "kis26": 1.0
+   }
+  }
+ },
+ "tablo": {
+  "URETIM_cat": {
+   "yaz25": {
+    "son_islem_YOK": {
+     "ham": 2.4791648691895234,
+     "agr": 2.0623868549576296,
+     "pg": 1.8787844188719276
+    },
+    "beta060_URETIM": {
+     "ham": 2.654034603362364,
+     "agr": 2.2123263937865656,
+     "pg": 2.1355328595253007
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.9,
+      "mse": 2.506982399766844
+     },
+     "agr": {
+      "beta": 0.6,
+      "mse": 2.2123263937865656
+     },
+     "pg": {
+      "beta": 0.9,
+      "mse": 1.920414155669986
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.667997447648453,
+      "agr": 2.234374693238319,
+      "pg": 2.172414025237463
+     },
+     "1001": {
+      "ham": 2.6453277405604783,
+      "agr": 2.1869019247161314,
+      "pg": 2.141305841571221
+     },
+     "1002": {
+      "ham": 2.654629243402782,
+      "agr": 2.220763733376897,
+      "pg": 2.0993628905718436
+     }
+    }
+   },
+   "guz25": {
+    "son_islem_YOK": {
+     "ham": 2.880785810844782,
+     "agr": 1.909065945421802,
+     "pg": 1.5640888986769519
+    },
+    "beta060_URETIM": {
+     "ham": 2.9615152991332687,
+     "agr": 1.9005777558997858,
+     "pg": 1.7533643721336332
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 1.0,
+      "mse": 2.880785810844782
+     },
+     "agr": {
+      "beta": 0.9,
+      "mse": 1.8952970515650176
+     },
+     "pg": {
+      "beta": 0.95,
+      "mse": 1.5808793896767728
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.9572684009804586,
+      "agr": 1.9093762716022253,
+      "pg": 1.7284024690088997
+     },
+     "1001": {
+      "ham": 2.9710739784979228,
+      "agr": 1.9024208959114066,
+      "pg": 1.7722503337431137
+     },
+     "1002": {
+      "ham": 2.962720365570168,
+      "agr": 1.9023914230838768,
+      "pg": 1.768425245040503
+     }
+    }
+   },
+   "kis26": {
+    "son_islem_YOK": {
+     "ham": 3.380602856765181,
+     "agr": 3.341681021193796,
+     "pg": 2.1989435199925214
+    },
+    "beta060_URETIM": {
+     "ham": 3.3344581414843035,
+     "agr": 3.242867212431832,
+     "pg": 2.063503817005566
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 1.0,
+      "mse": 3.380602856765181
+     },
+     "agr": {
+      "beta": 1.0,
+      "mse": 3.341681021193796
+     },
+     "pg": {
+      "beta": 1.0,
+      "mse": 2.1989435199925214
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 3.3340778871370835,
+      "agr": 3.2256840155325768,
+      "pg": 2.0389149085493656
+     },
+     "1001": {
+      "ham": 3.345630309643035,
+      "agr": 3.255841576100412,
+      "pg": 2.0956732007319996
+     },
+     "1002": {
+      "ham": 3.3333844915058606,
+      "agr": 3.2569217715294636,
+      "pg": 2.0660400797096314
+     }
+    }
+   }
+  },
+  "ESIT": {
+   "yaz25": {
+    "son_islem_YOK": {
+     "ham": 2.058854125225204,
+     "agr": 1.8299558569185868,
+     "pg": 1.4620931944025783
+    },
+    "beta060_URETIM": {
+     "ham": 2.3532483539733704,
+     "agr": 2.0630239654361104,
+     "pg": 1.8665195416983402
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.75,
+      "mse": 2.2146176024160247
+     },
+     "agr": {
+      "beta": 0.6,
+      "mse": 2.0630239654361104
+     },
+     "pg": {
+      "beta": 0.75,
+      "mse": 1.6866473898769443
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.3713199338057183,
+      "agr": 2.0729874912912134,
+      "pg": 1.8815553543459822
+     },
+     "1001": {
+      "ham": 2.3445355091657754,
+      "agr": 2.042724192766937,
+      "pg": 1.8623316461259578
+     },
+     "1002": {
+      "ham": 2.3512092253366155,
+      "agr": 2.0794439553113366,
+      "pg": 1.8610576087348845
+     }
+    }
+   },
+   "guz25": {
+    "son_islem_YOK": {
+     "ham": 2.585094046137946,
+     "agr": 1.6920501885024395,
+     "pg": 1.329653189060326
+    },
+    "beta060_URETIM": {
+     "ham": 2.7223052746999468,
+     "agr": 1.7082571818388863,
+     "pg": 1.5146706030042798
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.9,
+      "mse": 2.603952792692132
+     },
+     "agr": {
+      "beta": 0.85,
+      "mse": 1.6732365742877844
+     },
+     "pg": {
+      "beta": 1.0,
+      "mse": 1.329653189060326
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.724323130515178,
+      "agr": 1.730760322652125,
+      "pg": 1.5128607195205594
+     },
+     "1001": {
+      "ham": 2.7228890801990295,
+      "agr": 1.678224274679336,
+      "pg": 1.5006957620696728
+     },
+     "1002": {
+      "ham": 2.734708477468232,
+      "agr": 1.7295593983242579,
+      "pg": 1.543372214182088
+     }
+    }
+   },
+   "kis26": {
+    "son_islem_YOK": {
+     "ham": 3.6334060606174567,
+     "agr": 3.4696162172040137,
+     "pg": 2.3538543485271024
+    },
+    "beta060_URETIM": {
+     "ham": 3.4419881194990523,
+     "agr": 3.280668877385664,
+     "pg": 2.129727207787394
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 1.0,
+      "mse": 3.6334060606174567
+     },
+     "agr": {
+      "beta": 1.0,
+      "mse": 3.4696162172040137
+     },
+     "pg": {
+      "beta": 1.0,
+      "mse": 2.3538543485271024
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 3.429799766856285,
+      "agr": 3.272911977086796,
+      "pg": 2.1129627939897357
+     },
+     "1001": {
+      "ham": 3.4668100722331356,
+      "agr": 3.2927640749692326,
+      "pg": 2.152438949995889
+     },
+     "1002": {
+      "ham": 3.445387202665482,
+      "agr": 3.2923982114813546,
+      "pg": 2.1422070705396736
+     }
+    }
+   }
+  },
+  "ESKI_3_1_1": {
+   "yaz25": {
+    "son_islem_YOK": {
+     "ham": 2.174836980100506,
+     "agr": 1.8904175096917186,
+     "pg": 1.5821730435684715
+    },
+    "beta060_URETIM": {
+     "ham": 2.4542155361914793,
+     "agr": 2.1107549397779666,
+     "pg": 1.9571617401042458
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.85,
+      "mse": 2.2566357684574574
+     },
+     "agr": {
+      "beta": 0.65,
+      "mse": 2.075546059468264
+     },
+     "pg": {
+      "beta": 0.9,
+      "mse": 1.6547747660576826
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.4699011070059216,
+      "agr": 2.125919611338732,
+      "pg": 1.9814387170110725
+     },
+     "1001": {
+      "ham": 2.4454211662304473,
+      "agr": 2.08735528724998,
+      "pg": 1.9548361490951975
+     },
+     "1002": {
+      "ham": 2.451701875596845,
+      "agr": 2.1224044842531007,
+      "pg": 1.938907050062654
+     }
+    }
+   },
+   "guz25": {
+    "son_islem_YOK": {
+     "ham": 2.664867773237744,
+     "agr": 1.7305929601002301,
+     "pg": 1.3776244257402661
+    },
+    "beta060_URETIM": {
+     "ham": 2.8040715969775567,
+     "agr": 1.7678255011891968,
+     "pg": 1.5935580009730834
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 1.0,
+      "mse": 2.664867773237744
+     },
+     "agr": {
+      "beta": 0.95,
+      "mse": 1.7264081667594353
+     },
+     "pg": {
+      "beta": 1.0,
+      "mse": 1.3776244257402661
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.802467384765167,
+      "agr": 1.783077873475885,
+      "pg": 1.5807364201999197
+     },
+     "1001": {
+      "ham": 2.807397375185725,
+      "agr": 1.750657199451441,
+      "pg": 1.5925613389315165
+     },
+     "1002": {
+      "ham": 2.80970190967115,
+      "agr": 1.7791532817935374,
+      "pg": 1.6148220046642887
+     }
+    }
+   },
+   "kis26": {
+    "son_islem_YOK": {
+     "ham": 3.4864288702448816,
+     "agr": 3.378511570209175,
+     "pg": 2.2446154988158336
+    },
+    "beta060_URETIM": {
+     "ham": 3.381836545850239,
+     "agr": 3.251196862858158,
+     "pg": 2.085820265590071
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 1.0,
+      "mse": 3.4864288702448816
+     },
+     "agr": {
+      "beta": 1.0,
+      "mse": 3.378511570209175
+     },
+     "pg": {
+      "beta": 1.0,
+      "mse": 2.2446154988158336
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 3.3729153806319516,
+      "agr": 3.2367317487829523,
+      "pg": 2.0634414267819423
+     },
+     "1001": {
+      "ham": 3.398234090670602,
+      "agr": 3.262847509858543,
+      "pg": 2.111244403069669
+     },
+     "1002": {
+      "ham": 3.3833454875850286,
+      "agr": 3.2631741135836925,
+      "pg": 2.09329786188731
+     }
+    }
+   }
+  },
+  "CATSIZ_xgb_lgbm": {
+   "yaz25": {
+    "son_islem_YOK": {
+     "ham": 2.0116045236345204,
+     "agr": 1.815332104194822,
+     "pg": 1.3993620841111736
+    },
+    "beta060_URETIM": {
+     "ham": 2.2633155965835265,
+     "agr": 2.0258414918806493,
+     "pg": 1.7850226600501071
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.55,
+      "mse": 2.317824981726445
+     },
+     "agr": {
+      "beta": 0.5,
+      "mse": 2.1090859740339223
+     },
+     "pg": {
+      "beta": 0.6,
+      "mse": 1.7850226600501071
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.285761902937134,
+      "agr": 2.028615017603046,
+      "pg": 1.787563849186187
+     },
+     "1001": {
+      "ham": 2.2548620043847016,
+      "agr": 2.011385321469322,
+      "pg": 1.7824857209310314
+     },
+     "1002": {
+      "ham": 2.264734706823021,
+      "agr": 2.0511821359174935,
+      "pg": 1.796507065963323
+     }
+    }
+   },
+   "guz25": {
+    "son_islem_YOK": {
+     "ham": 2.557569972481205,
+     "agr": 1.7343658449488655,
+     "pg": 1.3555698566479824
+    },
+    "beta060_URETIM": {
+     "ham": 2.6461930359074075,
+     "agr": 1.6663466144148409,
+     "pg": 1.4471678111987836
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.75,
+      "mse": 2.5842575529993317
+     },
+     "agr": {
+      "beta": 0.7,
+      "mse": 1.6547609890061774
+     },
+     "pg": {
+      "beta": 0.8,
+      "mse": 1.354815656318637
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.6548312888329235,
+      "agr": 1.7012299380404488,
+      "pg": 1.4624054670138131
+     },
+     "1001": {
+      "ham": 2.6449393320897747,
+      "agr": 1.6200188506905597,
+      "pg": 1.4172817631314927
+     },
+     "1002": {
+      "ham": 2.6713629179105647,
+      "agr": 1.7042025310524733,
+      "pg": 1.488881392069021
+     }
+    }
+   },
+   "kis26": {
+    "son_islem_YOK": {
+     "ham": 3.9031073776425473,
+     "agr": 3.658366842055221,
+     "pg": 2.5790426324738793
+    },
+    "beta060_URETIM": {
+     "ham": 3.5493143036405295,
+     "agr": 3.3444176740687444,
+     "pg": 2.217268859067657
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 1.0,
+      "mse": 3.9031073776425473
+     },
+     "agr": {
+      "beta": 0.9,
+      "mse": 3.5585944010816193
+     },
+     "pg": {
+      "beta": 1.0,
+      "mse": 2.5790426324738793
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 3.5357720640179244,
+      "agr": 3.350554219370641,
+      "pg": 2.2121811524338093
+     },
+     "1001": {
+      "ham": 3.590225192673479,
+      "agr": 3.3585614667885206,
+      "pg": 2.2385975971924066
+     },
+     "1002": {
+      "ham": 3.5552655289221815,
+      "agr": 3.357116187447629,
+      "pg": 2.2379231044557764
+     }
+    }
+   }
+  },
+  "yalniz_xgb": {
+   "yaz25": {
+    "son_islem_YOK": {
+     "ham": 2.117106274411688,
+     "agr": 1.7891892692203413,
+     "pg": 1.3851766072622156
+    },
+    "beta060_URETIM": {
+     "ham": 2.3149876868216595,
+     "agr": 2.0050592024673497,
+     "pg": 1.7843283921529967
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.55,
+      "mse": 2.3641088387943423
+     },
+     "agr": {
+      "beta": 0.5,
+      "mse": 2.0909805554371768
+     },
+     "pg": {
+      "beta": 0.6,
+      "mse": 1.7843283921529967
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.3439776828753796,
+      "agr": 1.9546677514636017,
+      "pg": 1.7362343294611415
+     },
+     "1001": {
+      "ham": 2.325832596681265,
+      "agr": 2.040977229375134,
+      "pg": 1.8054103776644423
+     },
+     "1002": {
+      "ham": 2.3057748001049982,
+      "agr": 2.0485271656715964,
+      "pg": 1.8364231520096925
+     }
+    }
+   },
+   "guz25": {
+    "son_islem_YOK": {
+     "ham": 2.601460215053283,
+     "agr": 1.7514573514659781,
+     "pg": 1.393280273380023
+    },
+    "beta060_URETIM": {
+     "ham": 2.6775059764010996,
+     "agr": 1.6766698313493889,
+     "pg": 1.4613430773134874
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.7,
+      "mse": 2.6362009049960897
+     },
+     "agr": {
+      "beta": 0.7,
+      "mse": 1.6669598523618518
+     },
+     "pg": {
+      "beta": 0.8,
+      "mse": 1.379506532315205
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.70462946678948,
+      "agr": 1.706302181436601,
+      "pg": 1.494661494657179
+     },
+     "1001": {
+      "ham": 2.6732418792930455,
+      "agr": 1.658077357539752,
+      "pg": 1.4442551166370043
+     },
+     "1002": {
+      "ham": 2.680480283153292,
+      "agr": 1.6956499040200486,
+      "pg": 1.4709330444990987
+     }
+    }
+   },
+   "kis26": {
+    "son_islem_YOK": {
+     "ham": 3.90375230363316,
+     "agr": 3.6481361394736855,
+     "pg": 2.5952936329253626
+    },
+    "beta060_URETIM": {
+     "ham": 3.5442166016304197,
+     "agr": 3.334859171993869,
+     "pg": 2.222225675140762
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 1.0,
+      "mse": 3.90375230363316
+     },
+     "agr": {
+      "beta": 0.9,
+      "mse": 3.5484744440199396
+     },
+     "pg": {
+      "beta": 1.0,
+      "mse": 2.5952936329253626
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 3.5414642606457543,
+      "agr": 3.3312106307644633,
+      "pg": 2.234672572469962
+     },
+     "1001": {
+      "ham": 3.5920176987220773,
+      "agr": 3.3461711864453028,
+      "pg": 2.2155169484234705
+     },
+     "1002": {
+      "ham": 3.5381603991522237,
+      "agr": 3.36158442617565,
+      "pg": 2.256184697157861
+     }
+    }
+   }
+  },
+  "yalniz_lgbm": {
+   "yaz25": {
+    "son_islem_YOK": {
+     "ham": 1.974561090293411,
+     "agr": 1.8886770266953559,
+     "pg": 1.4505358546129703
+    },
+    "beta060_URETIM": {
+     "ham": 2.2368489452320004,
+     "agr": 2.0640947756471584,
+     "pg": 1.7988788177046957
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.5,
+      "mse": 2.354012433536349
+     },
+     "agr": {
+      "beta": 0.5,
+      "mse": 2.139557003524519
+     },
+     "pg": {
+      "beta": 0.6,
+      "mse": 1.7988788177046957
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.2666512776215786,
+      "agr": 2.1363698666054285,
+      "pg": 1.8649705420403195
+     },
+     "1001": {
+      "ham": 2.2249432345731033,
+      "agr": 2.009144298823885,
+      "pg": 1.7763640090391652
+     },
+     "1002": {
+      "ham": 2.25293645452692,
+      "agr": 2.0722790645526685,
+      "pg": 1.778399407403906
+     }
+    }
+   },
+   "guz25": {
+    "son_islem_YOK": {
+     "ham": 2.5840157065310185,
+     "agr": 1.7734214934911052,
+     "pg": 1.3758782063010644
+    },
+    "beta060_URETIM": {
+     "ham": 2.6402519153836015,
+     "agr": 1.6760584147047595,
+     "pg": 1.453692962204653
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 0.7,
+      "mse": 2.6004558647982488
+     },
+     "agr": {
+      "beta": 0.65,
+      "mse": 1.6704460925149747
+     },
+     "pg": {
+      "beta": 0.75,
+      "mse": 1.3798327555346508
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 2.6570581880976363,
+      "agr": 1.7341053407381515,
+      "pg": 1.4789549268736442
+     },
+     "1001": {
+      "ham": 2.6658994652084504,
+      "agr": 1.6288859026191647,
+      "pg": 1.4324126179088976
+     },
+     "1002": {
+      "ham": 2.7073859322539158,
+      "agr": 1.7569054083674505,
+      "pg": 1.5472521662998546
+     }
+    }
+   },
+   "kis26": {
+    "son_islem_YOK": {
+     "ham": 4.021110817492098,
+     "agr": 3.762160708710451,
+     "pg": 2.661885301124867
+    },
+    "beta060_URETIM": {
+     "ham": 3.5972123615716094,
+     "agr": 3.387695094177952,
+     "pg": 2.2479765595458177
+    },
+    "beta_blok_disi": {
+     "ham": {
+      "beta": 1.0,
+      "mse": 4.021110817492098
+     },
+     "agr": {
+      "beta": 0.85,
+      "mse": 3.5916898414626637
+     },
+     "pg": {
+      "beta": 1.0,
+      "mse": 2.661885301124867
+     }
+    },
+    "tohum_bazinda_beta060": {
+     "1000": {
+      "ham": 3.593358122964911,
+      "agr": 3.4365335976997557,
+      "pg": 2.254010158149766
+     },
+     "1001": {
+      "ham": 3.653201059838325,
+      "agr": 3.4197704513986817,
+      "pg": 2.3106484616719523
+     },
+     "1002": {
+      "ham": 3.640355554856026,
+      "agr": 3.410130104229058,
+      "pg": 2.289877728651483
+     }
+    }
+   }
+  }
+ },
+ "karsilastirma_vs_URETIM_cat": {
+  "ESIT": {
+   "son_islem_YOK": {
+    "ham": {
+     "yaz25": 0.420311,
+     "guz25": 0.295692,
+     "kis26": -0.252803,
+     "ORT_dMSE": 0.1544,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.034215
+    },
+    "agr": {
+     "yaz25": 0.232431,
+     "guz25": 0.217016,
+     "kis26": -0.127935,
+     "ORT_dMSE": 0.107171,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.023749
+    },
+    "pg": {
+     "yaz25": 0.416691,
+     "guz25": 0.234436,
+     "kis26": -0.154911,
+     "ORT_dMSE": 0.165405,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.036654
+    }
+   },
+   "beta060_URETIM": {
+    "ham": {
+     "yaz25": 0.300786,
+     "guz25": 0.23921,
+     "kis26": -0.10753,
+     "ORT_dMSE": 0.144155,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.031945
+    },
+    "agr": {
+     "yaz25": 0.149302,
+     "guz25": 0.192321,
+     "kis26": -0.037802,
+     "ORT_dMSE": 0.101274,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.022442
+    },
+    "pg": {
+     "yaz25": 0.269013,
+     "guz25": 0.238694,
+     "kis26": -0.066223,
+     "ORT_dMSE": 0.147161,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.032611
+    }
+   },
+   "beta_blok_disi": {
+    "ham": {
+     "yaz25": 0.292365,
+     "guz25": 0.276833,
+     "kis26": -0.252803,
+     "ORT_dMSE": 0.105465,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.023371
+    },
+    "agr": {
+     "yaz25": 0.149302,
+     "guz25": 0.22206,
+     "kis26": -0.127935,
+     "ORT_dMSE": 0.081143,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.017981
+    },
+    "pg": {
+     "yaz25": 0.233767,
+     "guz25": 0.251226,
+     "kis26": -0.154911,
+     "ORT_dMSE": 0.110027,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.024382
+    }
+   },
+   "tohum_bazinda_agr_dMSE": {
+    "yaz25": {
+     "1000": 0.161387,
+     "1001": 0.144178,
+     "1002": 0.14132
+    },
+    "guz25": {
+     "1000": 0.178616,
+     "1001": 0.224197,
+     "1002": 0.172832
+    },
+    "kis26": {
+     "1000": -0.047228,
+     "1001": -0.036922,
+     "1002": -0.035476
+    }
+   }
+  },
+  "ESKI_3_1_1": {
+   "son_islem_YOK": {
+    "ham": {
+     "yaz25": 0.304328,
+     "guz25": 0.215918,
+     "kis26": -0.105826,
+     "ORT_dMSE": 0.13814,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.030612
+    },
+    "agr": {
+     "yaz25": 0.171969,
+     "guz25": 0.178473,
+     "kis26": -0.036831,
+     "ORT_dMSE": 0.104537,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.023165
+    },
+    "pg": {
+     "yaz25": 0.296611,
+     "guz25": 0.186464,
+     "kis26": -0.045672,
+     "ORT_dMSE": 0.145801,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.03231
+    }
+   },
+   "beta060_URETIM": {
+    "ham": {
+     "yaz25": 0.199819,
+     "guz25": 0.157444,
+     "kis26": -0.047378,
+     "ORT_dMSE": 0.103295,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.02289
+    },
+    "agr": {
+     "yaz25": 0.101571,
+     "guz25": 0.132752,
+     "kis26": -0.00833,
+     "ORT_dMSE": 0.075331,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.016693
+    },
+    "pg": {
+     "yaz25": 0.178371,
+     "guz25": 0.159806,
+     "kis26": -0.022316,
+     "ORT_dMSE": 0.105287,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.023332
+    }
+   },
+   "beta_blok_disi": {
+    "ham": {
+     "yaz25": 0.250347,
+     "guz25": 0.215918,
+     "kis26": -0.105826,
+     "ORT_dMSE": 0.120146,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.026624
+    },
+    "agr": {
+     "yaz25": 0.13678,
+     "guz25": 0.168889,
+     "kis26": -0.036831,
+     "ORT_dMSE": 0.089613,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.019858
+    },
+    "pg": {
+     "yaz25": 0.265639,
+     "guz25": 0.203255,
+     "kis26": -0.045672,
+     "ORT_dMSE": 0.141074,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.031262
+    }
+   },
+   "tohum_bazinda_agr_dMSE": {
+    "yaz25": {
+     "1000": 0.108455,
+     "1001": 0.099547,
+     "1002": 0.098359
+    },
+    "guz25": {
+     "1000": 0.126298,
+     "1001": 0.151764,
+     "1002": 0.123238
+    },
+    "kis26": {
+     "1000": -0.011048,
+     "1001": -0.007006,
+     "1002": -0.006252
+    }
+   }
+  },
+  "CATSIZ_xgb_lgbm": {
+   "son_islem_YOK": {
+    "ham": {
+     "yaz25": 0.46756,
+     "guz25": 0.323216,
+     "kis26": -0.522505,
+     "ORT_dMSE": 0.089424,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.019816
+    },
+    "agr": {
+     "yaz25": 0.247055,
+     "guz25": 0.1747,
+     "kis26": -0.316686,
+     "ORT_dMSE": 0.035023,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.007761
+    },
+    "pg": {
+     "yaz25": 0.479422,
+     "guz25": 0.208519,
+     "kis26": -0.380099,
+     "ORT_dMSE": 0.102614,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.022739
+    }
+   },
+   "beta060_URETIM": {
+    "ham": {
+     "yaz25": 0.390719,
+     "guz25": 0.315322,
+     "kis26": -0.214856,
+     "ORT_dMSE": 0.163728,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.036282
+    },
+    "agr": {
+     "yaz25": 0.186485,
+     "guz25": 0.234231,
+     "kis26": -0.10155,
+     "ORT_dMSE": 0.106389,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.023576
+    },
+    "pg": {
+     "yaz25": 0.35051,
+     "guz25": 0.306197,
+     "kis26": -0.153765,
+     "ORT_dMSE": 0.167647,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.037151
+    }
+   },
+   "beta_blok_disi": {
+    "ham": {
+     "yaz25": 0.189157,
+     "guz25": 0.296528,
+     "kis26": -0.522505,
+     "ORT_dMSE": -0.012273,
+     "kazanan_blok": 2,
+     "test_dMSE": -0.00272
+    },
+    "agr": {
+     "yaz25": 0.10324,
+     "guz25": 0.240536,
+     "kis26": -0.216913,
+     "ORT_dMSE": 0.042288,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.009371
+    },
+    "pg": {
+     "yaz25": 0.135391,
+     "guz25": 0.226064,
+     "kis26": -0.380099,
+     "ORT_dMSE": -0.006215,
+     "kazanan_blok": 2,
+     "test_dMSE": -0.001377
+    }
+   },
+   "tohum_bazinda_agr_dMSE": {
+    "yaz25": {
+     "1000": 0.20576,
+     "1001": 0.175517,
+     "1002": 0.169582
+    },
+    "guz25": {
+     "1000": 0.208146,
+     "1001": 0.282402,
+     "1002": 0.198189
+    },
+    "kis26": {
+     "1000": -0.12487,
+     "1001": -0.10272,
+     "1002": -0.100194
+    }
+   }
+  },
+  "yalniz_xgb": {
+   "son_islem_YOK": {
+    "ham": {
+     "yaz25": 0.362059,
+     "guz25": 0.279326,
+     "kis26": -0.523149,
+     "ORT_dMSE": 0.039412,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.008734
+    },
+    "agr": {
+     "yaz25": 0.273198,
+     "guz25": 0.157609,
+     "kis26": -0.306455,
+     "ORT_dMSE": 0.04145,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.009185
+    },
+    "pg": {
+     "yaz25": 0.493608,
+     "guz25": 0.170809,
+     "kis26": -0.39635,
+     "ORT_dMSE": 0.089355,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.019801
+    }
+   },
+   "beta060_URETIM": {
+    "ham": {
+     "yaz25": 0.339047,
+     "guz25": 0.284009,
+     "kis26": -0.209758,
+     "ORT_dMSE": 0.137766,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.030529
+    },
+    "agr": {
+     "yaz25": 0.207267,
+     "guz25": 0.223908,
+     "kis26": -0.091992,
+     "ORT_dMSE": 0.113061,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.025054
+    },
+    "pg": {
+     "yaz25": 0.351204,
+     "guz25": 0.292021,
+     "kis26": -0.158722,
+     "ORT_dMSE": 0.161501,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.035789
+    }
+   },
+   "beta_blok_disi": {
+    "ham": {
+     "yaz25": 0.142874,
+     "guz25": 0.244585,
+     "kis26": -0.523149,
+     "ORT_dMSE": -0.04523,
+     "kazanan_blok": 2,
+     "test_dMSE": -0.010023
+    },
+    "agr": {
+     "yaz25": 0.121346,
+     "guz25": 0.228337,
+     "kis26": -0.206793,
+     "ORT_dMSE": 0.04763,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.010555
+    },
+    "pg": {
+     "yaz25": 0.136086,
+     "guz25": 0.201373,
+     "kis26": -0.39635,
+     "ORT_dMSE": -0.01963,
+     "kazanan_blok": 2,
+     "test_dMSE": -0.00435
+    }
+   },
+   "tohum_bazinda_agr_dMSE": {
+    "yaz25": {
+     "1000": 0.279707,
+     "1001": 0.145925,
+     "1002": 0.172237
+    },
+    "guz25": {
+     "1000": 0.203074,
+     "1001": 0.244344,
+     "1002": 0.206742
+    },
+    "kis26": {
+     "1000": -0.105527,
+     "1001": -0.09033,
+     "1002": -0.104663
+    }
+   }
+  },
+  "yalniz_lgbm": {
+   "son_islem_YOK": {
+    "ham": {
+     "yaz25": 0.504604,
+     "guz25": 0.29677,
+     "kis26": -0.640508,
+     "ORT_dMSE": 0.053622,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.011883
+    },
+    "agr": {
+     "yaz25": 0.17371,
+     "guz25": 0.135644,
+     "kis26": -0.42048,
+     "ORT_dMSE": -0.037042,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": -0.008208
+    },
+    "pg": {
+     "yaz25": 0.428249,
+     "guz25": 0.188211,
+     "kis26": -0.462942,
+     "ORT_dMSE": 0.051172,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.01134
+    }
+   },
+   "beta060_URETIM": {
+    "ham": {
+     "yaz25": 0.417186,
+     "guz25": 0.321263,
+     "kis26": -0.262754,
+     "ORT_dMSE": 0.158565,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.035138
+    },
+    "agr": {
+     "yaz25": 0.148232,
+     "guz25": 0.224519,
+     "kis26": -0.144828,
+     "ORT_dMSE": 0.075974,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.016836
+    },
+    "pg": {
+     "yaz25": 0.336654,
+     "guz25": 0.299671,
+     "kis26": -0.184473,
+     "ORT_dMSE": 0.150618,
+     "isaret_3_3": false,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.033377
+    }
+   },
+   "beta_blok_disi": {
+    "ham": {
+     "yaz25": 0.15297,
+     "guz25": 0.28033,
+     "kis26": -0.640508,
+     "ORT_dMSE": -0.069069,
+     "kazanan_blok": 2,
+     "test_dMSE": -0.015306
+    },
+    "agr": {
+     "yaz25": 0.072769,
+     "guz25": 0.224851,
+     "kis26": -0.250009,
+     "ORT_dMSE": 0.015871,
+     "kazanan_blok": 2,
+     "test_dMSE": 0.003517
+    },
+    "pg": {
+     "yaz25": 0.121535,
+     "guz25": 0.201047,
+     "kis26": -0.462942,
+     "ORT_dMSE": -0.046787,
+     "kazanan_blok": 2,
+     "test_dMSE": -0.010368
+    }
+   },
+   "tohum_bazinda_agr_dMSE": {
+    "yaz25": {
+     "1000": 0.098005,
+     "1001": 0.177758,
+     "1002": 0.148485
+    },
+    "guz25": {
+     "1000": 0.175271,
+     "1001": 0.273535,
+     "1002": 0.145486
+    },
+    "kis26": {
+     "1000": -0.21085,
+     "1001": -0.163929,
+     "1002": -0.153208
+    }
+   }
+  }
+ },
+ "bilesik_RMSLE_ham": {
+  "URETIM_cat": {
+   "son_islem_YOK": {
+    "yaz25": 1.02141,
+    "guz25": 1.0693,
+    "kis26": 1.08587,
+    "ORT": 1.05886
+   },
+   "beta060_URETIM": {
+    "yaz25": 1.0402,
+    "guz25": 1.07764,
+    "kis26": 1.08115,
+    "ORT": 1.06633
+   }
+  },
+  "ESIT": {
+   "son_islem_YOK": {
+    "yaz25": 0.97475,
+    "guz25": 1.03821,
+    "kis26": 1.11137,
+    "ORT": 1.04144
+   },
+   "beta060_URETIM": {
+    "yaz25": 1.00765,
+    "guz25": 1.05275,
+    "kis26": 1.09212,
+    "ORT": 1.05084
+   }
+  },
+  "ESKI_3_1_1": {
+   "son_islem_YOK": {
+    "yaz25": 0.98784,
+    "guz25": 1.04669,
+    "kis26": 1.09662,
+    "ORT": 1.04372
+   },
+   "beta060_URETIM": {
+    "yaz25": 1.0187,
+    "guz25": 1.06133,
+    "kis26": 1.086,
+    "ORT": 1.05534
+   }
+  },
+  "CATSIZ_xgb_lgbm": {
+   "son_islem_YOK": {
+    "yaz25": 0.96936,
+    "guz25": 1.03527,
+    "kis26": 1.13794,
+    "ORT": 1.04752
+   },
+   "beta060_URETIM": {
+    "yaz25": 0.99772,
+    "guz25": 1.04471,
+    "kis26": 1.10295,
+    "ORT": 1.04846
+   }
+  },
+  "yalniz_xgb": {
+   "son_islem_YOK": {
+    "yaz25": 0.98135,
+    "guz25": 1.03996,
+    "kis26": 1.138,
+    "ORT": 1.0531
+   },
+   "beta060_URETIM": {
+    "yaz25": 1.00344,
+    "guz25": 1.04803,
+    "kis26": 1.10244,
+    "ORT": 1.0513
+   }
+  },
+  "yalniz_lgbm": {
+   "son_islem_YOK": {
+    "yaz25": 0.96512,
+    "guz25": 1.0381,
+    "kis26": 1.14937,
+    "ORT": 1.05086
+   },
+   "beta060_URETIM": {
+    "yaz25": 0.99477,
+    "guz25": 1.04408,
+    "kis26": 1.10775,
+    "ORT": 1.04887
+   }
+  }
+ },
+ "HUKUM": {
+  "SECILEN_ADAY": "ESKI_3_1_1 (cat 0.6 / xgb 0.2 / lgbm 0.2), SEVIYESIZ (V1) uygulama",
+  "dosya": "scratchpad/p20_harman_ESKI_3_1_1_V1_seviyesiz.csv",
+  "neden_V1_seviyesiz": "Kazanc SEVIYE ve YAPI diye ayristirildi (p20_aday.json). YAPI bileseni UC BLOKTA DA POZITIF; SEVIYE bileseni UC BLOKTA DA ZARARLI (ESIT -0.0186, 3/1/1 -0.0114 ORT). Terslik tamamen seviyeden geliyor: kis26 toplam -0.0083 = yapi +0.0157 + seviye -0.0240. Gonderim dosyasinin seviye katmani zaten LB'den cozulmus (m111 kappa, span a0+r_hat); seviyeyi bir de buradan oynatmak CIFT SAYIMDIR.",
+  "DORT_KAPI": {
+   "a_gercek_blok_CV": true,
+   "b_blok_disi_secim": "0 PARAMETRE -- harman adayi hicbir bloktan secilmedi",
+   "c_isaret_tutarli": "3/3",
+   "d_tohumla_ayakta": "9/9"
+  },
+  "onyukleme_trafo_kumeli_500": {
+   "yaz25": {
+    "dMSE_agr": 0.105828,
+    "GA95": [
+     0.032275,
+     0.189485
+    ],
+    "P_pozitif": 1.0,
+    "trafo": 678
+   },
+   "guz25": {
+    "dMSE_agr": 0.138563,
+    "GA95": [
+     0.043424,
+     0.248509
+    ],
+    "P_pozitif": 0.996,
+    "trafo": 1173
+   },
+   "kis26": {
+    "dMSE_agr": 0.015673,
+    "GA95": [
+     -0.029417,
+     0.058952
+    ],
+    "P_pozitif": 0.756,
+    "trafo": 1223
+   }
+  },
+  "ozet": {
+   "ORT_dMSE_agr": 0.086688,
+   "isaret": "3/3",
+   "GA95_blokici": [
+    0.040281,
+    0.132302
+   ],
+   "P_pozitif": 1.0,
+   "bloklar_arasi_se": 0.036743,
+   "kirpma_ORT": {
+    "K=0": 0.086688,
+    "K=5": 0.05344,
+    "K=10": 0.038687,
+    "K=25": 0.024393,
+    "K=50": 0.016352
+   },
+   "tohum_isareti_9_hucre": "9/9",
+   "test_dMSE": 0.01921,
+   "beklenen_LB_oran1.0": 0.99151,
+   "beklenen_LB_oran0.5": 0.99634,
+   "MUHAFAZAKAR_K25_test_dMSE": 0.005405,
+   "MUHAFAZAKAR_K25_LB_oran0.5": 0.9998
+  },
+  "NEDEN_ESIT_DEGIL": "ESIT daha buyuk ham kazanc veriyor (ORT +0.1199 vs +0.0867) ama iki kapida daha zayif: tohum 8/9 (kis26/1000 negatif), kis26 P(+)=0.514, ve TRAFO KIRPMASINDA kis26 isareti DONUYOR (K=25'te -0.0065). ESKI_3_1_1 K=0,5,10,25,50'nin HEPSINDE uc blokta da POZITIF.",
+  "EK_DESTEK": "3/1/1 uretimin d04243f ONCESI soguk harmaniydi; LB'de 1.01750 (o donemin birinciligi) o harmanla alindi. Yani bu bir yenilik degil, GERI DONUS -- ve geri donulen nokta LB'de olculmus.",
+  "BEKLENTI": {
+   "test_dMSE_kirpmasiz": 0.01921,
+   "LB_oran1.0": 0.99151,
+   "LB_oran0.5": 0.99634,
+   "LB_K25_kirpik_oran0.5": 0.9998,
+   "3.sira": 0.99556,
+   "yorum": "Kirpmasiz ve oran=0.5 ile 0.99634 -- 3. sirayi (0.99556) GECMIYOR, cok yakin. oran=1.0 ile 0.99151, gecer. K=25 kirpmali muhafazakar ucta 0.9998, gecmez."
+  },
+  "DURUSTLUK": [
+   "KIRPMA EN BUYUK ZAYIFLIK: kazanc kirpmayla 3-5 KAT kuculuyor (3/1/1 ORT +0.0867 -> +0.0244 K=25'te). Isaret hicbir kirpma seviyesinde donmuyor ama buyukluk agir kuyruklardan besleniyor. Kirpmasiz sayi yansiz kestirimdir; K=25 (trafolarin %4-7'si, iki uctan) agresif bir alt sinirdir. Gercek deger arada.",
+   "kis26 YAPI kazanci kucuk ve anlamsiz (+0.0157, GA95 [-0.029,+0.059], P(+)=0.756). Uc blok 'ayni yonde' ama kis26 fiilen SIFIR. Iddia 'her blokta kazandiriyor' degil, 'hicbir blokta ZARAR VERMIYOR'.",
+   "SEVIYE bileseninin uc blokta da zararli cikmasi V1'i hakli cikariyor AMA blok CV'sinde seviye tabanin (cat) ortalamasina esitlendi; gonderim dosyasinda ise dosyanin KENDI seviyesi korunuyor. Ikisi ayni islem degil -- gonderim dosyasinin seviyesi zaten LB-optimal varsayiliyor.",
+   "OLCEK KATSAYISI s=0.8132 dosyadan REGRESYONLA olculdu (yontem v27/v30'da kalibre edildi, hata +-0.04). s yanlissa uygulanan delta orantili olarak yanlis olcekte olur; s=1.0 olsaydi delta %23 daha buyuk olurdu. Bu, kazanci degil OLCEGI etkiler.",
+   "p06_test_soguk_aile.npy TOHUM 1000-1002 ortalamasidir; uretim gonderimi baska tohumlar kullandi. Tohum gurultusu sd 0.00136 -- ihmal edilebilir ama sifir degil.",
+   "SICAK taraf bu eksende HIC DEGISMIYOR; butun olcumler soguk satirlarda (test'in %22.16'si)."
+  ],
+  "REDDEDILEN_ARA_YOLLAR": "Harman izgarasinda argmin ARANMADI (p06 tam orada kirilmisti). Yalnizca 0-parametreli adaylar olculdu: cat-tekil, ESIT, 3/1/1, catsiz, yalniz-xgb, yalniz-lgbm."
+ },
+ "DUZELTILEN_ILK_OKUMA": "p20b'de 'kis26 kaybinin %104'u en kotu 5 trafodan' diye okunmustu; bu YANLIS bir cikarimdi. Oran buyuk cunku NET kucuk (pozitif ve negatif trafolar birbirini goturuyor: negatiflerin toplami -0.192, net -0.038). Kirpma merdiveni kis26 tersliginin kirpmayla KAYBOLMADIGINI, hatta hafifce BUYUDUGUNU gosterdi. kis26 tersligi GERCEK bir blok etkisidir -- ve p20d onun tamamen SEVIYE bileseninde oldugunu buldu."
+}

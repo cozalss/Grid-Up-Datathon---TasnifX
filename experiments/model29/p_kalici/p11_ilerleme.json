@@ -1,0 +1,58 @@
+{
+ "gorev": "SOGUK tarafta p06 uzerine EK kazanc",
+ "taban": {
+  "soguk_harman_w": [
+   0.05,
+   0.35,
+   0.6
+  ],
+  "yaz25_soguk_ham": 1.41269,
+  "yaz25_soguk_test_agirlikli": 1.32315,
+  "yaz25_sicak": 0.80319
+ },
+ "KOHORT_UYARISI": {
+  "yaz25_ess_trafo": 34.3,
+  "yaz25_trafo_toplam": 678,
+  "yaz25_PG_75_90_trafo": 30,
+  "guz25_ess_trafo": null,
+  "kis26_ess_trafo": 192.7,
+  "not": "yaz25 agirlikli olcum 34 etkin trafoya dayaniyor -- cok zayif"
+ },
+ "durum": {
+  "fikir5_ufuk_ofset": "REDDEDILDI -- blok-disi uygulamada 3/3 blokta KAYIP; ufuk artik profili yaz25 ve kis26'da TERS isaretli",
+  "fikir4_komsu_havuzu_harmani": "REDDEDILDI -- capa tek basina 1.70+ (model 1.41); yaz25 blok-ici optimum agirlik w=0.0; blok-disi secim 3/3 KAYIP",
+  "fikir3_yalniz_statik": "KONUSUZ -- maske orani 1.00 ile 33 t_* kolonunun HEPSI zaten tam NaN (egitimde de dogrulamada da). Soguk uzman ZATEN yalniz-statik. Agac modellerinde tam-NaN kolon atmak ozdes model verir.",
+  "fikir2_skaler_kayma": "REDDEDILDI (agirlikli olcumde) -- ham olcumde 3/3 blokta pozitif gorunuyordu (a<=0.16); TEST dagilimina agirliklandirinca yaz25'te PG=(75,90] kovasinda kazanc NEGATIF (-0.0047), onyukleme pozitif orani 0.67. Onceden sabitlenen hukum (agirlikli VE PG-hakim ikisi de pozitif) SAGLANMIYOR.",
+  "fikir1_lgbm_ayarlari": "KOSUYOR (dalga2: huber alfa izgarasi + fair + log-hedef poisson/tweedie)"
+ },
+ "anatomi": {
+  "yaz25_soguk_MSE_payi_tuketim<=0": 0.5553,
+  "sifir_satir_orani": 0.04,
+  "sifirlar_trafo_bazli_mi": "EVET -- soguk trafolarin %8.8'i TAMAMEN sifir, sifir satirlarin %56'si o trafolardan. Gecmis yok, statikten ogrenilemiyor (AUC 0.58-0.61 zaten olculmus)."
+ },
+ "ilk_sinyal_huber": {
+  "yaz25_lgbm_tek_TABAN": 1.42095,
+  "yaz25_lgbm_tek_huber": 1.36304,
+  "seviye_mi_sekil_mi": "SEKIL -- huber TABAN uzerine ort +0.213 kaydiriyor ama ayni sabit kaydirma tek basina yalniz 1.4210->1.4158 veriyor; huber 1.3630. Fark std 0.47, kor(fark,TABAN)=-0.10.",
+  "uyari": "tek blok tek tohum HAM olcut. Hukum test-agirlikli ve PG=(75,90] kovasinda verilecek."
+ },
+ "aile_agirligi_yeniden_secimi": {
+  "durum": "REDDEDILDI",
+  "not": "test-agirlikli/PG-hakim/ham uc olcutte de blok-disi secim yaz25'te KAYBETTIRIYOR (-0.069/-0.054/-0.045 agirlikli). Blok ici argminler tutarsiz: yaz25 ham (0,0,1), kis26 (1,0,0)."
+ },
+ "kohort_teshisi_tam": {
+  "yaz25": {
+   "ess_trafo": 34.3,
+   "trafo": 678,
+   "PG_75_90_trafo": 30,
+   "hucre_kapsami": 0.9727
+  },
+  "guz25": {
+   "PG_75_90_trafo": 150
+  },
+  "kis26": {
+   "ess_trafo": 192.7,
+   "PG_75_90_trafo": 168
+  }
+ }
+}

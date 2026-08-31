@@ -1,0 +1,173 @@
+{
+ "baslik": "p18 -- TAM URETIM HATTI YENIDEN EGITIM DUZENEGI (hazirlik)",
+ "tarih": "2026-08-31",
+ "durum": "DUZENEK KURULDU. SOGUK birebir dogrulama GECTI; SICAK birebir dogrulama TUTMADI. Ayrica HARMAN UYUSMAZLIGI kesinlesti (bkz. p18_harman_hukmu.json) -- yeniden egitim baslatilmadan once o cozulmeli.",
+ "1_HAT_HARITASI": {
+  "ozet": "Hat IKI UZMANDAN olusuyor (soguk/sicak). Her uzman UC aileyi (cat/xgb/lgbm) birbirinden BAGIMSIZ egitiyor; harman SABIT AGIRLIKLI ARITMETIK ORTALAMA (log uzayinda). Tohumlar da log uzayinda ortalaniyor. Ogrenilen HICBIR harman parametresi yok.",
+  "giris_verisi": {
+   "data/interim/deney/egitim.parquet": "1.038.737 x 157 -- DAR egitim seti (ana bloklar yaz25/guz25/kis26). scripts/deney.py:cerceveleri_kur() uretir/onbellekler.",
+   "data/interim/deney/ek_kokenler.parquet": "3.109.532 satir, 11 koken blogu. deney._ek_kokenler_kur() uretir.",
+   "data/interim/deney/test.parquet": "714.688 x 157; soguk 158.369 (%22,16), sicak 556.319",
+   "GENIS_set": "egitim + EK_KOKENLER'in ALTISI (sub25,bah25,yaz25b,guz25b,kis26b,bah26) = 2.855.584 satir. Yalniz SICAK uzman gorur (REJIM_AYARLARI['sicak']['ek_koken']=True)."
+  },
+  "oznitelik": "tm.oznitelikler(egitim) ∩ test.columns, sonra tm.YALIN_CIKARILAN oneklerine gore budama -> 105 kolon. Kategorikler tm.kategorik_kodla ile YERINDE kodlanir; GENIS set kategorileri kodlanmis egitimden alir (sira onemli).",
+  "SOGUK_uzman": {
+   "uretim_ayari": "tm.REJIM_AYARLARI['soguk']: maske 1.00 (saf soguk uzman -- butun t_* NaN), cat ustyazim {'depth':7}, ek_koken False",
+   "URETIM_HARMANI": "{'cat': 1.0} -- yani URETIM GONDERIMINDE soguk taraf YALNIZ CAT (commit d04243f, 2026-08-23)",
+   "CV_TEZGAHI_HARMANI": "p02_duzeltme.blok() ve p17/p14 olcumleri soguk_tahmin_*.npz'nin BUTUN anahtarlarini ESIT agirlikla ortaliyor (cat+xgb+lgbm)",
+   "UYUSMAZLIK_UYARISI": "Bu iki harman AYNI DEGIL. Butun soguk CV hukumleri (p06, p11_b_lgbm, p14 huber) ESIT harman uzerinde verildi; uretim gonderimi ise cat-tekil bir soguk uzman icerdigini soyluyor. p06/p07 acikca 'uretim ESIT harman' varsayiyor. BU CELISKI COZULMEDEN tam yeniden egitimin hangi harmani hedefleyecegi belirsizdir.",
+   "blok_ureteci": "scripts/uret_soguk_tahmin.py -> data/interim/deney/soguk_tahmin_{blok}.npz, anahtar '{tohum}_{aile}', float64. yaz25/guz25 5 tohum (1000-1004), kis26 3 tohum (1000-1002).",
+   "test_ureteci": "experiments/model29/p06_soguk_test.py -> p_kalici/aday_csv/p06_test_soguk_aile.npy, (158369, 3) = (cat,xgb,lgbm) TOHUM ORTALAMASI, tohum 1000-1002",
+   "egitim_parcasi_blok": "dar[_blok != hedef]  (yaz25 763.808 / guz25 719.005 / kis26 594.661)",
+   "egitim_parcasi_test": "dar tamami 1.038.737"
+  },
+  "SICAK_uzman": {
+   "uretim_ayari": "tm.REJIM_AYARLARI['sicak']: maske 0.15, cat ustyazim {'random_strength':4.0,'l2_leaf_reg':1.0,'depth':6}, ek_koken True",
+   "URETIM_HARMANI": "{'cat':3.0,'xgb':1.0,'lgbm':1.0,'sinir_agi':1.4}",
+   "CV_TEZGAHI_HARMANI": "p02_duzeltme.blok() cat/xgb/lgbm ESIT, sinir_agi YOK",
+   "blok_ureteci": "scripts/aile_onbellegi.py -> data/interim/aile_onbellek/{blok}_{tohum}_{aile}_uretim.npy, float32, YALNIZ sicak satirlar. tohum 1000-1002. sinir_agi de onbellekte var.",
+   "test_ureteci": "YOK -- test tarafinda sicak aile onbellegi diskte hic uretilmedi (n18_carpan.py HUKUM 1a bunu belgeliyor)",
+   "egitim_parcasi_blok": "tm.kokenleri_ayikla(GENIS, hedef) -- hedef etiket penceresiyle KESISEN her koken atilir (yaz25 1.981.873 / guz25 1.180.665 / kis26 1.316.916)",
+   "egitim_parcasi_test": "GENIS tamami 2.855.584 (test butun egitimden sonra geldigi icin ayiklama yok)"
+  },
+  "URETIM_GIRIS_NOKTASI": "scripts/tuketim_model.py --cikti X.csv --tohum N --tohum-baslangic M : 5/5 adiminda rejim_tahmini ile ham CSV yazar (submissions/ altina).",
+  "SON_ISLEM_ZINCIRI": "Ham CSV gonderilmiyor. scripts/son_islem*.py (soguk buzme beta=0.60, gun ekseni olcegi c=1.3301, kuyruk rejimi +0.16640, sicak cekirdek +0.02486, olay duzeltmesi) uygulaniyor. Bunlar HAM TAHMINE gore kalibre edildi.",
+  "GONDERIM_DOSYASININ_GERCEK_KOKENI": {
+   "bulgu": "submissions/tuketim_YP_seviye.csv (1.00115) ve tuketim_m6_ikiyon.csv (1.00284) BIR MODEL KOSUSUNUN CIKTISI DEGILDIR.",
+   "aciklama": "m6_ikiyon zaten gonderim-uzayi cebiriyle (m99/m111/m112 span cozumu) kuruldu; YP_seviye = m6 + kappa*dik_eksen (m111_seviye.json: kappa=0.0061718, sabit=1.0019971). p07_gonderim_kur.py span optimumunu a0 + r_hat olarak yeniden kuruyor.",
+   "sonuc": "Bu dosyalarin dayandigi HAM MODEL TAHMINI diskte YOK ve yeniden uretilemez."
+  }
+ },
+ "2_BETIK": {
+  "yol": "experiments/model29/p18_yeniden_egit.py",
+  "parametreler": [
+   "P18_MOD = blok | test",
+   "P18_TARAF = soguk,sicak",
+   "P18_BLOKLAR = yaz25,guz25,kis26",
+   "P18_TOHUMLAR = 1000,1001,1002 (5 tohum icin 1000,1001,1002,1003,1004)",
+   "P18_AILELER = cat,xgb,lgbm",
+   "P18_SOGUK_CAT_KAYIP / P18_SOGUK_XGB_KAYIP / P18_SOGUK_LGBM_KAYIP",
+   "P18_SICAK_CAT_KAYIP / P18_SICAK_XGB_KAYIP / P18_SICAK_LGBM_KAYIP",
+   "  kabul edilen bicimler: '' (URETIM/L2) | huber:0.5 | l1 | fair:1.0",
+   "P18_TAU_SOGUK / P18_TAU_SICAK = yok | sayi   (w = exp(-max(kesim-tarih,0)/TAU))",
+   "P18_AGAC = '' | sayi        -- YALNIZ duman testi",
+   "P18_ALT_ORNEK = '' | 0<f<=1 -- YALNIZ duman testi",
+   "P18_CIKTI, P18_ETIKET, P18_DOGRULA=1"
+  ],
+  "kayip_esleme": {
+   "lgbm huber:a": "objective='huber', alpha=a",
+   "cat huber:a": "loss_function='Huber:delta=a'",
+   "xgb huber:a": "objective='reg:pseudohubererror', huber_slope=a"
+  },
+  "kesintiye_dayanikli": "her (tohum,aile) parcasi tamamlaninca npz'ye yazilir, yeniden kosuda atlanir",
+  "cikti_bicimi": "{P18_CIKTI}/{P18_ETIKET}/{taraf}_{blok}.npz, anahtar '{tohum}_{aile}', float64. Uretim onbellegiyle AYNI anahtar semasi.",
+  "guvenlik": "submissions/ altina yazmaz, Kaggle'a gonderim yapmaz, uretim onbelleklerinin uzerine YAZMAZ (ayri cikti dizini).",
+  "TASARIM_NOTU": "Iki uretim yolu (tm.aile_tahmini ve di.egit_tahmin) aritmetik olarak ozdes; p18 tek bir yoldan (di.egit_tahmin) gecirip maskelemeyi cagiran tarafta yapiyor. Ozdeslik varsayim degil, asagida OLCULDU."
+ },
+ "3_BIREBIR_DOGRULAMA": {
+  "yontem": "Varsayilan (taban) yapilandirmayla yeniden egit, uretim onbellegiyle maxabs farkini al.",
+  "SOGUK_BLOK": {
+   "hucre": "blok/soguk/yaz25/1000_lgbm",
+   "referans": "data/interim/deney/soguk_tahmin_yaz25.npz",
+   "maxabs": 8.881784197001252e-16,
+   "esik": 1e-06,
+   "durum": "BIREBIR GECTI",
+   "sure_sn": 101,
+   "not": "makine 3 baska agir isle dolu; ayni is bos makinede ~30 sn"
+  },
+  "SICAK_BLOK": {
+   "hucre": "blok/sicak/yaz25/1000_lgbm",
+   "referans": "data/interim/aile_onbellek/yaz25_1000_lgbm_uretim.npy (float32, 2026-08-24 10:54)",
+   "durum": "TUTMADI",
+   "maxabs": 0.325226407504994,
+   "rms_fark": 0.03277871903872567,
+   "ortalama_fark": -0.00711780750158722,
+   "korelasyon": 0.999893550671116,
+   "esik": "5e-6 x max|ref|",
+   "sure_sn": 601,
+   "ELENEN_ACIKLAMALAR": [
+    "Bayat veri DEGIL: egitim.parquet ve ek_kokenler.parquet 2026-08-22, onbellek 2026-08-24 -- girdi onbellekten ESKI.",
+    "Egitim seti boyutu birebir tutuyor (1.981.873 satir; genis 2.855.584 = aile_onbellegi.py docstringindeki sayi).",
+    "Kod yolu farki DEGIL gibi: ayni yol SOGUK tarafta 8.9e-16 ile birebir ureti (tm.aile_tahmini ile di.egit_tahmin ozdesligi boylece OLCULDU).",
+    "tm._GECMIS_ONEKI ve deney._GECMIS_ONEKI ayni (\"t_\",); maskeleme mantigi satir satir ayni."
+   ],
+   "KALAN_ACIKLAMA": "LightGBM 1.98M satirda calisma-arasi BELIRLENIMSIZ olabilir (row-wise/col-wise otomatik secimi ve is parcaci sayisina bagli; deterministic=false varsayilan). Ayirt edici deney KOSULUYOR: ayni hucre ikinci kez uretilip ilk kosuyla karsilastiriliyor.",
+   "SONUC_ETKISI": "SICAK tarafta bit-birebir yeniden uretim SU AN KANITLANMAMIS. Sicak yeniden egitim sonuclarina, bu cozulmeden, delta duzeyinde (rms 0.033) guvenilmemeli.",
+   "AYIRT_EDICI_DENEY": {
+    "durum": "KOSUYOR (etiket duman_sicak2, ayni hucre ikinci kez). Makine cok yuklu, 45+ dk surdu.",
+    "karsilastirma_komutu": "python -c \"import numpy as np,os;SP=r'C:/Users/Cem/AppData/Local/Temp/claude/c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad/p18';a=np.load(os.path.join(SP,'duman_sicak','sicak_yaz25.npz'))['1000_lgbm'].astype('float64');b=np.load(os.path.join(SP,'duman_sicak2','sicak_yaz25.npz'))['1000_lgbm'].astype('float64');print(abs(a-b).max(), np.sqrt(((a-b)**2).mean()))\"",
+    "yorumlama": "KOSU1==KOSU2 (maxabs ~0) ise LightGBM belirlenimli demektir ve uretim onbellegi BASKA bir kodla/veriyle uretilmis olmali -- o zaman aile_onbellek gecersizdir. KOSU1!=KOSU2 ise LightGBM 1.98M satirda belirlenimsiz demektir; o zaman butun SICAK olcumlerinin rms 0.033 buyuklugunde bir gurultu tabani vardir ve bit-birebir dogrulama SICAK tarafta MUMKUN DEGILDIR."
+   }
+  },
+  "TEST_MODU": {
+   "durum": "BIREBIR DOGRULANAMAZ -- ve bu betigin degil HATTIN bir ozelligi",
+   "gerekce": "Gonderilen tuketim_YP_seviye.csv gonderim-uzayi cebiriyle kurulmus bir dosyadir (m6_ikiyon -> span a0+r_hat -> +kappa*dik). Dayandigi ham model tahmini diske hic yazilmadi. Ayrica test tarafinda SICAK aile onbellegi hic uretilmedi.",
+   "ELDEKI_TEK_TEST_CAPASI": "p_kalici/aday_csv/p06_test_soguk_aile.npy -- p06_soguk_test.py'nin AYNI kod yolundan uretti; (158369,3) tohum(1000-1002) ortalamasi. p18 test/soguk cikisinin tohum ortalamasi bununla karsilastirilabilir.",
+   "capa_kosusu": "set P18_MOD=test & set P18_TARAF=soguk & set P18_TOHUMLAR=1000,1001,1002 & set P18_ETIKET=capa & python experiments/model29/p18_yeniden_egit.py    (~9 dk bos makinede, sonra elle np.mean karsilastirmasi)",
+   "kosuldu_mu": false
+  },
+  "OZET": "SOGUK GECTI (8.9e-16). SICAK GECMEDI (maxabs 0.325 / rms 0.033 / kor 0.99989). TEST modu yapisal olarak dogrulanamaz."
+ },
+ "4_SURE_TAHMINI": {
+  "olcum_tabani": "p06_soguk_test.log (BOS makine, 1.038.737 satir, tohum basina): cat 92 sn, xgb 41 sn, lgbm 30 sn -> 3 aile ~156 sn / milyon satir / tohum",
+  "cekismeli_makine_carpani": "3.5x (olculdu: 764k satir lgbm bos ~22 sn beklenirken 101 sn surdu)",
+  "egitim_satir_sayilari": {
+   "blok/soguk": {
+    "yaz25": 763808,
+    "guz25": 719005,
+    "kis26": 594661,
+    "toplam": 2077474
+   },
+   "blok/sicak": {
+    "yaz25": 1981873,
+    "guz25": 1180665,
+    "kis26": 1316916,
+    "toplam": 4479454
+   },
+   "test/soguk": 1038737,
+   "test/sicak": 2855584
+  },
+  "tahmin_BOS_makine_dakika": {
+   "blok_soguk_3aile_3tohum": 16,
+   "blok_soguk_3aile_5tohum": 27,
+   "blok_sicak_3aile_3tohum": 35,
+   "blok_sicak_3aile_5tohum": 58,
+   "test_soguk_3aile_3tohum": 8.5,
+   "test_soguk_3aile_5tohum": 14,
+   "test_sicak_3aile_3tohum": 22,
+   "test_sicak_3aile_5tohum": 37,
+   "TOPLAM_blok+test_3tohum": 82,
+   "TOPLAM_blok+test_5tohum": 136
+  },
+  "tahmin_CEKISMELI_makine_saat": {
+   "TOPLAM_blok+test_3tohum": 4.8,
+   "TOPLAM_blok+test_5tohum": 7.9
+  },
+  "hukum": "18 saatlik butceye SIGIYOR. Makine bosaltilirsa 5 tohumlu TAM kosu ~2,3 saat. Cekisme surerse ~8 saat -- yine sigar ama iki yapilandirma denemeye yer kalmaz.",
+  "oneri": "Once BLOK modu (dogrulama icin), sonra kazanan yapilandirmayla TEST modu. Blok modu 5 tohumla 1,4 saat (bos makine)."
+ },
+ "5_DELTA_YAMASI_ile_TAM_YENIDEN_EGITIMIN_FARKI": {
+  "betik": "experiments/model29/p18_delta_vs_tam.py",
+  "ANALITIK_BEKLENTI": "BLOK uzayinda DELTA = TAM (fark ~1e-15). Sebep: harman sabit agirlikli aritmetik ortalama ve aileler BAGIMSIZ egitiliyor. Bir ailenin kaybini degistirmek digerlerinin tahminini degistirmez; 'aileler birbirine uyum saglar' mekanizmasi BU HATTA YOKTUR (ogrenilen harman parametresi yok, yigma/stacking yok).",
+  "farkin_GERCEKTEN_dogdugu_yerler": [
+   "(a) Degisiklik aileler arasi ORTAK ise -- ornegin yakinlik agirligi TAU butun ailelere uygulanirsa. p18 bunu destekliyor ve p18_delta_vs_tam olcuyor.",
+   "(b) Tohum kumesi degisirse.",
+   "(c) TEST tarafinda: delta, ham model ciktisina degil GONDERIM-UZAYI CEBIRIYLE kurulmus bir dosyaya (m6/YP_seviye/span) bindiriliyor; ustelik son islem zinciri eski tahminlere gore kalibre edildi. Blokta sifir olan fark ORADA sifir degil -- ve OLCULEMEZ."
+  ],
+  "kullanim": "set P18K_ETIKET=huber & set P18K_DEGISEN=soguk:lgbm & python experiments/model29/p18_delta_vs_tam.py"
+ },
+ "6_ACIK_RISKLER": [
+  "SOGUK HARMAN CELISKISI (bkz. 1_HAT_HARITASI.SOGUK_uzman.UYUSMAZLIK_UYARISI): uretim cat-tekil, CV tezgahi esit. Tam yeniden egitimden once bu cozulmeli; yoksa 'uretimi yeniden urettik' iddiasi tezgah icin dogru, gonderim icin degil.",
+  "SINIR_AGI: uretim sicak harmaninda 1.4 agirlikla var, p18'de YOK. Aile onbelleginde sinir_agi parcalari mevcut; tam bir sicak yeniden egitim istenirse fit basina ~24 dk ek maliyet (3 blok x 5 tohum = ~6 saat) demektir.",
+  "TEST TARAFINDA HAM CAPA YOK: yeniden egitilmis bir test tahmininin mevcut gonderimle karsilastirilabilir olmasi icin son islem zincirinin de yeniden uygulanmasi gerekir; o zincirin katsayilari (beta=0.60, c=1.3301, +0.16640, +0.02486) LB'den cozulmustur ve YENI tahminler icin yeniden cozulemez.",
+  "kis26 soguk onbellegi yalnizca 3 tohum tasiyor (yaz25/guz25 5 tohum). 5 tohumlu bir karsilastirmada kis26 icin 1003/1004 SIFIRDAN uretilmeli."
+ ],
+ "7_CALISTIRMA_TALIMATI": {
+  "duman_testi_soguk": "set P18_TARAF=soguk & set P18_BLOKLAR=yaz25 & set P18_TOHUMLAR=1000 & set P18_AILELER=lgbm & set P18_DOGRULA=1 & set P18_ETIKET=duman & python experiments/model29/p18_yeniden_egit.py",
+  "duman_testi_sicak": "ayni, P18_TARAF=sicak, P18_ETIKET=duman_sicak",
+  "TAM_BLOK_KOSUSU_kazanan_yapilandirma": "set P18_MOD=blok & set P18_ETIKET=huber & set P18_TOHUMLAR=1000,1001,1002,1003,1004 & set P18_SOGUK_LGBM_KAYIP=huber:0.5 & set P18_SICAK_LGBM_KAYIP=huber:0.5 & python experiments/model29/p18_yeniden_egit.py",
+  "TAM_TEST_KOSUSU": "ayni ama set P18_MOD=test",
+  "KARSILASTIRMA": "set P18K_ETIKET=huber & set P18K_DEGISEN=soguk:lgbm,sicak:lgbm & python experiments/model29/p18_delta_vs_tam.py"
+ },
+ "0_ONCELIKLI_UYARI": "Bu belgedeki 1_HAT_HARITASI.SOGUK_uzman.UYUSMAZLIK_UYARISI kesinlesti ve AMPIRIK olarak dogrulandi. Ayrintili hukum: experiments/model29/p_kalici/p18_harman_hukmu.json. Kisaca: uretim soguk uzmani YALNIZ CAT, butun soguk CV olcumleri ESIT harman uzerinde yapildi, dolayisiyla soguk huber bulgusunun uretimde karsiligi YOK."
+}

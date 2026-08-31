@@ -1,0 +1,943 @@
+{
+ "tohumlar": [
+  1000
+ ],
+ "kovalar": {
+  "PG": "[0, 30, 60, 90, 115, inf]",
+  "GUC": "[0, 250, 400, 630, 1000, inf]",
+  "UF": "[0, 30, 60, 90, inf]"
+ },
+ "blok": {
+  "yaz25": {
+   "n_sicak": 254296,
+   "ess": 82016.9,
+   "ess5": 197375.8,
+   "soguk_rmsle": 1.57584,
+   "taban_sicak": 0.80991,
+   "taban_sicak_w": 0.82614,
+   "taban_sicak_w5": 0.79735,
+   "taban_bilesim": 1.02999
+  },
+  "guz25": {
+   "n_sicak": 280327,
+   "ess": 103210.5,
+   "ess5": 208204.9,
+   "soguk_rmsle": 1.6988,
+   "taban_sicak": 0.81476,
+   "taban_sicak_w": 0.98655,
+   "taban_sicak_w5": 0.86791,
+   "taban_bilesim": 1.07529
+  },
+  "kis26": {
+   "n_sicak": 382158,
+   "ess": 144277.2,
+   "ess5": 298645.1,
+   "soguk_rmsle": 1.83864,
+   "taban_sicak": 0.74686,
+   "taban_sicak_w": 0.77798,
+   "taban_sicak_w5": 0.76102,
+   "taban_bilesim": 1.08781
+  }
+ },
+ "eksik_taban": [],
+ "taban_uretim_azami_fark": {
+  "yaz25": 0.0,
+  "guz25": 0.0,
+  "kis26": 0.0
+ },
+ "adaylar": {
+  "cat": {
+   "TABAN": {
+    "yaz25": {
+     "sicak": 0.80991,
+     "sicak_w": 0.82614,
+     "sicak_w5": 0.79735,
+     "kazanc": 0.0,
+     "kazanc_w": 0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.02999,
+     "kazanc_bilesim": -0.0
+    },
+    "guz25": {
+     "sicak": 0.81476,
+     "sicak_w": 0.98655,
+     "sicak_w5": 0.86791,
+     "kazanc": -0.0,
+     "kazanc_w": -0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.07529,
+     "kazanc_bilesim": 0.0
+    },
+    "kis26": {
+     "sicak": 0.74686,
+     "sicak_w": 0.77798,
+     "sicak_w5": 0.76102,
+     "kazanc": 0.0,
+     "kazanc_w": 0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.08781,
+     "kazanc_bilesim": -0.0
+    }
+   },
+   "huber_a02": {
+    "yaz25": {
+     "sicak": 0.93128,
+     "sicak_w": 1.01505,
+     "sicak_w5": 0.99091,
+     "kazanc": -0.12137,
+     "kazanc_w": -0.18891,
+     "kazanc_w5": -0.19356,
+     "bilesim": 1.10697,
+     "kazanc_bilesim": -0.07698
+    },
+    "guz25": {
+     "sicak": 0.87693,
+     "sicak_w": 0.93474,
+     "sicak_w5": 0.88775,
+     "kazanc": -0.06217,
+     "kazanc_w": 0.05181,
+     "kazanc_w5": -0.01984,
+     "bilesim": 1.1127,
+     "kazanc_bilesim": -0.03741
+    },
+    "kis26": {
+     "sicak": 0.88823,
+     "sicak_w": 0.91139,
+     "sicak_w5": 0.90345,
+     "kazanc": -0.14137,
+     "kazanc_w": -0.13341,
+     "kazanc_w5": -0.14243,
+     "bilesim": 1.16759,
+     "kazanc_bilesim": -0.07978
+    }
+   },
+   "huber_a05": {
+    "yaz25": {
+     "sicak": 0.82183,
+     "sicak_w": 0.84495,
+     "sicak_w5": 0.81609,
+     "kazanc": -0.01192,
+     "kazanc_w": -0.01881,
+     "kazanc_w5": -0.01874,
+     "bilesim": 1.03732,
+     "kazanc_bilesim": -0.00733
+    },
+    "guz25": {
+     "sicak": 0.81626,
+     "sicak_w": 0.93714,
+     "sicak_w5": 0.84843,
+     "kazanc": -0.0015,
+     "kazanc_w": 0.04941,
+     "kazanc_w5": 0.01948,
+     "bilesim": 1.07617,
+     "kazanc_bilesim": -0.00088
+    },
+    "kis26": {
+     "sicak": 0.77488,
+     "sicak_w": 0.80331,
+     "sicak_w5": 0.79061,
+     "kazanc": -0.02802,
+     "kazanc_w": -0.02533,
+     "kazanc_w5": -0.02959,
+     "bilesim": 1.10296,
+     "kazanc_bilesim": -0.01515
+    }
+   },
+   "huber_a10": {
+    "yaz25": {
+     "sicak": 0.8044,
+     "sicak_w": 0.82549,
+     "sicak_w5": 0.7937,
+     "kazanc": 0.00551,
+     "kazanc_w": 0.00065,
+     "kazanc_w5": 0.00365,
+     "bilesim": 1.02663,
+     "kazanc_bilesim": 0.00336
+    },
+    "guz25": {
+     "sicak": 0.81494,
+     "sicak_w": 0.96087,
+     "sicak_w5": 0.85744,
+     "kazanc": -0.00018,
+     "kazanc_w": 0.02568,
+     "kazanc_w5": 0.01047,
+     "bilesim": 1.07539,
+     "kazanc_bilesim": -0.0001
+    },
+    "kis26": {
+     "sicak": 0.74397,
+     "sicak_w": 0.77067,
+     "sicak_w5": 0.75775,
+     "kazanc": 0.00289,
+     "kazanc_w": 0.00731,
+     "kazanc_w5": 0.00327,
+     "bilesim": 1.08627,
+     "kazanc_bilesim": 0.00154
+    }
+   },
+   "huber_a20": {
+    "yaz25": {
+     "sicak": 0.80519,
+     "sicak_w": 0.82481,
+     "sicak_w5": 0.79379,
+     "kazanc": 0.00472,
+     "kazanc_w": 0.00133,
+     "kazanc_w5": 0.00356,
+     "bilesim": 1.02711,
+     "kazanc_bilesim": 0.00288
+    },
+    "guz25": {
+     "sicak": 0.81367,
+     "sicak_w": 0.9693,
+     "sicak_w5": 0.86087,
+     "kazanc": 0.00109,
+     "kazanc_w": 0.01725,
+     "kazanc_w5": 0.00704,
+     "bilesim": 1.07465,
+     "kazanc_bilesim": 0.00064
+    },
+    "kis26": {
+     "sicak": 0.73991,
+     "sicak_w": 0.76621,
+     "sicak_w5": 0.75304,
+     "kazanc": 0.00695,
+     "kazanc_w": 0.01177,
+     "kazanc_w5": 0.00798,
+     "bilesim": 1.08411,
+     "kazanc_bilesim": 0.0037
+    }
+   },
+   "huber_a40": {
+    "yaz25": {
+     "sicak": 0.80604,
+     "sicak_w": 0.82511,
+     "sicak_w5": 0.79478,
+     "kazanc": 0.00387,
+     "kazanc_w": 0.00103,
+     "kazanc_w5": 0.00257,
+     "bilesim": 1.02763,
+     "kazanc_bilesim": 0.00236
+    },
+    "guz25": {
+     "sicak": 0.81344,
+     "sicak_w": 0.97768,
+     "sicak_w5": 0.86478,
+     "kazanc": 0.00132,
+     "kazanc_w": 0.00887,
+     "kazanc_w5": 0.00313,
+     "bilesim": 1.07451,
+     "kazanc_bilesim": 0.00078
+    },
+    "kis26": {
+     "sicak": 0.74537,
+     "sicak_w": 0.77613,
+     "sicak_w5": 0.75973,
+     "kazanc": 0.00149,
+     "kazanc_w": 0.00185,
+     "kazanc_w5": 0.00129,
+     "bilesim": 1.08702,
+     "kazanc_bilesim": 0.00079
+    }
+   },
+   "l1": {
+    "yaz25": {
+     "sicak": 0.8131,
+     "sicak_w": 0.83201,
+     "sicak_w5": 0.79935,
+     "kazanc": -0.00319,
+     "kazanc_w": -0.00587,
+     "kazanc_w5": -0.002,
+     "bilesim": 1.03195,
+     "kazanc_bilesim": -0.00196
+    },
+    "guz25": {
+     "sicak": 0.83476,
+     "sicak_w": 0.99897,
+     "sicak_w5": 0.88588,
+     "kazanc": -0.02,
+     "kazanc_w": -0.01242,
+     "kazanc_w5": -0.01797,
+     "bilesim": 1.08717,
+     "kazanc_bilesim": -0.01188
+    },
+    "kis26": {
+     "sicak": 0.7469,
+     "sicak_w": 0.78851,
+     "sicak_w5": 0.76984,
+     "kazanc": -4e-05,
+     "kazanc_w": -0.01053,
+     "kazanc_w5": -0.00882,
+     "bilesim": 1.08783,
+     "kazanc_bilesim": -2e-05
+    }
+   },
+   "tau120": {
+    "yaz25": {
+     "sicak": 0.80826,
+     "sicak_w": 0.82443,
+     "sicak_w5": 0.79553,
+     "kazanc": 0.00165,
+     "kazanc_w": 0.00171,
+     "kazanc_w5": 0.00182,
+     "bilesim": 1.02899,
+     "kazanc_bilesim": 0.001
+    }
+   },
+   "tau1920": {
+    "yaz25": {
+     "sicak": 0.81087,
+     "sicak_w": 0.82722,
+     "sicak_w5": 0.79795,
+     "kazanc": -0.00096,
+     "kazanc_w": -0.00108,
+     "kazanc_w5": -0.0006,
+     "bilesim": 1.03058,
+     "kazanc_bilesim": -0.00059
+    },
+    "guz25": {
+     "sicak": 0.81439,
+     "sicak_w": 0.98845,
+     "sicak_w5": 0.87012,
+     "kazanc": 0.00037,
+     "kazanc_w": -0.0019,
+     "kazanc_w5": -0.00221,
+     "bilesim": 1.07507,
+     "kazanc_bilesim": 0.00022
+    },
+    "kis26": {
+     "sicak": 0.7442,
+     "sicak_w": 0.77391,
+     "sicak_w5": 0.75778,
+     "kazanc": 0.00266,
+     "kazanc_w": 0.00407,
+     "kazanc_w5": 0.00324,
+     "bilesim": 1.08639,
+     "kazanc_bilesim": 0.00142
+    }
+   },
+   "tau240": {
+    "yaz25": {
+     "sicak": 0.81052,
+     "sicak_w": 0.82728,
+     "sicak_w5": 0.79802,
+     "kazanc": -0.00061,
+     "kazanc_w": -0.00114,
+     "kazanc_w5": -0.00067,
+     "bilesim": 1.03037,
+     "kazanc_bilesim": -0.00038
+    },
+    "guz25": {
+     "sicak": 0.81534,
+     "sicak_w": 0.99013,
+     "sicak_w5": 0.87025,
+     "kazanc": -0.00058,
+     "kazanc_w": -0.00358,
+     "kazanc_w5": -0.00234,
+     "bilesim": 1.07563,
+     "kazanc_bilesim": -0.00034
+    },
+    "kis26": {
+     "sicak": 0.75412,
+     "sicak_w": 0.78503,
+     "sicak_w5": 0.76756,
+     "kazanc": -0.00726,
+     "kazanc_w": -0.00705,
+     "kazanc_w5": -0.00654,
+     "bilesim": 1.0917,
+     "kazanc_bilesim": -0.00389
+    }
+   },
+   "tau480": {
+    "yaz25": {
+     "sicak": 0.80581,
+     "sicak_w": 0.82334,
+     "sicak_w5": 0.79361,
+     "kazanc": 0.0041,
+     "kazanc_w": 0.0028,
+     "kazanc_w5": 0.00374,
+     "bilesim": 1.02749,
+     "kazanc_bilesim": 0.0025
+    },
+    "guz25": {
+     "sicak": 0.81517,
+     "sicak_w": 0.98667,
+     "sicak_w5": 0.86954,
+     "kazanc": -0.00041,
+     "kazanc_w": -0.00012,
+     "kazanc_w5": -0.00163,
+     "bilesim": 1.07553,
+     "kazanc_bilesim": -0.00024
+    },
+    "kis26": {
+     "sicak": 0.74756,
+     "sicak_w": 0.78093,
+     "sicak_w5": 0.76265,
+     "kazanc": -0.0007,
+     "kazanc_w": -0.00295,
+     "kazanc_w5": -0.00163,
+     "bilesim": 1.08818,
+     "kazanc_bilesim": -0.00037
+    }
+   },
+   "tau960": {
+    "yaz25": {
+     "sicak": 0.81171,
+     "sicak_w": 0.82787,
+     "sicak_w5": 0.79884,
+     "kazanc": -0.0018,
+     "kazanc_w": -0.00173,
+     "kazanc_w5": -0.00149,
+     "bilesim": 1.03109,
+     "kazanc_bilesim": -0.0011
+    },
+    "guz25": {
+     "sicak": 0.81031,
+     "sicak_w": 0.98246,
+     "sicak_w5": 0.8652,
+     "kazanc": 0.00445,
+     "kazanc_w": 0.00409,
+     "kazanc_w5": 0.00271,
+     "bilesim": 1.07267,
+     "kazanc_bilesim": 0.00262
+    },
+    "kis26": {
+     "sicak": 0.74799,
+     "sicak_w": 0.77775,
+     "sicak_w5": 0.7618,
+     "kazanc": -0.00113,
+     "kazanc_w": 0.00023,
+     "kazanc_w5": -0.00078,
+     "bilesim": 1.08842,
+     "kazanc_bilesim": -0.00061
+    }
+   }
+  },
+  "xgb": {
+   "TABAN": {
+    "yaz25": {
+     "sicak": 0.80991,
+     "sicak_w": 0.82614,
+     "sicak_w5": 0.79735,
+     "kazanc": 0.0,
+     "kazanc_w": 0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.02999,
+     "kazanc_bilesim": -0.0
+    },
+    "guz25": {
+     "sicak": 0.81476,
+     "sicak_w": 0.98655,
+     "sicak_w5": 0.86791,
+     "kazanc": -0.0,
+     "kazanc_w": -0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.07529,
+     "kazanc_bilesim": 0.0
+    },
+    "kis26": {
+     "sicak": 0.74686,
+     "sicak_w": 0.77798,
+     "sicak_w5": 0.76102,
+     "kazanc": 0.0,
+     "kazanc_w": 0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.08781,
+     "kazanc_bilesim": -0.0
+    }
+   },
+   "huber_a02": {
+    "yaz25": {
+     "sicak": 0.84304,
+     "sicak_w": 0.86158,
+     "sicak_w5": 0.83506,
+     "kazanc": -0.03313,
+     "kazanc_w": -0.03544,
+     "kazanc_w5": -0.03771,
+     "bilesim": 1.05048,
+     "kazanc_bilesim": -0.02049
+    },
+    "guz25": {
+     "sicak": 0.85991,
+     "sicak_w": 1.03736,
+     "sicak_w5": 0.91903,
+     "kazanc": -0.04515,
+     "kazanc_w": -0.05081,
+     "kazanc_w5": -0.05112,
+     "bilesim": 1.10232,
+     "kazanc_bilesim": -0.02703
+    },
+    "kis26": {
+     "sicak": 0.74392,
+     "sicak_w": 0.78219,
+     "sicak_w5": 0.76065,
+     "kazanc": 0.00294,
+     "kazanc_w": -0.00421,
+     "kazanc_w5": 0.00037,
+     "bilesim": 1.08624,
+     "kazanc_bilesim": 0.00157
+    }
+   },
+   "huber_a05": {
+    "yaz25": {
+     "sicak": 0.80637,
+     "sicak_w": 0.82634,
+     "sicak_w5": 0.79795,
+     "kazanc": 0.00354,
+     "kazanc_w": -0.0002,
+     "kazanc_w5": -0.0006,
+     "bilesim": 1.02783,
+     "kazanc_bilesim": 0.00216
+    },
+    "guz25": {
+     "sicak": 0.81879,
+     "sicak_w": 0.95037,
+     "sicak_w5": 0.86525,
+     "kazanc": -0.00403,
+     "kazanc_w": 0.03618,
+     "kazanc_w5": 0.00266,
+     "bilesim": 1.07767,
+     "kazanc_bilesim": -0.00238
+    },
+    "kis26": {
+     "sicak": 0.76191,
+     "sicak_w": 0.80397,
+     "sicak_w5": 0.77862,
+     "kazanc": -0.01505,
+     "kazanc_w": -0.02599,
+     "kazanc_w5": -0.0176,
+     "bilesim": 1.09591,
+     "kazanc_bilesim": -0.0081
+    }
+   },
+   "huber_a10": {
+    "yaz25": {
+     "sicak": 0.8062,
+     "sicak_w": 0.82083,
+     "sicak_w5": 0.79184,
+     "kazanc": 0.00371,
+     "kazanc_w": 0.00531,
+     "kazanc_w5": 0.00551,
+     "bilesim": 1.02773,
+     "kazanc_bilesim": 0.00226
+    },
+    "guz25": {
+     "sicak": 0.82204,
+     "sicak_w": 0.99168,
+     "sicak_w5": 0.87655,
+     "kazanc": -0.00728,
+     "kazanc_w": -0.00513,
+     "kazanc_w5": -0.00864,
+     "bilesim": 1.07959,
+     "kazanc_bilesim": -0.0043
+    },
+    "kis26": {
+     "sicak": 0.75339,
+     "sicak_w": 0.77722,
+     "sicak_w5": 0.76488,
+     "kazanc": -0.00653,
+     "kazanc_w": 0.00076,
+     "kazanc_w5": -0.00386,
+     "bilesim": 1.09131,
+     "kazanc_bilesim": -0.0035
+    }
+   },
+   "huber_a20": {
+    "yaz25": {
+     "sicak": 0.80822,
+     "sicak_w": 0.82401,
+     "sicak_w5": 0.79566,
+     "kazanc": 0.00169,
+     "kazanc_w": 0.00213,
+     "kazanc_w5": 0.00169,
+     "bilesim": 1.02896,
+     "kazanc_bilesim": 0.00103
+    },
+    "guz25": {
+     "sicak": 0.81605,
+     "sicak_w": 0.97917,
+     "sicak_w5": 0.86814,
+     "kazanc": -0.00129,
+     "kazanc_w": 0.00738,
+     "kazanc_w5": -0.00023,
+     "bilesim": 1.07605,
+     "kazanc_bilesim": -0.00076
+    },
+    "kis26": {
+     "sicak": 0.74215,
+     "sicak_w": 0.76969,
+     "sicak_w5": 0.75474,
+     "kazanc": 0.00471,
+     "kazanc_w": 0.00829,
+     "kazanc_w5": 0.00628,
+     "bilesim": 1.0853,
+     "kazanc_bilesim": 0.00251
+    }
+   },
+   "l1": {
+    "yaz25": {
+     "sicak": 0.80742,
+     "sicak_w": 0.825,
+     "sicak_w5": 0.7965,
+     "kazanc": 0.00249,
+     "kazanc_w": 0.00114,
+     "kazanc_w5": 0.00085,
+     "bilesim": 1.02847,
+     "kazanc_bilesim": 0.00152
+    },
+    "guz25": {
+     "sicak": 0.82023,
+     "sicak_w": 0.98166,
+     "sicak_w5": 0.86825,
+     "kazanc": -0.00547,
+     "kazanc_w": 0.00489,
+     "kazanc_w5": -0.00034,
+     "bilesim": 1.07852,
+     "kazanc_bilesim": -0.00323
+    }
+   }
+  },
+  "lgbm": {
+   "TABAN": {
+    "yaz25": {
+     "sicak": 0.80991,
+     "sicak_w": 0.82614,
+     "sicak_w5": 0.79735,
+     "kazanc": 0.0,
+     "kazanc_w": 0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.02999,
+     "kazanc_bilesim": -0.0
+    },
+    "guz25": {
+     "sicak": 0.81476,
+     "sicak_w": 0.98655,
+     "sicak_w5": 0.86791,
+     "kazanc": -0.0,
+     "kazanc_w": -0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.07529,
+     "kazanc_bilesim": 0.0
+    },
+    "kis26": {
+     "sicak": 0.74686,
+     "sicak_w": 0.77798,
+     "sicak_w5": 0.76102,
+     "kazanc": 0.0,
+     "kazanc_w": 0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.08781,
+     "kazanc_bilesim": -0.0
+    }
+   },
+   "huber_a01": {
+    "yaz25": {
+     "sicak": 0.82091,
+     "sicak_w": 0.84952,
+     "sicak_w5": 0.82303,
+     "kazanc": -0.011,
+     "kazanc_w": -0.02338,
+     "kazanc_w5": -0.02568,
+     "bilesim": 1.03675,
+     "kazanc_bilesim": -0.00676
+    }
+   },
+   "huber_a02": {
+    "yaz25": {
+     "sicak": 0.81271,
+     "sicak_w": 0.8351,
+     "sicak_w5": 0.80785,
+     "kazanc": -0.0028,
+     "kazanc_w": -0.00896,
+     "kazanc_w5": -0.0105,
+     "bilesim": 1.03171,
+     "kazanc_bilesim": -0.00172
+    }
+   },
+   "huber_a05": {
+    "yaz25": {
+     "sicak": 0.80484,
+     "sicak_w": 0.823,
+     "sicak_w5": 0.79434,
+     "kazanc": 0.00507,
+     "kazanc_w": 0.00314,
+     "kazanc_w5": 0.00301,
+     "bilesim": 1.02689,
+     "kazanc_bilesim": 0.0031
+    }
+   },
+   "huber_a10": {
+    "yaz25": {
+     "sicak": 0.80535,
+     "sicak_w": 0.82325,
+     "sicak_w5": 0.79438,
+     "kazanc": 0.00456,
+     "kazanc_w": 0.00289,
+     "kazanc_w5": 0.00297,
+     "bilesim": 1.02721,
+     "kazanc_bilesim": 0.00278
+    }
+   },
+   "huber_a20": {
+    "yaz25": {
+     "sicak": 0.80647,
+     "sicak_w": 0.82381,
+     "sicak_w5": 0.79512,
+     "kazanc": 0.00344,
+     "kazanc_w": 0.00233,
+     "kazanc_w5": 0.00223,
+     "bilesim": 1.02789,
+     "kazanc_bilesim": 0.0021
+    }
+   }
+  },
+  "HEPSI": {
+   "TABAN": {
+    "yaz25": {
+     "sicak": 0.80991,
+     "sicak_w": 0.82614,
+     "sicak_w5": 0.79735,
+     "kazanc": 0.0,
+     "kazanc_w": 0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.02999,
+     "kazanc_bilesim": -0.0
+    },
+    "guz25": {
+     "sicak": 0.81476,
+     "sicak_w": 0.98655,
+     "sicak_w5": 0.86791,
+     "kazanc": -0.0,
+     "kazanc_w": -0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.07529,
+     "kazanc_bilesim": 0.0
+    },
+    "kis26": {
+     "sicak": 0.74686,
+     "sicak_w": 0.77798,
+     "sicak_w5": 0.76102,
+     "kazanc": 0.0,
+     "kazanc_w": 0.0,
+     "kazanc_w5": 0.0,
+     "bilesim": 1.08781,
+     "kazanc_bilesim": -0.0
+    }
+   },
+   "huber_a02": {
+    "yaz25": {
+     "sicak": 1.01091,
+     "sicak_w": 1.10987,
+     "sicak_w5": 1.08875,
+     "kazanc": -0.201,
+     "kazanc_w": -0.28373,
+     "kazanc_w5": -0.2914,
+     "bilesim": 1.16008,
+     "kazanc_bilesim": -0.13009
+    }
+   },
+   "huber_a05": {
+    "yaz25": {
+     "sicak": 0.81673,
+     "sicak_w": 0.84373,
+     "sicak_w5": 0.81546,
+     "kazanc": -0.00682,
+     "kazanc_w": -0.01759,
+     "kazanc_w5": -0.01811,
+     "bilesim": 1.03417,
+     "kazanc_bilesim": -0.00418
+    }
+   },
+   "huber_a10": {
+    "yaz25": {
+     "sicak": 0.79751,
+     "sicak_w": 0.81932,
+     "sicak_w5": 0.78689,
+     "kazanc": 0.0124,
+     "kazanc_w": 0.00682,
+     "kazanc_w5": 0.01046,
+     "bilesim": 1.02243,
+     "kazanc_bilesim": 0.00756
+    }
+   },
+   "huber_a20": {
+    "yaz25": {
+     "sicak": 0.80056,
+     "sicak_w": 0.82036,
+     "sicak_w5": 0.79007,
+     "kazanc": 0.00935,
+     "kazanc_w": 0.00578,
+     "kazanc_w5": 0.00728,
+     "bilesim": 1.02429,
+     "kazanc_bilesim": 0.0057
+    }
+   }
+  }
+ },
+ "blok_disi_secim": {
+  "cat": {
+   "yaz25": {
+    "secilen": "huber_a20",
+    "dis_bloklar": [
+     "guz25",
+     "kis26"
+    ],
+    "hedefte_kazanc_w": 0.00133,
+    "hedefte_kazanc_w5": 0.00356,
+    "hedefte_kazanc": 0.00472,
+    "hedefte_kazanc_bilesim": 0.00288,
+    "blok_ici_argmin": "huber_a10",
+    "blok_ici_kazanc": 0.00551
+   },
+   "guz25": {
+    "secilen": "huber_a20",
+    "dis_bloklar": [
+     "yaz25",
+     "kis26"
+    ],
+    "hedefte_kazanc_w": 0.01725,
+    "hedefte_kazanc_w5": 0.00704,
+    "hedefte_kazanc": 0.00109,
+    "hedefte_kazanc_bilesim": 0.00064,
+    "blok_ici_argmin": "tau960",
+    "blok_ici_kazanc": 0.00445
+   },
+   "kis26": {
+    "secilen": "huber_a20",
+    "dis_bloklar": [
+     "yaz25",
+     "guz25"
+    ],
+    "hedefte_kazanc_w": 0.01177,
+    "hedefte_kazanc_w5": 0.00798,
+    "hedefte_kazanc": 0.00695,
+    "hedefte_kazanc_bilesim": 0.0037,
+    "blok_ici_argmin": "huber_a20",
+    "blok_ici_kazanc": 0.00695
+   }
+  },
+  "xgb": {
+   "yaz25": {
+    "secilen": "huber_a20",
+    "dis_bloklar": [
+     "guz25",
+     "kis26"
+    ],
+    "hedefte_kazanc_w": 0.00213,
+    "hedefte_kazanc_w5": 0.00169,
+    "hedefte_kazanc": 0.00169,
+    "hedefte_kazanc_bilesim": 0.00103,
+    "blok_ici_argmin": "huber_a10",
+    "blok_ici_kazanc": 0.00371
+   },
+   "guz25": {
+    "secilen": "huber_a20",
+    "dis_bloklar": [
+     "yaz25",
+     "kis26"
+    ],
+    "hedefte_kazanc_w": 0.00738,
+    "hedefte_kazanc_w5": -0.00023,
+    "hedefte_kazanc": -0.00129,
+    "hedefte_kazanc_bilesim": -0.00076,
+    "blok_ici_argmin": "TABAN",
+    "blok_ici_kazanc": -0.0
+   },
+   "kis26": {
+    "secilen": "huber_a20",
+    "dis_bloklar": [
+     "yaz25",
+     "guz25"
+    ],
+    "hedefte_kazanc_w": 0.00829,
+    "hedefte_kazanc_w5": 0.00628,
+    "hedefte_kazanc": 0.00471,
+    "hedefte_kazanc_bilesim": 0.00251,
+    "blok_ici_argmin": "huber_a20",
+    "blok_ici_kazanc": 0.00471
+   }
+  },
+  "lgbm": {
+   "yaz25": {
+    "secilen": "TABAN",
+    "dis_bloklar": [
+     "guz25",
+     "kis26"
+    ],
+    "hedefte_kazanc_w": 0.0,
+    "hedefte_kazanc_w5": 0.0,
+    "hedefte_kazanc": 0.0,
+    "hedefte_kazanc_bilesim": -0.0,
+    "blok_ici_argmin": "TABAN",
+    "blok_ici_kazanc": 0.0
+   },
+   "guz25": {
+    "secilen": "TABAN",
+    "dis_bloklar": [
+     "yaz25",
+     "kis26"
+    ],
+    "hedefte_kazanc_w": -0.0,
+    "hedefte_kazanc_w5": 0.0,
+    "hedefte_kazanc": -0.0,
+    "hedefte_kazanc_bilesim": 0.0,
+    "blok_ici_argmin": "TABAN",
+    "blok_ici_kazanc": -0.0
+   },
+   "kis26": {
+    "secilen": "TABAN",
+    "dis_bloklar": [
+     "yaz25",
+     "guz25"
+    ],
+    "hedefte_kazanc_w": 0.0,
+    "hedefte_kazanc_w5": 0.0,
+    "hedefte_kazanc": 0.0,
+    "hedefte_kazanc_bilesim": -0.0,
+    "blok_ici_argmin": "TABAN",
+    "blok_ici_kazanc": 0.0
+   }
+  },
+  "HEPSI": {
+   "yaz25": {
+    "secilen": "TABAN",
+    "dis_bloklar": [
+     "guz25",
+     "kis26"
+    ],
+    "hedefte_kazanc_w": 0.0,
+    "hedefte_kazanc_w5": 0.0,
+    "hedefte_kazanc": 0.0,
+    "hedefte_kazanc_bilesim": -0.0,
+    "blok_ici_argmin": "TABAN",
+    "blok_ici_kazanc": 0.0
+   },
+   "guz25": {
+    "secilen": "TABAN",
+    "dis_bloklar": [
+     "yaz25",
+     "kis26"
+    ],
+    "hedefte_kazanc_w": -0.0,
+    "hedefte_kazanc_w5": 0.0,
+    "hedefte_kazanc": -0.0,
+    "hedefte_kazanc_bilesim": 0.0,
+    "blok_ici_argmin": "TABAN",
+    "blok_ici_kazanc": -0.0
+   },
+   "kis26": {
+    "secilen": "TABAN",
+    "dis_bloklar": [
+     "yaz25",
+     "guz25"
+    ],
+    "hedefte_kazanc_w": 0.0,
+    "hedefte_kazanc_w5": 0.0,
+    "hedefte_kazanc": 0.0,
+    "hedefte_kazanc_bilesim": -0.0,
+    "blok_ici_argmin": "TABAN",
+    "blok_ici_kazanc": 0.0
+   }
+  }
+ },
+ "durum": "asama 1-2 surerken, otomatik tazeleme"
+}

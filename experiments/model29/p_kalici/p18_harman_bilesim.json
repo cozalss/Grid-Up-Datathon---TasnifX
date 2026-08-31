@@ -1,0 +1,35 @@
+{
+ "yaz25": {
+  "sicak_URETIM_3_1_1_ag": 0.79655,
+  "sicak_TEZGAH_esit": 0.80304,
+  "soguk_URETIM_cat": 1.57454,
+  "soguk_TEZGAH_esit": 1.43487,
+  "soguk_lgbm": 1.40519,
+  "BILESIM_URETIM(cat+3/1/1/1.4)": 1.02141,
+  "BILESIM_TEZGAH(esit+esit)": 0.97888,
+  "BILESIM_URETIMsicak+ESITsoguk": 0.97475,
+  "BILESIM_URETIMsicak+LGBMsoguk": 0.96512
+ },
+ "guz25": {
+  "sicak_URETIM_3_1_1_ag": 0.80548,
+  "sicak_TEZGAH_esit": 0.80473,
+  "soguk_URETIM_cat": 1.69729,
+  "soguk_TEZGAH_esit": 1.60782,
+  "soguk_lgbm": 1.60749,
+  "BILESIM_URETIM(cat+3/1/1/1.4)": 1.0693,
+  "BILESIM_TEZGAH(esit+esit)": 1.03776,
+  "BILESIM_URETIMsicak+ESITsoguk": 1.03821,
+  "BILESIM_URETIMsicak+LGBMsoguk": 1.0381
+ },
+ "kis26": {
+  "sicak_URETIM_3_1_1_ag": 0.74322,
+  "sicak_TEZGAH_esit": 0.73831,
+  "soguk_URETIM_cat": 1.83864,
+  "soguk_TEZGAH_esit": 1.90615,
+  "soguk_lgbm": 2.00527,
+  "BILESIM_URETIM(cat+3/1/1/1.4)": 1.08587,
+  "BILESIM_TEZGAH(esit+esit)": 1.10881,
+  "BILESIM_URETIMsicak+ESITsoguk": 1.11137,
+  "BILESIM_URETIMsicak+LGBMsoguk": 1.14937
+ }
+}

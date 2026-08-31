@@ -1,0 +1,226 @@
+{
+ "beta": 0.6,
+ "n_onyukleme": 500,
+ "trafo_kirpma_merdiveni": {
+  "ESIT": {
+   "yaz25": {
+    "K=0": 0.149302,
+    "K=1": 0.129957,
+    "K=3": 0.09625,
+    "K=5": 0.074582,
+    "K=10": 0.044599,
+    "K=25": 0.02289
+   },
+   "guz25": {
+    "K=0": 0.192321,
+    "K=1": 0.197,
+    "K=3": 0.149729,
+    "K=5": 0.12447,
+    "K=10": 0.101094,
+    "K=25": 0.074831
+   },
+   "kis26": {
+    "K=0": -0.037802,
+    "K=1": -0.037187,
+    "K=3": -0.037888,
+    "K=5": -0.037762,
+    "K=10": -0.041763,
+    "K=25": -0.042752
+   }
+  },
+  "ESKI_3_1_1": {
+   "yaz25": {
+    "K=0": 0.101571,
+    "K=1": 0.088553,
+    "K=3": 0.06561,
+    "K=5": 0.049576,
+    "K=10": 0.030019,
+    "K=25": 0.015598
+   },
+   "guz25": {
+    "K=0": 0.132752,
+    "K=1": 0.129913,
+    "K=3": 0.099312,
+    "K=5": 0.08289,
+    "K=10": 0.067114,
+    "K=25": 0.048802
+   },
+   "kis26": {
+    "K=0": -0.00833,
+    "K=1": -0.008879,
+    "K=3": -0.010157,
+    "K=5": -0.011047,
+    "K=10": -0.014602,
+    "K=25": -0.018149
+   }
+  }
+ },
+ "test_benzeri_kohort_onyuklemeli": {
+  "ESIT": {
+   "yaz25": {
+    "dMSE": 0.028282,
+    "GA95": [
+     -0.1213,
+     0.17911
+    ],
+    "P_pozitif": 0.59,
+    "trafo": 8,
+    "n": 654
+   },
+   "guz25": {
+    "dMSE": -0.026784,
+    "GA95": [
+     -0.567488,
+     0.290266
+    ],
+    "P_pozitif": 0.472,
+    "trafo": 29,
+    "n": 2392
+   },
+   "kis26": {
+    "dMSE": 0.090277,
+    "GA95": [
+     -0.053573,
+     0.210331
+    ],
+    "P_pozitif": 0.89,
+    "trafo": 28,
+    "n": 2217
+   },
+   "UC_BLOK_ORT": {
+    "dMSE": 0.030592,
+    "GA95_blokici": [
+     -0.158731,
+     0.162912
+    ],
+    "P_pozitif": 0.66,
+    "isaret": "2/3",
+    "bloklar_arasi_se": 0.033812,
+    "test_dMSE": 0.006779,
+    "beklenen_LB_oran1.0": 0.99776,
+    "beklenen_LB_oran0.5": 0.99946
+   }
+  },
+  "ESKI_3_1_1": {
+   "yaz25": {
+    "dMSE": 0.025429,
+    "GA95": [
+     -0.066634,
+     0.118419
+    ],
+    "P_pozitif": 0.66,
+    "trafo": 8,
+    "n": 654
+   },
+   "guz25": {
+    "dMSE": 0.01283,
+    "GA95": [
+     -0.270286,
+     0.190107
+    ],
+    "P_pozitif": 0.57,
+    "trafo": 29,
+    "n": 2392
+   },
+   "kis26": {
+    "dMSE": 0.065796,
+    "GA95": [
+     -0.018146,
+     0.13735
+    ],
+    "P_pozitif": 0.942,
+    "trafo": 28,
+    "n": 2217
+   },
+   "UC_BLOK_ORT": {
+    "dMSE": 0.034685,
+    "GA95_blokici": [
+     -0.066826,
+     0.108971
+    ],
+    "P_pozitif": 0.778,
+    "isaret": "3/3",
+    "bloklar_arasi_se": 0.015975,
+    "test_dMSE": 0.007686,
+    "beklenen_LB_oran1.0": 0.9973,
+    "beklenen_LB_oran0.5": 0.99923
+   }
+  }
+ },
+ "kis26_en_kotu_8_trafo": [
+  {
+   "tanim": "77830182",
+   "dMSE_katkisi": -0.010433,
+   "guc": 1000.0,
+   "gun": 75,
+   "sifir_pay": 0.0,
+   "ort_tuketim": 4181.9,
+   "lokasyon": "MANİSA>SALİHLİ"
+  },
+  {
+   "tanim": "77830050",
+   "dMSE_katkisi": -0.008509,
+   "guc": 630.0,
+   "gun": 75,
+   "sifir_pay": 1.0,
+   "ort_tuketim": 0.0,
+   "lokasyon": "MANİSA>SALİHLİ"
+  },
+  {
+   "tanim": "70222641",
+   "dMSE_katkisi": -0.007336,
+   "guc": 1000.0,
+   "gun": 75,
+   "sifir_pay": 0.0,
+   "ort_tuketim": 538.0,
+   "lokasyon": "İZMİR>METROPOL>BORNOVA"
+  },
+  {
+   "tanim": "77841202",
+   "dMSE_katkisi": -0.007117,
+   "guc": 1000.0,
+   "gun": 76,
+   "sifir_pay": 0.0,
+   "ort_tuketim": 7034.3,
+   "lokasyon": "MANİSA>SALİHLİ"
+  },
+  {
+   "tanim": "71530080",
+   "dMSE_katkisi": -0.005932,
+   "guc": 250.0,
+   "gun": 79,
+   "sifir_pay": 0.0,
+   "ort_tuketim": 2670.7,
+   "lokasyon": "İZMİR>GÜNEY BÖLGE>ÖDEMİŞ"
+  },
+  {
+   "tanim": "70220096",
+   "dMSE_katkisi": -0.005187,
+   "guc": 630.0,
+   "gun": 84,
+   "sifir_pay": 0.0,
+   "ort_tuketim": 1979.3,
+   "lokasyon": "İZMİR>METROPOL>BORNOVA"
+  },
+  {
+   "tanim": "71740459",
+   "dMSE_katkisi": -0.003955,
+   "guc": 630.0,
+   "gun": 79,
+   "sifir_pay": 0.0,
+   "ort_tuketim": 2757.5,
+   "lokasyon": "İZMİR>KUZEY BÖLGE>ALİAĞA"
+  },
+  {
+   "tanim": "78430010",
+   "dMSE_katkisi": -0.003648,
+   "guc": 630.0,
+   "gun": 82,
+   "sifir_pay": 0.0,
+   "ort_tuketim": 4841.2,
+   "lokasyon": "MANİSA>AHMETLİ"
+  }
+ ],
+ "kis26_toplam_negatif_dMSE": -0.192443,
+ "kis26_net_dMSE": -0.037802
+}

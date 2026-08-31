@@ -1,0 +1,133 @@
+{
+ "1_brut_egim": {
+  "n": 27,
+  "a": 0.003228346400264844,
+  "b": 1.427635882395723,
+  "R2": 0.6911228154372351,
+  "b_GA95": [
+   -0.09754379992502023,
+   1.7299134272618812
+  ],
+  "a_GA95": [
+   -0.007800455625104256,
+   0.021921732406985826
+  ],
+  "b_buyuk": 2.2790498393483505,
+  "n_buyuk": 8,
+  "b_kucuk": -0.47432796837574087,
+  "n_kucuk": 19
+ },
+ "6_vekil_saglamasi_rekor": [
+  {
+   "cift": "tuketim_v27_v18hedge.csv->tuketim_v30_buzme.csv",
+   "gercek": -0.00952161516782235,
+   "vekil": 0.017418000000000003,
+   "fark": 0.026939615167822353
+  },
+  {
+   "cift": "tuketim_v30_buzme.csv->tuketim_v46_gun.csv",
+   "gercek": -0.006917461086157095,
+   "vekil": 0.0013290000000000003,
+   "fark": 0.008246461086157095
+  },
+  {
+   "cift": "tuketim_v27_v18hedge.csv->tuketim_v46_gun.csv",
+   "gercek": -0.016439076253979445,
+   "vekil": 0.018747,
+   "fark": 0.035186076253979445
+  }
+ ],
+ "brut": {
+  "EKK": 1.427635882395723,
+  "ters_ust_sinir": 2.065676100553181,
+  "TLS": 1.8933748228416192
+ },
+ "cift": {
+  "n": 11,
+  "kesmesiz": -0.160834216059075,
+  "kesmesiz_GA95": [
+   -0.5031518953522365,
+   0.1716680527001084
+  ],
+  "nokta_oran_medyan": -0.1000232612235403
+ },
+ "A_vekil_gurultusu": {
+  "sd_dosya": {
+   "tuketim_v67_c1335_olay.csv": 0.0009994826755012043,
+   "tuketim_v73_soguk_gun160.csv": 0.00031528628324450247,
+   "tuketim_v55_gunolcek.csv": 0.001285473537537541,
+   "tuketim_v50_nihai30.csv": 0.0006843594991442016,
+   "tuketim_v30_buzme.csv": 0.0014557424850359208,
+   "tuketim_v27_v18hedge.csv": 0.0016202152382982905,
+   "tuketim_v46_gun.csv": 0.0014246737385732223,
+   "tuketim_v7.csv": 0.007082170353843472
+  },
+  "sd_tipik": 0.0013550736380553816
+ },
+ "B_sapma_sigma": "sapma, tohum gurultusunun 5-11 katidir -> SISTEMATIK, rastgele DEGIL",
+ "C_cift_egimi": {
+  "b_ham": -0.16083421605907497,
+  "lambda_": 0.9301058011073131,
+  "b_duzeltilmis": -0.17292034504848589,
+  "GA95": [
+   -0.5472934409681994,
+   0.18700409711179583
+  ],
+  "var_x": 0.00010872588007272725,
+  "var_gurultu": 7.599308286585627e-06
+ },
+ "D_kesmesiz": {
+  "A_son_islem": {
+   "n": 7,
+   "b": 0.03134986511922475,
+   "GA95": [
+    -0.07013517926118874,
+    0.06809793604667627
+   ]
+  },
+  "B_yapisal": {
+   "n": 3,
+   "b": -0.36018628290120547,
+   "GA95": [
+    -0.3818181818181818,
+    0.7592942659105231
+   ]
+  },
+  "C_hepsi": {
+   "n": 10,
+   "b": -0.33932907840323173,
+   "GA95": [
+    -0.3741572341969426,
+    0.3620180954150355
+   ]
+  },
+  "D_soguk": {
+   "n": 2,
+   "b": 0.002994804419036272,
+   "GA95": [
+    -0.05863192182410425,
+    0.01335648457326032
+   ]
+  }
+ },
+ "E_karar": {
+  "A son-islem": {
+   "b": 0.03134986511922475,
+   "P": 0.0
+  },
+  "B yapisal": {
+   "b": -0.36018628290120547,
+   "P": 0.03525
+  },
+  "C hepsi": {
+   "b": -0.33932907840323173,
+   "P": 0.0
+  },
+  "bahis_karisimi": {
+   "medyan": -0.3286029138410742,
+   "P": 0.035335
+  }
+ },
+ "gerekli_oran": 0.6817073170731707,
+ "HUKUM": "Zayiflatma itirazi NICEL OLARAK CURUTULDU: olculen guvenilirlik lambda=0.930, yani zayiflatma egimi en fazla %7 buyutur (-0.161 -> -0.173). Vekilin ASIL hatasi rastgele degil SISTEMATIKTIR (belgelenmis gercek blok CV ile karsilastirildiginda 4.0 ve 12.4 sigma sapma) ve bu hataya zayiflatma duzeltmesi UYGULANAMAZ."
+}

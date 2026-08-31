@@ -1,0 +1,550 @@
+{
+ "kaynak_dizi": "experiments/model29/p_kalici/aday_csv/p06_test_soguk_aile.npy",
+ "n_soguk": 158369,
+ "aile_sirasi": [
+  "cat",
+  "xgb",
+  "lgbm"
+ ],
+ "aile_ortalamasi": {
+  "cat": 6.6996,
+  "xgb": 6.6661,
+  "lgbm": 6.6105
+ },
+ "aile_korelasyonu": [
+  [
+   1.0,
+   0.8708,
+   0.8297
+  ],
+  [
+   0.8708,
+   1.0,
+   0.9348
+  ],
+  [
+   0.8297,
+   0.9348,
+   1.0
+  ]
+ ],
+ "dosyalar": {
+  "tuketim_YP_seviye.csv": {
+   "regresyon_ham": {
+    "sabit": 0.2426,
+    "b_cat": 1.1086,
+    "b_xgb": -0.1321,
+    "b_lgbm": 0.0015,
+    "R2": 0.94598
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.9064,
+    "b_xgb": -0.0806,
+    "b_lgbm": -0.0126,
+    "toplam": 0.8132,
+    "PAY_cat": 1.1146,
+    "PAY_xgb": -0.0992,
+    "PAY_lgbm": -0.0155,
+    "R2": 0.78412
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.94007,
+    "kor": 0.96957,
+    "rms_artik": 0.25726
+   },
+   "hipotez_ESIT": {
+    "R2": 0.76779,
+    "kor": 0.87624,
+    "rms_artik": 0.5064
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.85866,
+    "kor": 0.92664,
+    "rms_artik": 0.39508
+   }
+  },
+  "tuketim_m6_ikiyon.csv": {
+   "regresyon_ham": {
+    "sabit": 0.4995,
+    "b_cat": 1.0478,
+    "b_xgb": -0.1228,
+    "b_lgbm": 0.0149,
+    "R2": 0.95608
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.7511,
+    "b_xgb": -0.0495,
+    "b_lgbm": -0.0036,
+    "toplam": 0.698,
+    "PAY_cat": 1.0761,
+    "PAY_xgb": -0.071,
+    "PAY_lgbm": -0.0051,
+    "R2": 0.85037
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.95151,
+    "kor": 0.97545,
+    "rms_artik": 0.22117
+   },
+   "hipotez_ESIT": {
+    "R2": 0.78464,
+    "kor": 0.8858,
+    "rms_artik": 0.46609
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.87413,
+    "kor": 0.93495,
+    "rms_artik": 0.35632
+   }
+  },
+  "tuketim_K_yenibas.csv": {
+   "regresyon_ham": {
+    "sabit": 0.3302,
+    "b_cat": 1.097,
+    "b_xgb": -0.1286,
+    "b_lgbm": 0.0006,
+    "R2": 0.94813
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.9099,
+    "b_xgb": -0.0806,
+    "b_lgbm": -0.013,
+    "toplam": 0.8162,
+    "PAY_cat": 1.1147,
+    "PAY_xgb": -0.0988,
+    "PAY_lgbm": -0.016,
+    "R2": 0.7929
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.94234,
+    "kor": 0.97074,
+    "rms_artik": 0.24973
+   },
+   "hipotez_ESIT": {
+    "R2": 0.77007,
+    "kor": 0.87754,
+    "rms_artik": 0.49867
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.86102,
+    "kor": 0.92791,
+    "rms_artik": 0.3877
+   }
+  },
+  "tuketim_v90_temiz_sota.csv": {
+   "regresyon_ham": {
+    "sabit": 1.1475,
+    "b_cat": 0.9299,
+    "b_xgb": -0.0947,
+    "b_lgbm": 0.0354,
+    "R2": 0.91008
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.5009,
+    "b_xgb": 0.0091,
+    "b_lgbm": 0.0139,
+    "toplam": 0.5239,
+    "PAY_cat": 0.9561,
+    "PAY_xgb": 0.0173,
+    "PAY_lgbm": 0.0266,
+    "R2": 0.6746
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.90815,
+    "kor": 0.95297,
+    "rms_artik": 0.28914
+   },
+   "hipotez_ESIT": {
+    "R2": 0.76628,
+    "kor": 0.87537,
+    "rms_artik": 0.46124
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.8459,
+    "kor": 0.91973,
+    "rms_artik": 0.37452
+   }
+  },
+  "tuketim_v83_sicak_optimum.csv": {
+   "regresyon_ham": {
+    "sabit": 0.8162,
+    "b_cat": 0.9508,
+    "b_xgb": -0.0741,
+    "b_lgbm": 0.0164,
+    "R2": 0.9676
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.6533,
+    "b_xgb": -0.0018,
+    "b_lgbm": 0.0012,
+    "toplam": 0.6527,
+    "PAY_cat": 1.001,
+    "PAY_xgb": -0.0028,
+    "PAY_lgbm": 0.0018,
+    "R2": 0.93908
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.96605,
+    "kor": 0.98288,
+    "rms_artik": 0.17491
+   },
+   "hipotez_ESIT": {
+    "R2": 0.81479,
+    "kor": 0.90266,
+    "rms_artik": 0.40855
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.8996,
+    "kor": 0.94847,
+    "rms_artik": 0.30079
+   }
+  },
+  "tuketim_v80_optimum.csv": {
+   "regresyon_ham": {
+    "sabit": 0.8162,
+    "b_cat": 0.9508,
+    "b_xgb": -0.0741,
+    "b_lgbm": 0.0164,
+    "R2": 0.9676
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.6533,
+    "b_xgb": -0.0018,
+    "b_lgbm": 0.0012,
+    "toplam": 0.6527,
+    "PAY_cat": 1.001,
+    "PAY_xgb": -0.0028,
+    "PAY_lgbm": 0.0018,
+    "R2": 0.93908
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.96605,
+    "kor": 0.98288,
+    "rms_artik": 0.17491
+   },
+   "hipotez_ESIT": {
+    "R2": 0.81479,
+    "kor": 0.90266,
+    "rms_artik": 0.40855
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.8996,
+    "kor": 0.94847,
+    "rms_artik": 0.30079
+   }
+  },
+  "tuketim_v27_v18hedge.csv": {
+   "regresyon_ham": {
+    "sabit": -0.031,
+    "b_cat": 0.6043,
+    "b_xgb": 0.2345,
+    "b_lgbm": 0.1653,
+    "R2": 0.99531
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.5947,
+    "b_xgb": 0.2375,
+    "b_lgbm": 0.1644,
+    "toplam": 0.9965,
+    "PAY_cat": 0.5968,
+    "PAY_xgb": 0.2383,
+    "PAY_lgbm": 0.165,
+    "R2": 0.98601
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.94375,
+    "kor": 0.97147,
+    "rms_artik": 0.2609
+   },
+   "hipotez_ESIT": {
+    "R2": 0.97423,
+    "kor": 0.98703,
+    "rms_artik": 0.17658
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.99509,
+    "kor": 0.99754,
+    "rms_artik": 0.07706
+   }
+  },
+  "tuketim_v46_gun.csv": {
+   "regresyon_ham": {
+    "sabit": 0.8176,
+    "b_cat": 0.9632,
+    "b_xgb": -0.1057,
+    "b_lgbm": 0.0204,
+    "R2": 0.91051
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.5561,
+    "b_xgb": -0.0086,
+    "b_lgbm": 0.003,
+    "toplam": 0.5505,
+    "PAY_cat": 1.0101,
+    "PAY_xgb": -0.0156,
+    "PAY_lgbm": 0.0055,
+    "R2": 0.66505
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.90728,
+    "kor": 0.95251,
+    "rms_artik": 0.29278
+   },
+   "hipotez_ESIT": {
+    "R2": 0.75461,
+    "kor": 0.86868,
+    "rms_artik": 0.47629
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.8378,
+    "kor": 0.91532,
+    "rms_artik": 0.38723
+   }
+  },
+  "tuketim_v30_buzme.csv": {
+   "regresyon_ham": {
+    "sabit": 0.7879,
+    "b_cat": 0.7088,
+    "b_xgb": 0.0531,
+    "b_lgbm": 0.1184,
+    "R2": 0.96406
+   },
+   "regresyon_kova_merkezli": {
+    "b_cat": 0.3655,
+    "b_xgb": 0.1364,
+    "b_lgbm": 0.1012,
+    "toplam": 0.603,
+    "PAY_cat": 0.606,
+    "PAY_xgb": 0.2262,
+    "PAY_lgbm": 0.1678,
+    "R2": 0.96829
+   },
+   "hipotez_CAT_TEKIL": {
+    "R2": 0.94991,
+    "kor": 0.97463,
+    "rms_artik": 0.21331
+   },
+   "hipotez_ESIT": {
+    "R2": 0.90291,
+    "kor": 0.95022,
+    "rms_artik": 0.29699
+   },
+   "hipotez_URETIM_SICAK_3_1_1": {
+    "R2": 0.95148,
+    "kor": 0.97544,
+    "rms_artik": 0.20995
+   }
+  }
+ },
+ "0_YONTEM_GECERLILIGI": {
+  "iddia": "log1p(gonderim) uc aile kolonuna (cat,xgb,lgbm) regrese edilirse katsayi PAYLARI harman agirliklarini, katsayi TOPLAMI son islem buzmesini verir.",
+  "KALIBRASYON_KANITI": {
+   "tuketim_v27_v18hedge.csv": {
+    "bilinen_gercek": "ESKI soguk harman 3/1/1 = (0.600, 0.200, 0.200); son islem YOK (scripts/son_islem.py docstring: 'v27 (son islem YOK) 1,03362')",
+    "olculen_pay": [
+     0.5968,
+     0.2383,
+     0.165
+    ],
+    "olculen_toplam": 0.9965,
+    "yorum": "Paylar 3/1/1'i, toplam 1.00 ise 'son islem yok'u DOGRU okudu."
+   },
+   "tuketim_v30_buzme.csv": {
+    "bilinen_gercek": "v30 = v27 + scripts/son_islem.py (beta=0.60)",
+    "olculen_pay": [
+     0.606,
+     0.2262,
+     0.1678
+    ],
+    "olculen_toplam": 0.603,
+    "yorum": "Paylar degismedi, toplam 0.603 = beta 0.60. Yontem hem harmani hem buzmeyi DOGRU okuyor."
+   }
+  },
+  "aile_kolonlari_ayirt_edilebilir_mi": "Evet. Aile korelasyonlari 0.83-0.93 (tam es-dogrusal degil); v27/v30 kalibrasyonu paylari +-0.04 icinde geri veriyor."
+ },
+ "1_KAYNAK_KOD": {
+  "dosya": "scripts/tuketim_model.py",
+  "REJIM_AYARLARI_tanimi_satir": 837,
+  "SOGUK_bloku_satir": "990-995",
+  "SOGUK_ifadesi": "\"soguk\": {\"maske\": 1.00, \"cat\": {\"depth\": 7}, \"ek_koken\": False, \"agirlik\": {\"cat\": 1.0}}",
+  "SICAK_bloku_satir": "926-931",
+  "SICAK_ifadesi": "\"sicak\": {\"maske\": 0.15, \"cat\": {\"random_strength\": 4.0, \"l2_leaf_reg\": 1.0, \"depth\": 6}, \"ek_koken\": True, \"agirlik\": {\"cat\": 3.0, \"xgb\": 1.0, \"lgbm\": 1.0, \"sinir_agi\": 1.4}}",
+  "kullanim": "tuketim_model.rejim_tahmini() satir 1221-1305: her rejim icin agirlik = ayar['agirlik']; cikti[maske] = sum(w*aile_tahmini(a,...)) / sum(w)",
+  "degisiklik_commiti": "d04243f 'feat: soguk son islem yeniden kuruldu -- gun ekseni korunuyor, hedef kosullu' (2026-08-23 19:56). Soguk harman 3/1/1 -> YALNIZ cat bu commit'te sabitlendi.",
+  "gerekce_yorumda": "REJIM_AYARLARI soguk yorumu: 'SOGUK HARMAN -> YALNIZ cat (2026-08-23, deney_soguk_taban.py)'; harman 1.84106 vs 3/1/1 1.86931 (kis26, beta=1.00)."
+ },
+ "2_HUKUM": {
+  "SOGUK_URETIM_HARMANI": "YALNIZ CAT ({'cat': 1.0}). Hem kaynak kod hem AMPIRIK regresyon soyluyor.",
+  "ampirik_destek": {
+   "tuketim_YP_seviye.csv (LB 1.00115, yedegimiz)": {
+    "pay": [
+     1.1146,
+     -0.0992,
+     -0.0155
+    ],
+    "toplam": 0.8132
+   },
+   "tuketim_m6_ikiyon.csv (LB 1.00284)": {
+    "pay": [
+     1.0761,
+     -0.071,
+     -0.0051
+    ],
+    "toplam": 0.698
+   },
+   "tuketim_K_yenibas.csv": {
+    "pay": [
+     1.1147,
+     -0.0988,
+     -0.016
+    ],
+    "toplam": 0.8162
+   },
+   "tuketim_v83_sicak_optimum.csv": {
+    "pay": [
+     1.001,
+     -0.0028,
+     0.0018
+    ],
+    "toplam": 0.6527
+   },
+   "tuketim_v80_optimum.csv": {
+    "pay": [
+     1.001,
+     -0.0028,
+     0.0018
+    ],
+    "toplam": 0.6527
+   },
+   "tuketim_v46_gun.csv": {
+    "pay": [
+     1.0101,
+     -0.0156,
+     0.0055
+    ],
+    "toplam": 0.5505
+   },
+   "tuketim_v90_temiz_sota.csv": {
+    "pay": [
+     0.9561,
+     0.0173,
+     0.0266
+    ],
+    "toplam": 0.5239
+   },
+   "yorum": "2026-08-23 SONRASI uretilen HER dosyada cat payi ~1.0, xgb ve lgbm paylari ~0 (bazilari hafif NEGATIF). Oncekilerde (v27, v30) 0.60/0.24/0.17. Kirilma noktasi commit d04243f ile ortusuyor."
+  },
+  "SICAK_URETIM_HARMANI": "{'cat': 3.0, 'xgb': 1.0, 'lgbm': 1.0, 'sinir_agi': 1.4} -> paylar cat %46.9, xgb %15.6, lgbm %15.6, sinir_agi %21.9. (Kaynak koddan; test tarafinda sicak aile dizisi diskte olmadigi icin ampirik dogrulanamadi. experiments/sicak_kaldirac/ortak.py bu agirligi DOGRU kullaniyor.)",
+  "CV_TEZGAHININ_KULLANDIGI": "experiments/model29/p02_duzeltme.py:blok() -- SICAK icin aile_onbellek'ten cat/xgb/lgbm ESIT (sinir_agi YOK), SOGUK icin soguk_tahmin_*.npz'nin TUM anahtarlari ESIT (cat/xgb/lgbm). Ayni kurulus p01, p03-p14, p17'de tekrarlaniyor."
+ },
+ "3_GECERSIZ_OLAN_OLCUMLER": {
+  "SOGUK_TARAFTA_TUMU": [
+   "p11_b_lgbm.json -- soguk lgbm kayip fonksiyonu taramasi (huber a=1.0 / 2.0 / 0.5, l1, fair). TABAN sutunu ESIT harman.",
+   "p14 huber a=0.5 olcumu (+0.01263 test bilesimi, docs/79 EK). Ayni ESIT harman uzerinde.",
+   "p06 soguk harman agirligi (esit -> 0.05/0.35/0.60) ve p07'nin urettigi 12 aday CSV + 4 delta npy.",
+   "p17_band.json'un 5_huber_beklentisi bolumu ve ona dayanan butun LB/olasilik hesaplari (P(3.sira)=0.52 dahil)."
+  ],
+  "NEDEN": "Uretim soguk uzmani lgbm'i HIC KULLANMIYOR. lgbm'in kayip fonksiyonunu degistirmek, iceriginde lgbm olmayan bir harmani DEGISTIRMEZ. Olculen kazanc uretimde birebir SIFIRDIR.",
+  "p06_ozel_notu": "p06 deltasi A@(w_yeni - w_esit) idi; cat-tekil bir tabana eklenirse harmani (0.05,0.35,0.60)'a DEGIL, (1,0,0)+(w_yeni-w_esit) = (0.7167, 0.0167, 0.2667)'e goturur. Yani uretilmis 12 aday CSV'nin uyguladigi harman, p06'nin olctugu harman DEGILDIR.",
+  "SICAK_TARAFTA_KISMEN_GECERSIZ": "p02/p15 sicak olcumleri cat/xgb/lgbm ESIT harman uzerinde; uretim 3/1/1 + sinir_agi 1.4. Bir sicak aile degisikliginin uretimdeki etkisi, olculen etkinin yaklasik (uretim_payi / 0.3333) kati: cat icin x1.41, xgb icin x0.47, lgbm icin x0.47. Isaret korunur, BUYUKLUK korunmaz. Ayrica harmanin %21.9'u (sinir_agi) hicbir olcumde YOK.",
+  "GECERLI_KALANLAR": [
+   "experiments/sicak_kaldirac/* -- ortak.py URETIM agirligini (3/1/1/1.4) kullaniyor, sinir_agi dahil.",
+   "p08 olu trafo kurali -- harmandan bagimsiz, tahmin uzerinde carpan.",
+   "p17'nin 1-4. bolumleri (band/gurultu tabani analizi) -- harmandan bagimsiz."
+  ]
+ },
+ "4_TASIMA_BILMECESINE_ETKISI": {
+  "hipotez": "'Kucuk CV kazanclari LB'ye tasinmiyor' bulgusunun bir parcasi, CV tezgahinin URETIM HATTINI OLCMEMESI olabilir.",
+  "destek": "Tezgah soguk tarafta uretimde HIC KULLANILMAYAN iki aileyi (xgb, lgbm) 2/3 agirlikla tasiyor; sicak tarafta uretim harmaninin %21.9'unu (sinir_agi) hic tasimiyor ve cat'i %46.9 yerine %33.3 sayiyor.",
+  "SINIR": "Bu bir ISARETTIR, kanit degil. docs/79 EK'teki 3 GERCEK cift (v27->v30->v46) blok CV'si de AYNI tezgahtan geliyor ve orada tasima orani 0.57-0.97 olculmustu -- yani tezgah tamamen kor degil. Ayrica v27/v30 ESKI (3/1/1) harman doneminden; tezgahin esit harmani o donemde uretime DAHA YAKINDI.",
+  "YENI_SORU": "Tezgah-uretim uyusmazligi 2026-08-23'te (d04243f) DOGDU. O tarihten SONRAKI butun CV->LB karsilastirmalari bu sapmayi tasiyor. docs/79'daki 27 dosyalik tasima analizi iki donemi KARISTIRIYOR olabilir."
+ },
+ "5_NE_YAPILMALI": {
+  "A_EN_HIZLI_DOGRU_OLCUM": "Mevcut onbellekler yeterli. soguk_tahmin_*.npz'de cat anahtarlari ZATEN var; p02_duzeltme.blok()'un soguk kolunu 'z tum anahtarlarin ortalamasi' yerine 'yalniz {tohum}_cat' yapmak, soguk tarafi URETIME hizalar. EGITIM GEREKTIRMEZ.",
+  "B_SICAK_HIZALAMA": "aile_onbellek'te sinir_agi parcalari VAR (yaz25/guz25/kis26 x 1000-1002). Sicak kolu 3/1/1/1.4 agirligiyla kurmak da EGITIM GEREKTIRMEZ. experiments/sicak_kaldirac/ortak.py bunu zaten yapiyor -- oradan kopyalanabilir.",
+  "C_SONRA": "Uretime hizalanmis tezgah kurulunca huber ve diger adaylar YENIDEN olculmelidir. Soguk tarafta anlamli soru artik 'lgbm huber mi' degil, 'CAT huber mi'dir -- ve p11_b_lgbm bu soruyu HIC sormadi.",
+  "D_p18_DESTEGI": "p18_yeniden_egit.py aile bazinda uretiyor; harman asagi akista kuruluyor. Harman degisikligi p18'i etkilemez, YALNIZ p18_delta_vs_tam.py'nin harman kurulusu uretime hizalanmalidir.",
+  "E_ONCELIK": [
+   "1. p02_duzeltme.blok() ve turevlerinin harman kurulusunu URETIME hizala (soguk: yalniz cat; sicak: 3/1/1/1.4 + sinir_agi). EGITIM GEREKTIRMEZ.",
+   "2. Hizalanmis tezgahta soguk harman eksenini son islem ALTINDA uc blokta olc. EGITIM GEREKTIRMEZ.",
+   "3. Soguk kayip fonksiyonu sorusunu CAT icin yeniden sor (p11 yalniz lgbm'i taradi). Bu EGITIM GEREKTIRIR: 3 blok x 3-5 tohum x cat = ~25-40 dk bos makinede.",
+   "4. Huber a=0.5 gonderim adayini ve p17'nin 5. bolumunu GEcERSIZ isaretle."
+  ]
+ },
+ "6_DURUSTLUK_NOTLARI": [
+  "Ampirik regresyon SON ISLEM'i afin varsayiyor. Kova-merkezli varyant hucre sabitlerini temizliyor ama son islem tam olarak afin degilse paylar hafif kayabilir. Yine de cat 1.0 / xgb -0.10 / lgbm -0.02 gibi bir desen 'esit harman'la (0.33 her biri) UZLASMAZ.",
+  "p06 dizisi tohum 1000-1002 ile uretildi; uretim gonderimleri baska tohumlar kullandi. Tohum gurultusu sd 0.00136 -- paylari 0.33'ten 1.00'a tasiyacak buyuklukte DEGIL.",
+  "YP_seviye ve m6_ikiyon gonderim-uzayi cebiriyle kurulmus dosyalar; regresyon yine de net cat-tekil desen veriyor, cunku cebir soguk satirlarda kucuk bir duzeltme.",
+  "SICAK harman ampirik olarak DOGRULANMADI (test tarafinda sicak aile dizisi yok). Hukum yalnizca kaynak koda dayaniyor."
+ ],
+ "3b_CELISKININ_YAZILI_KANITI": {
+  "p_kalici/p14_ozet.json:harman": "ESIT (1/3 cat, 1/3 xgb, 1/3 lgbm) -- URETIM ile ayni, p06 agirligi KULLANILMADI",
+  "p_kalici/p14_olc.json:harman": "ESIT (uretim ile ayni)",
+  "scripts/tuketim_model.py:990-995": "\"soguk\": {\"maske\": 1.00, \"cat\": {\"depth\": 7}, \"ek_koken\": False, \"agirlik\": {\"cat\": 1.0}}",
+  "hukum": "p14 'ESIT harman = URETIM' diye ACIKCA yaziyor. Kaynak kod ve gonderim dosyalarinin ampirik regresyonu bunun YANLIS oldugunu soyluyor. p14'un butun kazanc rakamlari bu yanlis varsayim uzerine kurulu.",
+  "p11_b_lgbm_ayrica": "p11'in 'TABAN' sutunu (yaz25/1000 = 1.420952, kis26/1000 = 2.017536) ESIT harman DEGIL, YALNIZ-LGBM'dir (3 tohumlu lgbm-tekil: yaz25 1.40519, kis26 2.00527). docs/79 §6 tablosu bunu 'TABAN (uretim)' diye etiketlemis; o etiket de yanlis."
+ },
+ "3c_BLOK_SKORLARI_HAM": {
+  "aciklama": "SON ISLEM ONCESI, 3 tohum (1000-1002) ortalamasi, log uzayinda kirpma (max(p,0)) ile. SOGUK = soguk_tahmin_*.npz, SICAK = aile_onbellek/*_uretim.npy (sinir_agi dahil).",
+  "yaz25": {
+   "soguk_URETIM_cat": 1.57454,
+   "soguk_TEZGAH_esit": 1.43487,
+   "soguk_lgbm": 1.40519,
+   "sicak_URETIM_3_1_1_14": 0.79655,
+   "sicak_TEZGAH_esit": 0.80304
+  },
+  "guz25": {
+   "soguk_URETIM_cat": 1.69729,
+   "soguk_TEZGAH_esit": 1.60782,
+   "soguk_lgbm": 1.60749,
+   "sicak_URETIM_3_1_1_14": 0.80548,
+   "sicak_TEZGAH_esit": 0.80473
+  },
+  "kis26": {
+   "soguk_URETIM_cat": 1.83864,
+   "soguk_TEZGAH_esit": 1.90615,
+   "soguk_lgbm": 2.00527,
+   "sicak_URETIM_3_1_1_14": 0.74322,
+   "sicak_TEZGAH_esit": 0.73831
+  },
+  "test_bilesimi_sqrt(0.2216*soguk+0.7784*sicak)": {
+   "URETIM (cat soguk + 3/1/1/1.4 sicak)": {
+    "yaz25": 1.02141,
+    "guz25": 1.0693,
+    "kis26": 1.08587,
+    "ORT": 1.05886
+   },
+   "TEZGAH (esit + esit)": {
+    "yaz25": 0.97888,
+    "guz25": 1.03776,
+    "kis26": 1.10881,
+    "ORT": 1.04182
+   },
+   "URETIM sicak + ESIT soguk": {
+    "yaz25": 0.97475,
+    "guz25": 1.03821,
+    "kis26": 1.11137,
+    "ORT": 1.04144
+   },
+   "URETIM sicak + LGBM soguk": {
+    "yaz25": 0.96512,
+    "guz25": 1.0381,
+    "kis26": 1.14937,
+    "ORT": 1.05086
+   }
+  },
+  "OLCEK": "Tezgah ile uretim arasindaki bilesim farki ORT 0.017. Yani CV tezgahi, gonderdigimizden ~0.017 DAHA IYI bir nesneyi olcuyor. Bu, tartisilan huber kazancindan (0.0126) BUYUK."
+ },
+ "3d_ACILAN_BUYUK_SORU": {
+  "soru": "Soguk uzman CAT-TEKIL olmali mi?",
+  "veri": "Soguk cat-tekil, yaz25'te esit harmandan 0.1397 KOTU, guz25'te 0.0895 KOTU, kis26'da 0.0675 IYI.",
+  "karar_gecmisi": "tuketim_model.py'nin kendi yorumu: 'SOGUK HARMAN -> YALNIZ cat (2026-08-23, deney_soguk_taban.py). Eski 3/1/1 hukmu KIRLI bloklarin ortalamasindan geliyordu. kis26 tek basina bakildiginda ... olculdu'. Yani secim YALNIZ kis26'da yapildi.",
+  "kalici_kural_ihlali": "docs (KALICI KURAL 10): 'kis26'da olculen seviye kazanci kesme-etiket mevsim bitisikliginden besleniyor ve TEST'in geometrisine tasinmiyor; boyle oneriler yaz25'te olculmelidir.' Soguk harman karari tam olarak bu kuralin yasakladigi bicimde verilmis.",
+  "buyukluk": "Soguk tarafi esite dondurmek test bilesiminde ORT -0.0174 (yaz25 -0.0467, guz25 -0.0311, kis26 +0.0255). Isaret 2/3. Bu, simdiye kadar tartisilan her adaydan BUYUK bir eksen.",
+  "UYARI_DURUST": [
+   "Bu rakamlar SON ISLEM ONCESI. Uretim soguk buzmesi (beta) cat-tekil tahminlere gore kalibre edildi; buzme altinda siralama degisebilir. Kod yorumundaki kis26 tablosu buzme altinda da cat'i onde gosteriyor (1.82250 vs 3/1/1 1.83041) ama yaz25/guz25 buzme altinda HIC olculmedi.",
+   "kis26 ters isaret veriyor ve isaret tutarliligi 2/3 -- docs/79 EK'teki (c) kapisini GECEMIYOR.",
+   "Bu bir GONDERIM ONERISI DEGIL, olculmesi gereken bir eksendir. Olcum EGITIM GEREKTIRMIYOR (butun diziler onbellekte)."
+  ]
+ }
+}

@@ -1,0 +1,60 @@
+{
+ "test": {
+  "n": 158369,
+  "trafo": 2024,
+  "hucre": 85
+ },
+ "bloklar": {
+  "yaz25": {
+   "n": 20633,
+   "trafo": 677,
+   "hucre": 87,
+   "tv_teste": 0.7227,
+   "test_hucre_kapsami": 0.9727,
+   "ham_etkin_trafo": 378.7,
+   "agirlikli_ess_satir": 2766.4,
+   "agirlikli_etkin_trafo": 34.3,
+   "w_max": 12.1,
+   "w_ust_sinira_dayanan_satir": 0,
+   "pg_hakim_n": 2426,
+   "pg_hakim_trafo": 30,
+   "pg_hakim_etkin_trafo": 29.9,
+   "pg_hakim_agirlikli_etkin_trafo": 22.2,
+   "pg_hakim_agirlik_payi": 0.7901
+  },
+  "guz25": {
+   "n": 39405,
+   "trafo": 1169,
+   "hucre": 84,
+   "tv_teste": 0.531,
+   "test_hucre_kapsami": 0.9718,
+   "ham_etkin_trafo": 655.7,
+   "agirlikli_ess_satir": 13039.8,
+   "agirlikli_etkin_trafo": 156.5,
+   "w_max": 5.6,
+   "w_ust_sinira_dayanan_satir": 0,
+   "pg_hakim_n": 12319,
+   "pg_hakim_trafo": 150,
+   "pg_hakim_etkin_trafo": 149.9,
+   "pg_hakim_agirlikli_etkin_trafo": 108.9,
+   "pg_hakim_agirlik_payi": 0.7909
+  },
+  "kis26": {
+   "n": 61918,
+   "trafo": 1220,
+   "hucre": 95,
+   "tv_teste": 0.5538,
+   "test_hucre_kapsami": 0.9997,
+   "ham_etkin_trafo": 714.4,
+   "agirlikli_ess_satir": 15249.4,
+   "agirlikli_etkin_trafo": 192.7,
+   "w_max": 9.3,
+   "w_ust_sinira_dayanan_satir": 0,
+   "pg_hakim_n": 13532,
+   "pg_hakim_trafo": 168,
+   "pg_hakim_etkin_trafo": 167.7,
+   "pg_hakim_agirlikli_etkin_trafo": 116.6,
+   "pg_hakim_agirlik_payi": 0.7688
+  }
+ }
+}

@@ -1,0 +1,52 @@
+{
+ "baslik": "p19 -- SOGUK CATBOOST iyilestirme (URETIM harmani = YALNIZ CAT)",
+ "tarih": "2026-08-31",
+ "durum": "ON-KAYIT YAZILDI, OLCUM BASLAMADI",
+
+ "00_ON_KAYIT": {
+  "yazildi": "olcum yapilmadan ONCE, hicbir p19_*.npy uretilmeden",
+  "GEREKCE": "Bu projenin butun soguk calismasi (p06, p11_b_lgbm, p14 huber) cat+xgb+lgbm ESIT harman uzerinde olculdu. Ama tm.REJIM_AYARLARI['soguk']['agirlik'] = {'cat': 1.0} -- URETIM GONDERIMINDE SOGUK TARAF YALNIZ CATBOOST. Esit harman uretimde karsiligi olmayan bir nesnedir. p19 olcutu URETIM olcutudur: soguk tahmin = cat tekil.",
+
+  "OLCUT": {
+   "soguk_tahmin": "yalniz cat (uretim harmani). Cok tohumlu ise LOG UZAYINDA tohum ortalamasi (uretim hatti da oyle).",
+   "metrik": "np.clip(np.expm1(log_tahmin), 0, None) -> tm.rmsle  (uretim olcutu)",
+   "test_bilesimi": "sqrt(0.2216*soguk^2 + 0.7784*sicak^2); sicak blogun URETIM sicak RMSLE'si, DEGISMEZ",
+   "kohort_agirligi": "p11_agirlik.agirlik() -- test soguk satirlarinin (p_gun_sayisi kovasi x guc kovasi x ufuk kovasi) hucre dagilimina yeniden agirliklandirma, ust sinir 50, ortalama 1'e normalize",
+   "PG_HAKIM": "ayrica PG=(75,90] kovasinda ayri olcum (testin soguklarinin %82,3'u orada)",
+   "KARAR": "AGIRLIKLI olcume gore. Ham olcum yalnizca raporlanir."
+  },
+
+  "TABAN": "data/interim/deney/soguk_tahmin_{blok}.npz anahtari '{tohum}_cat'. p19_a_soguk_cat.py --aday TABAN ile YENIDEN uretilip BIREBIR dogrulanacak (esik 1e-9). Dogrulama gecmezse tezgah gecersizdir ve is DURDURULUR.",
+
+  "BLOKLAR": ["yaz25", "guz25", "kis26"],
+
+  "ADAYLAR_oncelik1_kayip": ["huber_a02", "huber_a05", "huber_a10", "huber_a20",
+                             "huber_a40", "l1 (MAE)", "quantile_05", "mape"],
+  "ADAYLAR_oncelik2_tau": ["tau240", "tau480", "tau960", "tau1920"],
+  "ADAYLAR_oncelik3_hp": ["hp_l2r10", "hp_rs4", "hp_lr03_it400", "hp_mdl50",
+                          "hp_bt10", "hp_derin6", "hp_derin8"],
+
+  "TAU_YAPISAL_UYARI": "SOGUK uzman ek_koken=False, yani egitim cercevesi YALNIZCA dar egitim setidir (yaz25 2025-04..07, guz25 2025-08..11, kis26 2025-12..2026-03). Hedef blok disarida birakilinca: yaz25 icin egitim satirlarinin HEPSI GELECEKTE (guz25+kis26) -> w=exp(-max(kesim-tarih,0)/TAU)=1, tau ETKISIZ. guz25 icin yalniz yaz25 gecmiste (yarim etki). Yalniz kis26'da tam etki var. Bu yuzden tau soguk tarafta BLOK-DISI DOGRULANAMAZ; olculur ve raporlanir ama tek basina hukum tasiyamaz.",
+
+  "ASAMA_PLANI": {
+   "asama1_eleme": "tohum 1000, uc blok, oncelik-1 kayip adaylari + TABAN. Hayatta kalma olcutu: AGIRLIKLI soguk RMSLE'de TABAN'i uc bloktan EN AZ IKISINDE yenmek.",
+   "asama2_hukum": "Hayatta kalan en fazla 3 aday: tohum 1001,1002 x uc blok. Tam tablo (aday x blok x tohum x olcut).",
+   "asama3": "zaman kalirsa oncelik-2 (tau) ve oncelik-3 (hp)."
+  },
+
+  "BLOK_DISI_SECIM_PROSEDURU": "Hedef blok h icin aday puani = SUM_{b != h} [ agirlikli soguk MSE(aday,b) / agirlikli soguk MSE(TABAN,b) ]. En kucuk puanli aday secilir (TABAN dahil yarisir). Sonra o adayin h'deki kazanci OLCULUR VE NE CIKARSA RAPORLANIR. Hedef bloktan hicbir bilgi kullanilmaz. 'Dis bloklardan hemfikir olani sec' YAPILMAZ -- p06'yi kiran kusur oydu.",
+
+  "KAPI": {
+   "a": "kazanc AGIRLIKLI olcumde pozitif",
+   "b": "kazanc PG(75,90] kovasinda pozitif",
+   "c": "uc bloktan en az ikisinde pozitif (isaret tutarliligi)",
+   "d": "tohum sayisi 1 -> 3'e cikarken kazanc AYAKTA kaliyor (bu duzenekte olculmus yanlilik: eklenen her tohum kazanci asagi cekiyor)",
+   "e": "trafo-kumeli onyukleme (500 tur, agirlikli olcut) GA95 alt siniri > 0 veya pozitif_oran >= 0.90",
+   "hukum": "a,b,c saglanmazsa KAZANC YOKTUR. d ve e zayifsa kazanc SARTLI bildirilir."
+  },
+
+  "KULLANILMAYAN_KURAL": "'0.02 tasima bandi' KULLANILMIYOR -- p_kalici/p17_band.json'da curutuldu. Tasima orani icin muhafazakar nokta tahmin 0.5.",
+
+  "YASAK": "Test tahmini URETILMEYECEK. Kaggle gonderimi YOK. submissions/ altina yazilmayacak."
+ }
+}

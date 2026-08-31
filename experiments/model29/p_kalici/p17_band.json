@@ -1,0 +1,750 @@
+{
+ "1_gurultu_tabani": {
+  "vekil_hatasi_uc_cift": {
+   "tuketim_v27_v18hedge.csv->tuketim_v30_buzme.csv": 0.026939615167822353,
+   "tuketim_v30_buzme.csv->tuketim_v46_gun.csv": 0.008246461086157095,
+   "tuketim_v27_v18hedge.csv->tuketim_v46_gun.csv": 0.035186076253979445
+  },
+  "uc_cift_bagimsiz_mi": false,
+  "toplanabilirlik_kontrolu_d1_d2_esittir_d3": true,
+  "bagimsiz_gozlem_sayisi": 2,
+  "sigma_cift_RMS": 0.019921683988004972,
+  "sigma_dosya_basina": 0.014086757840573779,
+  "tohum_gurultusu_sd": 0.0013550736380553816,
+  "band_siniri": 0.02,
+  "band_siniri_sigma_dosya_cinsinden": 1.4197731107717662,
+  "band_siniri_sigma_cift_cinsinden": 1.0039311943730351,
+  "band_siniri_tohum_sd_cinsinden": 14.759345498523087,
+  "ZAYIFLATMA_YENIDEN": {
+   "aciklama": "p12e lambda'yi TOHUM gurultusuyle hesapladi (7.60e-06). Ama vekilin hatasi tohum degil SISTEMATIK ve OLCULDU. Olculen hata varyansi ile lambda yeniden hesaplanirsa:",
+   "var_x_ciftlerde": 0.00010872588007272725,
+   "var_gurultu_p12e_kullandi_tohum": 7.599308286585627e-06,
+   "var_gurultu_OLCULEN_vekil": 0.0003968734929179337,
+   "lambda_p12e": 0.9301058011073131,
+   "lambda_OLCULEN_ile": -2.6502210205377335,
+   "yorum": "lambda<=0: gozlenen x sacilimi (var 1.09e-04) OLCULEN vekil hata varyansindan (3.97e-04) KUCUK. Yani n=11 cift regresyonundaki x degiskenliginin TAMAMI hata olabilir; guvenilirlik SIFIR. b_cift=-0.161 herhangi bir gercek b ile uyumlu -- BILGI TASIMIYOR."
+  }
+ },
+ "2b_ayirt_etme_gucu": {
+  "oruntu(R2b>0.9 & R2k<0.2)": {
+   "P_H0_kural_YOK": 0.158,
+   "P_H1_kural_GERCEK": 0.13713713713713713,
+   "LR_H1/H0": 0.8679565641590957
+  },
+  "dort_sayi_birden": {
+   "P_H0_kural_YOK": 0.016,
+   "P_H1_kural_GERCEK": 0.026026026026026026,
+   "LR_H1/H0": 1.6266266266266265
+  },
+  "R2k<=0.036": {
+   "P_H0_kural_YOK": 0.305,
+   "P_H1_kural_GERCEK": 0.45045045045045046,
+   "LR_H1/H0": 1.4768867227883622
+  },
+  "ADALETSIZ_karsilastirma_uyarisi": "H1'i vekil gurultusu OLMADAN calistirmak (P(dort sayi)=0.411) ADALETSIZDIR: vekilin hatasi OLCULDU, yok sayilamaz. Adil karsilastirma iki hipotezi de AYNI olculen gurultuyle calistirir.",
+  "SONUC": "Adil karsilastirmada LR(kural gercek / kural yok) = 1.63. 27 dosyalik veri iki hipotezi AYIRT EDEMIYOR."
+ },
+ "2_simulasyon": {
+  "n_tekrar": 1000,
+  "gozlenen": {
+   "R2_buyuk": 0.986,
+   "R2_kucuk": 0.036,
+   "b_buyuk": 2.2790498393483505,
+   "b_kucuk": -0.47432796837574087,
+   "n_buyuk": 8,
+   "n_kucuk": 19,
+   "R2_brut": 0.6911228154372351
+  },
+  "kurulum": "gercek dCV_i = dLB_i / b_true (gozlenen 27 dosyanin dLB dagilimi korunur); dLB = b_true*dCV + N(0,sd_lb) + 5 hane yuvarlama; vekil dCV = gercek + N(0,sigma_vekil) + N(0,tohum). Sonra ayni katmanli analiz (|vekil dCV|>=0.02 vs <0.02).",
+  "b_true": 1.427635882395723,
+  "senaryolar": {
+   "H0_b1.43_vekil_gurultusu_OLCULEN(0.0141)": {
+    "n_buyuk": {
+     "medyan": 11.0,
+     "p05": 8.0,
+     "p95": 15.0
+    },
+    "b_buyuk": {
+     "medyan": 1.3951739203913935,
+     "p05": 1.0935042805140185,
+     "p95": 1.8028589835984412
+    },
+    "R2_buyuk": {
+     "medyan": 0.8813452344995569,
+     "p05": 0.7377493185212115,
+     "p95": 0.9635847068212776
+    },
+    "n_kucuk": {
+     "medyan": 16.0,
+     "p05": 12.0,
+     "p95": 19.0
+    },
+    "b_kucuk": {
+     "medyan": 0.36482079451407445,
+     "p05": -0.09574757239008182,
+     "p95": 0.7969511148814339
+    },
+    "R2_kucuk": {
+     "medyan": 0.111238495877092,
+     "p05": 0.001664736518369303,
+     "p95": 0.4118932740887794
+    },
+    "b_brut": {
+     "medyan": 1.157148419518968,
+     "p05": 1.0155430403361239,
+     "p95": 1.3269972212876078
+    },
+    "R2_brut": {
+     "medyan": 0.8138508138640481,
+     "p05": 0.7135616030156923,
+     "p95": 0.889591815493758
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.285,
+    "P_R2kucuk<=0.036": 0.26,
+    "P_R2buyuk>=0.986": 0.002,
+    "P_b_kucuk_negatif": 0.087,
+    "P_b_buyuk>=2.0": 0.008,
+    "P_hepsi_birden": 0.001
+   },
+   "H0_b1.89(TLS)_vekil_gurultusu_OLCULEN": {
+    "n_buyuk": {
+     "medyan": 9.0,
+     "p05": 6.0,
+     "p95": 13.0
+    },
+    "b_buyuk": {
+     "medyan": 1.7194950702647247,
+     "p05": 1.2484914822831719,
+     "p95": 2.71642535298816
+    },
+    "R2_buyuk": {
+     "medyan": 0.8059253293584974,
+     "p05": 0.5913502543232306,
+     "p95": 0.9536080949713008
+    },
+    "n_kucuk": {
+     "medyan": 18.0,
+     "p05": 14.0,
+     "p95": 21.0
+    },
+    "b_kucuk": {
+     "medyan": 0.3636625774413702,
+     "p05": -0.1410946259135317,
+     "p95": 0.8153883856155933
+    },
+    "R2_kucuk": {
+     "medyan": 0.0879589281752099,
+     "p05": 0.0010372499775546829,
+     "p95": 0.35260458429523067
+    },
+    "b_brut": {
+     "medyan": 1.3461489532722477,
+     "p05": 1.13819741001256,
+     "p95": 1.609611961790689
+    },
+    "R2_brut": {
+     "medyan": 0.7152062710230651,
+     "p05": 0.5701376343730897,
+     "p95": 0.8226628924992796
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.158,
+    "P_R2kucuk<=0.036": 0.305,
+    "P_R2buyuk>=0.986": 0.008,
+    "P_b_kucuk_negatif": 0.116,
+    "P_b_buyuk>=2.0": 0.333,
+    "P_hepsi_birden": 0.016
+   },
+   "H0_b2.07(ters)_vekil_gurultusu_OLCULEN": {
+    "n_buyuk": {
+     "medyan": 9.0,
+     "p05": 6.0,
+     "p95": 12.0
+    },
+    "b_buyuk": {
+     "medyan": 1.748078628461395,
+     "p05": 1.2478356798965602,
+     "p95": 3.0614172243574234
+    },
+    "R2_buyuk": {
+     "medyan": 0.7561987134966852,
+     "p05": 0.5282979633871563,
+     "p95": 0.9489585064368569
+    },
+    "n_kucuk": {
+     "medyan": 18.0,
+     "p05": 15.0,
+     "p95": 21.0
+    },
+    "b_kucuk": {
+     "medyan": 0.36107169227922187,
+     "p05": -0.12339929394446918,
+     "p95": 0.8299999785401136
+    },
+    "R2_kucuk": {
+     "medyan": 0.0845881017713469,
+     "p05": 0.0012499095521588178,
+     "p95": 0.3473743720984823
+    },
+    "b_brut": {
+     "medyan": 1.3955547373909116,
+     "p05": 1.171105940983049,
+     "p95": 1.6498191922700283
+    },
+    "R2_brut": {
+     "medyan": 0.6771884665978221,
+     "p05": 0.5169187266501184,
+     "p95": 0.8016375304291917
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.12,
+    "P_R2kucuk<=0.036": 0.313,
+    "P_R2buyuk>=0.986": 0.003,
+    "P_b_kucuk_negatif": 0.109,
+    "P_b_buyuk>=2.0": 0.377,
+    "P_hepsi_birden": 0.014
+   },
+   "H0_b1.89_vekil_gurultusu_YARI(0.007)": {
+    "n_buyuk": {
+     "medyan": 6.0,
+     "p05": 4.0,
+     "p95": 9.0
+    },
+    "b_buyuk": {
+     "medyan": 2.030897248498947,
+     "p05": 1.719733759896892,
+     "p95": 2.423941609541553
+    },
+    "R2_buyuk": {
+     "medyan": 0.9688205664073052,
+     "p05": 0.9135801016607266,
+     "p95": 0.994401387712399
+    },
+    "n_kucuk": {
+     "medyan": 21.0,
+     "p05": 18.0,
+     "p95": 23.0
+    },
+    "b_kucuk": {
+     "medyan": 0.7997070300334592,
+     "p05": 0.41856827342318265,
+     "p95": 1.211132680428149
+    },
+    "R2_kucuk": {
+     "medyan": 0.31999005629678445,
+     "p05": 0.09140128789130933,
+     "p95": 0.5487200877470118
+    },
+    "b_brut": {
+     "medyan": 1.7156473818659475,
+     "p05": 1.54493250567903,
+     "p95": 1.9072905489175986
+    },
+    "R2_brut": {
+     "medyan": 0.9078488659614055,
+     "p05": 0.8569830591808633,
+     "p95": 0.9435680893817797
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.196,
+    "P_R2kucuk<=0.036": 0.015,
+    "P_R2buyuk>=0.986": 0.174,
+    "P_b_kucuk_negatif": 0.001,
+    "P_b_buyuk>=2.0": 0.559,
+    "P_hepsi_birden": 0.0
+   },
+   "H0_b1.89_vekil_gurultusu_1.4x(0.020)": {
+    "n_buyuk": {
+     "medyan": 12.0,
+     "p05": 8.0,
+     "p95": 16.0
+    },
+    "b_buyuk": {
+     "medyan": 1.1853192820754082,
+     "p05": 0.8652255528780425,
+     "p95": 2.161382933620854
+    },
+    "R2_buyuk": {
+     "medyan": 0.602101609041444,
+     "p05": 0.34274362011768356,
+     "p95": 0.8289288183904638
+    },
+    "n_kucuk": {
+     "medyan": 15.0,
+     "p05": 11.0,
+     "p95": 19.0
+    },
+    "b_kucuk": {
+     "medyan": 0.2266474938793117,
+     "p05": -0.3315521300532936,
+     "p95": 0.7729477442904705
+    },
+    "R2_kucuk": {
+     "medyan": 0.05358500740468197,
+     "p05": 0.000618082946518772,
+     "p95": 0.3237224707340327
+    },
+    "b_brut": {
+     "medyan": 1.0615139062551933,
+     "p05": 0.8552953807210927,
+     "p95": 1.318933091051671
+    },
+    "R2_brut": {
+     "medyan": 0.5696148407643837,
+     "p05": 0.3646675801519631,
+     "p95": 0.7286167062462459
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.013,
+    "P_R2kucuk<=0.036": 0.408,
+    "P_R2buyuk>=0.986": 0.0,
+    "P_b_kucuk_negatif": 0.244,
+    "P_b_buyuk>=2.0": 0.07,
+    "P_hepsi_birden": 0.004
+   },
+   "H0_b1.89_vekil_gurultusu_YOK(KONTROL)": {
+    "n_buyuk": {
+     "medyan": 5.0,
+     "p05": 4.0,
+     "p95": 6.0
+    },
+    "b_buyuk": {
+     "medyan": 1.9010025385888443,
+     "p05": 1.8203432228560892,
+     "p95": 1.9830942385900636
+    },
+    "R2_buyuk": {
+     "medyan": 0.9982774807775385,
+     "p05": 0.9947789525051273,
+     "p95": 0.9997539244636444
+    },
+    "n_kucuk": {
+     "medyan": 22.0,
+     "p05": 21.0,
+     "p95": 23.0
+    },
+    "b_kucuk": {
+     "medyan": 1.8178833915371182,
+     "p05": 1.6083521963598335,
+     "p95": 2.023392207531368
+    },
+    "R2_kucuk": {
+     "medyan": 0.915930816922431,
+     "p05": 0.8594619026676515,
+     "p95": 0.9523314366494142
+    },
+    "b_brut": {
+     "medyan": 1.8859443611678852,
+     "p05": 1.84138153216448,
+     "p95": 1.9350944160327574
+    },
+    "R2_brut": {
+     "medyan": 0.9942880829995601,
+     "p05": 0.9909459257502422,
+     "p95": 0.9965372123138314
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.0,
+    "P_R2kucuk<=0.036": 0.0,
+    "P_R2buyuk>=0.986": 1.0,
+    "P_b_kucuk_negatif": 0.0,
+    "P_b_buyuk>=2.0": 0.029,
+    "P_hepsi_birden": 0.0
+   },
+   "H0_b1.89_olculen_gurultu_LBgurultusu_YOK": {
+    "n_buyuk": {
+     "medyan": 9.0,
+     "p05": 6.0,
+     "p95": 13.0
+    },
+    "b_buyuk": {
+     "medyan": 1.7176224166323766,
+     "p05": 1.2401184482964178,
+     "p95": 2.703601037450852
+    },
+    "R2_buyuk": {
+     "medyan": 0.8035798776910337,
+     "p05": 0.5810604529707832,
+     "p95": 0.9590191977099678
+    },
+    "n_kucuk": {
+     "medyan": 18.0,
+     "p05": 14.0,
+     "p95": 21.0
+    },
+    "b_kucuk": {
+     "medyan": 0.3568368458726313,
+     "p05": -0.1369738509213742,
+     "p95": 0.8116417838160623
+    },
+    "R2_kucuk": {
+     "medyan": 0.08921568477891173,
+     "p05": 0.0014440774123816672,
+     "p95": 0.3581527788205967
+    },
+    "b_brut": {
+     "medyan": 1.3448043834835426,
+     "p05": 1.138400849524676,
+     "p95": 1.5949017164961412
+    },
+    "R2_brut": {
+     "medyan": 0.7145057800658332,
+     "p05": 0.5759278748939118,
+     "p95": 0.8259042879753813
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.154,
+    "P_R2kucuk<=0.036": 0.288,
+    "P_R2buyuk>=0.986": 0.007,
+    "P_b_kucuk_negatif": 0.105,
+    "P_b_buyuk>=2.0": 0.333,
+    "P_hepsi_birden": 0.015
+   },
+   "H0_b1.89_olculen_gurultu_LBgurultusu_0.005": {
+    "n_buyuk": {
+     "medyan": 9.0,
+     "p05": 6.0,
+     "p95": 13.0
+    },
+    "b_buyuk": {
+     "medyan": 1.7270887916714441,
+     "p05": 1.238426800033997,
+     "p95": 2.666955092028378
+    },
+    "R2_buyuk": {
+     "medyan": 0.8087717922266175,
+     "p05": 0.587381417798585,
+     "p95": 0.9554641340011145
+    },
+    "n_kucuk": {
+     "medyan": 18.0,
+     "p05": 14.0,
+     "p95": 21.0
+    },
+    "b_kucuk": {
+     "medyan": 0.3635645036473485,
+     "p05": -0.13687482233225962,
+     "p95": 0.8578494211134758
+    },
+    "R2_kucuk": {
+     "medyan": 0.08240145867607918,
+     "p05": 0.0008018942814862985,
+     "p95": 0.3622929821913748
+    },
+    "b_brut": {
+     "medyan": 1.3544537092430744,
+     "p05": 1.1442505037405035,
+     "p95": 1.5929740048930945
+    },
+    "R2_brut": {
+     "medyan": 0.7110855841624663,
+     "p05": 0.5611900799256908,
+     "p95": 0.8233572991817563
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.169,
+    "P_R2kucuk<=0.036": 0.318,
+    "P_R2buyuk>=0.986": 0.004,
+    "P_b_kucuk_negatif": 0.129,
+    "P_b_buyuk>=2.0": 0.341,
+    "P_hepsi_birden": 0.015
+   },
+   "H1_kural_GERCEK_b1.89_vekil_gurultusu_YOK": {
+    "n_buyuk": {
+     "medyan": 5.0,
+     "p05": 4.0,
+     "p95": 6.0
+    },
+    "b_buyuk": {
+     "medyan": 1.9247995522564807,
+     "p05": 1.832607019806584,
+     "p95": 2.1476622881575893
+    },
+    "R2_buyuk": {
+     "medyan": 0.9976277631848496,
+     "p05": 0.94357763477485,
+     "p95": 0.9998093641515501
+    },
+    "n_kucuk": {
+     "medyan": 22.0,
+     "p05": 21.0,
+     "p95": 23.0
+    },
+    "b_kucuk": {
+     "medyan": 0.016625561912001922,
+     "p05": -0.1268607169307158,
+     "p95": 0.6587051322794606
+    },
+    "R2_kucuk": {
+     "medyan": 0.035502493121781165,
+     "p05": 0.00020362048004666234,
+     "p95": 0.2124151916387446
+    },
+    "b_brut": {
+     "medyan": 1.9886283934883746,
+     "p05": 1.941022213806723,
+     "p95": 2.041132252478589
+    },
+    "R2_brut": {
+     "medyan": 0.9367135079161905,
+     "p05": 0.9237448798270451,
+     "p95": 0.948387933651916
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.933,
+    "P_R2kucuk<=0.036": 0.501,
+    "P_R2buyuk>=0.986": 0.713,
+    "P_b_kucuk_negatif": 0.426,
+    "P_b_buyuk>=2.0": 0.288,
+    "P_hepsi_birden": 0.411
+   },
+   "H1_kural_GERCEK_b1.89_vekil_gurultusu_OLCULEN": {
+    "n_buyuk": {
+     "medyan": 9.0,
+     "p05": 6.0,
+     "p95": 13.0
+    },
+    "b_buyuk": {
+     "medyan": 1.815616600346966,
+     "p05": 1.3100046717076634,
+     "p95": 3.1143613031587254
+    },
+    "R2_buyuk": {
+     "medyan": 0.7479664970015689,
+     "p05": 0.5361050437024761,
+     "p95": 0.9463785583055229
+    },
+    "n_kucuk": {
+     "medyan": 18.0,
+     "p05": 14.0,
+     "p95": 21.0
+    },
+    "b_kucuk": {
+     "medyan": 0.12595761934885652,
+     "p05": -0.18019254764226056,
+     "p95": 0.6325150844296131
+    },
+    "R2_kucuk": {
+     "medyan": 0.04302831769627774,
+     "p05": 0.0002671955432675566,
+     "p95": 0.19886649079281987
+    },
+    "b_brut": {
+     "medyan": 1.4060978319946364,
+     "p05": 1.196341334143178,
+     "p95": 1.7176267276285209
+    },
+    "R2_brut": {
+     "medyan": 0.6690638454452272,
+     "p05": 0.5157560348827562,
+     "p95": 0.7983666261693558
+    },
+    "P_oruntu_R2buyuk>0.9_ve_R2kucuk<0.2": 0.13713713713713713,
+    "P_R2kucuk<=0.036": 0.45045045045045046,
+    "P_R2buyuk>=0.986": 0.006006006006006006,
+    "P_b_kucuk_negatif": 0.2772772772772773,
+    "P_b_buyuk>=2.0": 0.4134134134134134,
+    "P_hepsi_birden": 0.026026026026026026
+   }
+  }
+ },
+ "3_gercek_dCV_kontrolu": {
+  "kaynak": "experiments/rekor.jsonl -- 'blok' turu gercek blok CV, 'lb' turu gercek LB",
+  "gercek_blok_CV_bilinen_dosya_sayisi": 10,
+  "hem_gercek_blok_CV_hem_LB_bilinen": 3,
+  "bagimsiz_cift_sayisi": 2,
+  "eslestirme_A_p12e_ile_ayni": {
+   "ciftler": [
+    {
+     "cift": "v27->v30",
+     "gercek_dCV": -0.00952161516782235,
+     "gercek_dLB": -0.00723000000000007,
+     "oran": 0.7593249540722211,
+     "band_ici_mi": true
+    },
+    {
+     "cift": "v27->v46",
+     "gercek_dCV": -0.016439076253979445,
+     "gercek_dLB": -0.009139999999999926,
+     "oran": 0.5559923111730433,
+     "band_ici_mi": true
+    },
+    {
+     "cift": "v30->v46",
+     "gercek_dCV": -0.006917461086157095,
+     "gercek_dLB": -0.0019099999999998563,
+     "oran": 0.27611286514094896,
+     "band_ici_mi": true
+    }
+   ],
+   "hepsi_band_icinde_mi": true,
+   "kesmesiz_egim_3cift": 0.5683267852628429,
+   "kesmesiz_egim_2_BAGIMSIZ_cift": 0.5923918331174093,
+   "oranlar": [
+    0.7593249540722211,
+    0.5559923111730433,
+    0.27611286514094896
+   ],
+   "isaret_uyumu": true
+  },
+  "eslestirme_B_v46blok_ESKI_sonislem_yani_v47LB": {
+   "ciftler": [
+    {
+     "cift": "v27->v30",
+     "gercek_dCV": -0.00952161516782235,
+     "gercek_dLB": -0.00723000000000007,
+     "oran": 0.7593249540722211,
+     "band_ici_mi": true
+    },
+    {
+     "cift": "v27->v46",
+     "gercek_dCV": -0.016439076253979445,
+     "gercek_dLB": -0.016119999999999912,
+     "oran": 0.9805903781301402,
+     "band_ici_mi": true
+    },
+    {
+     "cift": "v30->v46",
+     "gercek_dCV": -0.006917461086157095,
+     "gercek_dLB": -0.008889999999999842,
+     "oran": 1.2851535974362185,
+     "band_ici_mi": true
+    }
+   ],
+   "hepsi_band_icinde_mi": true,
+   "kesmesiz_egim_3cift": 0.9671680736683612,
+   "kesmesiz_egim_2_BAGIMSIZ_cift": 0.9409806256393943,
+   "oranlar": [
+    0.7593249540722211,
+    0.9805903781301402,
+    1.2851535974362185
+   ],
+   "isaret_uyumu": true
+  },
+  "eslestirme_notu": "rekor.jsonl'de v30/v33/v36/v39/v46 blok skorlari 'SON ISLEM SONRASI (eski buzme)' olarak isaretli. v46'nin LB'si 1.02448 YENI son islem ile, v47 1.01750 ESKI son islem ile gonderildi. Eslestirme B daha tutarli olabilir; IKISI DE ayni yonu veriyor.",
+  "vekil_ayni_ciftlerde_ne_dedi": {
+   "tuketim_v27_v18hedge.csv->tuketim_v30_buzme.csv": 0.026939615167822353,
+   "tuketim_v30_buzme.csv->tuketim_v46_gun.csv": 0.008246461086157095,
+   "tuketim_v27_v18hedge.csv->tuketim_v46_gun.csv": 0.035186076253979445
+  },
+  "3b_b0_hipotezi_sinamasi": {
+   "b_kesmesiz_2_bagimsiz_cift": 0.5923918331174093,
+   "artiklarin_RMS_si": 0.0019122108533015142,
+   "aciklama": "Kural gercekse bu ciftlerde (hepsi |dCV|<0.02) b=0 olmali ve dLB sirf CV->LB sapma gurultusu olmali. sd_LB varsayimina duyarlilik:",
+   "duyarlilik": {
+    "sd_LB=0.0016": {
+     "se_b": 0.13594887528369093,
+     "z": 4.357460345892802,
+     "tek_yonlu_p_b0icin": 6.579016410844478e-06
+    },
+    "sd_LB=0.0020": {
+     "se_b": 0.16993609410461363,
+     "z": 3.4859682767142424,
+     "tek_yonlu_p_b0icin": 0.0002451795758586522
+    },
+    "sd_LB=0.0050": {
+     "se_b": 0.4248402352615341,
+     "z": 1.394387310685697,
+     "tek_yonlu_p_b0icin": 0.08160033893666699
+    },
+    "sd_LB=0.0100": {
+     "se_b": 0.8496804705230682,
+     "z": 0.6971936553428485,
+     "tek_yonlu_p_b0icin": 0.24284080450485818
+    }
+   },
+   "isaret_sinamasi": {
+    "n_bagimsiz": 2,
+    "isaret_uyumu": "2/2",
+    "P_sirf_sansla": 0.25
+   },
+   "UYARI": "n=2 bagimsiz gozlem. Bu bir KANIT DEGIL, bir ISARETTIR."
+  }
+ },
+ "5_huber_beklentisi": {
+  "aday": "soguk lgbm huber alpha=0.5, esit harman",
+  "blok_kazanclari_test_bilesimi": {
+   "yaz25": -0.00736,
+   "guz25": 0.02067,
+   "kis26": 0.02458
+  },
+  "uc_blok_ort": 0.01263,
+  "blok_sd": 0.017421885661431716,
+  "ort_se": 0.010058530376418483,
+  "P_kazanc>0_bloklar_arasi_t2": 0.832435,
+  "mevcut_LB": 1.00115,
+  "3.sira": 0.99556,
+  "2.sira": 0.99536,
+  "gereken_kazanc": 0.005589999999999984,
+  "gereken_tasima_orani_nokta_tahminle": 0.44259699129057667,
+  "sabit_oran_senaryolari": {
+   "oran_0.0": {
+    "beklenen_LB": 1.00115,
+    "3.sirayi(0.99556)_gecer_mi_nokta": false,
+    "P_3.siradan_iyi_CVbelirsizligiyle": 0.0,
+    "P_mevcuttan_kotu": 0.0
+   },
+   "oran_0.25": {
+    "beklenen_LB": 0.9979925,
+    "3.sirayi(0.99556)_gecer_mi_nokta": false,
+    "P_3.siradan_iyi_CVbelirsizligiyle": 0.216225,
+    "P_mevcuttan_kotu": 0.167655
+   },
+   "oran_0.5": {
+    "beklenen_LB": 0.994835,
+    "3.sirayi(0.99556)_gecer_mi_nokta": true,
+    "P_3.siradan_iyi_CVbelirsizligiyle": 0.551825,
+    "P_mevcuttan_kotu": 0.167655
+   },
+   "oran_0.568_gercek_cift_A": {
+    "beklenen_LB": 0.99397616,
+    "3.sirayi(0.99556)_gecer_mi_nokta": true,
+    "P_3.siradan_iyi_CVbelirsizligiyle": 0.597175,
+    "P_mevcuttan_kotu": 0.167655
+   },
+   "oran_0.967_gercek_cift_B": {
+    "beklenen_LB": 0.98893679,
+    "3.sirayi(0.99556)_gecer_mi_nokta": true,
+    "P_3.siradan_iyi_CVbelirsizligiyle": 0.71737,
+    "P_mevcuttan_kotu": 0.167655
+   },
+   "oran_1.0": {
+    "beklenen_LB": 0.98852,
+    "3.sirayi(0.99556)_gecer_mi_nokta": true,
+    "P_3.siradan_iyi_CVbelirsizligiyle": 0.722485,
+    "P_mevcuttan_kotu": 0.167655
+   },
+   "oran_1.428_brut_vekil": {
+    "beklenen_LB": 0.983118958805342,
+    "3.sirayi(0.99556)_gecer_mi_nokta": true,
+    "P_3.siradan_iyi_CVbelirsizligiyle": 0.761945,
+    "P_mevcuttan_kotu": 0.167655
+   }
+  },
+  "MonteCarlo": {
+   "aciklama": "kazanc ~ t2(0.01263, se=0.01006) [uc blok arasi sacilim]; tasima orani ~ t2(ort/se) [3 GERCEK ciftin orani]; LB = 1.00115 - oran*kazanc",
+   "oran_ort": 0.5304767101287378,
+   "oran_sd": 0.24261443721431758,
+   "beklenen_LB_medyan": 0.9951878787561796,
+   "LB_GA80": [
+    0.982470750185578,
+    1.0050041819952715
+   ],
+   "P_3.siradan_iyi": 0.52176,
+   "P_2.siradan_iyi": 0.509995,
+   "P_mevcuttan_kotu": 0.188485
+  }
+ },
+ "4_HUKUM": {
+  "secim": "B'ye YAKIN C -- kural KANITLANMAMIS; gonderimi bloklamak icin yetersiz",
+  "1_band_siniri_gurultu_tabaninda": "0.02 = 1.00 x olculen cift-vekil hatasi (0.0199) = 1.42 x dosya basina vekil hatasi (0.0141). Sinir tam da 'olcemedigimiz yerde'.",
+  "2_katmanlama_istatistigi_kanit_degil": "R2 0.986 vs 0.036 oruntusu, TASIMA ORANI SABIT (kural YOK) H0'i altinda olculen vekil gurultusuyle %15.8 olasilikla uretiliyor; vekil gurultusu SIFIRLANINCA %0.0'a duser. Yani oruntuyu ureten sey gurultudur, kural degil.",
+  "3_ayirt_edilemiyor": "Iki hipotez AYNI olculen gurultuyle kosuldugunda LR = 1.6 -- 27 dosyalik veri kurali ne DOGRULUYOR ne CURUTUYOR. R2=0.036, 'tasima yok' degil 'olcemedim' demektir.",
+  "4_p12e_zayiflatma_curutmesi_GECERSIZ": "lambda=0.930 TOHUM gurultusuyle hesaplandi (var 7.6e-06). Vekilin OLCULEN hatasi 3.97e-04, yani gozlenen x sacilimindan (1.09e-04) BUYUK. Dogru lambda = -2.65 -> n=11 cift regresyonunun guvenilirligi SIFIR. b_cift = -0.161 hicbir bilgi tasimiyor. Bu, docs/78-79'un ana dayanagidir ve DUSMUSTUR.",
+  "5_vekilsiz_tek_olcum_TERS_yonu_gosteriyor": "GERCEK blok CV + GERCEK LB'nin ikisinin de bilindigi 3 cift (2 bagimsiz) -- UCU DE bandin ICINDE (|dCV| 0.0069-0.0164) -- tasima orani 0.57 (alternatif eslestirmede 0.97), isaret uyumu 3/3. Ayni ciftlerde VEKIL isareti 3/3 YANLIS verdi. n kucuk (2 bagimsiz), kanit degil isaret.",
+  "6_karar_kurali_onerisi": [
+   "0.02 esigini bir GONDERIM KAPISI olarak KULLANMA -- o bir olcum siniri.",
+   "Kapiyi sunlara koy: (a) kazanc VEKILDEN degil GERCEK blok CV'sinden olculmus mu; (b) blok-disi secim, hedef bloktan bilgi kullanmadan mi yapildi; (c) bloklar arasi isaret tutarli mi; (d) tohum sayisi arttikca kazanc ayakta kaliyor mu.",
+   "Tasima orani icin nokta tahmin 0.5 kullan (gercek ciftlerden 0.57 ve 0.97; muhafazakar taraf 0.5)."
+  ],
+  "7_KARSI_ARGUMANLAR_durust": [
+   "Simulasyonun gozlenen TAM sayilarina (b_kucuk=-0.47, b_buyuk=+2.28) bakildiginda H1 (kural gercek) H0'dan 1.6 KAT daha olasi. Yani veri cok zayif da olsa kuralin LEHINE egiliyor, aleyhine degil.",
+   "Vekil hata tahmini yalnizca 2 BAGIMSIZ gozleme dayaniyor; sigma_dosya 0.0141 kendisi cok belirsiz. Gercek deger 0.007 ise H0 oruntuyu cok daha az uretiyor (bkz. YARI senaryosu: P(R2k<=0.036)=0.015).",
+   "3 gercek cift AYNI SOYAGACINDAN (v27->v30->v46, ardisik son-islem degisiklikleri). Baska tur degisikliklere genellemesi garanti degil.",
+   "Bu analiz kurali YIKMIYOR, DESTEKSIZ birakiyor. 'Kural yanlis' ile 'kural olculmemis' ayni sey degildir."
+  ],
+  "8_huber_icin_ASIL_risk_band_degil": "Huber'in gercek riski 0.02 bandi DEGIL: yaz25 blogu NEGATIF (-0.00736) ve yaz25 test ile MEVSIMSEL OLARAK ayni donem (2025-04..07 vs test 2026-04..07). p14 kendi 9_uyari'sinda bunu isaretliyor. Ayrica p14 6_BUYUKLUK: eklenen HER tohum kazanci ASAGI cekti, ISTISNASIZ -- +0.0126 hala iyimser yanli olabilir."
+ }
+}

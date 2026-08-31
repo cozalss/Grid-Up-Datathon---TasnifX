@@ -1,0 +1,682 @@
+{
+ "aday": "soguk lgbm objective=huber alpha=1.0 (ofset hedefi, digerleri uretimle ayni)",
+ "harman": "ESIT (1/3 cat, 1/3 xgb, 1/3 lgbm) -- URETIM ile ayni, p06 agirligi KULLANILMADI",
+ "1_gerilim_cozumu": {
+  "aciklama": "yaz25'te agirlikli ve PG-hakim olcutler AYRISMIYOR; tek tohumda (t=1000) PG +0.0069 / agirlikli -0.0057 goruntusu TOHUM ARTEFAKTIYDI. Dort tohumla yaz25 HER IKI olcutte de NEGATIF (agr -0.0183, pg -0.0148) ve dort tohumun DORDUNDE de negatif (-0.006, -0.021, -0.028, -0.016). Gerilim yoktur: yaz25 KAYBETTIRIYOR, guz25 ve kis26 KAZANDIRIYOR.",
+  "hangi_olcut_teste_yakin": "Test-agirlikli olcut. Ortak (p_gun x guc x ufuk) hucre dagilimini tam esitler; PG(75,90] kovasi ise testin agirliginin yalnizca %76,9'unu temsil eden bir ALT KUME kontrolu. Iki olcut uc blokta da ayni isareti veriyor.",
+  "olcum_gucu": {
+   "yaz25": {
+    "n": 20633,
+    "trafo": 677,
+    "hucre": 87,
+    "tv_teste": 0.7227,
+    "test_hucre_kapsami": 0.9727,
+    "ham_etkin_trafo": 378.7,
+    "agirlikli_ess_satir": 2766.4,
+    "agirlikli_etkin_trafo": 34.3,
+    "w_max": 12.1,
+    "w_ust_sinira_dayanan_satir": 0,
+    "pg_hakim_n": 2426,
+    "pg_hakim_trafo": 30,
+    "pg_hakim_etkin_trafo": 29.9,
+    "pg_hakim_agirlikli_etkin_trafo": 22.2,
+    "pg_hakim_agirlik_payi": 0.7901
+   },
+   "guz25": {
+    "n": 39405,
+    "trafo": 1169,
+    "hucre": 84,
+    "tv_teste": 0.531,
+    "test_hucre_kapsami": 0.9718,
+    "ham_etkin_trafo": 655.7,
+    "agirlikli_ess_satir": 13039.8,
+    "agirlikli_etkin_trafo": 156.5,
+    "w_max": 5.6,
+    "w_ust_sinira_dayanan_satir": 0,
+    "pg_hakim_n": 12319,
+    "pg_hakim_trafo": 150,
+    "pg_hakim_etkin_trafo": 149.9,
+    "pg_hakim_agirlikli_etkin_trafo": 108.9,
+    "pg_hakim_agirlik_payi": 0.7909
+   },
+   "kis26": {
+    "n": 61918,
+    "trafo": 1220,
+    "hucre": 95,
+    "tv_teste": 0.5538,
+    "test_hucre_kapsami": 0.9997,
+    "ham_etkin_trafo": 714.4,
+    "agirlikli_ess_satir": 15249.4,
+    "agirlikli_etkin_trafo": 192.7,
+    "w_max": 9.3,
+    "w_ust_sinira_dayanan_satir": 0,
+    "pg_hakim_n": 13532,
+    "pg_hakim_trafo": 168,
+    "pg_hakim_etkin_trafo": 167.7,
+    "pg_hakim_agirlikli_etkin_trafo": 116.6,
+    "pg_hakim_agirlik_payi": 0.7688
+   }
+  },
+  "sonuc": "yaz25 zayif AMA nullugu gurultu degil: dort tohumda da ayni isaret. guz25 (etkin 156,5 trafo) ve kis26 (192,7) uc-dort kat daha guclu ve ikisi de POZITIF."
+ },
+ "2_uc_blok_tablo": {
+  "yaz25": {
+   "URETIM_npz_esit": {
+    "ham": 1.43592,
+    "agr": 1.33902,
+    "pg": 1.20963,
+    "bilesim_ham": 0.97932,
+    "bilesim_agr": 0.94841
+   },
+   "huber_esit": {
+    "ham": 1.41618,
+    "agr": 1.36311,
+    "pg": 1.23023,
+    "bilesim_ham": 0.97293,
+    "bilesim_agr": 0.95598
+   },
+   "kazanc": {
+    "ortak_tohum": [
+     1000,
+     1001,
+     1002,
+     1003
+    ],
+    "n_tohum": 4,
+    "ham": 0.01968,
+    "agr": -0.01826,
+    "pg": -0.0148,
+    "bilesim_ham": 0.00637,
+    "bilesim_agr": -0.00575,
+    "onyukleme_agr": {
+     "ort": -0.01082,
+     "std": 0.02883,
+     "ga95": [
+      -0.06143,
+      0.03617
+     ],
+     "pozitif_oran": 0.366,
+     "tur": 500
+    },
+    "tohum_bazli_agr": {
+     "1000": -0.00574,
+     "1001": -0.02129,
+     "1002": -0.02755,
+     "1003": -0.01574
+    }
+   }
+  },
+  "guz25": {
+   "URETIM_npz_esit": {
+    "ham": 1.60821,
+    "agr": 1.35005,
+    "pg": 1.26329,
+    "bilesim_ham": 1.03846,
+    "bilesim_agr": 0.9535
+   },
+   "huber_esit": {
+    "ham": 1.60069,
+    "agr": 1.30246,
+    "pg": 1.22939,
+    "bilesim_ham": 1.03588,
+    "bilesim_agr": 0.93872
+   },
+   "kazanc": {
+    "ortak_tohum": [
+     1000,
+     1001
+    ],
+    "n_tohum": 2,
+    "ham": 0.00523,
+    "agr": 0.04067,
+    "pg": 0.02269,
+    "bilesim_ham": 0.00179,
+    "bilesim_agr": 0.01261,
+    "onyukleme_agr": {
+     "ort": 0.04061,
+     "std": 0.01559,
+     "ga95": [
+      0.01155,
+      0.07303
+     ],
+     "pozitif_oran": 0.998,
+     "tur": 500
+    },
+    "tohum_bazli_agr": {
+     "1000": 0.05184,
+     "1001": 0.03477
+    }
+   }
+  },
+  "kis26": {
+   "URETIM_npz_esit": {
+    "ham": 1.90615,
+    "agr": 1.77186,
+    "pg": 1.68166,
+    "bilesim_ham": 1.10884,
+    "bilesim_agr": 1.05834
+   },
+   "huber_esit": {
+    "ham": 1.88169,
+    "agr": 1.73626,
+    "pg": 1.62879,
+    "bilesim_ham": 1.09955,
+    "bilesim_agr": 1.04518
+   },
+   "kazanc": {
+    "ortak_tohum": [
+     1000
+    ],
+    "n_tohum": 1,
+    "ham": 0.02376,
+    "agr": 0.04405,
+    "pg": 0.0578,
+    "bilesim_ham": 0.00903,
+    "bilesim_agr": 0.01629,
+    "onyukleme_agr": {
+     "ort": 0.04614,
+     "std": 0.01748,
+     "ga95": [
+      0.01392,
+      0.08182
+     ],
+     "pozitif_oran": 1.0,
+     "tur": 500
+    },
+    "tohum_bazli_agr": {
+     "1000": 0.04405
+    }
+   }
+  }
+ },
+ "3_alfa_secimi": {
+  "prosedur": "hedef blok h icin alfa, DIS iki blogun test-agirlikli MSE'sinin TABAN'a oraninin toplamiyla secildi; sonra h'de olculdu. Hicbir hedef bloktan bilgi kullanilmadi.",
+  "sonuc": {
+   "yaz25": {
+    "secilen": "huber_a05",
+    "puan": {
+     "TABAN": 2.0,
+     "huber": 1.89986,
+     "huber_a20": 1.98821,
+     "huber_a05": 1.82881
+    },
+    "hedefte_kazanc": {
+     "ortak_tohum": [
+      1000,
+      1001,
+      1002,
+      1003
+     ],
+     "n_tohum": 4,
+     "ham": -0.00828,
+     "agr": -0.02335,
+     "pg": -0.04472,
+     "bilesim_ham": -0.00269,
+     "bilesim_agr": -0.00736,
+     "onyukleme_agr": {
+      "ort": -0.01629,
+      "std": 0.03118,
+      "ga95": [
+       -0.07258,
+       0.04266
+      ],
+      "pozitif_oran": 0.298,
+      "tur": 500
+     },
+     "tohum_bazli_agr": {
+      "1000": -0.01475,
+      "1001": -0.02978,
+      "1002": -0.02669,
+      "1003": -0.01856
+     }
+    }
+   },
+   "guz25": {
+    "secilen": "huber_a05",
+    "puan": {
+     "TABAN": 2.0,
+     "huber": 1.98683,
+     "huber_a20": 1.99851,
+     "huber_a05": 1.96114
+    },
+    "hedefte_kazanc": {
+     "ortak_tohum": [
+      1000,
+      1001
+     ],
+     "n_tohum": 2,
+     "ham": -0.01305,
+     "agr": 0.06702,
+     "pg": 0.03335,
+     "bilesim_ham": -0.00448,
+     "bilesim_agr": 0.02067,
+     "onyukleme_agr": {
+      "ort": 0.06665,
+      "std": 0.04997,
+      "ga95": [
+       -0.00363,
+       0.18027
+      ],
+      "pozitif_oran": 0.962,
+      "tur": 500
+     },
+     "tohum_bazli_agr": {
+      "1000": 0.0769,
+      "1001": 0.06318
+     }
+    }
+   },
+   "kis26": {
+    "secilen": "huber_a05",
+    "puan": {
+     "TABAN": 2.0,
+     "huber": 1.9677,
+     "huber_a20": 2.00368,
+     "huber_a05": 1.93772
+    },
+    "hedefte_kazanc": {
+     "ortak_tohum": [
+      1000,
+      1001
+     ],
+     "n_tohum": 2,
+     "ham": 0.0563,
+     "agr": 0.06674,
+     "pg": 0.1066,
+     "bilesim_ham": 0.02134,
+     "bilesim_agr": 0.02458,
+     "onyukleme_agr": {
+      "ort": 0.07024,
+      "std": 0.01787,
+      "ga95": [
+       0.03677,
+       0.10492
+      ],
+      "pozitif_oran": 1.0,
+      "tur": 500
+     },
+     "tohum_bazli_agr": {
+      "1000": 0.07486,
+      "1001": 0.06368
+     }
+    }
+   }
+  },
+  "secim": "alpha=1.0 UC HEDEFTE DE secildi (a=2.0 hepsinde geride). Secim istikrarli.",
+  "GENIS_IZGARA_alpha_0.2_0.5_1.0_2.0_4.0": {
+   "prosedur": "Ayni blok-disi prosedur, alfa SABIT IZGARA {0.2,0.5,1.0,2.0,4.0} uzerinde; hepsi p11-B tarafindan zaten egitilmisti (ek egitim yok). Hedef blok secimde HIC kullanilmadi.",
+   "sonuc": {
+    "yaz25": {
+     "secilen": "a=0.5",
+     "puan": {
+      "a=0.5": 1.80735,
+      "a=0.2": 1.82687,
+      "a=1.0": 1.87606,
+      "a=2.0": 1.96268,
+      "a=4.0": 1.98159,
+      "TABAN": 2.0
+     },
+     "hedefte_kazanc": {
+      "ham": 0.0003,
+      "agr": -0.01475,
+      "pg": -0.03624,
+      "bilesim_agr": -0.00466
+     },
+     "onyukleme_agr": {
+      "ort": -0.00792,
+      "std": 0.02875,
+      "ga95": [
+       -0.06073,
+       0.04709
+      ],
+      "pozitif_oran": 0.364,
+      "tur": 500
+     }
+    },
+    "guz25": {
+     "secilen": "a=0.5",
+     "puan": {
+      "a=0.5": 1.93958,
+      "a=0.2": 1.9554,
+      "a=1.0": 1.95963,
+      "a=2.0": 1.98221,
+      "a=4.0": 1.98613,
+      "TABAN": 2.0
+     },
+     "hedefte_kazanc": {
+      "ham": -0.01341,
+      "agr": 0.0769,
+      "pg": 0.03857,
+      "bilesim_agr": 0.02378
+     },
+     "onyukleme_agr": {
+      "ort": 0.07687,
+      "std": 0.05131,
+      "ga95": [
+       3e-05,
+       0.19407
+      ],
+      "pozitif_oran": 0.976,
+      "tur": 500
+     }
+    },
+    "kis26": {
+     "secilen": "a=0.5",
+     "puan": {
+      "a=0.5": 1.91159,
+      "a=1.0": 1.93342,
+      "a=0.2": 1.95714,
+      "a=4.0": 1.97762,
+      "a=2.0": 1.97912,
+      "TABAN": 2.0
+     },
+     "hedefte_kazanc": {
+      "ham": 0.0563,
+      "agr": 0.07486,
+      "pg": 0.11231,
+      "bilesim_agr": 0.0276
+     },
+     "onyukleme_agr": {
+      "ort": 0.07882,
+      "std": 0.02037,
+      "ga95": [
+       0.04248,
+       0.11993
+      ],
+      "pozitif_oran": 1.0,
+      "tur": 500
+     }
+    }
+   },
+   "secilen": "alpha=0.5 UC HEDEFTE DE (t=1000 izgarasi)"
+  }
+ },
+ "4_tohum_saglamasi": {
+  "taban_gurultusu_uretim_npz_5_lgbm_tohumu": {
+   "yaz25": {
+    "npz_lgbm_tohumlari": {
+     "1000": {
+      "agr": 1.3535,
+      "pg": 1.22696,
+      "ham": 1.44148
+     },
+     "1001": {
+      "agr": 1.33316,
+      "pg": 1.20781,
+      "ham": 1.43326
+     },
+     "1002": {
+      "agr": 1.34447,
+      "pg": 1.21117,
+      "ham": 1.44014
+     },
+     "1003": {
+      "agr": 1.35276,
+      "pg": 1.22,
+      "ham": 1.43412
+     },
+     "1004": {
+      "agr": 1.3168,
+      "pg": 1.18752,
+      "ham": 1.43774
+     }
+    },
+    "n": 5,
+    "agr_std": 0.01541,
+    "agr_menzil": 0.0367,
+    "pg_std": 0.01497,
+    "pg_menzil": 0.03944
+   },
+   "guz25": {
+    "npz_lgbm_tohumlari": {
+     "1000": {
+      "agr": 1.35465,
+      "pg": 1.25976,
+      "ham": 1.60578
+     },
+     "1001": {
+      "agr": 1.33832,
+      "pg": 1.25193,
+      "ham": 1.61167
+     },
+     "1002": {
+      "agr": 1.3738,
+      "pg": 1.28141,
+      "ham": 1.61861
+     },
+     "1003": {
+      "agr": 1.34406,
+      "pg": 1.26968,
+      "ham": 1.60457
+     },
+     "1004": {
+      "agr": 1.35831,
+      "pg": 1.27346,
+      "ham": 1.6198
+     }
+    },
+    "n": 5,
+    "agr_std": 0.01374,
+    "agr_menzil": 0.03548,
+    "pg_std": 0.01157,
+    "pg_menzil": 0.02948
+   },
+   "kis26": {
+    "npz_lgbm_tohumlari": {
+     "1000": {
+      "agr": 1.7803,
+      "pg": 1.68658,
+      "ham": 1.90545
+     },
+     "1001": {
+      "agr": 1.77051,
+      "pg": 1.6857,
+      "ham": 1.91034
+     },
+     "1002": {
+      "agr": 1.77383,
+      "pg": 1.68236,
+      "ham": 1.90999
+     }
+    },
+    "n": 3,
+    "agr_std": 0.00498,
+    "agr_menzil": 0.00979,
+    "pg_std": 0.00223,
+    "pg_menzil": 0.00422
+   }
+  },
+  "kazancin_tohum_bazli_sacilimi": {
+   "yaz25": {
+    "1000": -0.00574,
+    "1001": -0.02129,
+    "1002": -0.02755,
+    "1003": -0.01574
+   },
+   "guz25": {
+    "1000": 0.05184,
+    "1001": 0.03477
+   },
+   "kis26": {
+    "1000": 0.04405
+   }
+  },
+  "sonuc": "Kazanc tek tohuma bagli DEGIL. guz25'te iki tohumda da (+0.052, +0.035) pozitif; yaz25'te dort tohumda da negatif. Isaretler tohum degistikce donmuyor -- blok farki GERCEK."
+ },
+ "5_HUKUM": {
+  "kapi": {
+   "yaz25": {
+    "agirlikli_pozitif": false,
+    "pg_pozitif": false,
+    "agr": -0.01826,
+    "pg": -0.0148,
+    "bilesim_agr": -0.00575,
+    "n_tohum": 4,
+    "tohum_bazli_agr": {
+     "1000": -0.00574,
+     "1001": -0.02129,
+     "1002": -0.02755,
+     "1003": -0.01574
+    },
+    "onyukleme_pozitif_oran": 0.366
+   },
+   "guz25": {
+    "agirlikli_pozitif": true,
+    "pg_pozitif": true,
+    "agr": 0.04067,
+    "pg": 0.02269,
+    "bilesim_agr": 0.01261,
+    "n_tohum": 2,
+    "tohum_bazli_agr": {
+     "1000": 0.05184,
+     "1001": 0.03477
+    },
+    "onyukleme_pozitif_oran": 0.998
+   },
+   "kis26": {
+    "agirlikli_pozitif": true,
+    "pg_pozitif": true,
+    "agr": 0.04405,
+    "pg": 0.0578,
+    "bilesim_agr": 0.01629,
+    "n_tohum": 1,
+    "tohum_bazli_agr": {
+     "1000": 0.04405
+    },
+    "onyukleme_pozitif_oran": 1.0
+   }
+  },
+  "a_agirlikli_pozitif_bloklar": [
+   "guz25",
+   "kis26"
+  ],
+  "b_pg_pozitif_bloklar": [
+   "guz25",
+   "kis26"
+  ],
+  "c_iki_olcutu_birden_saglayan_bloklar": [
+   "guz25",
+   "kis26"
+  ],
+  "d_tohum_gurultusunden_buyuk_mu": true,
+  "kapidan_gecti_mi": true
+ },
+ "6_BUYUKLUK": {
+  "test_bilesimi_kazanc_blok_basina": {
+   "yaz25": -0.00575,
+   "guz25": 0.01261,
+   "kis26": 0.01629
+  },
+  "uc_blok_ortalamasi": 0.00772,
+  "kazanan_iki_blok_ortalamasi": 0.01445,
+  "esik": 0.02,
+  "esigi_asiyor_mu": false,
+  "not": "|dCV| < 0.02 olan kazanclar LB'ye olculebilir bicimde TASINMIYOR (R^2=0.036). Bu kazanc o bandin ICINDE.",
+  "alpha_0.5_test_bilesimi": {
+   "yaz25": -0.00736,
+   "guz25": 0.02067,
+   "kis26": 0.02458
+  },
+  "alpha_0.5_uc_blok_ortalamasi": 0.01263,
+  "alpha_0.5_esigi_asiyor_mu": false,
+  "TOHUM_EGILIMI": "Eklenen HER tohum kazanci ASAGI cekti, ISTISNASIZ: a=1.0 yaz25 -0.0018->-0.0058 (1->4 tohum); a=0.5 guz25 +0.0238->+0.0207 (1->2); a=0.5 kis26 +0.0276->+0.0246 (1->2); a=0.5 yaz25 -0.0047->-0.0074 (1->4); a=0.5 uc blok ort. +0.0156->+0.0126. Tek tohumlu sayilar bu rig'de SISTEMATIK IYIMSER YANLI."
+ },
+ "7_yalniz_huber_lgbm_varyanti": {
+  "yaz25": {
+   "ham": 0.07235,
+   "agr": -0.08911,
+   "pg": -0.0524,
+   "bilesim_agr": -0.02838
+  },
+  "guz25": {
+   "ham": 0.01759,
+   "agr": 0.0733,
+   "pg": 0.06027,
+   "bilesim_agr": 0.02264
+  },
+  "kis26": {
+   "ham": -0.04623,
+   "agr": 0.00536,
+   "pg": 0.04827,
+   "bilesim_agr": 0.00199
+  }
+ },
+ "8_test_ciktisi": null,
+ "9_uyari": "Test donemi 2026-04..07; yaz25 (2025-04..07) MEVSIMSEL OLARAK test ile ayni ve tam o blokta kazanc NEGATIF. guz25/kis26 kohort yapisi bakimindan (TV 0.53/0.55) teste yaz25'ten (TV 0.72) daha yakin ama MEVSIM bakimindan degil. Sifir tuketim orani uc blokta benzer (agirlikli %3.1-4.1) oldugundan 'yazin sifir yok' aciklamasi GECERSIZ; blok ayrismasi aciklanamamis durumda.",
+ "3b_alpha_0.5_tohum_replikasyonu": {
+  "yaz25": {
+   "n_tohum": 4,
+   "agr": -0.02335,
+   "pg": -0.04472,
+   "bilesim_agr": -0.00736,
+   "tohum_bazli_agr": {
+    "1000": -0.01475,
+    "1001": -0.02978,
+    "1002": -0.02669,
+    "1003": -0.01856
+   },
+   "onyukleme_pozitif_oran": 0.298
+  },
+  "guz25": {
+   "n_tohum": 2,
+   "agr": 0.06702,
+   "pg": 0.03335,
+   "bilesim_agr": 0.02067,
+   "tohum_bazli_agr": {
+    "1000": 0.0769,
+    "1001": 0.06318
+   },
+   "onyukleme_pozitif_oran": 0.962
+  },
+  "kis26": {
+   "n_tohum": 2,
+   "agr": 0.06674,
+   "pg": 0.1066,
+   "bilesim_agr": 0.02458,
+   "tohum_bazli_agr": {
+    "1000": 0.07486,
+    "1001": 0.06368
+   },
+   "onyukleme_pozitif_oran": 1.0
+  }
+ },
+ "10_DEVAM_ICIN": {
+  "durum": "TAMAMLANDI -- planlanan butun egitimler bitti.",
+  "test_ciktisi_betigi": "p14_test.py hazir ama CALISTIRILMASI ONERILMIYOR (aday 0.02 bandinin altinda)."
+ },
+ "11_UYARI_BASKA_OTURUMUN_URETTIGI_TEST_DOSYASI": {
+  "ne_oldu": "20:47'de scratchpad'de p14_soguk_huber_test_log.npy + p14_soguk_huber_yalniz_test_log.npy + p14_test.json belirdi. BUNLARI BEN URETMEDIM. p14_test.py degistirilmemis (ADAY varsayilani 'huber'), ama JSON 'huber_a05' diyor -- yani PARALEL BIR OTURUM benim betigimi P14_ADAY=huber_a05 ile calistirmis. Benim p14_test.log'um (20:03) hic guncellenmedi.",
+  "dosya_gecerli_mi": "MEKANIK OLARAK TUTARLI: test deltasi ort +0.1152, CV'deki a=0.5 araligi (+0.0949 yaz25 / +0.1394 guz25 / +0.1664 kis26) icinde. Tahminler sonlu, negatif yok, 714688 satir. Yani BOZUK DEGIL -- gercek bir a=0.5 deltasi.",
+  "AMA_GONDERILMEMELI": [
+   "a=0.5'in uc blok ortalama test-bilesimi kazanci +0.0126 -- 0.02 TASIMA BANDININ ALTINDA (|dCV|<0.02 -> R^2=0.036, olculebilir taşıma YOK).",
+   "a=0.5 yaz25'te NEGATIF (-0.0074, dort tohumda da) ve yaz25 (2025-04..07) test donemiyle (2026-04..07) MEVSIMSEL OLARAK BIREBIR AYNI blok.",
+   "Degisiklik BUYUK: 158.369 soguk satirin (test'in %22.2'si) hepsine sistematik +0.115 log-birim YUKARI kayma. Buyuk degisiklik + bandin altinda kazanc + mevsim-eslesmis blokta negatif = yuksek varyansli, beklenen degeri olculmus bicimde SIFIR olan bahis.",
+   "a=0.5 BENIM onceden sabitledigim {1.0, 2.0} kumesinde YOKTU; genis izgarada blok-disi secildi ama yine de bandi asamadi."
+  ],
+  "tavsiye": "GONDERILMESIN. Onay verilecekse bu gerekcelerle birlikte verilsin."
+ },
+ "00_GECERSIZ_HUKUM_UYARISI": {
+  "tarih": "2026-08-31 21:00",
+  "uyari": "BU DOSYADAKI -ELENDI- HUKMU GECERSIZDIR.",
+  "sebep_1": "Hukum -0.02 tasima bandi- kuralina dayaniyordu. O kural p17_band.json ile CURUTULDU: p12e lambda hesabini TOHUM gurultusuyle (7.60e-06) yapmis; vekilin hatasi TOHUM degil SISTEMATIK ve olculdu (3.97e-04). Dogru lambda = -2.65, yani guvenilirlik SIFIR. Band siniri 0.02 = 1.00 x sigma_cift, yani olcum gurultu tabaniyla birebir cakisiyor.",
+  "sebep_2": "Vekile bulasmamis GERCEK blok CV olcumleri (rekor.jsonl): v27->v30 oran 0.759, v30->v46 0.276, v27->v46 0.556 -- UCU DE bandin ICINDE, isaret uyumu 3/3, kesmesiz egim 0.568. Kucuk kazanclar TASINIYOR.",
+  "yeni_degerlendirme": "huber alpha=0.5, CV kazanci +0.0126. Tasima orani 0.5 ile beklenen LB 0.99484. Monte Carlo: medyan 0.99519, P(ilk 3)=0.52, P(2.siradan iyi)=0.51.",
+  "gecerli_kalan_uyarilar": [
+   "yaz25 (test ile ayni mevsim) NEGATIF: -0.0074, dort tohumda da",
+   "eklenen her tohum kazanci asagi cekti: +0.0156 -> +0.0126"
+  ],
+  "kaynak": "p17_band.json, docs/79 EK bolumu"
+ },
+ "00_p14_TEST_CIKTISI_GUVENILMEZ": {
+  "tarih": "2026-08-31 20:50",
+  "dosyalar": [
+   "p14_soguk_huber_test_log.npy",
+   "p14_soguk_huber_yalniz_test_log.npy",
+   "p14_delta_esit.npy",
+   "p14_delta_yalniz.npy"
+  ],
+  "sorun": "p14_test.py icindeki DENETIM COKTU: uretim lgbm yeniden egitilip p06_test_soguk_aile.npy ile karsilastirildiginda maxabs=5.850299 kor=0.8614. Betigin kendi belgesi -tutmazsa DUR- diyor ve daha once maxabs 4.8e-07 ile dogrulandigi not dusulmus. Kontrol raise etmiyor, sadece log yaziyor -- dosya SESSIZCE uretildi.",
+  "anlami": "delta = (lgbm_huber - lgbm_uretim)/3 ve lgbm_uretim olarak p06 dizisi kullaniliyor. Denetim tam olarak o dizinin dogru referans olup olmadigini sinuyordu ve KALDI. p06 zaten kirmizi takim tarafindan kirilmis bir calisma.",
+  "karar": "BU DOSYALAR KULLANILMAYACAK. Test tahmini p18_yeniden_egit.py ile, birebir dogrulama sarti altinda yeniden uretilecek."
+ }
+}

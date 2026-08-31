@@ -1,0 +1,69 @@
+{
+ "durum": "TAMAMLANDI -- 7 hat da olculdu",
+ "dosyalar": ["kt_p06_01.json", "kt_p06_02.json", "kt_p06_03.json", "kt_p06_04.json", "kt_p06_05.json"],
+ "hat1_secim_yanliligi": {
+  "hukum": "KISMEN KIRILDI",
+  "izgara_nokta": 231,
+  "guz25_yuzeyi_duz": "en iyi 20 nokta 1.59715-1.59814 (yayilma 0.001)",
+  "guz25_esit": 1.60821, "guz25_argmin": 1.59715,
+  "trafo_onyuklemeli_secim_w_std": [0.106, 0.241, 0.204],
+  "p06_w_nin_yeniden_secilme_orani": 0.0147,
+  "rastgele_dirichlet_yaz25_kazanc_ort": -0.01139, "pozitif": 0.415, "p90": 0.0243,
+  "ters_yon_yaz25te_sec_guz25te_olc_kazanc": 0.00508
+ },
+ "hat2_soguk_tanimi": {
+  "hukum": "KIRILDI",
+  "maske_tanimi": "trafo ozet penceresinde YOK -> soguk (src/gridup/features/trafo.py:635)",
+  "test": {"trafo": 2024, "satir": 158369, "guc_medyan": 630, "p_gun_sayisi_medyan": 82, "p_ilk_ofset_medyan": 40, "satir_basi_gun": 78.2},
+  "yaz25": {"trafo": 678, "satir": 20633, "guc_medyan": 400, "p_gun_sayisi_medyan": 46, "p_ilk_ofset_medyan": 61, "satir_basi_gun": 30.4},
+  "p_gun_sayisi_TV_uzakligi_teste": {"yaz25": 0.7053, "guz25": 0.519, "kis26": 0.6213},
+  "p_ilk_ofset_TV_uzakligi_teste": {"yaz25": 0.6527, "guz25": 0.5132, "kis26": 0.5986},
+  "test_baskin_kova": "(75,90] gun -> test soguk satirlarinin %82.3'u",
+  "test_dagilimina_yeniden_agirlikli_soguk_kazanc": {"yaz25": 0.01115, "guz25": -0.00119, "kis26": -0.04269}
+ },
+ "hat3_bilesim_aritmetigi": {"hukum": "KIRILAMADI", "kanit": "MSE uzayinda dogru; 0.00752 birebir; naif dogrusal 0.00515 olurdu"},
+ "hat4_kis26_celiskisi": {
+  "hukum": "KIRILDI (karsi-hipotez ayakta)",
+  "kazanc_p_gun_sayisi_kovasina_gore": {
+   "yaz25": {"0-30": 0.0336, "30-60": 0.0137, "60-75": 0.0298, "75-90": 0.0289, "90+": 0.0452},
+   "guz25": {"0-30": 0.0546, "30-60": 0.0023, "60-75": 0.0181, "75-90": -0.0054, "90+": -0.029},
+   "kis26": {"0-30": -0.0905, "30-60": -0.045, "60-75": -0.0503, "75-90": -0.0625, "90+": -0.0659}
+  },
+  "test_baskin_75_90_bilesim_kazanci": {
+   "yaz25": {"trafo": 30, "kazanc": 0.00819, "ci95": [-0.00849, 0.03282], "pozitif": 0.7555},
+   "guz25": {"trafo": 148, "kazanc": -0.00175, "ci95": [-0.0225, 0.01232], "pozitif": 0.46},
+   "kis26": {"trafo": 154, "kazanc": -0.02118, "ci95": [-0.03044, -0.01295], "pozitif": 0.0}
+  }
+ },
+ "hat5_delta_dosyasi": {
+  "hukum": "KIRILAMADI",
+  "bagimsiz_maske": "train.csv'de olmayan tanim -> 158369 satir / 2024 trafo; p06 maskesiyle BIREBIR AYNI",
+  "delta_yeniden_uretim_maks_mutlak_fark": 0.0,
+  "sifir_disi_maske_disinda": 0, "sifir_maske_icinde": 0
+ },
+ "hat6_kirpma_expm1": {
+  "hukum": "KIRILAMADI",
+  "test_negatif_log1p_tahmin": 0, "yeni_min": 0.0118,
+  "yaz25_kirpmali_vs_ham": {"esit": [1.43592, 1.43592], "p06_w": [1.41269, 1.41269]}
+ },
+ "hat7_asiri_uyum": {
+  "hukum": "KIRILAMADI",
+  "kaba_kural_cat_yok_bilesim_kazanci": 0.00531,
+  "yalniz_lgbm_bilesim_kazanci": 0.01159,
+  "ince_ayar": 0.00752
+ },
+ "UCTAN_UCA_DURUST": {
+  "A_yaz25_ham_secim_gurultusu_dahil": {"ort": 0.00627, "ci95": [-0.00551, 0.01616], "P_sifir_veya_negatif": 0.1253},
+  "B_yaz25_test_kohortuna_agirlikli": {"ort": 0.00306, "ci95": [-0.00836, 0.01563], "P_sifir_veya_negatif": 0.2913},
+  "D_guz25_test_kohortuna_agirlikli": {"ort": -0.00054, "P_sifir_veya_negatif": 0.464},
+  "C_kis26_test_kohortuna_agirlikli": {"ort": -0.01547, "P_sifir_veya_negatif": 0.9827},
+  "F_yaz_guz_ort": {"ort": 0.00126, "P_sifir_veya_negatif": 0.388},
+  "E_uc_blok_ort": {"ort": -0.00432, "P_sifir_veya_negatif": 0.8393}
+ },
+ "HUKUM": {
+  "iddia": 0.00752,
+  "duzeltilmis_en_iyimser_Kural10": 0.0031,
+  "duzeltilmis_yaz_guz": 0.0013,
+  "P_kazanc_sifir_veya_negatif": "0.29 (Kural 10'a tam guven) - 0.39 (yaz+guz) - 0.84 (uc blok esit)"
+ }
+}

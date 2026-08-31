@@ -1,0 +1,39 @@
+{
+ "durum": "hat1/hat3/hat7 bitti; hat2/hat4/hat5/hat6 devam",
+ "hat1_secim_yanliligi": {
+  "hukum": "KISMEN KIRILDI",
+  "izgara_nokta": 231,
+  "guz25_argmin": [0.05, 0.35, 0.6],
+  "guz25_argmin_rmsle": 1.59715,
+  "guz25_esit_rmsle": 1.60821,
+  "guz25_yuzey_duzlugu": "en iyi 20 nokta 1.59715-1.59814 arasi (yayilma 0.001) -- argmin GURULTU ile belirleniyor",
+  "guz25_en_iyi_20_nin_yaz25_araligi": [1.40629, 1.42271],
+  "trafo_onyuklemeli_secim_200": {
+   "w_ort": [0.081, 0.345, 0.574],
+   "w_std": [0.106, 0.241, 0.204],
+   "lgbm_agirlik_p5_p95": [0.25, 0.9],
+   "secilen_w_nin_yaz25_kazanci_ort": 0.01801,
+   "std": 0.01138,
+   "min": -0.02495,
+   "pozitif_oran": 0.915
+  },
+  "sifir_hipotezi_rastgele_dirichlet_2000": {
+   "yaz25_kazanc_ort": -0.01139, "medyan": -0.00638, "pozitif": 0.415,
+   "p90": 0.0243, "max": 0.03568
+  },
+  "ters_yon_yaz25te_sec_guz25te_olc": {"w": [0,0,1], "guz25_kazanc": 0.00508},
+  "yorum": "Secim SURECI transfer ediyor (%91.5 pozitif) ama secilen NOKTA tanimli degil; kazanc beklentisi 0.02323 degil 0.01801 (yaz25 soguk RMSLE uzayinda)."
+ },
+ "hat3_bilesim_aritmetigi": {
+  "hukum": "KIRILAMADI",
+  "kanit": "toplam = sqrt(0.2216*soguk^2 + 0.7784*0.80319^2) -- MSE uzayinda, DOGRU. esit 0.97932, p06w 0.97180, fark 0.00752 BIREBIR dogrulandi. Naif dogrusal yaklasim 0.00515 verirdi; p06 bunu KULLANMAMIS."
+ },
+ "hat7_asiri_uyum": {
+  "hukum": "KIRILAMADI (bulgu kaba kuralda da var)",
+  "yaz25_soguk": {"esit": 1.43592, "cat_yok_0_.5_.5": 1.41954, "yalniz_lgbm": 1.40001, "p06_w": 1.41269},
+  "test_bilesimi": {"esit": 0.97932, "cat_yok": 0.97401, "yalniz_lgbm": 0.96773, "p06_w": 0.9718},
+  "kaba_kural_kazanci": 0.00531,
+  "ince_ayar_kazanci": 0.00752,
+  "yorum": "0-parametreli 'cat'i at' kurali kazancin %71'ini veriyor; yalniz_lgbm ise 0.01159 ile DAHA FAZLA. Yani kazanc ince ayardan degil YONDEN geliyor -- asiri uyum degil."
+ }
+}

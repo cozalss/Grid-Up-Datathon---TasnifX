@@ -1,0 +1,124 @@
+{
+ "seviye_yapi_ayrismasi": {
+  "ESIT": {
+   "yaz25": {
+    "dMSE_TOPLAM": 0.149302,
+    "dMSE_YAPI(seviyesiz)": 0.156688,
+    "dMSE_SEVIYE(fark)": -0.007386,
+    "ort_ofset_taban": 0.61526,
+    "ort_ofset_aday": 0.554
+   },
+   "guz25": {
+    "dMSE_TOPLAM": 0.192321,
+    "dMSE_YAPI(seviyesiz)": 0.201854,
+    "dMSE_SEVIYE(fark)": -0.009533,
+    "ort_ofset_taban": 0.31843,
+    "ort_ofset_aday": 0.29923
+   },
+   "kis26": {
+    "dMSE_TOPLAM": -0.037802,
+    "dMSE_YAPI(seviyesiz)": 0.001118,
+    "dMSE_SEVIYE(fark)": -0.03892,
+    "ort_ofset_taban": 0.418,
+    "ort_ofset_aday": 0.35388
+   },
+   "ORT_dMSE_TOPLAM": 0.101274,
+   "isaret_dMSE_TOPLAM": "2/3",
+   "ORT_dMSE_YAPI(seviyesiz)": 0.119887,
+   "isaret_dMSE_YAPI(seviyesiz)": "3/3",
+   "ORT_dMSE_SEVIYE(fark)": -0.018613,
+   "isaret_dMSE_SEVIYE(fark)": "0/3"
+  },
+  "ESKI_3_1_1": {
+   "yaz25": {
+    "dMSE_TOPLAM": 0.101571,
+    "dMSE_YAPI(seviyesiz)": 0.105828,
+    "dMSE_SEVIYE(fark)": -0.004257,
+    "ort_ofset_taban": 0.61526,
+    "ort_ofset_aday": 0.5785
+   },
+   "guz25": {
+    "dMSE_TOPLAM": 0.132752,
+    "dMSE_YAPI(seviyesiz)": 0.138563,
+    "dMSE_SEVIYE(fark)": -0.005811,
+    "ort_ofset_taban": 0.31843,
+    "ort_ofset_aday": 0.30691
+   },
+   "kis26": {
+    "dMSE_TOPLAM": -0.00833,
+    "dMSE_YAPI(seviyesiz)": 0.015673,
+    "dMSE_SEVIYE(fark)": -0.024003,
+    "ort_ofset_taban": 0.418,
+    "ort_ofset_aday": 0.37953
+   },
+   "ORT_dMSE_TOPLAM": 0.075331,
+   "isaret_dMSE_TOPLAM": "2/3",
+   "ORT_dMSE_YAPI(seviyesiz)": 0.086688,
+   "isaret_dMSE_YAPI(seviyesiz)": "3/3",
+   "ORT_dMSE_SEVIYE(fark)": -0.011357,
+   "isaret_dMSE_SEVIYE(fark)": "0/3"
+  }
+ },
+ "kaynak_dosya": {
+  "dosya": "tuketim_YP_seviye.csv",
+  "LB": 1.00115,
+  "olculen_egim_s": 0.8132,
+  "aile_paylari": [
+   1.1146,
+   -0.0992,
+   -0.0155
+  ]
+ },
+ "uretilen_dosyalar": [
+  {
+   "dosya": "p20_harman_ESIT_V1_seviyesiz.csv",
+   "harman": "ESIT",
+   "varyant": "V1_seviyesiz",
+   "degisen_satir": 158369,
+   "degisen_pay": 0.2216,
+   "log_kayma_ort": -0.0,
+   "log_kayma_std": 0.3442,
+   "log_kayma_min": -2.8059,
+   "log_kayma_max": 1.6957,
+   "dogrulama": "GECTI (714688 satir, id sirasi, NaN yok, negatif yok, sonlu)"
+  },
+  {
+   "dosya": "p20_harman_ESIT_V2_seviyeli.csv",
+   "harman": "ESIT",
+   "varyant": "V2_seviyeli",
+   "degisen_satir": 158369,
+   "degisen_pay": 0.2216,
+   "log_kayma_ort": -0.03324,
+   "log_kayma_std": 0.3442,
+   "log_kayma_min": -2.8392,
+   "log_kayma_max": 1.6624,
+   "dogrulama": "GECTI (714688 satir, id sirasi, NaN yok, negatif yok, sonlu)"
+  },
+  {
+   "dosya": "p20_harman_ESKI_3_1_1_V1_seviyesiz.csv",
+   "harman": "ESKI_3_1_1",
+   "varyant": "V1_seviyesiz",
+   "degisen_satir": 158369,
+   "degisen_pay": 0.2216,
+   "log_kayma_ort": 0.0,
+   "log_kayma_std": 0.20652,
+   "log_kayma_min": -1.6836,
+   "log_kayma_max": 1.0174,
+   "dogrulama": "GECTI (714688 satir, id sirasi, NaN yok, negatif yok, sonlu)"
+  },
+  {
+   "dosya": "p20_harman_ESKI_3_1_1_V2_seviyeli.csv",
+   "harman": "ESKI_3_1_1",
+   "varyant": "V2_seviyeli",
+   "degisen_satir": 158369,
+   "degisen_pay": 0.2216,
+   "log_kayma_ort": -0.01994,
+   "log_kayma_std": 0.20652,
+   "log_kayma_min": -1.7035,
+   "log_kayma_max": 0.9974,
+   "dogrulama": "GECTI (714688 satir, id sirasi, NaN yok, negatif yok, sonlu)"
+  }
+ ],
+ "cikti_dizini": "C:/Users/Cem/AppData/Local/Temp/claude/c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad",
+ "NOT": "submissions/ altina YAZILMADI, GONDERIM YAPILMADI. V1 seviyeyi korur (LB'den cozulmus seviye katmaniyla cift saymaz); V2 blok CV'sinde olculen kazancin TAMAMINI tasir ama seviye duzeltmesiyle cakisma riski vardir."
+}

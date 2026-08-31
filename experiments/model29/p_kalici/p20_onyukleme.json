@@ -1,0 +1,273 @@
+{
+ "beta": 0.6,
+ "n_onyukleme": 500,
+ "tohumlar": [
+  1000,
+  1001,
+  1002
+ ],
+ "onyukleme": {
+  "ESIT": {
+   "yaz25": {
+    "dMSE_agr": 0.149302,
+    "GA95": [
+     0.011837,
+     0.289088
+    ],
+    "P_pozitif": 0.986,
+    "trafo": 678
+   },
+   "guz25": {
+    "dMSE_agr": 0.192321,
+    "GA95": [
+     0.008181,
+     0.37177
+    ],
+    "P_pozitif": 0.98,
+    "trafo": 1173
+   },
+   "kis26": {
+    "dMSE_agr": -0.037802,
+    "GA95": [
+     -0.102905,
+     0.024062
+    ],
+    "P_pozitif": 0.114,
+    "trafo": 1223
+   },
+   "UC_BLOK_ORT": {
+    "dMSE_agr": 0.101274,
+    "GA95_blokici_gurultu": [
+     0.024185,
+     0.180916
+    ],
+    "P_pozitif": 1.0,
+    "UYARI": "Bu GA yalnizca BLOK ICI ornekleme gurultusunu tasir. Bloklar arasi sacilim (yaz +, kis -) ondan COK daha buyuk; asagidaki bloklar_arasi_se ile birlikte okunmali."
+   },
+   "bloklar_arasi": {
+    "sd": 0.122349,
+    "se_ort": 0.070638,
+    "isaret": "2/3"
+   },
+   "LB_cevrimi": {
+    "test_dMSE": 0.022442,
+    "dRMSLE_oran1.0": 0.01127,
+    "beklenen_LB_oran1.0": 0.98988,
+    "beklenen_LB_oran0.5": 0.99553
+   }
+  },
+  "ESKI_3_1_1": {
+   "yaz25": {
+    "dMSE_agr": 0.101571,
+    "GA95": [
+     0.015184,
+     0.188885
+    ],
+    "P_pozitif": 0.996,
+    "trafo": 678
+   },
+   "guz25": {
+    "dMSE_agr": 0.132752,
+    "GA95": [
+     0.031395,
+     0.244775
+    ],
+    "P_pozitif": 0.99,
+    "trafo": 1173
+   },
+   "kis26": {
+    "dMSE_agr": -0.00833,
+    "GA95": [
+     -0.046478,
+     0.029478
+    ],
+    "P_pozitif": 0.3,
+    "trafo": 1223
+   },
+   "UC_BLOK_ORT": {
+    "dMSE_agr": 0.075331,
+    "GA95_blokici_gurultu": [
+     0.029342,
+     0.123135
+    ],
+    "P_pozitif": 1.0,
+    "UYARI": "Bu GA yalnizca BLOK ICI ornekleme gurultusunu tasir. Bloklar arasi sacilim (yaz +, kis -) ondan COK daha buyuk; asagidaki bloklar_arasi_se ile birlikte okunmali."
+   },
+   "bloklar_arasi": {
+    "sd": 0.074111,
+    "se_ort": 0.042788,
+    "isaret": "2/3"
+   },
+   "LB_cevrimi": {
+    "test_dMSE": 0.016693,
+    "dRMSLE_oran1.0": 0.00837,
+    "beklenen_LB_oran1.0": 0.99278,
+    "beklenen_LB_oran0.5": 0.99697
+   }
+  },
+  "CATSIZ_xgb_lgbm": {
+   "yaz25": {
+    "dMSE_agr": 0.186485,
+    "GA95": [
+     -0.007723,
+     0.384672
+    ],
+    "P_pozitif": 0.966,
+    "trafo": 678
+   },
+   "guz25": {
+    "dMSE_agr": 0.234231,
+    "GA95": [
+     -0.07574,
+     0.500527
+    ],
+    "P_pozitif": 0.954,
+    "trafo": 1173
+   },
+   "kis26": {
+    "dMSE_agr": -0.10155,
+    "GA95": [
+     -0.209404,
+     -0.005721
+    ],
+    "P_pozitif": 0.022,
+    "trafo": 1223
+   },
+   "UC_BLOK_ORT": {
+    "dMSE_agr": 0.106389,
+    "GA95_blokici_gurultu": [
+     -0.009151,
+     0.221862
+    ],
+    "P_pozitif": 0.952,
+    "UYARI": "Bu GA yalnizca BLOK ICI ornekleme gurultusunu tasir. Bloklar arasi sacilim (yaz +, kis -) ondan COK daha buyuk; asagidaki bloklar_arasi_se ile birlikte okunmali."
+   },
+   "bloklar_arasi": {
+    "sd": 0.181656,
+    "se_ort": 0.104879,
+    "isaret": "2/3"
+   },
+   "LB_cevrimi": {
+    "test_dMSE": 0.023576,
+    "dRMSLE_oran1.0": 0.01184,
+    "beklenen_LB_oran1.0": 0.98931,
+    "beklenen_LB_oran0.5": 0.99525
+   }
+  }
+ },
+ "kis26_teshisi": {
+  "yaz25": {
+   "sifir_satir_payi": 0.04,
+   "dMSE_sifir_satirlardan": 0.058249,
+   "dMSE_sifirdisi_satirlardan": 0.091053,
+   "kova_bazinda_dMSE_payi": {
+    "0": 0.018216,
+    "1": -0.016775,
+    "2": 0.017839,
+    "3": 0.031757,
+    "4": 0.032039,
+    "5": 0.048584,
+    "6": 0.013632,
+    "7": 0.004011
+   },
+   "kova>=6(650+kVA)_satir_payi": 0.3203,
+   "ay_bazinda_dMSE_payi": {
+    "4": 0.002602,
+    "5": -0.0048,
+    "6": 0.076856,
+    "7": 0.074644
+   },
+   "en_kotu_trafo_dMSE_payi": -0.0977,
+   "en_kotu_5_trafo_dMSE_payi": -0.3854,
+   "trafo_sayisi": 678,
+   "kazanan_trafo_orani": 0.5708
+  },
+  "guz25": {
+   "sifir_satir_payi": 0.0566,
+   "dMSE_sifir_satirlardan": 0.076146,
+   "dMSE_sifirdisi_satirlardan": 0.116174,
+   "kova_bazinda_dMSE_payi": {
+    "0": 0.004307,
+    "1": 0.004614,
+    "2": 0.038655,
+    "3": 0.009822,
+    "4": 0.032869,
+    "5": 0.040382,
+    "6": -0.023304,
+    "7": 0.084976
+   },
+   "kova>=6(650+kVA)_satir_payi": 0.1602,
+   "ay_bazinda_dMSE_payi": {
+    "8": -0.000441,
+    "9": 0.026847,
+    "10": 0.07386,
+    "11": 0.092054
+   },
+   "en_kotu_trafo_dMSE_payi": -0.2525,
+   "en_kotu_5_trafo_dMSE_payi": -0.4011,
+   "trafo_sayisi": 1173,
+   "kazanan_trafo_orani": 0.6232
+  },
+  "kis26": {
+   "sifir_satir_payi": 0.0523,
+   "dMSE_sifir_satirlardan": 0.019496,
+   "dMSE_sifirdisi_satirlardan": -0.057297,
+   "kova_bazinda_dMSE_payi": {
+    "0": -0.00046,
+    "1": -0.002524,
+    "2": -0.011368,
+    "3": -0.008002,
+    "4": -0.013555,
+    "5": -0.030069,
+    "6": -0.010473,
+    "7": 0.03865
+   },
+   "kova>=6(650+kVA)_satir_payi": 0.1899,
+   "ay_bazinda_dMSE_payi": {
+    "1": -0.027226,
+    "2": -0.00672,
+    "3": 0.000306,
+    "12": -0.004162
+   },
+   "en_kotu_trafo_dMSE_payi": 0.276,
+   "en_kotu_5_trafo_dMSE_payi": 1.0404,
+   "trafo_sayisi": 1223,
+   "kazanan_trafo_orani": 0.435
+  }
+ },
+ "test_benzeri_alt_kume_kova650+_pg(75,90]": {
+  "yaz25": {
+   "n": 654,
+   "pay": 0.0317,
+   "URETIM_cat": 0.49536,
+   "ESIT": 0.46708,
+   "ESKI_3_1_1": 0.46993,
+   "CATSIZ_xgb_lgbm": 0.47938,
+   "dMSE_ESIT": 0.02828,
+   "dMSE_ESKI_3_1_1": 0.02543,
+   "dMSE_CATSIZ_xgb_lgbm": 0.01598
+  },
+  "guz25": {
+   "n": 2392,
+   "pay": 0.0607,
+   "URETIM_cat": 0.76438,
+   "ESIT": 0.79117,
+   "ESKI_3_1_1": 0.75155,
+   "CATSIZ_xgb_lgbm": 0.89487,
+   "dMSE_ESIT": -0.02679,
+   "dMSE_ESKI_3_1_1": 0.01283,
+   "dMSE_CATSIZ_xgb_lgbm": -0.13049
+  },
+  "kis26": {
+   "n": 2217,
+   "pay": 0.0358,
+   "URETIM_cat": 3.15831,
+   "ESIT": 3.06803,
+   "ESKI_3_1_1": 3.09251,
+   "CATSIZ_xgb_lgbm": 3.05924,
+   "dMSE_ESIT": 0.09028,
+   "dMSE_ESKI_3_1_1": 0.0658,
+   "dMSE_CATSIZ_xgb_lgbm": 0.09907
+  }
+ }
+}
