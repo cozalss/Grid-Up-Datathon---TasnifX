@@ -62,7 +62,9 @@ te_tn = pd.to_numeric(te.tanim, errors="coerce")
 R["tanim"] = {
     "uzunluk_dagilim": tr.tanim.str.len().value_counts().to_dict(),
     "sayisal_olmayan_trafo": int(pd.to_numeric(trf.tanim, errors="coerce").isna().sum()),
-    "sayisal_olmayan_ornek": trf.tanim[pd.to_numeric(trf.tanim, errors="coerce").isna()].head(10).tolist(),
+    "sayisal_olmayan_ornek": trf.tanim[pd.to_numeric(trf.tanim, errors="coerce").isna()]
+    .head(10)
+    .tolist(),
     "min": int(tn.min()),
     "max": int(tn.max()),
     "test_min": int(te_tn.min()),
@@ -80,8 +82,18 @@ for p in (2, 3, 4, 5):
 y = tr.tuketim.to_numpy()
 ly = np.log1p(y)
 kesikler = [0, 1e-9, 1, 10, 50, 100, 500, 1000, 5000, 1e5, 1e9]
-etiket = ["=0", "(0,1]", "(1,10]", "(10,50]", "(50,100]", "(100,500]",
-          "(500,1e3]", "(1e3,5e3]", "(5e3,1e5]", ">1e5"]
+etiket = [
+    "=0",
+    "(0,1]",
+    "(1,10]",
+    "(10,50]",
+    "(50,100]",
+    "(100,500]",
+    "(500,1e3]",
+    "(1e3,5e3]",
+    "(5e3,1e5]",
+    ">1e5",
+]
 kova = pd.cut(y, bins=kesikler, labels=etiket, include_lowest=True, right=True)
 R["hedef"] = {
     "sifir_orani": float((y == 0).mean()),
@@ -99,8 +111,10 @@ R["sifir_yapisi"] = {
     "tamamen_sifir_trafo": int((ps == 1).sum()),
     "kismi_sifir_trafo": int(((ps > 0) & (ps < 1)).sum()),
     "sifir_orani_gun_bazinda_std": float(tr.groupby("tarih").sifir.mean().std()),
-    "aylik_sifir_orani": tr.groupby(tr.tarih.dt.to_period("M")).sifir.mean()
-    .rename(lambda p: str(p)).to_dict(),
+    "aylik_sifir_orani": tr.groupby(tr.tarih.dt.to_period("M"))
+    .sifir.mean()
+    .rename(lambda p: str(p))
+    .to_dict(),
 }
 
 # --- 7. yaz25 blok tanimi ---

@@ -182,8 +182,11 @@ class Ayar:
             for taraf in ("soguk", "sicak")
         }
         self.tau = {
-            taraf: (None if cev(f"P18_TAU_{taraf.upper()}", "yok") in ("", "yok") else float(
-                cev(f"P18_TAU_{taraf.upper()}")))
+            taraf: (
+                None
+                if cev(f"P18_TAU_{taraf.upper()}", "yok") in ("", "yok")
+                else float(cev(f"P18_TAU_{taraf.upper()}"))
+            )
             for taraf in ("soguk", "sicak")
         }
         agac = cev("P18_AGAC")
@@ -206,10 +209,17 @@ class Ayar:
 
     def sozluk(self) -> dict:
         return {
-            "mod": self.mod, "taraflar": self.taraflar, "bloklar": self.bloklar,
-            "tohumlar": self.tohumlar, "aileler": self.aileler, "kayip": self.kayip,
-            "tau": self.tau, "agac": self.agac, "alt_ornek": self.alt_ornek,
-            "etiket": self.etiket, "taban_mi": self.taban_mi,
+            "mod": self.mod,
+            "taraflar": self.taraflar,
+            "bloklar": self.bloklar,
+            "tohumlar": self.tohumlar,
+            "aileler": self.aileler,
+            "kayip": self.kayip,
+            "tau": self.tau,
+            "agac": self.agac,
+            "alt_ornek": self.alt_ornek,
+            "etiket": self.etiket,
+            "taban_mi": self.taban_mi,
         }
 
 
@@ -344,13 +354,16 @@ def dogrula(ayar: Ayar, kayit: dict) -> dict:
             v = z[k].astype("float64")
             if ref is None:
                 sonuc[f"{ayar.mod}/{taraf}/{blok}/{k}"] = {
-                    "durum": "REFERANS YOK", "referans": ref_ad
+                    "durum": "REFERANS YOK",
+                    "referans": ref_ad,
                 }
                 continue
             if ref.shape != v.shape:
                 sonuc[f"{ayar.mod}/{taraf}/{blok}/{k}"] = {
-                    "durum": "SEKIL UYUSMAZLIGI", "bizim": list(v.shape),
-                    "referans_sekil": list(ref.shape), "referans": ref_ad,
+                    "durum": "SEKIL UYUSMAZLIGI",
+                    "bizim": list(v.shape),
+                    "referans_sekil": list(ref.shape),
+                    "referans": ref_ad,
                 }
                 continue
             mx = float(np.max(np.abs(v - ref)))
@@ -358,7 +371,9 @@ def dogrula(ayar: Ayar, kayit: dict) -> dict:
             esik = 1e-6 if taraf == "soguk" else 5e-6 * max(1.0, float(np.abs(ref).max()))
             sonuc[f"{ayar.mod}/{taraf}/{blok}/{k}"] = {
                 "durum": "BIREBIR" if mx <= esik else "TUTMADI",
-                "maxabs": mx, "esik": esik, "referans": os.path.basename(str(ref_ad)),
+                "maxabs": mx,
+                "esik": esik,
+                "referans": os.path.basename(str(ref_ad)),
             }
     return sonuc
 

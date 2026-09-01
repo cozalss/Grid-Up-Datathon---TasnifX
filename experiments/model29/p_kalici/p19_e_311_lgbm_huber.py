@@ -24,8 +24,16 @@ import pandas as pd
 
 BURA = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BURA)
-from p11_agirlik import (PG_HAKIM, agirlik, ess, kova, onyukleme_w, rmsle,  # noqa: E402
-                         test_dagilimi, wrmsle)
+from p11_agirlik import (
+    PG_HAKIM,
+    agirlik,
+    ess,
+    kova,
+    onyukleme_w,
+    rmsle,  # noqa: E402
+    test_dagilimi,
+    wrmsle,
+)
 from p11_ortak import BLOKLAR, DN, HEDEF_SOGUK, egitim, kirp, sicak_rmsle, toplam  # noqa: E402
 
 W311 = {"cat": 0.6, "xgb": 0.2, "lgbm": 0.2}
@@ -46,8 +54,13 @@ def main():
     del T
     E = egitim()
 
-    R = {"soru": "3/1/1 harmaninda lgbm uyesi huber olursa ne olur?",
-         "harman": W311, "bloklar": {}, "kazanclar": {}, "toplama": {}}
+    R = {
+        "soru": "3/1/1 harmaninda lgbm uyesi huber olursa ne olur?",
+        "harman": W311,
+        "bloklar": {},
+        "kazanclar": {},
+        "toplama": {},
+    }
 
     bil = {a: {} for a in HUBER_ADAYLAR}
     for b in BLOKLAR:
@@ -62,13 +75,20 @@ def main():
 
         def olc(lg):
             r = y - kirp(lg)
-            return dict(ham=round(rmsle(r), 5), agr=round(wrmsle(r, w), 5),
-                        pg=round(rmsle(r[m]), 5),
-                        bilesim_agr=round(toplam(wrmsle(r, w), sic), 5))
+            return dict(
+                ham=round(rmsle(r), 5),
+                agr=round(wrmsle(r, w), 5),
+                pg=round(rmsle(r[m]), 5),
+                bilesim_agr=round(toplam(wrmsle(r, w), sic), 5),
+            )
 
-        Rb = {"n_soguk": int(len(y)), "sicak_rmsle": round(sic, 5),
-              "agirlik_ess": round(ess(w), 1), "npz_tohum": npz_tohum,
-              "seviye": {}}
+        Rb = {
+            "n_soguk": int(len(y)),
+            "sicak_rmsle": round(sic, 5),
+            "agirlik_ess": round(ess(w), 1),
+            "npz_tohum": npz_tohum,
+            "seviye": {},
+        }
         R["bloklar"][b] = Rb
 
         # referans: tam tohum kumesiyle A ve B
@@ -89,8 +109,13 @@ def main():
             for t in ts:
                 yol = p11b(b, t, "TABAN")
                 if os.path.exists(yol):
-                    mx = float(np.max(np.abs(
-                        np.load(yol).astype(np.float64) - z[f"{t}_lgbm"].astype(np.float64))))
+                    mx = float(
+                        np.max(
+                            np.abs(
+                                np.load(yol).astype(np.float64) - z[f"{t}_lgbm"].astype(np.float64)
+                            )
+                        )
+                    )
                     dog[t] = mx
                     assert mx < 1e-5, f"p11b TABAN != npz lgbm ({b} t={t} maxabs={mx})"
 
@@ -110,16 +135,21 @@ def main():
             # tohum bazli delta (agr): B_t vs C_t tek tohumla
             tb = {}
             for t in ts:
-                Bt = (W311["cat"] * z[f"{t}_cat"].astype(np.float64)
-                      + W311["xgb"] * z[f"{t}_xgb"].astype(np.float64)
-                      + W311["lgbm"] * z[f"{t}_lgbm"].astype(np.float64))
-                Ct = (W311["cat"] * z[f"{t}_cat"].astype(np.float64)
-                      + W311["xgb"] * z[f"{t}_xgb"].astype(np.float64)
-                      + W311["lgbm"] * np.load(p11b(b, t, ha)).astype(np.float64))
+                Bt = (
+                    W311["cat"] * z[f"{t}_cat"].astype(np.float64)
+                    + W311["xgb"] * z[f"{t}_xgb"].astype(np.float64)
+                    + W311["lgbm"] * z[f"{t}_lgbm"].astype(np.float64)
+                )
+                Ct = (
+                    W311["cat"] * z[f"{t}_cat"].astype(np.float64)
+                    + W311["xgb"] * z[f"{t}_xgb"].astype(np.float64)
+                    + W311["lgbm"] * np.load(p11b(b, t, ha)).astype(np.float64)
+                )
                 tb[str(t)] = round(wrmsle(y - kirp(Bt), w) - wrmsle(y - kirp(Ct), w), 5)
 
             kz = dict(
-                ortak_tohum=ts, n_tohum=len(ts),
+                ortak_tohum=ts,
+                n_tohum=len(ts),
                 p11b_taban_dogrulama_maxabs={str(k): round(v, 8) for k, v in dog.items()},
                 ham=round(rmsle(rB) - rmsle(rC), 5),
                 agr=round(wrmsle(rB, w) - wrmsle(rC, w), 5),
@@ -127,11 +157,13 @@ def main():
                 bilesim_agr=round(toplam(wrmsle(rB, w), sic) - toplam(wrmsle(rC, w), sic), 5),
                 tohum_bazli_agr=tb,
                 onyukleme_agr=onyukleme_w(sog.tanim.values, rB, rC, w, 500),
-                onyukleme_pg=onyukleme_w(sog.tanim.values[m], rB[m], rC[m],
-                                         np.ones(int(m.sum())), 500),
+                onyukleme_pg=onyukleme_w(
+                    sog.tanim.values[m], rB[m], rC[m], np.ones(int(m.sum())), 500
+                ),
                 C_vs_cat_tekil_agr=round(wrmsle(rA, w) - wrmsle(rC, w), 5),
                 C_vs_cat_tekil_bilesim_agr=round(
-                    toplam(wrmsle(rA, w), sic) - toplam(wrmsle(rC, w), sic), 5),
+                    toplam(wrmsle(rA, w), sic) - toplam(wrmsle(rC, w), sic), 5
+                ),
             )
             R["kazanclar"].setdefault(ha, {})[b] = kz
             bil[ha][b] = kz["bilesim_agr"]
@@ -144,7 +176,8 @@ def main():
             blok={b: bil[ha][b] for b in BLOKLAR},
             ort=round(float(v.mean()), 5),
             pozitif_blok=int((v > 0).sum()),
-            not_="bilesim_agr = test bilesimi RMSLE kazanci (B_311_std - C_311_huber), pozitif = huber IYI")
+            not_="bilesim_agr = test bilesimi RMSLE kazanci (B_311_std - C_311_huber), pozitif = huber IYI",
+        )
 
     yol = os.path.join(BURA, "p19_e_311_lgbm_huber.json")
     with open(yol, "w", encoding="utf-8") as fh:
@@ -153,17 +186,23 @@ def main():
     print(f"\n{'yapik':28}{'blok':7}{'ham':>9}{'agr':>9}{'pg':>9}{'bil_agr':>9}")
     for b in BLOKLAR:
         for a, v in R["bloklar"][b]["seviye"].items():
-            print(f"{a:28}{b:7}{v['ham']:>9.5f}{v['agr']:>9.5f}{v['pg']:>9.5f}"
-                  f"{v['bilesim_agr']:>9.5f}")
+            print(
+                f"{a:28}{b:7}{v['ham']:>9.5f}{v['agr']:>9.5f}{v['pg']:>9.5f}"
+                f"{v['bilesim_agr']:>9.5f}"
+            )
     print(f"\nKAZANC C-B (pozitif = huber IYI)")
-    print(f"{'aday':12}{'blok':7}{'nt':>3}{'ham':>9}{'agr':>9}{'pg':>9}{'bil':>9}"
-          f"{'oy+':>7}{'oypg+':>7}")
+    print(
+        f"{'aday':12}{'blok':7}{'nt':>3}{'ham':>9}{'agr':>9}{'pg':>9}{'bil':>9}"
+        f"{'oy+':>7}{'oypg+':>7}"
+    )
     for a, bb in R["kazanclar"].items():
         for b, v in bb.items():
-            print(f"{a:12}{b:7}{v['n_tohum']:>3}{v['ham']:>+9.5f}{v['agr']:>+9.5f}"
-                  f"{v['pg']:>+9.5f}{v['bilesim_agr']:>+9.5f}"
-                  f"{v['onyukleme_agr']['pozitif_oran']:>7.3f}"
-                  f"{v['onyukleme_pg']['pozitif_oran']:>7.3f}")
+            print(
+                f"{a:12}{b:7}{v['n_tohum']:>3}{v['ham']:>+9.5f}{v['agr']:>+9.5f}"
+                f"{v['pg']:>+9.5f}{v['bilesim_agr']:>+9.5f}"
+                f"{v['onyukleme_agr']['pozitif_oran']:>7.3f}"
+                f"{v['onyukleme_pg']['pozitif_oran']:>7.3f}"
+            )
     print("\nTOPLAMA")
     print(json.dumps(R["toplama"], indent=1, ensure_ascii=False))
     print("\nyazildi", yol)

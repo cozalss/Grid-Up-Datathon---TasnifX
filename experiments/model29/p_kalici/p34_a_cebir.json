@@ -1,0 +1,92 @@
+{
+ "00_KURAL": "Kaggle gonderimi YOK, submissions/ yazilmadi, commit yok",
+ "N": 714688,
+ "M0": 1.005846366,
+ "adlar_30": [
+  "tuketim_p51_sicak05.csv",
+  "tuketim_m4_hava_capali.csv",
+  "tuketim_v109_birlesik.csv",
+  "tuketim_v102_kappa_optimum.csv",
+  "tuketim_v101_hepsi.csv",
+  "tuketim_v83_sicak_optimum.csv",
+  "tuketim_v81_sicak08.csv",
+  "tuketim_v80_optimum.csv",
+  "tuketim_v79_S3.csv",
+  "tuketim_v73_soguk_gun160.csv",
+  "tuketim_v67_c1335_olay.csv",
+  "tuketim_v55_gunolcek.csv",
+  "tuketim_v50_nihai30.csv",
+  "tuketim_v47_eskison.csv",
+  "tuketim_v44_v27yeni.csv",
+  "tuketim_v46_gun.csv",
+  "tuketim_v30_buzme.csv",
+  "tuketim_v27_v18hedge.csv",
+  "tuketim_v25_hedge.csv",
+  "tuketim_v18.csv",
+  "tuketim_v16.csv",
+  "tuketim_v15.csv",
+  "tuketim_v7.csv",
+  "tuketim_v2.csv",
+  "tuketim_s3y40.csv",
+  "tuketim_y40_sota_temiz.csv",
+  "tuketim_YP_seviye.csv",
+  "tuketim_K_yenibas.csv",
+  "tuketim_H1_span0_kuyruk8.csv",
+  "tuketim_H2_harman311.csv"
+ ],
+ "c28_p33_yeniden_uretim": {
+  "kL": 0.0037769822210929017,
+  "r_hat_norm2": 0.003734501676515773,
+  "beklenen_kazanc": 0.0037345016765157764,
+  "TABAN_MSE": 1.00202690323433,
+  "saf_span_cebirsel": 1.0010129385948665,
+  "saf_span_durust": 1.0010553752532796,
+  "p33_ile_uyum": true
+ },
+ "c30_yeni": {
+  "kL": 0.004293663213942415,
+  "r_hat_norm2": 0.0041989421218469785,
+  "beklenen_kazanc": 0.004198942121846987,
+  "TABAN_MSE": 1.0014579816939622,
+  "saf_span_cebirsel": 1.0007287253266801,
+  "saf_span_durust": 1.0008233729675549,
+  "r_hat_goreli_degisim": 0.3771037581147809
+ },
+ "H_ongoru_vs_olcum": {
+  "tuketim_H1_span0_kuyruk8.csv": {
+   "LB": 1.00299,
+   "Q": 0.010145615744495934,
+   "L_olculmus": 0.005001520822247918,
+   "L_ongoru_28yon": 0.004021917340456813,
+   "P_ongoru_28yon": 1.0039662081283327,
+   "P_hata": -0.0009762081283326562,
+   "L_hata": 0.0009796034817911052
+  },
+  "tuketim_H2_harman311.csv": {
+   "LB": 1.00715,
+   "Q": 0.012852999089605206,
+   "L_olculmus": 0.0021741212948026556,
+   "L_ongoru_28yon": 0.003284192604788961,
+   "P_ongoru_28yon": 1.006047205592276,
+   "P_hata": 0.0011027944077239837,
+   "L_hata": -0.0011100713099863055
+  }
+ },
+ "geri_uyum": {
+  "tuketim_YP_seviye.csv": {
+   "P_model_30yon": 1.0013141899287337,
+   "P_LB": 1.00115,
+   "artik": -0.00016418992873368232
+  },
+  "tuketim_H1_span0_kuyruk8.csv": {
+   "P_model_30yon": 1.0031476484411073,
+   "P_LB": 1.00299,
+   "artik": -0.00015764844110721654
+  },
+  "tuketim_H2_harman311.csv": {
+   "P_model_30yon": 1.006789070032854,
+   "P_LB": 1.00715,
+   "artik": 0.00036092996714609527
+  }
+ }
+}

@@ -1,0 +1,255 @@
+{
+ "01_bolum6_bolum4": [
+  {
+   "blok": "yaz25",
+   "MSE": 1.08366,
+   "RMSE": 1.04099,
+   "sifir_pay_agir": 0.05199,
+   "MSE_sifir_payi": 0.4131,
+   "sifir_ort_p": 1.4944,
+   "sifir_rms_p": 2.9344,
+   "sifir_medyan_p": 0.1584,
+   "olu_trafo_ort_p": 0.9851,
+   "olu_trafo_rms_p": 2.3904,
+   "canli_poz_ort_p": 6.6447
+  },
+  {
+   "blok": "guz25",
+   "MSE": 1.16321,
+   "RMSE": 1.07852,
+   "sifir_pay_agir": 0.03212,
+   "MSE_sifir_payi": 0.4863,
+   "sifir_ort_p": 3.0758,
+   "sifir_rms_p": 4.1966,
+   "sifir_medyan_p": 0.8479,
+   "olu_trafo_ort_p": 3.0244,
+   "olu_trafo_rms_p": 4.1262,
+   "canli_poz_ort_p": 6.8684
+  },
+  {
+   "blok": "kis26",
+   "MSE": 1.1689,
+   "RMSE": 1.08116,
+   "sifir_pay_agir": 0.04491,
+   "MSE_sifir_payi": 0.5328,
+   "sifir_ort_p": 2.3945,
+   "sifir_rms_p": 3.7238,
+   "sifir_medyan_p": 0.5345,
+   "olu_trafo_ort_p": 2.1827,
+   "olu_trafo_rms_p": 3.5096,
+   "canli_poz_ort_p": 6.4844
+  }
+ ],
+ "02_desil": [
+  {
+   "blok": "yaz25",
+   "desil": 1,
+   "p_ort": -0.184,
+   "satir_pay": 0.0878,
+   "MSE_pay_sifir_icinde": 0.0004
+  },
+  {
+   "blok": "yaz25",
+   "desil": 2,
+   "p_ort": -0.1,
+   "satir_pay": 0.0878,
+   "MSE_pay_sifir_icinde": 0.0001
+  },
+  {
+   "blok": "yaz25",
+   "desil": 3,
+   "p_ort": -0.046,
+   "satir_pay": 0.0878,
+   "MSE_pay_sifir_icinde": 0.0
+  },
+  {
+   "blok": "yaz25",
+   "desil": 4,
+   "p_ort": 0.044,
+   "satir_pay": 0.0878,
+   "MSE_pay_sifir_icinde": 0.0
+  },
+  {
+   "blok": "yaz25",
+   "desil": 5,
+   "p_ort": 0.13,
+   "satir_pay": 0.0878,
+   "MSE_pay_sifir_icinde": 0.0002
+  },
+  {
+   "blok": "yaz25",
+   "desil": 6,
+   "p_ort": 0.189,
+   "satir_pay": 0.0878,
+   "MSE_pay_sifir_icinde": 0.0004
+  },
+  {
+   "blok": "yaz25",
+   "desil": 7,
+   "p_ort": 0.278,
+   "satir_pay": 0.0878,
+   "MSE_pay_sifir_icinde": 0.0008
+  },
+  {
+   "blok": "yaz25",
+   "desil": 8,
+   "p_ort": 0.518,
+   "satir_pay": 0.0878,
+   "MSE_pay_sifir_icinde": 0.003
+  },
+  {
+   "blok": "yaz25",
+   "desil": 9,
+   "p_ort": 1.581,
+   "satir_pay": 0.0896,
+   "MSE_pay_sifir_icinde": 0.0314
+  },
+  {
+   "blok": "yaz25",
+   "desil": 10,
+   "p_ort": 6.152,
+   "satir_pay": 0.2081,
+   "MSE_pay_sifir_icinde": 0.9637
+  },
+  {
+   "blok": "guz25",
+   "desil": 1,
+   "p_ort": -0.122,
+   "satir_pay": 0.0802,
+   "MSE_pay_sifir_icinde": 0.0001
+  },
+  {
+   "blok": "guz25",
+   "desil": 2,
+   "p_ort": -0.016,
+   "satir_pay": 0.0802,
+   "MSE_pay_sifir_icinde": 0.0
+  },
+  {
+   "blok": "guz25",
+   "desil": 3,
+   "p_ort": 0.122,
+   "satir_pay": 0.0803,
+   "MSE_pay_sifir_icinde": 0.0001
+  },
+  {
+   "blok": "guz25",
+   "desil": 4,
+   "p_ort": 0.274,
+   "satir_pay": 0.0801,
+   "MSE_pay_sifir_icinde": 0.0004
+  },
+  {
+   "blok": "guz25",
+   "desil": 5,
+   "p_ort": 0.564,
+   "satir_pay": 0.0802,
+   "MSE_pay_sifir_icinde": 0.0015
+  },
+  {
+   "blok": "guz25",
+   "desil": 6,
+   "p_ort": 1.233,
+   "satir_pay": 0.0803,
+   "MSE_pay_sifir_icinde": 0.0073
+  },
+  {
+   "blok": "guz25",
+   "desil": 7,
+   "p_ort": 3.271,
+   "satir_pay": 0.0912,
+   "MSE_pay_sifir_icinde": 0.059
+  },
+  {
+   "blok": "guz25",
+   "desil": 8,
+   "p_ort": 5.156,
+   "satir_pay": 0.1434,
+   "MSE_pay_sifir_icinde": 0.2172
+  },
+  {
+   "blok": "guz25",
+   "desil": 9,
+   "p_ort": 6.018,
+   "satir_pay": 0.156,
+   "MSE_pay_sifir_icinde": 0.3212
+  },
+  {
+   "blok": "guz25",
+   "desil": 10,
+   "p_ort": 7.302,
+   "satir_pay": 0.1279,
+   "MSE_pay_sifir_icinde": 0.3932
+  },
+  {
+   "blok": "kis26",
+   "desil": 1,
+   "p_ort": -0.029,
+   "satir_pay": 0.0889,
+   "MSE_pay_sifir_icinde": 0.0
+  },
+  {
+   "blok": "kis26",
+   "desil": 2,
+   "p_ort": 0.079,
+   "satir_pay": 0.0888,
+   "MSE_pay_sifir_icinde": 0.0
+  },
+  {
+   "blok": "kis26",
+   "desil": 3,
+   "p_ort": 0.188,
+   "satir_pay": 0.0889,
+   "MSE_pay_sifir_icinde": 0.0002
+  },
+  {
+   "blok": "kis26",
+   "desil": 4,
+   "p_ort": 0.309,
+   "satir_pay": 0.0888,
+   "MSE_pay_sifir_icinde": 0.0006
+  },
+  {
+   "blok": "kis26",
+   "desil": 5,
+   "p_ort": 0.459,
+   "satir_pay": 0.0888,
+   "MSE_pay_sifir_icinde": 0.0014
+  },
+  {
+   "blok": "kis26",
+   "desil": 6,
+   "p_ort": 0.619,
+   "satir_pay": 0.0889,
+   "MSE_pay_sifir_icinde": 0.0025
+  },
+  {
+   "blok": "kis26",
+   "desil": 7,
+   "p_ort": 1.023,
+   "satir_pay": 0.0888,
+   "MSE_pay_sifir_icinde": 0.0071
+  },
+  {
+   "blok": "kis26",
+   "desil": 8,
+   "p_ort": 2.97,
+   "satir_pay": 0.0966,
+   "MSE_pay_sifir_icinde": 0.07
+  },
+  {
+   "blok": "kis26",
+   "desil": 9,
+   "p_ort": 5.887,
+   "satir_pay": 0.1485,
+   "MSE_pay_sifir_icinde": 0.3738
+  },
+  {
+   "blok": "kis26",
+   "desil": 10,
+   "p_ort": 7.516,
+   "satir_pay": 0.1328,
+   "MSE_pay_sifir_icinde": 0.5443
+  }
+ ]
+}

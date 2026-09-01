@@ -28,8 +28,7 @@ ARA = os.environ.get(
 )
 HEDEF_SOGUK = 0.222
 
-e = pd.read_parquet(os.path.join(DN, "egitim.parquet"),
-                    columns=["tuketim", "soguk_mu", "_blok"])
+e = pd.read_parquet(os.path.join(DN, "egitim.parquet"), columns=["tuketim", "soguk_mu", "_blok"])
 blk = e[e._blok == "yaz25"]
 sic, sog = blk[blk.soguk_mu == 0], blk[blk.soguk_mu == 1]
 idx = np.concatenate([sic.index.values, sog.index.values])
@@ -47,15 +46,22 @@ z = y == 0
 
 def olc(p):
     r = np.asarray(p) - yv
-    return {"duz": float(np.sqrt(np.mean(r * r))),
-            "test_agirlikli": float(np.sqrt(np.mean(ww * r * r))),
-            "soguk": float(np.sqrt(np.mean(r[s] ** 2))),
-            "sicak": float(np.sqrt(np.mean(r[~s] ** 2)))}
+    return {
+        "duz": float(np.sqrt(np.mean(r * r))),
+        "test_agirlikli": float(np.sqrt(np.mean(ww * r * r))),
+        "soguk": float(np.sqrt(np.mean(r[s] ** 2))),
+        "sicak": float(np.sqrt(np.mean(r[~s] ** 2))),
+    }
 
 
 T = olc(pb)
-R = {"aciklama": __doc__.strip(), "taban": T, "sifir_orani": float(z.mean()),
-     "sifir_orani_soguk": float(z[s].mean()), "sifir_orani_sicak": float(z[~s].mean())}
+R = {
+    "aciklama": __doc__.strip(),
+    "taban": T,
+    "sifir_orani": float(z.mean()),
+    "sifir_orani_soguk": float(z[s].mean()),
+    "sifir_orani_sicak": float(z[~s].mean()),
+}
 
 # 1) kahin
 pk = pb.copy()
@@ -78,22 +84,33 @@ for th in (0.3, 0.5, 0.7, 0.8, 0.9, 0.95, 0.99):
         continue
     q = np.where(m, 0.0, pb)
     R["esik_taramasi_KAHIN"].append(
-        {"esik": th, "n": int(m.sum()), "kesinlik": float(z[m].mean()),
-         "anma": float(m[z].mean()), **olc(q),
-         "kazanc_agirlikli": T["test_agirlikli"] - olc(q)["test_agirlikli"]})
+        {
+            "esik": th,
+            "n": int(m.sum()),
+            "kesinlik": float(z[m].mean()),
+            "anma": float(m[z].mean()),
+            **olc(q),
+            "kazanc_agirlikli": T["test_agirlikli"] - olc(q)["test_agirlikli"],
+        }
+    )
 
 # 3) yumusak buzme (1-P0)^g
 R["gama_taramasi_KAHIN"] = []
 for g in (0.0, 0.25, 0.5, 1.0, 2.0, 4.0):
     q = ((1 - P0) ** g) * pb
-    R["gama_taramasi_KAHIN"].append({"gama": g, **olc(q),
-                                     "kazanc_agirlikli": T["test_agirlikli"] - olc(q)["test_agirlikli"]})
+    R["gama_taramasi_KAHIN"].append(
+        {"gama": g, **olc(q), "kazanc_agirlikli": T["test_agirlikli"] - olc(q)["test_agirlikli"]}
+    )
 
 # 4) sifir satirlarin toplam hata payi
 r = pb - yv
 R["sifir_satir_hata_payi"] = float((r[z] ** 2).sum() / (r * r).sum())
 R["sifir_satir_ort_tahmin"] = float(pb[z].mean())
 
-json.dump(R, open(os.path.join(BURA, "p05_sifir_tavani.json"), "w", encoding="utf-8"),
-          indent=1, ensure_ascii=False)
+json.dump(
+    R,
+    open(os.path.join(BURA, "p05_sifir_tavani.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
+)
 print(json.dumps(R, indent=1, ensure_ascii=False))

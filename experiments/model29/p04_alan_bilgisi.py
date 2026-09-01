@@ -27,12 +27,34 @@ BURA = os.path.dirname(os.path.abspath(__file__))
 HEDEF_SOGUK = 0.222
 
 KOL = [
-    "tanim", "tarih", "tuketim", "ilce_key", "il_key", "soguk_mu", "_blok",
-    "ufuk_gun", "guc", "tarim_orani", "yerlesim_orani", "nufus",
-    "cdd18", "cdd22", "cdd24", "sicaklik_ort", "sicaklik_max",
-    "et0_toplam", "toprak_nem_ort", "vpd_ort", "gunes_radyasyon",
-    "tatil_mi", "tatil_agirligi", "tatil_kod", "tatil_mesafe",
-    "ramazan_ayi", "ulusal_gunluk", "trafo_basina_nufus",
+    "tanim",
+    "tarih",
+    "tuketim",
+    "ilce_key",
+    "il_key",
+    "soguk_mu",
+    "_blok",
+    "ufuk_gun",
+    "guc",
+    "tarim_orani",
+    "yerlesim_orani",
+    "nufus",
+    "cdd18",
+    "cdd22",
+    "cdd24",
+    "sicaklik_ort",
+    "sicaklik_max",
+    "et0_toplam",
+    "toprak_nem_ort",
+    "vpd_ort",
+    "gunes_radyasyon",
+    "tatil_mi",
+    "tatil_agirligi",
+    "tatil_kod",
+    "tatil_mesafe",
+    "ramazan_ayi",
+    "ulusal_gunluk",
+    "trafo_basina_nufus",
 ]
 
 e = pd.read_parquet(os.path.join(DN, "egitim.parquet"), columns=KOL)
@@ -59,8 +81,10 @@ def blok_artik(ad):
     s = bf.soguk_mu.values.astype(np.float64)
     w = np.where(s == 1, HEDEF_SOGUK / s.mean(), (1 - HEDEF_SOGUK) / (1 - s.mean()))
     bf["w"] = w / w.mean()
-    print(f"  {ad}: n={len(bf)} aile={len(P)} agirlikli_MSE={float((bf.w*bf.r**2).mean()):.6f}",
-          flush=True)
+    print(
+        f"  {ad}: n={len(bf)} aile={len(P)} agirlikli_MSE={float((bf.w * bf.r**2).mean()):.6f}",
+        flush=True,
+    )
     return bf.reset_index(drop=True)
 
 
@@ -81,14 +105,16 @@ def kazanc(duz, ad, kirp=None):
         d = np.clip(d, -kirp, kirp)
     m1 = float((Y.w * (Y.r - d) ** 2).mean())
     g = float(np.sqrt(m0) - np.sqrt(m1))
-    print(f"  {ad:44s} kazanc={g:+.6f}  (|d|ort={np.abs(d).mean():.5f}, "
-          f"dokunan={float((d != 0).mean()):.3f})", flush=True)
+    print(
+        f"  {ad:44s} kazanc={g:+.6f}  (|d|ort={np.abs(d).mean():.5f}, "
+        f"dokunan={float((d != 0).mean()):.3f})",
+        flush=True,
+    )
     return g
 
 
 # ===================== 1. TANI: bayram gunleri yaz25 artiginda =====================
-KURBAN25 = pd.to_datetime(["2025-06-05", "2025-06-06", "2025-06-07", "2025-06-08",
-                           "2025-06-09"])
+KURBAN25 = pd.to_datetime(["2025-06-05", "2025-06-06", "2025-06-07", "2025-06-08", "2025-06-09"])
 TEKGUN25 = pd.to_datetime(["2025-04-23", "2025-05-01", "2025-05-19", "2025-07-15"])
 
 Y["tarih"] = pd.to_datetime(Y.tarih)
@@ -103,22 +129,26 @@ for ad, gunler in (("kurban25", KURBAN25), ("tekgun25", TEKGUN25)):
         "ort_artik": float(np.average(Y.r[m], weights=Y.w[m])),
         "ort_artik_disi": float(np.average(Y.r[~m], weights=Y.w[~m])),
     }
-    print(f"{ad}: satir%={tani[ad]['satir_payi']:.4f} SSE%={tani[ad]['sse_payi']:.4f} "
-          f"ort_artik={tani[ad]['ort_artik']:+.4f} (digerleri {tani[ad]['ort_artik_disi']:+.4f})",
-          flush=True)
+    print(
+        f"{ad}: satir%={tani[ad]['satir_payi']:.4f} SSE%={tani[ad]['sse_payi']:.4f} "
+        f"ort_artik={tani[ad]['ort_artik']:+.4f} (digerleri {tani[ad]['ort_artik_disi']:+.4f})",
+        flush=True,
+    )
 
 gunluk = Y.groupby("tarih").apply(
-    lambda g: pd.Series({"ort": np.average(g.r, weights=g.w), "n": len(g)}),
-    include_groups=False)
+    lambda g: pd.Series({"ort": np.average(g.r, weights=g.w), "n": len(g)}), include_groups=False
+)
 print("\nKurban civari gunluk agirlikli ortalama artik:", flush=True)
 print(gunluk.loc["2025-05-30":"2025-06-15"].round(4).to_string(), flush=True)
-R["gunluk_kurban_civari"] = {str(k.date()): float(v) for k, v in
-                             gunluk.loc["2025-05-30":"2025-06-15"]["ort"].items()}
+R["gunluk_kurban_civari"] = {
+    str(k.date()): float(v) for k, v in gunluk.loc["2025-05-30":"2025-06-15"]["ort"].items()
+}
 R["tani_bayram"] = tani
 
 print("\nAylik agirlikli ortalama artik (yaz25):", flush=True)
 ay = Y.groupby(Y.tarih.dt.month).apply(
-    lambda g: float(np.average(g.r, weights=g.w)), include_groups=False)
+    lambda g: float(np.average(g.r, weights=g.w)), include_groups=False
+)
 print(ay.round(4).to_string(), flush=True)
 R["aylik_yanlilik_yaz25"] = {int(k): float(v) for k, v in ay.items()}
 
@@ -137,10 +167,12 @@ def sapma_tablosu(df, gunler, tum_tatil):
     """Trafo basina: tatil gunu artigi eksi +-10 gunde AYNI HAFTA GUNU tabani."""
     par = []
     for g in gunler:
-        pen = df[(df.tarih >= g - pd.Timedelta(days=PENCERE))
-                 & (df.tarih <= g + pd.Timedelta(days=PENCERE))
-                 & (df.tarih.dt.dayofweek == g.dayofweek)
-                 & (~df.tarih.isin(tum_tatil))]
+        pen = df[
+            (df.tarih >= g - pd.Timedelta(days=PENCERE))
+            & (df.tarih <= g + pd.Timedelta(days=PENCERE))
+            & (df.tarih.dt.dayofweek == g.dayofweek)
+            & (~df.tarih.isin(tum_tatil))
+        ]
         tb = pen.groupby("tanim").r.agg(["mean", "size"])
         tb = tb[tb["size"] >= MIN_TABAN]["mean"]
         gun = df[df.tarih == g].groupby("tanim").r.mean()
@@ -152,8 +184,11 @@ def sapma_tablosu(df, gunler, tum_tatil):
     return pd.concat(par, axis=1).mean(axis=1)
 
 
-TUM_TATIL_DIS = pd.to_datetime(sorted(set().union(*[set(v) for v in DIS_BAYRAM.values()])
-                                      | set(pd.to_datetime(["2025-09-01"]))))
+TUM_TATIL_DIS = pd.to_datetime(
+    sorted(
+        set().union(*[set(v) for v in DIS_BAYRAM.values()]) | set(pd.to_datetime(["2025-09-01"]))
+    )
+)
 ILCE_OF = e.drop_duplicates("tanim").set_index("tanim").ilce_key
 
 bayram_kats = {}
@@ -165,18 +200,26 @@ for ad, gunler in DIS_BAYRAM.items():
     k = k[sp.groupby(sp.index.map(ILCE_OF)).size() >= 8]
     k = k - k.median()
     bayram_kats[ad] = k
-    print(f"\n{ad}: {len(sp)} trafo, {len(k)} ilce, global_sapma={sp.median():+.4f}, "
-          f"ilce yayilimi std={k.std():.4f}", flush=True)
+    print(
+        f"\n{ad}: {len(sp)} trafo, {len(k)} ilce, global_sapma={sp.median():+.4f}, "
+        f"ilce yayilimi std={k.std():.4f}",
+        flush=True,
+    )
 
 # 2a. GLOBAL bayram kaymasi (blok disi olculur, Kurban'a uygulanir)
 kurban_mask = Y.tarih.isin(KURBAN25).values
 tekgun_mask = Y.tarih.isin(TEKGUN25).values
 glob_dini = float(np.median(sapma_tablosu(DIS, DIS_BAYRAM["ramazan26"], TUM_TATIL_DIS)))
-glob_tek = float(np.median(sapma_tablosu(
-    DIS, pd.to_datetime(list(DIS_BAYRAM["z30agu25"]) + list(DIS_BAYRAM["z29eki25"])),
-    TUM_TATIL_DIS)))
-print(f"\nBLOK DISI global kayma: dini_bayram={glob_dini:+.4f} tekgun={glob_tek:+.4f}",
-      flush=True)
+glob_tek = float(
+    np.median(
+        sapma_tablosu(
+            DIS,
+            pd.to_datetime(list(DIS_BAYRAM["z30agu25"]) + list(DIS_BAYRAM["z29eki25"])),
+            TUM_TATIL_DIS,
+        )
+    )
+)
+print(f"\nBLOK DISI global kayma: dini_bayram={glob_dini:+.4f} tekgun={glob_tek:+.4f}", flush=True)
 R["blok_disi_global_kayma"] = {"dini": glob_dini, "tekgun": glob_tek}
 
 d = np.zeros(len(Y))
@@ -202,6 +245,7 @@ if "ramazan26" in bayram_kats:
     R["kor_ilce_ramazan26_kurban25"] = kor
     R["ilce_kurban25_gercek"] = {k: round(float(v), 4) for k, v in ky_gercek.items()}
 
+
 # ===================== 3. SULAMA / TURIZM / CDD: blok-disi dogrusal ayar ==========
 def dis_katsayi(x_dis, x_yaz):
     """Blok disinda artigi x uzerine regresyon; katsayiyi yaz25'e tasi."""
@@ -218,16 +262,55 @@ def dis_katsayi(x_dis, x_yaz):
     return b, b * (xy - xy.mean())
 
 
-KIYI = {"cesme", "karaburun", "urla", "seferihisar", "foca", "dikili", "selcuk",
-        "guzelbahce", "menderes", "aliaga"}
-SULAMA = {"saruhanli", "salihli", "alasehir", "turgutlu", "akhisar", "kinik",
-          "bergama", "menemen", "torbali", "odemis", "tire", "bayindir",
-          "sarigol", "kirkagac", "golmarmara", "kula", "gordes", "selendi",
-          "demirci", "soma", "beydag", "kiraz", "kemalpasa"}
+KIYI = {
+    "cesme",
+    "karaburun",
+    "urla",
+    "seferihisar",
+    "foca",
+    "dikili",
+    "selcuk",
+    "guzelbahce",
+    "menderes",
+    "aliaga",
+}
+SULAMA = {
+    "saruhanli",
+    "salihli",
+    "alasehir",
+    "turgutlu",
+    "akhisar",
+    "kinik",
+    "bergama",
+    "menemen",
+    "torbali",
+    "odemis",
+    "tire",
+    "bayindir",
+    "sarigol",
+    "kirkagac",
+    "golmarmara",
+    "kula",
+    "gordes",
+    "selendi",
+    "demirci",
+    "soma",
+    "beydag",
+    "kiraz",
+    "kemalpasa",
+}
 
 adaylar = {}
-for nm in ("cdd18", "cdd22", "cdd24", "sicaklik_ort", "et0_toplam",
-           "toprak_nem_ort", "vpd_ort", "gunes_radyasyon"):
+for nm in (
+    "cdd18",
+    "cdd22",
+    "cdd24",
+    "sicaklik_ort",
+    "et0_toplam",
+    "toprak_nem_ort",
+    "vpd_ort",
+    "gunes_radyasyon",
+):
     adaylar[f"H_{nm}"] = (DIS[nm].values, Y[nm].values)
 
 ta_d, ta_y = DIS.tarim_orani.fillna(0).values, Y.tarim_orani.fillna(0).values
@@ -241,8 +324,7 @@ su_y = Y.ilce_key.isin(SULAMA).astype(float).values
 adaylar["T_kiyi_x_cdd24"] = (ki_d * DIS.cdd24.values, ki_y * Y.cdd24.values)
 adaylar["T_kiyi_x_gunuzunlugu"] = (ki_d * DIS.sicaklik_ort.values, ki_y * Y.sicaklik_ort.values)
 adaylar["S_sulama_x_et0"] = (su_d * DIS.et0_toplam.values, su_y * Y.et0_toplam.values)
-adaylar["S_sulama_x_topraknem"] = (su_d * DIS.toprak_nem_ort.values,
-                                   su_y * Y.toprak_nem_ort.values)
+adaylar["S_sulama_x_topraknem"] = (su_d * DIS.toprak_nem_ort.values, su_y * Y.toprak_nem_ort.values)
 
 print("\n=== DOGRUSAL ADAYLAR (katsayi blok DISINDA, olcum yaz25'te) ===", flush=True)
 R["dogrusal"] = {}
@@ -253,7 +335,8 @@ for ad, (xd, xy) in adaylar.items():
 # ===================== 4. Aylik yanlilik: blok disi tasinabilir mi? ==============
 print("\n=== AYLIK YANLILIK TASINABILIRLIGI ===", flush=True)
 ay_dis = DIS.groupby(DIS.tarih.dt.month).apply(
-    lambda g: float(np.average(g.r, weights=g.w)), include_groups=False)
+    lambda g: float(np.average(g.r, weights=g.w)), include_groups=False
+)
 print("blok disi aylik yanlilik:", ay_dis.round(4).to_dict(), flush=True)
 R["aylik_yanlilik_dis"] = {int(k): float(v) for k, v in ay_dis.items()}
 

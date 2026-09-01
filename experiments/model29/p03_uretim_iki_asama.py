@@ -87,12 +87,22 @@ say_temiz = [c for c in say if c not in KIMLIK]
 egt = e[e._blok.isin(["guz25", "kis26"])]
 ye = np.log1p(egt.tuketim.to_numpy(dtype=np.float64))
 ze = (egt.tuketim.to_numpy() == 0).astype(int)
-log(f"egitim bloklari {len(egt)} satir, ozellik {len(say_temiz)} (kimliksiz) "
-    f"/ {len(say)} (kimlikli); sifir orani {ze.mean():.4f}")
+log(
+    f"egitim bloklari {len(egt)} satir, ozellik {len(say_temiz)} (kimliksiz) "
+    f"/ {len(say)} (kimlikli); sifir orani {ze.mean():.4f}"
+)
 
-ORT = dict(learning_rate=0.05, num_leaves=127, min_data_in_leaf=100,
-           feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
-           lambda_l2=5.0, num_threads=8, verbose=-1)
+ORT = dict(
+    learning_rate=0.05,
+    num_leaves=127,
+    min_data_in_leaf=100,
+    feature_fraction=0.8,
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    lambda_l2=5.0,
+    num_threads=8,
+    verbose=-1,
+)
 PC = dict(ORT, objective="binary", metric="binary_logloss")
 PR_HUB = dict(ORT, objective="huber", alpha=2.0, lambda_l2=20.0, metric="l2")
 PR_L2 = dict(ORT, objective="l2", metric="l2")
@@ -103,8 +113,12 @@ R = {"uretim_tabani": TABAN, "sizinti_kontrolu": __doc__.strip()}
 
 def egit_tahmin(pk, X, y, Xh, tohumlar=TOHUM, tur=TUR):
     return np.mean(
-        [lgb.train(dict(pk, seed=s), lgb.Dataset(X, y), num_boost_round=tur).predict(Xh)
-         for s in tohumlar], axis=0)
+        [
+            lgb.train(dict(pk, seed=s), lgb.Dataset(X, y), num_boost_round=tur).predict(Xh)
+            for s in tohumlar
+        ],
+        axis=0,
+    )
 
 
 Xe = egt[say_temiz].astype(np.float32)
@@ -113,12 +127,16 @@ poz = ye > 0
 
 # ---------------- P0 siniflandiricisi ----------------
 P0 = egit_tahmin(PC, Xe, ze, Xh)
-log(f"P0 hazir: yaz25 ort {P0.mean():.4f}, gercek sifir orani "
-    f"{float((bf.tuketim.to_numpy() == 0).mean()):.4f}")
-R["P0"] = {"yaz25_ortalama": float(P0.mean()),
-           "yaz25_gercek_sifir_orani": float((bf.tuketim.to_numpy() == 0).mean()),
-           "soguk_ortalama": float(P0[sgm == 1].mean()),
-           "sicak_ortalama": float(P0[sgm == 0].mean())}
+log(
+    f"P0 hazir: yaz25 ort {P0.mean():.4f}, gercek sifir orani "
+    f"{float((bf.tuketim.to_numpy() == 0).mean()):.4f}"
+)
+R["P0"] = {
+    "yaz25_ortalama": float(P0.mean()),
+    "yaz25_gercek_sifir_orani": float((bf.tuketim.to_numpy() == 0).mean()),
+    "soguk_ortalama": float(P0[sgm == 1].mean()),
+    "sicak_ortalama": float(P0[sgm == 0].mean()),
+}
 
 # ---------------- (a) uretim tahmini x (1-P0) ----------------
 R["a_uretim_carpim"] = olc((1 - P0) * pb)
@@ -147,18 +165,19 @@ p0e = np.empty(len(Xe))
 pbe = np.empty(len(Xe))  # egitim blogunda "uretim tahmini" yerine l2 regresyon
 for b in (False, True):
     m = np.equal(kat, b)
-    p0e[m] = lgb.train(dict(PC, seed=7), lgb.Dataset(Xe[~m], ze[~m]),
-                       num_boost_round=TUR).predict(Xe[m])
-    pbe[m] = lgb.train(dict(PR_L2, seed=7), lgb.Dataset(Xe[~m], ye[~m]),
-                       num_boost_round=TUR).predict(Xe[m])
+    p0e[m] = lgb.train(dict(PC, seed=7), lgb.Dataset(Xe[~m], ze[~m]), num_boost_round=TUR).predict(
+        Xe[m]
+    )
+    pbe[m] = lgb.train(
+        dict(PR_L2, seed=7), lgb.Dataset(Xe[~m], ye[~m]), num_boost_round=TUR
+    ).predict(Xe[m])
 en, esik = 1e9, None
 for th in np.arange(0.30, 0.96, 0.05):
     q = np.where(p0e > th, 0.0, pbe)
     v = float(np.sqrt(np.mean((q - ye) ** 2)))
     if v < en:
         en, esik = v, float(th)
-R["d_esik"] = {"esik": esik, "egitim_blogu_rmsle": en,
-               "yaz25": olc(np.where(P0 > esik, 0.0, pb))}
+R["d_esik"] = {"esik": esik, "egitim_blogu_rmsle": en, "yaz25": olc(np.where(P0 > esik, 0.0, pb))}
 log("d)", json.dumps(R["d_esik"]))
 
 # ---------------- (e) KIMLIK sutunlariyla (sizinti riski) ----------------
@@ -171,12 +190,15 @@ R["e_KIMLIK_ILE"] = {
 }
 log("e)", json.dumps(R["e_KIMLIK_ILE"]["a_carpim"]))
 
+
 # ---------------- kazanclar ----------------
 def kazanc(d):
-    return {"duz": TABAN["duz"] - d["duz"],
-            "test_agirlikli": TABAN["test_agirlikli"] - d["test_agirlikli"],
-            "soguk": TABAN["soguk"] - d["soguk"],
-            "sicak": TABAN["sicak"] - d["sicak"]}
+    return {
+        "duz": TABAN["duz"] - d["duz"],
+        "test_agirlikli": TABAN["test_agirlikli"] - d["test_agirlikli"],
+        "soguk": TABAN["soguk"] - d["soguk"],
+        "sicak": TABAN["sicak"] - d["sicak"],
+    }
 
 
 R["kazanclar"] = {
@@ -186,8 +208,12 @@ R["kazanclar"] = {
     "d_esik": kazanc(R["d_esik"]["yaz25"]),
     **{f"c_{k}": kazanc(v) for k, v in R["c_harman"].items()},
 }
-json.dump(R, open(os.path.join(BURA, "p03_uretim_iki_asama.json"), "w",
-                  encoding="utf-8"), indent=1, ensure_ascii=False)
+json.dump(
+    R,
+    open(os.path.join(BURA, "p03_uretim_iki_asama.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
+)
 np.save(os.path.join(ARA, "p03_P0_yaz25.npy"), P0)
 np.save(os.path.join(ARA, "p03_ppos_hub_yaz25.npy"), ppos_hub)
 np.save(os.path.join(ARA, "p03_pb_yaz25.npy"), pb)

@@ -26,9 +26,18 @@ Xe, ye, Xd, yd, hd, d_soguk = T.veri(tr)
 soguk_d = hd.tanim.isin(d_soguk).to_numpy()
 poz = ye > 0
 z_e = (ye == 0).astype(int)
-TABAN_PK = dict(metric="l2", learning_rate=0.04, num_leaves=63, min_data_in_leaf=200,
-                feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
-                lambda_l2=5.0, num_threads=8, verbose=-1)
+TABAN_PK = dict(
+    metric="l2",
+    learning_rate=0.04,
+    num_leaves=63,
+    min_data_in_leaf=200,
+    feature_fraction=0.8,
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    lambda_l2=5.0,
+    num_threads=8,
+    verbose=-1,
+)
 TUR = 600
 TOHUM = [7, 17, 27]
 R = {}
@@ -47,8 +56,9 @@ e_gec = tr[(tr.tarih <= T.E_KESIM) & (tr.tarih >= T.E_GEC_BAS)]
 e_hed = tr[(tr.tarih > T.E_KESIM) & (tr.tarih <= T.E_HED_SON)]
 e_hed = e_hed[~e_hed.tanim.isin(d_soguk)].reset_index(drop=True)
 d_gec = tr[(tr.tarih <= T.D_KESIM) & (tr.tarih >= T.D_GEC_BAS)]
-ke = komsu_ozellik(e_gec[~e_gec.tanim.isin(d_soguk)],
-                   e_hed.drop_duplicates("tanim")[["tanim", "ilce", "idnum"]])
+ke = komsu_ozellik(
+    e_gec[~e_gec.tanim.isin(d_soguk)], e_hed.drop_duplicates("tanim")[["tanim", "ilce", "idnum"]]
+)
 kd = komsu_ozellik(d_gec, hd.drop_duplicates("tanim")[["tanim", "ilce", "idnum"]])
 Xe2 = Xe.assign(k_komsu=e_hed.tanim.map(ke).to_numpy())
 Xd2 = Xd.assign(k_komsu=hd.tanim.map(kd).to_numpy())
@@ -56,9 +66,11 @@ log("komsu ozellikleri hazir")
 
 # ---- A. amac fonksiyonu karsilastirmasi (tek asamali) ----
 R["amac_tek_asamali"] = {}
-for ad, ek in [("l2", dict(objective="l2")),
-               ("huber2", dict(objective="huber", alpha=2.0, lambda_l2=20.0)),
-               ("l1", dict(objective="l1"))]:
+for ad, ek in [
+    ("l2", dict(objective="l2")),
+    ("huber2", dict(objective="huber", alpha=2.0, lambda_l2=20.0)),
+    ("l1", dict(objective="l1")),
+]:
     p = kos(ek, Xe, Xd, ye)
     R["amac_tek_asamali"][ad] = T.rmsle(yd, p)
     log(f"amac {ad}: {R['amac_tek_asamali'][ad]:.5f}")
@@ -67,20 +79,32 @@ R["taban_l2"] = taban
 
 # ---- B. iki asamali, amac karsilastirmasi ----
 PKC = dict(TABAN_PK, objective="binary", metric="binary_logloss")
-P0 = np.mean([lgb.train(dict(PKC, seed=s), lgb.Dataset(Xe, z_e),
-                        num_boost_round=TUR).predict(Xd) for s in TOHUM], axis=0)
+P0 = np.mean(
+    [
+        lgb.train(dict(PKC, seed=s), lgb.Dataset(Xe, z_e), num_boost_round=TUR).predict(Xd)
+        for s in TOHUM
+    ],
+    axis=0,
+)
 R["amac_iki_asamali"] = {}
-for ad, ek in [("l2", dict(objective="l2")),
-               ("huber2", dict(objective="huber", alpha=2.0, lambda_l2=20.0)),
-               ("l1", dict(objective="l1"))]:
+for ad, ek in [
+    ("l2", dict(objective="l2")),
+    ("huber2", dict(objective="huber", alpha=2.0, lambda_l2=20.0)),
+    ("l1", dict(objective="l1")),
+]:
     pp = kos(ek, Xe[poz], Xd, ye[poz])
     v = T.rmsle(yd, (1 - P0) * pp)
     R["amac_iki_asamali"][ad] = v
     log(f"iki-asamali {ad}: {v:.5f} (kazanc {taban - v:+.5f})")
 
 # ---- C. F1 x F4 birlesimi ----
-P0b = np.mean([lgb.train(dict(PKC, seed=s), lgb.Dataset(Xe2, z_e),
-                         num_boost_round=TUR).predict(Xd2) for s in TOHUM], axis=0)
+P0b = np.mean(
+    [
+        lgb.train(dict(PKC, seed=s), lgb.Dataset(Xe2, z_e), num_boost_round=TUR).predict(Xd2)
+        for s in TOHUM
+    ],
+    axis=0,
+)
 pp2 = kos(dict(objective="l2"), Xe2[poz], Xd2, ye[poz])
 p_f14 = (1 - P0b) * pp2
 p_f4 = kos(dict(objective="l2"), Xe2, Xd2, ye)

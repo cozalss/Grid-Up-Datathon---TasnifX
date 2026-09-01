@@ -1,0 +1,13 @@
+{
+ "kurulum": "ridge_merkezli_tamozn",
+ "isaret": -1.0,
+ "agac": 0,
+ "n_egitim": 1038737,
+ "n": 714688,
+ "rms": 0.5492763652273766,
+ "ort": -0.287599128283942,
+ "dik_norm": 0.2516626062927276,
+ "dik_pay": 0.4581711907239085,
+ "span_ici_varyans": 0.7900791599906358,
+ "dosya": "C:\\Users\\Cem\\AppData\\Local\\Temp\\claude\\c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX\\d8509f77-6f9b-4e1d-b980-62e299ed4fc5\\scratchpad\\yon_ARTIK_RIDGE.npy"
+}

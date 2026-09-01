@@ -16,13 +16,13 @@ R["0_YONTEM_GECERLILIGI"] = {
             "bilinen_gercek": "ESKI soguk harman 3/1/1 = (0.600, 0.200, 0.200); son islem YOK (scripts/son_islem.py docstring: 'v27 (son islem YOK) 1,03362')",
             "olculen_pay": [0.5968, 0.2383, 0.165],
             "olculen_toplam": 0.9965,
-            "yorum": "Paylar 3/1/1'i, toplam 1.00 ise 'son islem yok'u DOGRU okudu."
+            "yorum": "Paylar 3/1/1'i, toplam 1.00 ise 'son islem yok'u DOGRU okudu.",
         },
         "tuketim_v30_buzme.csv": {
             "bilinen_gercek": "v30 = v27 + scripts/son_islem.py (beta=0.60)",
             "olculen_pay": [0.606, 0.2262, 0.1678],
             "olculen_toplam": 0.603,
-            "yorum": "Paylar degismedi, toplam 0.603 = beta 0.60. Yontem hem harmani hem buzmeyi DOGRU okuyor."
+            "yorum": "Paylar degismedi, toplam 0.603 = beta 0.60. Yontem hem harmani hem buzmeyi DOGRU okuyor.",
         },
     },
     "aile_kolonlari_ayirt_edilebilir_mi": "Evet. Aile korelasyonlari 0.83-0.93 (tam es-dogrusal degil); v27/v30 kalibrasyonu paylari +-0.04 icinde geri veriyor.",
@@ -43,7 +43,10 @@ R["1_KAYNAK_KOD"] = {
 R["2_HUKUM"] = {
     "SOGUK_URETIM_HARMANI": "YALNIZ CAT ({'cat': 1.0}). Hem kaynak kod hem AMPIRIK regresyon soyluyor.",
     "ampirik_destek": {
-        "tuketim_YP_seviye.csv (LB 1.00115, yedegimiz)": {"pay": [1.1146, -0.0992, -0.0155], "toplam": 0.8132},
+        "tuketim_YP_seviye.csv (LB 1.00115, yedegimiz)": {
+            "pay": [1.1146, -0.0992, -0.0155],
+            "toplam": 0.8132,
+        },
         "tuketim_m6_ikiyon.csv (LB 1.00284)": {"pay": [1.0761, -0.071, -0.0051], "toplam": 0.698},
         "tuketim_K_yenibas.csv": {"pay": [1.1147, -0.0988, -0.016], "toplam": 0.8162},
         "tuketim_v83_sicak_optimum.csv": {"pay": [1.001, -0.0028, 0.0018], "toplam": 0.6527},

@@ -1,0 +1,81 @@
+{
+ "01_test_kuyruk": [
+  {
+   "esik": 1,
+   "pay": 0.04277,
+   "soguk_pay_bayrakta": 0.0,
+   "ort_p_bayrak": 1.9846,
+   "rms_p_bayrak": 3.2209,
+   "kappa_tam_sifirlama": 0.66613,
+   "kappa_span_disi": 0.40735,
+   "span_disi_pay": 0.6115
+  },
+  {
+   "esik": 3,
+   "pay": 0.03887,
+   "soguk_pay_bayrakta": 0.0,
+   "ort_p_bayrak": 1.8083,
+   "rms_p_bayrak": 3.0842,
+   "kappa_tam_sifirlama": 0.6081,
+   "kappa_span_disi": 0.40039,
+   "span_disi_pay": 0.6584
+  },
+  {
+   "esik": 7,
+   "pay": 0.03659,
+   "soguk_pay_bayrakta": 0.0,
+   "ort_p_bayrak": 1.7284,
+   "rms_p_bayrak": 3.0051,
+   "kappa_tam_sifirlama": 0.57481,
+   "kappa_span_disi": 0.40421,
+   "span_disi_pay": 0.7032
+  },
+  {
+   "esik": 14,
+   "pay": 0.03532,
+   "soguk_pay_bayrakta": 0.0,
+   "ort_p_bayrak": 1.7126,
+   "rms_p_bayrak": 3.008,
+   "kappa_tam_sifirlama": 0.5653,
+   "kappa_span_disi": 0.39961,
+   "span_disi_pay": 0.7069
+  },
+  {
+   "esik": 30,
+   "pay": 0.03349,
+   "soguk_pay_bayrakta": 0.0,
+   "ort_p_bayrak": 1.629,
+   "rms_p_bayrak": 2.944,
+   "kappa_tam_sifirlama": 0.53873,
+   "kappa_span_disi": 0.3871,
+   "span_disi_pay": 0.7185
+  }
+ ],
+ "02_t_olu_mu": {
+  "pay": 0.03532,
+  "ort_p": 1.7126,
+  "kappa_tam": 0.5653,
+  "kappa_span_disi": 0.39961,
+  "span_disi_pay": 0.7069
+ },
+ "03_pay_yaz25": {
+  "kuyruk1": 0.05209,
+  "olu": 0.04663,
+  "soguk": 0.075
+ },
+ "03_pay_guz25": {
+  "kuyruk1": 0.02541,
+  "olu": 0.01565,
+  "soguk": 0.1232
+ },
+ "03_pay_kis26": {
+  "kuyruk1": 0.03717,
+  "olu": 0.02245,
+  "soguk": 0.1394
+ },
+ "03_pay_TEST": {
+  "kuyruk1": 0.04277,
+  "olu": 0.03532,
+  "soguk": 0.2216
+ }
+}

@@ -92,3 +92,6 @@ catboost_info/
 # Ajan ara matrisleri: yeniden uretilebilir, bazilari 100+ MB (GitHub siniri).
 # 29 Agustos gecesi g1_X.npy 136 MB ve b2_U.npy 131 MB push'u reddettirdi.
 experiments/model29/*.npy
+
+# 100MB ustu ara diziler (GitHub siniri)
+experiments/model29/p_kalici/*.npy

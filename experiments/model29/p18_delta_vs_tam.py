@@ -169,9 +169,7 @@ def main() -> None:
             f"|TAM-DELTA|max={satir['TAM_ile_DELTA_maxabs']:.3e}"
         )
     R["ortalama_kazanc"] = {
-        "DELTA": round(
-            float(np.mean([R["bloklar"][b]["DELTA_eksi_TABAN"] for b in BLOKLAR])), 6
-        ),
+        "DELTA": round(float(np.mean([R["bloklar"][b]["DELTA_eksi_TABAN"] for b in BLOKLAR])), 6),
         "TAM": round(float(np.mean([R["bloklar"][b]["TAM_eksi_TABAN"] for b in BLOKLAR])), 6),
     }
     R["hukum"] = (

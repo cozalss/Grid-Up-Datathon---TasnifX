@@ -40,12 +40,17 @@ def tablo(d):
     out = []
     for kk in sorted(set(k)):
         m = k == kk
-        out.append(dict(kova=int(kk), n=int(m.sum()),
-                        kendi_ort=round(float(d.kendi.values[m].mean()), 1),
-                        yanlilik=round(float(d.r.values[m].mean()), 4),
-                        rmsle=round(rmsle(d.r.values[m]), 4),
-                        sifir=round(float((d.tuketim.values[m] <= 0).mean()), 4),
-                        kare_pay=round(float((d.r.values[m] ** 2).sum() / (d.r.values**2).sum()), 4)))
+        out.append(
+            dict(
+                kova=int(kk),
+                n=int(m.sum()),
+                kendi_ort=round(float(d.kendi.values[m].mean()), 1),
+                yanlilik=round(float(d.r.values[m].mean()), 4),
+                rmsle=round(rmsle(d.r.values[m]), 4),
+                sifir=round(float((d.tuketim.values[m] <= 0).mean()), 4),
+                kare_pay=round(float((d.r.values[m] ** 2).sum() / (d.r.values**2).sum()), 4),
+            )
+        )
     return out
 
 
@@ -61,14 +66,18 @@ def main():
     for ad, d in (("yaz25", ys), ("guz25", gs), ("kis26", ks)):
         ilk = d.groupby("tanim", observed=True).tarih.min()
         vc = ilk.value_counts().sort_values(ascending=False).head(5)
-        R[f"{ad}_toplu_giris"] = [dict(tarih=str(pd.Timestamp(t).date()), trafo=int(n)) for t, n in vc.items()]
+        R[f"{ad}_toplu_giris"] = [
+            dict(tarih=str(pd.Timestamp(t).date()), trafo=int(n)) for t, n in vc.items()
+        ]
         print(ad, "en kalabalik giris gunleri:", R[f"{ad}_toplu_giris"])
 
     tp = pd.read_parquet(os.path.join(DN, "test.parquet"))
     ts = tp[tp.soguk_mu == 1]
     ilk = ts.groupby("tanim", observed=True).tarih.min()
     vc = ilk.value_counts().sort_values(ascending=False).head(5)
-    R["test_toplu_giris"] = [dict(tarih=str(pd.Timestamp(t).date()), trafo=int(n)) for t, n in vc.items()]
+    R["test_toplu_giris"] = [
+        dict(tarih=str(pd.Timestamp(t).date()), trafo=int(n)) for t, n in vc.items()
+    ]
     print("TEST en kalabalik giris gunleri:", R["test_toplu_giris"])
 
     # --- DUZELTME: kendi_gun kovasi ofseti, DIS bloklardan kestirilir

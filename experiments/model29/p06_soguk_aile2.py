@@ -63,9 +63,14 @@ def main():
     for kol in ("ay", "ufuk", "guc"):
         rows = []
         for k, g in d.groupby(kol, observed=True):
-            rows.append(dict(seviye=str(k), n=int(len(g)),
-                             **{a: round(rmsle(g.y - g[a]), 4) for a in AILE},
-                             hepsi=round(rmsle(g.y - g.hep), 4)))
+            rows.append(
+                dict(
+                    seviye=str(k),
+                    n=int(len(g)),
+                    **{a: round(rmsle(g.y - g[a]), 4) for a in AILE},
+                    hepsi=round(rmsle(g.y - g.hep), 4),
+                )
+            )
         kes[kol] = rows
         print("---", kol)
         print(pd.DataFrame(rows).to_string(index=False))

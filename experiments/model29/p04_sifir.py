@@ -81,7 +81,7 @@ def main():
     D["S1_carpansal_(1-q)"] = (1.0 - qy) * yaz.p.values
     # S2: ussu, gamma dis blokta secilir
     gs = np.arange(0.1, 2.01, 0.1)
-    sc = [float((((dis.y.values - (1 - qd) ** g * dis.p.values)) ** 2).mean()) for g in gs]
+    sc = [float(((dis.y.values - (1 - qd) ** g * dis.p.values) ** 2).mean()) for g in gs]
     g_ = float(gs[int(np.argmin(sc))])
     D[f"S2_carpansal_gamma={g_:.1f}"] = (1 - qy) ** g_ * yaz.p.values
     # S3: r ~ q, q*p dogrusal (dis OLS)
@@ -128,7 +128,12 @@ def main():
         )
         print(f"{ad:28s} RMSLE={s:.5f} kazanc={t0 - s:+.5f}  (agirlikli {sw:.5f} {t0w - sw:+.5f})")
 
-    json.dump(R, open(os.path.join(BURA, "p04_sifir.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+    json.dump(
+        R,
+        open(os.path.join(BURA, "p04_sifir.json"), "w", encoding="utf-8"),
+        indent=1,
+        ensure_ascii=False,
+    )
     print(json.dumps({k: R[k] for k in ("q_auc", "q_kalibrasyon")}, ensure_ascii=False))
 
 

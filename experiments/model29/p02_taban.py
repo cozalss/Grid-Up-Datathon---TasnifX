@@ -1,4 +1,5 @@
 """p02: SIFIRDAN temiz taban model. yaz25 geri-testi + mevcut boru hatti karsilastirmasi."""
+
 import json
 import os
 import sys
@@ -13,14 +14,16 @@ from p02_oznitelik import DIS, KESIM, blok_kur, grup_onceligi, ham  # noqa
 
 K = "c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
 DN = f"{K}/data/interim/deney"
-SC = ("C:/Users/Cem/AppData/Local/Temp/claude/"
-      "c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/"
-      "e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad")
+SC = (
+    "C:/Users/Cem/AppData/Local/Temp/claude/"
+    "c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/"
+    "e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad"
+)
 T0 = time.time()
 
 
 def log(*a):
-    print(f"[{time.time()-T0:6.1f}s]", *a, flush=True)
+    print(f"[{time.time() - T0:6.1f}s]", *a, flush=True)
 
 
 tr, te = ham()
@@ -40,13 +43,20 @@ for ad, (k0, k1) in KESIM.items():
         s = te[["id", "tanim", "guc", "tarih", "lokasyon"]].copy()
     else:
         s = tr[(tr.tarih >= kes) & (tr.tarih <= pd.Timestamp(k1))][
-            ["tanim", "guc", "tarih", "lokasyon", "y"]].copy()
+            ["tanim", "guc", "tarih", "lokasyon", "y"]
+        ].copy()
     grp = grup_onceligi(h[["tanim", "y"]], meta[["tanim", "guc", "ilce"]])
     d = blok_kur(s.reset_index(drop=True), h, meta, k0, grp)
     d["_blok"] = ad
     bloklar[ad] = d
-    log(ad, d.shape, "soguk", round(float(d.soguk.mean()), 4),
-        "gecmis gun", int((kes - h.tarih.min()).days))
+    log(
+        ad,
+        d.shape,
+        "soguk",
+        round(float(d.soguk.mean()), 4),
+        "gecmis gun",
+        int((kes - h.tarih.min()).days),
+    )
 
 # ---- SIZINTI KAPISI 2: yaz25 hedefi hicbir gecmis penceresinde yok ----
 kes_y = pd.Timestamp("2025-04-01")
@@ -95,10 +105,20 @@ for ad in bloklar:
 if "_ofs" not in OZ:
     OZ.append("_ofs")
 
-PAR = dict(objective="regression", metric="l2", learning_rate=0.05,
-           num_leaves=127, min_data_in_leaf=200, feature_fraction=0.7,
-           bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0,
-           num_threads=8, verbosity=-1, max_bin=127)
+PAR = dict(
+    objective="regression",
+    metric="l2",
+    learning_rate=0.05,
+    num_leaves=127,
+    min_data_in_leaf=200,
+    feature_fraction=0.7,
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    lambda_l2=5.0,
+    num_threads=8,
+    verbosity=-1,
+    max_bin=127,
+)
 
 
 def veri(d, ofs_hedef=True):
@@ -116,8 +136,13 @@ for ofs_hedef in (True, False):
     # tur sayisi: kis26'da egit, guz25'te erken durdur (yaz25'e HIC dokunmaz)
     dtr = veri(bloklar["kis26"], ofs_hedef)
     dvl = veri(bloklar["guz25"], ofs_hedef)
-    m = lgb.train(PAR, dtr, num_boost_round=3000, valid_sets=[dvl],
-                  callbacks=[lgb.early_stopping(100, verbose=False)])
+    m = lgb.train(
+        PAR,
+        dtr,
+        num_boost_round=3000,
+        valid_sets=[dvl],
+        callbacks=[lgb.early_stopping(100, verbose=False)],
+    )
     ni = int(m.best_iteration * 1.15)
     log(et, "erken durdurma turu (guz25 dogrulama)", m.best_iteration, "-> nihai", ni)
     # nihai: guz25+kis26 birlikte
@@ -142,6 +167,7 @@ log("karisim yaz25 RMSLE", round(SONUC["karisim"], 6))
 
 bloklar["yaz25"].to_parquet(f"{SC}/p02_yaz25.parquet")
 bloklar["test"][["id", "tanim", "tarih", "soguk", "p_ofsetli", "p_ham", "p_kar"]].to_parquet(
-    f"{SC}/p02_test.parquet")
+    f"{SC}/p02_test.parquet"
+)
 json.dump(SONUC, open(f"{K}/experiments/model29/p02_temiz_taban.json", "w"), indent=1)
 log("BITTI", SONUC)

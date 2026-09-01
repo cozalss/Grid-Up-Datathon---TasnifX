@@ -65,11 +65,25 @@ def main():
 
     # --- ONGORULEBILIRLIK: tam-sifir trafolar neye benziyor?
     E = pd.read_parquet(os.path.join(DN, "egitim.parquet"))
-    kol = ["guc", "ilce_key", "tanim_num", "p_gun_sayisi", "p_ilk_ofset", "p_son_ofset",
-           "p_yayilma", "p_doluluk", "g_ilce_log_ort", "g_ilce_kova_ort", "yas", "ilk_gun_mu"]
+    kol = [
+        "guc",
+        "ilce_key",
+        "tanim_num",
+        "p_gun_sayisi",
+        "p_ilk_ofset",
+        "p_son_ofset",
+        "p_yayilma",
+        "p_doluluk",
+        "g_ilce_log_ort",
+        "g_ilce_kova_ort",
+        "yas",
+        "ilk_gun_mu",
+    ]
     kol = [c for c in kol if c in E.columns]
     tmeta = E.loc[s.index, kol].assign(tanim=s.tanim.values, sf=s.sf.values)
-    g = tmeta.groupby("tanim", observed=True).agg({**{c: "first" for c in kol if c != "ilce_key"}, "sf": "mean"})
+    g = tmeta.groupby("tanim", observed=True).agg(
+        {**{c: "first" for c in kol if c != "ilce_key"}, "sf": "mean"}
+    )
     R["tam_sifir_profil"] = {
         c: dict(
             tam_sifir=round(float(g.loc[g.sf == 1, c].median()), 3),

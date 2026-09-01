@@ -31,16 +31,28 @@ ARA = os.environ.get(
 HEDEF_SOGUK = 0.222
 KIMLIK = ["tanim_num", "tanim_on2", "tanim_on3", "tanim_on4", "tanim_on5"]
 ATLA = ["tanim", "tarih", "tuketim", "lokasyon", "_blok", "id"]
-ORT = dict(learning_rate=0.05, num_leaves=127, min_data_in_leaf=100,
-           feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
-           lambda_l2=5.0, num_threads=8, verbose=-1, seed=7)
+ORT = dict(
+    learning_rate=0.05,
+    num_leaves=127,
+    min_data_in_leaf=100,
+    feature_fraction=0.8,
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    lambda_l2=5.0,
+    num_threads=8,
+    verbose=-1,
+    seed=7,
+)
 PR_HUB = dict(ORT, objective="huber", alpha=2.0, lambda_l2=20.0, metric="l2")
 PR_L1 = dict(ORT, objective="l1", metric="l2")
 TUR = 500
 
 e = pd.read_parquet(os.path.join(DN, "egitim.parquet"))
-SAY = [c for c in e.columns
-       if c not in ATLA and c not in KIMLIK and pd.api.types.is_numeric_dtype(e[c])]
+SAY = [
+    c
+    for c in e.columns
+    if c not in ATLA and c not in KIMLIK and pd.api.types.is_numeric_dtype(e[c])
+]
 blk = e[e._blok == "yaz25"]
 sic, sog = blk[blk.soguk_mu == 0], blk[blk.soguk_mu == 1]
 idx = np.concatenate([sic.index.values, sog.index.values])
@@ -54,10 +66,12 @@ s = sgm == 1
 
 def olc(p):
     r = np.asarray(p, dtype=np.float64) - yv
-    return {"duz": float(np.sqrt(np.mean(r * r))),
-            "test_agirlikli": float(np.sqrt(np.mean(ww * r * r))),
-            "soguk": float(np.sqrt(np.mean(r[s] ** 2))),
-            "sicak": float(np.sqrt(np.mean(r[~s] ** 2)))}
+    return {
+        "duz": float(np.sqrt(np.mean(r * r))),
+        "test_agirlikli": float(np.sqrt(np.mean(ww * r * r))),
+        "soguk": float(np.sqrt(np.mean(r[s] ** 2))),
+        "sicak": float(np.sqrt(np.mean(r[~s] ** 2))),
+    }
 
 
 egt = e[~e._blok.eq("yaz25")]
@@ -76,9 +90,15 @@ for ad, pk in (("huber", PR_HUB), ("l1", PR_L1)):
         np.save(os.path.join(ARA, "p05_pall_yaz25.npy"), pall)
 R["iki_asamali_huber"] = olc((1 - P0) * ppos)
 R["fikrin_ikiz_kazanci"] = {
-    k: R["tek_asamali_huber"][k] - R["iki_asamali_huber"][k] for k in R["iki_asamali_huber"]}
+    k: R["tek_asamali_huber"][k] - R["iki_asamali_huber"][k] for k in R["iki_asamali_huber"]
+}
 R["fikrin_ikiz_kazanci_l1_tabana_gore"] = {
-    k: R["tek_asamali_l1"][k] - R["iki_asamali_huber"][k] for k in R["iki_asamali_huber"]}
-json.dump(R, open(os.path.join(BURA, "p05_ikiz_sinav.json"), "w", encoding="utf-8"),
-          indent=1, ensure_ascii=False)
+    k: R["tek_asamali_l1"][k] - R["iki_asamali_huber"][k] for k in R["iki_asamali_huber"]
+}
+json.dump(
+    R,
+    open(os.path.join(BURA, "p05_ikiz_sinav.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
+)
 print(json.dumps(R, indent=1, ensure_ascii=False))

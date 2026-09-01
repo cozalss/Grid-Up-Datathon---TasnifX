@@ -83,8 +83,10 @@ if AILE.ndim == 2 and 3 in AILE.shape:
     lgbm = A[:, 2]
     DELTA_AGR = np.zeros(N)
     DELTA_AGR[MASKE] = lgbm - esit
-    print(f"agresif delta (yalniz-lgbm): ort {DELTA_AGR[MASKE].mean():+.5f} "
-          f"std {DELTA_AGR[MASKE].std():.5f}")
+    print(
+        f"agresif delta (yalniz-lgbm): ort {DELTA_AGR[MASKE].mean():+.5f} "
+        f"std {DELTA_AGR[MASKE].std():.5f}"
+    )
 else:
     DELTA_AGR = None
     print("UYARI: aile dizisi beklenen sekilde degil, agresif varyant atlandi")
@@ -158,8 +160,7 @@ for tad, taban in TABANLAR.items():
             raise SystemExit(f"DUR: {ad} dogrulamadan gecmedi")
         bek = LB[tad] - kz if kz else float("nan")
         URETILEN.append((ad, tad, dad, bek))
-        print(f"{ad:>34s} {LB[tad]:9.5f} "
-              f"{(f'{bek:.5f}' if kz else '?'):>12s} {len(g):8d}")
+        print(f"{ad:>34s} {LB[tad]:9.5f} {(f'{bek:.5f}' if kz else '?'):>12s} {len(g):8d}")
 
 print("\nHEPSI DOGRULANDI (satir sayisi, id sirasi, NaN, negatif, sonlu).")
 print(f"Dosyalar: {CIK}")

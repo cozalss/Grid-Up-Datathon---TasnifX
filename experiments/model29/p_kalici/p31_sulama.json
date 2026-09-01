@@ -1,0 +1,1251 @@
+{
+ "00_BASLIK": "p31 sulama / ilce x ay ekseni",
+ "_meta": {
+  "kural": "Kaggle gonderimi YOK, submissions/ yazilmadi, commit yok"
+ },
+ "01_ANAHTAR": {
+  "veri_ilce_sayisi": 47,
+  "arazi_ortusu_satir": 96,
+  "eslesen": 47,
+  "eslesmeyen": [],
+  "p29_eslesen": 18,
+  "yontem": "lokasyon son segmenti + il oneki, TR harf ceviri + NFKD"
+ },
+ "02_ILCE_x_AY_MODEL_ARTIGI": {
+  "yaz25_TUM": {
+   "n_hucre": 188,
+   "n_ilce": 47,
+   "ilce_x_ay_std": 0.2201,
+   "ilce_ort_std": 0.1872,
+   "kor_tarim_orani": 0.46,
+   "kor_yerlesim_orani": -0.269
+  },
+  "yaz25_SICAK": {
+   "n_hucre": 188,
+   "n_ilce": 47,
+   "ilce_x_ay_std": 0.224,
+   "ilce_ort_std": 0.1944,
+   "kor_tarim_orani": 0.464,
+   "kor_yerlesim_orani": -0.32
+  },
+  "guz25_TUM": {
+   "n_hucre": 188,
+   "n_ilce": 47,
+   "ilce_x_ay_std": 0.1658,
+   "ilce_ort_std": 0.1197,
+   "kor_tarim_orani": -0.082,
+   "kor_yerlesim_orani": 0.205
+  },
+  "guz25_SICAK": {
+   "n_hucre": 188,
+   "n_ilce": 47,
+   "ilce_x_ay_std": 0.1561,
+   "ilce_ort_std": 0.1203,
+   "kor_tarim_orani": -0.167,
+   "kor_yerlesim_orani": 0.235
+  },
+  "kis26_TUM": {
+   "n_hucre": 188,
+   "n_ilce": 47,
+   "ilce_x_ay_std": 0.1586,
+   "ilce_ort_std": 0.1497,
+   "kor_tarim_orani": -0.04,
+   "kor_yerlesim_orani": 0.097
+  },
+  "kis26_SICAK": {
+   "n_hucre": 188,
+   "n_ilce": 47,
+   "ilce_x_ay_std": 0.1579,
+   "ilce_ort_std": 0.1497,
+   "kor_tarim_orani": -0.189,
+   "kor_yerlesim_orani": 0.262
+  }
+ },
+ "03_SULAMA_IMZASI_47_ILCE": {
+  "TUM": {
+   "n_ilce": 47,
+   "std": 0.2629,
+   "kor_tarim_orani": 0.335,
+   "kor_yerlesim_orani": -0.212,
+   "kor_agac_orani": 0.078,
+   "kor_agac_yerlesim_orani": 0.46,
+   "kor_otlak_orani": 0.219,
+   "kor_ciplak_orani": -0.194,
+   "kor_bitki_ortusu_orani": 0.163,
+   "en_negatif": [
+    "guzelbahce -0.544",
+    "ahmetli -0.492",
+    "foca -0.396",
+    "bornova -0.373",
+    "seferihisar -0.262"
+   ],
+   "en_pozitif": [
+    "odemis +0.367",
+    "sarigol +0.415",
+    "kinik +0.422",
+    "golmarmara +0.508",
+    "gordes +0.963"
+   ]
+  },
+  "SICAK": {
+   "n_ilce": 47,
+   "std": 0.2671,
+   "kor_tarim_orani": 0.416,
+   "kor_yerlesim_orani": -0.33,
+   "kor_agac_orani": 0.168,
+   "kor_agac_yerlesim_orani": 0.511,
+   "kor_otlak_orani": 0.267,
+   "kor_ciplak_orani": -0.123,
+   "kor_bitki_ortusu_orani": 0.265,
+   "en_negatif": [
+    "guzelbahce -0.411",
+    "foca -0.405",
+    "bornova -0.398",
+    "bergama -0.288",
+    "konak -0.248"
+   ],
+   "en_pozitif": [
+    "kinik +0.342",
+    "odemis +0.427",
+    "sarigol +0.489",
+    "golmarmara +0.514",
+    "gordes +1.158"
+   ]
+  },
+  "p29_karsilastirma": {
+   "p29_n_ilce": 18,
+   "p29_kor_tarim": 0.541,
+   "p29_std": 0.241,
+   "p29_taban": "trafo+ortak gun cikarilmis HAM artik (model tahmini DEGIL)",
+   "p31_taban": "URETIM harman tahminine gore model artigi"
+  }
+ },
+ "06_a_ILCE_SABITI_blokdisi_dMSE": {
+  "yaz25_TUM": {
+   "0.0": 0.0,
+   "0.1": -0.001613,
+   "0.2": -0.003477,
+   "0.3": -0.005592,
+   "0.4": -0.007958,
+   "0.5": -0.010574,
+   "0.7": -0.016559,
+   "1.0": -0.027425
+  },
+  "yaz25_SICAK": {
+   "0.0": 0.0,
+   "0.1": -0.002204,
+   "0.2": -0.004635,
+   "0.3": -0.007292,
+   "0.4": -0.010175,
+   "0.5": -0.013285,
+   "0.7": -0.020185,
+   "1.0": -0.032243
+  },
+  "yaz25_SOGUK": {
+   "0.0": 0.0,
+   "0.1": 0.000462,
+   "0.2": 0.000589,
+   "0.3": 0.000379,
+   "0.4": -0.000167,
+   "0.5": -0.001049,
+   "0.7": -0.003821,
+   "1.0": -0.010499
+  },
+  "guz25_TUM": {
+   "0.0": 0.0,
+   "0.1": 7e-06,
+   "0.2": -0.000117,
+   "0.3": -0.000374,
+   "0.4": -0.000761,
+   "0.5": -0.001279,
+   "0.7": -0.002711,
+   "1.0": -0.005849
+  },
+  "guz25_SICAK": {
+   "0.0": 0.0,
+   "0.1": 0.000563,
+   "0.2": 0.001011,
+   "0.3": 0.001345,
+   "0.4": 0.001567,
+   "0.5": 0.001675,
+   "0.7": 0.001548,
+   "1.0": 0.0005
+  },
+  "guz25_SOGUK": {
+   "0.0": 0.0,
+   "0.1": -0.001944,
+   "0.2": -0.004081,
+   "0.3": -0.006412,
+   "0.4": -0.008937,
+   "0.5": -0.011656,
+   "0.7": -0.017674,
+   "1.0": -0.028155
+  },
+  "kis26_TUM": {
+   "0.0": 0.0,
+   "0.1": 8e-05,
+   "0.2": 4.7e-05,
+   "0.3": -0.0001,
+   "0.4": -0.000361,
+   "0.5": -0.000736,
+   "0.7": -0.001827,
+   "1.0": -0.004316
+  },
+  "kis26_SICAK": {
+   "0.0": 0.0,
+   "0.1": -0.000114,
+   "0.2": -0.000342,
+   "0.3": -0.000683,
+   "0.4": -0.001138,
+   "0.5": -0.001706,
+   "0.7": -0.003182,
+   "1.0": -0.006248
+  },
+  "kis26_SOGUK": {
+   "0.0": 0.0,
+   "0.1": 0.000764,
+   "0.2": 0.001413,
+   "0.3": 0.001947,
+   "0.4": 0.002367,
+   "0.5": 0.002671,
+   "0.7": 0.002935,
+   "1.0": 0.002469
+  }
+ },
+ "07_b_ILCE_SABITI_ARTI_HARMONIK_TARIM_dMSE": {
+  "yaz25_TUM": {
+   "0.0": 0.0,
+   "0.1": -0.001795,
+   "0.2": -0.003866,
+   "0.3": -0.006212,
+   "0.4": -0.008834,
+   "0.5": -0.011729,
+   "0.7": -0.018348,
+   "1.0": -0.030352
+  },
+  "yaz25_SICAK": {
+   "0.0": 0.0,
+   "0.1": -0.00253,
+   "0.2": -0.005311,
+   "0.3": -0.008345,
+   "0.4": -0.011631,
+   "0.5": -0.015167,
+   "0.7": -0.022997,
+   "1.0": -0.036646
+  },
+  "yaz25_SOGUK": {
+   "0.0": 0.0,
+   "0.1": 0.000784,
+   "0.2": 0.001211,
+   "0.3": 0.001281,
+   "0.4": 0.000993,
+   "0.5": 0.000348,
+   "0.7": -0.002015,
+   "1.0": -0.008241
+  },
+  "guz25_TUM": {
+   "0.0": 0.0,
+   "0.1": -0.000396,
+   "0.2": -0.001098,
+   "0.3": -0.002105,
+   "0.4": -0.003418,
+   "0.5": -0.005035,
+   "0.7": -0.009184,
+   "1.0": -0.0177
+  },
+  "guz25_SICAK": {
+   "0.0": 0.0,
+   "0.1": 0.000203,
+   "0.2": 0.000102,
+   "0.3": -0.000304,
+   "0.4": -0.001014,
+   "0.5": -0.002027,
+   "0.7": -0.004964,
+   "1.0": -0.011654
+  },
+  "guz25_SOGUK": {
+   "0.0": 0.0,
+   "0.1": -0.002502,
+   "0.2": -0.005313,
+   "0.3": -0.008434,
+   "0.4": -0.011864,
+   "0.5": -0.015603,
+   "0.7": -0.024009,
+   "1.0": -0.038937
+  },
+  "kis26_TUM": {
+   "0.0": 0.0,
+   "0.1": -0.000213,
+   "0.2": -0.000537,
+   "0.3": -0.000973,
+   "0.4": -0.001519,
+   "0.5": -0.002178,
+   "0.7": -0.003828,
+   "1.0": -0.007137
+  },
+  "kis26_SICAK": {
+   "0.0": 0.0,
+   "0.1": 4.4e-05,
+   "0.2": -2.5e-05,
+   "0.3": -0.000207,
+   "0.4": -0.000503,
+   "0.5": -0.000912,
+   "0.7": -0.002069,
+   "1.0": -0.004653
+  },
+  "kis26_SOGUK": {
+   "0.0": 0.0,
+   "0.1": -0.001116,
+   "0.2": -0.002336,
+   "0.3": -0.003661,
+   "0.4": -0.00509,
+   "0.5": -0.006624,
+   "0.7": -0.010006,
+   "1.0": -0.015863
+  }
+ },
+ "08_beta_ay_tarim_egimi": {
+  "yaz25": {
+   "kaynak_aylar_gozlenen": {
+    "1": -0.2341,
+    "2": -0.1148,
+    "3": -0.0677,
+    "8": -0.191,
+    "9": 0.1107,
+    "10": -0.0045,
+    "11": -0.0433,
+    "12": -0.1391
+   },
+   "harmonik_katsayi_a_sin_cos": [
+    -0.0872,
+    -0.0578,
+    -0.0113
+   ],
+   "hedef_aylara_ekstrapole": {
+    "4": -0.1316,
+    "5": -0.1063,
+    "6": -0.0759,
+    "7": -0.0485
+   }
+  },
+  "guz25": {
+   "kaynak_aylar_gozlenen": {
+    "1": -0.439,
+    "2": -0.3178,
+    "3": -0.2716,
+    "4": 0.0489,
+    "5": 0.3292,
+    "6": 0.7792,
+    "7": 0.8973,
+    "12": -0.3459
+   },
+   "harmonik_katsayi_a_sin_cos": [
+    0.2168,
+    -0.4594,
+    -0.4977
+   ],
+   "hedef_aylara_ekstrapole": {
+    "8": 0.8635,
+    "9": 0.6762,
+    "10": 0.3658,
+    "11": 0.0155
+   }
+  },
+  "kis26": {
+   "kaynak_aylar_gozlenen": {
+    "4": -0.0431,
+    "5": 0.2346,
+    "6": 0.6867,
+    "7": 0.807,
+    "8": -0.5264,
+    "9": -0.2164,
+    "10": -0.3312,
+    "11": -0.3738
+   },
+   "harmonik_katsayi_a_sin_cos": [
+    -0.1119,
+    0.0294,
+    -0.5082
+   ],
+   "hedef_aylara_ekstrapole": {
+    "1": -0.5373,
+    "2": -0.3405,
+    "3": -0.0825,
+    "12": -0.6201
+   }
+  }
+ },
+ "09_KAHIN_TAVANI_blok_ICI": {
+  "yaz25_TUM": {
+   "kahin_ilce_x_ay": 0.099459,
+   "kahin_ilce_sabiti": 0.041798,
+   "n": 274929
+  },
+  "yaz25_SICAK": {
+   "kahin_ilce_x_ay": 0.117525,
+   "kahin_ilce_sabiti": 0.054566,
+   "n": 254296
+  },
+  "yaz25_SOGUK": {
+   "kahin_ilce_x_ay": 0.427524,
+   "kahin_ilce_sabiti": 0.188569,
+   "n": 20633
+  },
+  "guz25_TUM": {
+   "kahin_ilce_x_ay": 0.091201,
+   "kahin_ilce_sabiti": 0.079683,
+   "n": 319732
+  },
+  "guz25_SICAK": {
+   "kahin_ilce_x_ay": 0.144937,
+   "kahin_ilce_sabiti": 0.13683,
+   "n": 280327
+  },
+  "guz25_SOGUK": {
+   "kahin_ilce_x_ay": 0.22027,
+   "kahin_ilce_sabiti": 0.180224,
+   "n": 39405
+  },
+  "kis26_TUM": {
+   "kahin_ilce_x_ay": 0.06594,
+   "kahin_ilce_sabiti": 0.061491,
+   "n": 444076
+  },
+  "kis26_SICAK": {
+   "kahin_ilce_x_ay": 0.059948,
+   "kahin_ilce_sabiti": 0.05636,
+   "n": 382158
+  },
+  "kis26_SOGUK": {
+   "kahin_ilce_x_ay": 0.419493,
+   "kahin_ilce_sabiti": 0.399655,
+   "n": 61918
+  },
+  "_not": "Blok ICI kahin -- ulasilamaz ust sinir. Gercek kazanc bunun kucuk bir kesri olur."
+ },
+ "10_YIL_UZERI_ILCE_VEKTORU": {
+  "aylik": [
+   {
+    "ay": 1,
+    "n_ilce": 47,
+    "korelasyon": 0.728,
+    "egim_2026_uzerine_2025": 0.666,
+    "std_2025": 0.129,
+    "std_2026": 0.116
+   },
+   {
+    "ay": 2,
+    "n_ilce": 47,
+    "korelasyon": 0.659,
+    "egim_2026_uzerine_2025": 0.483,
+    "std_2025": 0.166,
+    "std_2026": 0.119
+   },
+   {
+    "ay": 3,
+    "n_ilce": 47,
+    "korelasyon": 0.383,
+    "egim_2026_uzerine_2025": 0.337,
+    "std_2025": 0.093,
+    "std_2026": 0.08
+   }
+  ],
+  "ortalama_egim": 0.495,
+  "yontem": "ham vekil (trafo + ortak gun cikarilmis), 2025 Oca-Mar deney penceresinde YOK"
+ },
+ "11_YIL_UZERI_TARIM_EGIMI_beta": {
+  "aylik_beta": {
+   "2025-01": -0.4607,
+   "2025-02": -0.6571,
+   "2025-03": -0.2535,
+   "2025-04": -0.2866,
+   "2025-05": 0.064,
+   "2025-06": 0.5444,
+   "2025-07": 0.6923,
+   "2025-08": 0.5407,
+   "2025-09": 0.4692,
+   "2025-10": 0.0716,
+   "2025-11": 0.1295,
+   "2025-12": -0.1476,
+   "2026-01": -0.1758,
+   "2026-02": -0.2015,
+   "2026-03": -0.1544
+  },
+  "cift_2025_vs_2026": {
+   "01": [
+    -0.4607,
+    -0.1758
+   ],
+   "02": [
+    -0.6571,
+    -0.2015
+   ],
+   "03": [
+    -0.2535,
+    -0.1544
+   ]
+  },
+  "not": "Nisan-Temmuz beta'si YALNIZ 2025'te var -- yil-uzeri dogrulanamaz."
+ },
+ "12_DOGRULAMA_kis26_Oca_Mar": {
+  "dogrudan|YIL_DISI_2025|TUM": {
+   "0.0": 0.0,
+   "0.1": 3.8e-05,
+   "0.2": 2.5e-05,
+   "0.3": -3.8e-05,
+   "0.5": -0.000314,
+   "0.7": -0.00079,
+   "1.0": -0.001881
+  },
+  "dogrudan|YIL_DISI_2025|SICAK": {
+   "0.0": 0.0,
+   "0.1": 4.7e-05,
+   "0.2": 4.5e-05,
+   "0.3": -7e-06,
+   "0.5": -0.000261,
+   "0.7": -0.000714,
+   "1.0": -0.001766
+  },
+  "dogrudan|YIL_DISI_2025|SOGUK": {
+   "0.0": 0.0,
+   "0.1": 1e-05,
+   "0.2": -3.2e-05,
+   "0.3": -0.000125,
+   "0.5": -0.000464,
+   "0.7": -0.001009,
+   "1.0": -0.002211
+  },
+  "dogrudan|AYNI_YIL_2026_kahin|TUM": {
+   "0.0": 0.0,
+   "0.1": 8.7e-05,
+   "0.2": 0.000166,
+   "0.3": 0.000235,
+   "0.5": 0.000346,
+   "0.7": 0.000422,
+   "1.0": 0.000468
+  },
+  "dogrudan|AYNI_YIL_2026_kahin|SICAK": {
+   "0.0": 0.0,
+   "0.1": 5.6e-05,
+   "0.2": 0.000102,
+   "0.3": 0.000138,
+   "0.5": 0.00018,
+   "0.7": 0.000183,
+   "1.0": 0.000113
+  },
+  "dogrudan|AYNI_YIL_2026_kahin|SOGUK": {
+   "0.0": 0.0,
+   "0.1": 0.000177,
+   "0.2": 0.000347,
+   "0.3": 0.000511,
+   "0.5": 0.00082,
+   "0.7": 0.001104,
+   "1.0": 0.001482
+  },
+  "parametrik|YIL_DISI_2025|TUM": {
+   "0.0": 0.0,
+   "0.1": 2.2e-05,
+   "0.2": 3.2e-05,
+   "0.3": 3e-05,
+   "0.5": -8e-06,
+   "0.7": -9.3e-05,
+   "1.0": -0.000308
+  },
+  "parametrik|YIL_DISI_2025|SICAK": {
+   "0.0": 0.0,
+   "0.1": 1.1e-05,
+   "0.2": 1.1e-05,
+   "0.3": -0.0,
+   "0.5": -5.7e-05,
+   "0.7": -0.000158,
+   "1.0": -0.000394
+  },
+  "parametrik|YIL_DISI_2025|SOGUK": {
+   "0.0": 0.0,
+   "0.1": 5.2e-05,
+   "0.2": 9.1e-05,
+   "0.3": 0.000118,
+   "0.5": 0.000131,
+   "0.7": 9.2e-05,
+   "1.0": -6.3e-05
+  },
+  "parametrik|AYNI_YIL_2026_kahin|TUM": {
+   "0.0": 0.0,
+   "0.1": 2e-06,
+   "0.2": 4e-06,
+   "0.3": 6e-06,
+   "0.5": 8e-06,
+   "0.7": 1e-05,
+   "1.0": 1e-05
+  },
+  "parametrik|AYNI_YIL_2026_kahin|SICAK": {
+   "0.0": 0.0,
+   "0.1": 1e-06,
+   "0.2": 2e-06,
+   "0.3": 3e-06,
+   "0.5": 4e-06,
+   "0.7": 4e-06,
+   "1.0": 2e-06
+  },
+  "parametrik|AYNI_YIL_2026_kahin|SOGUK": {
+   "0.0": 0.0,
+   "0.1": 5e-06,
+   "0.2": 9e-06,
+   "0.3": 1.3e-05,
+   "0.5": 2e-05,
+   "0.7": 2.7e-05,
+   "1.0": 3.4e-05
+  },
+  "_kurulum": {
+   "hedef_satir": 338187,
+   "hedef_sicak": 282211,
+   "hedef_soguk": 55976,
+   "capa_kaynagi": "YALNIZ 2025 Oca-Mar ham verisi; 2026 hic kullanilmadi",
+   "not": "AYNI_YIL_2026 satiri KAHIN (ulasilamaz ust sinir), tasima orani icin"
+  }
+ },
+ "13_yaz25_AYNI_YIL_KAHIN": {
+  "dogrudan|TUM": {
+   "0.0": 0.0,
+   "0.1": 0.001691,
+   "0.2": 0.003191,
+   "0.3": 0.0045,
+   "0.5": 0.006546,
+   "0.7": 0.007829,
+   "1.0": 0.008323
+  },
+  "dogrudan|SICAK": {
+   "0.0": 0.0,
+   "0.1": 0.001565,
+   "0.2": 0.002928,
+   "0.3": 0.00409,
+   "0.5": 0.005807,
+   "0.7": 0.006717,
+   "1.0": 0.006569
+  },
+  "dogrudan|SOGUK": {
+   "0.0": 0.0,
+   "0.1": 0.002132,
+   "0.2": 0.004113,
+   "0.3": 0.005941,
+   "0.5": 0.009141,
+   "0.7": 0.011734,
+   "1.0": 0.014482
+  },
+  "parametrik|TUM": {
+   "0.0": 0.0,
+   "0.1": 0.000122,
+   "0.2": 0.00019,
+   "0.3": 0.000204,
+   "0.5": 6.8e-05,
+   "0.7": -0.000285,
+   "1.0": -0.001221
+  },
+  "parametrik|SICAK": {
+   "0.0": 0.0,
+   "0.1": 0.000199,
+   "0.2": 0.000342,
+   "0.3": 0.000429,
+   "0.5": 0.000435,
+   "0.7": 0.000219,
+   "1.0": -0.000525
+  },
+  "parametrik|SOGUK": {
+   "0.0": 0.0,
+   "0.1": -0.000146,
+   "0.2": -0.000341,
+   "0.3": -0.000586,
+   "0.5": -0.001221,
+   "0.7": -0.002052,
+   "1.0": -0.003666
+  },
+  "_not": "Capa yaz25'in KENDI yilindan -- test'te bu MUMKUN DEGIL (2026 Nis-Tem yok). Yalniz odulun buyuklugunu ve tasima orani carpani icin taban."
+ },
+ "14_ONYUKLEME_dogrulama_blogu": {
+  "dogrudan|TUM|0.3": {
+   "ort": -3.8e-05,
+   "GA95": [
+    -0.000251,
+    0.000166
+   ],
+   "P_pozitif": 0.356
+  },
+  "dogrudan|TUM|0.5": {
+   "ort": -0.000294,
+   "GA95": [
+    -0.000624,
+    6.6e-05
+   ],
+   "P_pozitif": 0.04
+  },
+  "dogrudan|TUM|0.7": {
+   "ort": -0.000806,
+   "GA95": [
+    -0.001296,
+    -0.000297
+   ],
+   "P_pozitif": 0.0
+  },
+  "dogrudan|TUM|1.0": {
+   "ort": -0.001873,
+   "GA95": [
+    -0.002568,
+    -0.001215
+   ],
+   "P_pozitif": 0.0
+  },
+  "dogrudan|SICAK|0.3": {
+   "ort": -1e-05,
+   "GA95": [
+    -0.00016,
+    0.000146
+   ],
+   "P_pozitif": 0.416
+  },
+  "dogrudan|SICAK|0.5": {
+   "ort": -0.000266,
+   "GA95": [
+    -0.000508,
+    -2.1e-05
+   ],
+   "P_pozitif": 0.018
+  },
+  "dogrudan|SICAK|0.7": {
+   "ort": -0.000699,
+   "GA95": [
+    -0.001068,
+    -0.000325
+   ],
+   "P_pozitif": 0.0
+  },
+  "dogrudan|SICAK|1.0": {
+   "ort": -0.001773,
+   "GA95": [
+    -0.002259,
+    -0.00125
+   ],
+   "P_pozitif": 0.0
+  },
+  "dogrudan|SOGUK|0.3": {
+   "ort": -0.000105,
+   "GA95": [
+    -0.000755,
+    0.000535
+   ],
+   "P_pozitif": 0.38
+  },
+  "dogrudan|SOGUK|0.5": {
+   "ort": -0.000461,
+   "GA95": [
+    -0.001567,
+    0.000563
+   ],
+   "P_pozitif": 0.2
+  },
+  "dogrudan|SOGUK|0.7": {
+   "ort": -0.000992,
+   "GA95": [
+    -0.002475,
+    0.000532
+   ],
+   "P_pozitif": 0.092
+  },
+  "dogrudan|SOGUK|1.0": {
+   "ort": -0.002164,
+   "GA95": [
+    -0.004463,
+    -8.2e-05
+   ],
+   "P_pozitif": 0.02
+  },
+  "parametrik|TUM|0.3": {
+   "ort": 3.5e-05,
+   "GA95": [
+    -5.3e-05,
+    0.000118
+   ],
+   "P_pozitif": 0.79
+  },
+  "parametrik|TUM|0.5": {
+   "ort": -5e-06,
+   "GA95": [
+    -0.00016,
+    0.000151
+   ],
+   "P_pozitif": 0.482
+  },
+  "parametrik|TUM|0.7": {
+   "ort": -9.5e-05,
+   "GA95": [
+    -0.000304,
+    0.000109
+   ],
+   "P_pozitif": 0.184
+  },
+  "parametrik|TUM|1.0": {
+   "ort": -0.000295,
+   "GA95": [
+    -0.000608,
+    1.9e-05
+   ],
+   "P_pozitif": 0.034
+  },
+  "parametrik|SICAK|0.3": {
+   "ort": 3e-06,
+   "GA95": [
+    -6.5e-05,
+    7.1e-05
+   ],
+   "P_pozitif": 0.532
+  },
+  "parametrik|SICAK|0.5": {
+   "ort": -5.5e-05,
+   "GA95": [
+    -0.000165,
+    5e-05
+   ],
+   "P_pozitif": 0.174
+  },
+  "parametrik|SICAK|0.7": {
+   "ort": -0.000147,
+   "GA95": [
+    -0.00031,
+    1.5e-05
+   ],
+   "P_pozitif": 0.038
+  },
+  "parametrik|SICAK|1.0": {
+   "ort": -0.000373,
+   "GA95": [
+    -0.000609,
+    -0.000168
+   ],
+   "P_pozitif": 0.0
+  },
+  "parametrik|SOGUK|0.3": {
+   "ort": 0.000115,
+   "GA95": [
+    -0.000155,
+    0.000432
+   ],
+   "P_pozitif": 0.768
+  },
+  "parametrik|SOGUK|0.5": {
+   "ort": 0.000138,
+   "GA95": [
+    -0.000342,
+    0.000657
+   ],
+   "P_pozitif": 0.68
+  },
+  "parametrik|SOGUK|0.7": {
+   "ort": 0.000124,
+   "GA95": [
+    -0.000572,
+    0.000843
+   ],
+   "P_pozitif": 0.606
+  },
+  "parametrik|SOGUK|1.0": {
+   "ort": -7.7e-05,
+   "GA95": [
+    -0.001048,
+    0.000912
+   ],
+   "P_pozitif": 0.44
+  }
+ },
+ "15_TESHIS_ham_vekil_vs_model_artigi": {
+  "n_hucre": 564,
+  "std_model_artigi": 0.183,
+  "std_ham_vekil": 0.1297,
+  "korelasyon": 0.571,
+  "R2": 0.326,
+  "egim_model_uzerine_ham": 0.807,
+  "ANLAM": "Ham-vekil ilce x ay etkisi (p29'un sulama imzasi) ile MODELIN artik yanliligi ayni nesne DEGILSE, sulama capasi modelin hatasini duzeltemez."
+ },
+ "16_ADAY_DOSYALARI": {
+  "capa_beta_2025": {
+   "4": -0.5499,
+   "5": -0.198,
+   "6": 0.2717,
+   "7": 0.3429
+  },
+  "capa_std": {
+   "4": 0.159,
+   "5": 0.0723,
+   "6": 0.0908,
+   "7": 0.114
+  },
+  "dosyalar": {
+   "p31_sulama_dogrudan_l030": {
+    "satir": 714688,
+    "degisen_satir": 714443,
+    "log_kayma_ort": -0.000593,
+    "log_kayma_std": 0.034132,
+    "log_kayma_aralik": [
+     -0.1186,
+     0.1057
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_dogrudan_l030_olu50": {
+    "satir": 714688,
+    "degisen_satir": 714291,
+    "log_kayma_ort": -0.003522,
+    "log_kayma_std": 0.042574,
+    "log_kayma_aralik": [
+     -0.611,
+     0.1057
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_dogrudan_l050": {
+    "satir": 714688,
+    "degisen_satir": 714443,
+    "log_kayma_ort": -0.000955,
+    "log_kayma_std": 0.056807,
+    "log_kayma_aralik": [
+     -0.1977,
+     0.1761
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_dogrudan_l050_olu50": {
+    "satir": 714688,
+    "degisen_satir": 714350,
+    "log_kayma_ort": -0.00381,
+    "log_kayma_std": 0.061788,
+    "log_kayma_aralik": [
+     -0.6214,
+     0.1761
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_dogrudan_l070": {
+    "satir": 714688,
+    "degisen_satir": 714443,
+    "log_kayma_ort": -0.001268,
+    "log_kayma_std": 0.07938,
+    "log_kayma_aralik": [
+     -0.2768,
+     0.2465
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_dogrudan_l070_olu50": {
+    "satir": 714688,
+    "degisen_satir": 714379,
+    "log_kayma_ort": -0.004073,
+    "log_kayma_std": 0.082682,
+    "log_kayma_aralik": [
+     -0.6317,
+     0.2465
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_dogrudan_l100": {
+    "satir": 714688,
+    "degisen_satir": 714443,
+    "log_kayma_ort": -0.001696,
+    "log_kayma_std": 0.113202,
+    "log_kayma_aralik": [
+     -0.3955,
+     0.3522
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_dogrudan_l100_olu50": {
+    "satir": 714688,
+    "degisen_satir": 714398,
+    "log_kayma_ort": -0.004426,
+    "log_kayma_std": 0.115101,
+    "log_kayma_aralik": [
+     -0.6891,
+     0.3522
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_parametrik_l030": {
+    "satir": 714688,
+    "degisen_satir": 714363,
+    "log_kayma_ort": -0.000443,
+    "log_kayma_std": 0.014975,
+    "log_kayma_aralik": [
+     -0.056,
+     0.0349
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_parametrik_l030_olu50": {
+    "satir": 714688,
+    "degisen_satir": 714269,
+    "log_kayma_ort": -0.003411,
+    "log_kayma_std": 0.030038,
+    "log_kayma_aralik": [
+     -0.6111,
+     0.0349
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_parametrik_l050": {
+    "satir": 714688,
+    "degisen_satir": 714363,
+    "log_kayma_ort": -0.000734,
+    "log_kayma_std": 0.024951,
+    "log_kayma_aralik": [
+     -0.0934,
+     0.0582
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_parametrik_l050_olu50": {
+    "satir": 714688,
+    "degisen_satir": 714320,
+    "log_kayma_ort": -0.003687,
+    "log_kayma_std": 0.035896,
+    "log_kayma_aralik": [
+     -0.6214,
+     0.0582
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_parametrik_l070": {
+    "satir": 714688,
+    "degisen_satir": 714363,
+    "log_kayma_ort": -0.00102,
+    "log_kayma_std": 0.034919,
+    "log_kayma_aralik": [
+     -0.1307,
+     0.0815
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_parametrik_l070_olu50": {
+    "satir": 714688,
+    "degisen_satir": 714343,
+    "log_kayma_ort": -0.003957,
+    "log_kayma_std": 0.043271,
+    "log_kayma_aralik": [
+     -0.6318,
+     0.0815
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_parametrik_l100": {
+    "satir": 714688,
+    "degisen_satir": 714363,
+    "log_kayma_ort": -0.00144,
+    "log_kayma_std": 0.049865,
+    "log_kayma_aralik": [
+     -0.1867,
+     0.1164
+    ],
+    "nan": 0,
+    "negatif": 0
+   },
+   "p31_sulama_parametrik_l100_olu50": {
+    "satir": 714688,
+    "degisen_satir": 714354,
+    "log_kayma_ort": -0.00435,
+    "log_kayma_std": 0.055838,
+    "log_kayma_aralik": [
+     -0.6474,
+     0.1164
+    ],
+    "nan": 0,
+    "negatif": 0
+   }
+  }
+ },
+ "17_HUKUM": {
+  "01_ANAHTAR": "47/47 ilce eslesti (p29: 18/47). Kapi ACILDI.",
+  "02_SULAMA_IMZASI_47_ILCE_ILE_AYAKTA": {
+   "yaz-kis farki std": 0.2671,
+   "kor_tarim_orani": 0.416,
+   "p29_degeri": 0.541,
+   "hukum": "Isaret ve fizik AYAKTA (Odemis/Kinik/Sarigol/Golmarmara + ; Guzelbahce/Foca/Bornova -). 47 ilcede r=+0.42, p29'un 18 ilceli r=+0.54'unden dusuk ama ayni yonde ve anlamli."
+  },
+  "03_ETKI_MODEL_ARTIGINDA_DA_VAR": {
+   "ilce_x_ay_artik_std_yaz25": 0.224,
+   "kor_tarim_yaz25": 0.464,
+   "kahin_tavani_dMSE_yaz25_TUM": 0.099459,
+   "hukum": "Odul GERCEK ve BUYUK: mukemmel bir ilce x ay duzeltmesi yaz25'te 0.0995 dMSE degerinde. Sorun buyukluk degil, TASINABILIRLIK."
+  },
+  "04_YIL_UZERI_KARARLILIK": {
+   "ilce_vektoru_kor": [
+    0.728,
+    0.659,
+    0.383
+   ],
+   "ilce_vektoru_egim": [
+    0.666,
+    0.483,
+    0.337
+   ],
+   "ortalama_egim": 0.495,
+   "p29_egimi": "0.25-0.39 (yanlis anahtar, 29 ilce)",
+   "duzeltilmis": "0.34-0.67, ortalama 0.495 -- p29'dan IYI",
+   "tarim_beta_yil_uzeri": {
+    "01": [
+     -0.4607,
+     -0.1758
+    ],
+    "02": [
+     -0.6571,
+     -0.2015
+    ],
+    "03": [
+     -0.2535,
+     -0.1544
+    ]
+   },
+   "uyari": "Nisan-Temmuz beta'si tek yil -- DOGRULANAMAZ."
+  },
+  "05_ASIL_KAPI_DUSTU": {
+   "deney": "kis26 Oca-Mar 2026 GERCEK CV tahminleri; capa YALNIZ 2025 Oca-Mar'dan. Test kurgusunun birebir provasi.",
+   "dogrudan_YIL_DISI_TUM": {
+    "0.0": 0.0,
+    "0.1": 3.8e-05,
+    "0.2": 2.5e-05,
+    "0.3": -3.8e-05,
+    "0.5": -0.000314,
+    "0.7": -0.00079,
+    "1.0": -0.001881
+   },
+   "parametrik_YIL_DISI_TUM": {
+    "0.0": 0.0,
+    "0.1": 2.2e-05,
+    "0.2": 3.2e-05,
+    "0.3": 3e-05,
+    "0.5": -8e-06,
+    "0.7": -9.3e-05,
+    "1.0": -0.000308
+   },
+   "ayni_yil_KAHIN_TUM": {
+    "0.0": 0.0,
+    "0.1": 8.7e-05,
+    "0.2": 0.000166,
+    "0.3": 0.000235,
+    "0.5": 0.000346,
+    "0.7": 0.000422,
+    "1.0": 0.000468
+   },
+   "onyukleme_dogrudan_l030_TUM": {
+    "ort": -3.8e-05,
+    "GA95": [
+     -0.000251,
+     0.000166
+    ],
+    "P_pozitif": 0.356
+   },
+   "onyukleme_dogrudan_l050_TUM": {
+    "ort": -0.000294,
+    "GA95": [
+     -0.000624,
+     6.6e-05
+    ],
+    "P_pozitif": 0.04
+   },
+   "onyukleme_parametrik_l030_TUM": {
+    "ort": 3.5e-05,
+    "GA95": [
+     -5.3e-05,
+     0.000118
+    ],
+    "P_pozitif": 0.79
+   },
+   "HUKUM": "YIL-DISI capa lambda>=0.3'te NEGATIF (dogrudan) ya da SIFIR (parametrik). P(pozitif) en iyi durumda 0.79 ama buyukluk 3.5e-05 -- gerekenin ~700 katindan kucuk."
+  },
+  "06_UST_SINIR_HESABI": {
+   "yaz25_ayni_yil_KAHIN_TUM_en_iyi": 0.008323,
+   "aciklama": "Bu deger HILELI: capa yaz25'in kendi yilindan. Test'te 2026 Nis-Tem yok, boyle bir capa MUMKUN DEGIL.",
+   "gercekci_indirim": "kis26'da olculen yil-uzeri tasima orani G_dis/G_ic NEGATIF. En comert varsayimla bile ilce vektoru egimi 0.495 -> kazanc ~0.495^2 ile olceklenir: 0.0083 * 0.245 = 0.0020 dMSE.",
+   "gereken_dMSE": {
+    "tasima_0.5": {
+     "ilk3_icin_dMSE": 0.02515,
+     "ilk10_icin_dMSE": 0.01221
+    },
+    "tasima_0.7": {
+     "ilk3_icin_dMSE": 0.01796,
+     "ilk10_icin_dMSE": 0.00872
+    },
+    "tasima_1.0": {
+     "ilk3_icin_dMSE": 0.01257,
+     "ilk10_icin_dMSE": 0.00611
+    }
+   },
+   "SONUC": "Ilk 3 icin tasima 1.0'da bile 0.01257 dMSE gerekiyor. HILELI ust sinir 0.0083, gercekci beklenti 0.0020. Ilk 10 icin (0.00611 @ tasima 1.0) bile hileli ust sinir kil payi yetmiyor."
+  },
+  "07_P_KAZANC_HESABI": {
+   "olcut": "P(LB kazanci >= 0.00628)",
+   "yontem": "Onyukleme dagilimi (trafo kumeli, 500) dMSE uzerinde; esik = 2*1.00115*0.00628/tasima.",
+   "esik_dMSE": {
+    "tasima_1.0": 0.01257,
+    "tasima_0.7": 0.01796,
+    "tasima_0.5": 0.02515
+   },
+   "en_iyi_varyantin_GA95_ust_ucu": 0.000912,
+   "P_ilk3": 0.0,
+   "P_ilk10": 0.0,
+   "not": "Butun onyukleme dagilimlarinin 97.5 yuzdeligi 0.00066'nin altinda; esikler 0.0126-0.0252. Kesisim YOK -- P sifir."
+  },
+  "08_NEDEN": {
+   "ham_vekil_vs_model_artigi_kor": 0.571,
+   "R2": 0.326,
+   "aciklama": "Ham verideki ilce x ay sinyali ile modelin ARTIK yanliligi yalniz kismen ortusuyor (R2=0.33) VE ayni-yil kahin capasi kis26'da yalnizca 0.00035 dMSE aliyor (model-artigi kahini 0.066). Yani p29'un olctugu ham sulama imzasini model BUYUK OLCUDE ZATEN GORUYOR (sicaklik + trafo mevsim oznitelikleri uzerinden); geriye kalan ilce x ay artigi ise yil-uzeri TASINMIYOR."
+  },
+  "09_ADAYLAR": {
+   "uretildi": [
+    "p31_sulama_dogrudan_l030",
+    "p31_sulama_dogrudan_l030_olu50",
+    "p31_sulama_dogrudan_l050",
+    "p31_sulama_dogrudan_l050_olu50",
+    "p31_sulama_dogrudan_l070",
+    "p31_sulama_dogrudan_l070_olu50",
+    "p31_sulama_dogrudan_l100",
+    "p31_sulama_dogrudan_l100_olu50",
+    "p31_sulama_parametrik_l030",
+    "p31_sulama_parametrik_l030_olu50",
+    "p31_sulama_parametrik_l050",
+    "p31_sulama_parametrik_l050_olu50",
+    "p31_sulama_parametrik_l070",
+    "p31_sulama_parametrik_l070_olu50",
+    "p31_sulama_parametrik_l100",
+    "p31_sulama_parametrik_l100_olu50"
+   ],
+   "dogrulama": "714688 satir, id sirasi test.csv ile birebir, NaN/negatif yok",
+   "TAVSIYE": "HICBIRI GONDERILMEMELI. Blok-disi + yil-disi olcumde lambda>=0.5 NEGATIF, lambda=0.3 sifir. Dosyalar yalnizca arastirma probu olarak duruyor.",
+   "tek_temiz_katman": "p08 olu trafo x0.50 (sicak satirlar, uc blokta da pozitif, ezberden bagimsiz) -- bu p31'den BAGIMSIZ ve hala gecerli."
+  },
+  "10_DURUSTLUK": "Sulama ekseni ELENDI. Bulunan sey gercek (imza fiziksel, odul buyuk) ama kullanilabilir degil: (a) Nisan-Temmuz capasi tek yil, dogrulanamaz; (b) dogrulanabilen tek prova (Oca-Mar) NEGATIF; (c) hileli ust sinir bile ilk 3 esiginin altinda. Bu, bugun kirilan yedinci 'dogrulanmis' bulgu olmasin diye kendi kapimi kendim koydum ve gecemedi.",
+  "11_GEREKEN_dMSE_TABLOSU": {
+   "tasima_0.5": {
+    "ilk3_icin_dMSE": 0.02515,
+    "ilk10_icin_dMSE": 0.01221
+   },
+   "tasima_0.7": {
+    "ilk3_icin_dMSE": 0.01796,
+    "ilk10_icin_dMSE": 0.00872
+   },
+   "tasima_1.0": {
+    "ilk3_icin_dMSE": 0.01257,
+    "ilk10_icin_dMSE": 0.00611
+   }
+  }
+ }
+}

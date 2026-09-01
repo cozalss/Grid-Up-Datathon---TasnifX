@@ -1,0 +1,114 @@
+{
+ "09_KAHIN_TAVANI_blok_ICI": {
+  "yaz25_TUM": {
+   "kahin_ilce_x_ay": 0.099459,
+   "kahin_ilce_sabiti": 0.041798,
+   "n": 274929
+  },
+  "yaz25_SICAK": {
+   "kahin_ilce_x_ay": 0.117525,
+   "kahin_ilce_sabiti": 0.054566,
+   "n": 254296
+  },
+  "yaz25_SOGUK": {
+   "kahin_ilce_x_ay": 0.427524,
+   "kahin_ilce_sabiti": 0.188569,
+   "n": 20633
+  },
+  "guz25_TUM": {
+   "kahin_ilce_x_ay": 0.091201,
+   "kahin_ilce_sabiti": 0.079683,
+   "n": 319732
+  },
+  "guz25_SICAK": {
+   "kahin_ilce_x_ay": 0.144937,
+   "kahin_ilce_sabiti": 0.13683,
+   "n": 280327
+  },
+  "guz25_SOGUK": {
+   "kahin_ilce_x_ay": 0.22027,
+   "kahin_ilce_sabiti": 0.180224,
+   "n": 39405
+  },
+  "kis26_TUM": {
+   "kahin_ilce_x_ay": 0.06594,
+   "kahin_ilce_sabiti": 0.061491,
+   "n": 444076
+  },
+  "kis26_SICAK": {
+   "kahin_ilce_x_ay": 0.059948,
+   "kahin_ilce_sabiti": 0.05636,
+   "n": 382158
+  },
+  "kis26_SOGUK": {
+   "kahin_ilce_x_ay": 0.419493,
+   "kahin_ilce_sabiti": 0.399655,
+   "n": 61918
+  },
+  "_not": "Blok ICI kahin -- ulasilamaz ust sinir. Gercek kazanc bunun kucuk bir kesri olur."
+ },
+ "10_YIL_UZERI_ILCE_VEKTORU": {
+  "aylik": [
+   {
+    "ay": 1,
+    "n_ilce": 47,
+    "korelasyon": 0.728,
+    "egim_2026_uzerine_2025": 0.666,
+    "std_2025": 0.129,
+    "std_2026": 0.116
+   },
+   {
+    "ay": 2,
+    "n_ilce": 47,
+    "korelasyon": 0.659,
+    "egim_2026_uzerine_2025": 0.483,
+    "std_2025": 0.166,
+    "std_2026": 0.119
+   },
+   {
+    "ay": 3,
+    "n_ilce": 47,
+    "korelasyon": 0.383,
+    "egim_2026_uzerine_2025": 0.337,
+    "std_2025": 0.093,
+    "std_2026": 0.08
+   }
+  ],
+  "ortalama_egim": 0.495,
+  "yontem": "ham vekil (trafo + ortak gun cikarilmis), 2025 Oca-Mar deney penceresinde YOK"
+ },
+ "11_YIL_UZERI_TARIM_EGIMI_beta": {
+  "aylik_beta": {
+   "2025-01": -0.4607,
+   "2025-02": -0.6571,
+   "2025-03": -0.2535,
+   "2025-04": -0.2866,
+   "2025-05": 0.064,
+   "2025-06": 0.5444,
+   "2025-07": 0.6923,
+   "2025-08": 0.5407,
+   "2025-09": 0.4692,
+   "2025-10": 0.0716,
+   "2025-11": 0.1295,
+   "2025-12": -0.1476,
+   "2026-01": -0.1758,
+   "2026-02": -0.2015,
+   "2026-03": -0.1544
+  },
+  "cift_2025_vs_2026": {
+   "01": [
+    -0.4607,
+    -0.1758
+   ],
+   "02": [
+    -0.6571,
+    -0.2015
+   ],
+   "03": [
+    -0.2535,
+    -0.1544
+   ]
+  },
+  "not": "Nisan-Temmuz beta'si YALNIZ 2025'te var -- yil-uzeri dogrulanamaz."
+ }
+}

@@ -62,13 +62,27 @@ R["duzeltmeler"] = {}
 for ad, x in D.items():
     s, sw = skor(yaz, x)
     R["duzeltmeler"][ad] = dict(
-        rmsle=round(s, 5), kazanc=round(t0 - s, 5),
-        rmsle_test_bilesimi=round(sw, 5), kazanc_test_bilesimi=round(t0w - sw, 5),
+        rmsle=round(s, 5),
+        kazanc=round(t0 - s, 5),
+        rmsle_test_bilesimi=round(sw, 5),
+        kazanc_test_bilesimi=round(t0w - sw, 5),
     )
     print(f"{ad:26s} RMSLE={s:.5f} kazanc={t0 - s:+.5f}  (agirlikli {sw:.5f} {t0w - sw:+.5f})")
 
 # yaz25-optimal beta taramasi (tavan)
-best = min(((skor(yaz, yaz.p.values + b * (yaz.p.values - pm))[0], b) for b in np.arange(-0.20, 0.06, 0.01)))
-R["beta_taramasi_tavan"] = dict(en_iyi_beta=round(float(best[1]), 3), rmsle=round(best[0], 5), kazanc=round(t0 - best[0], 5))
+best = min(
+    (
+        (skor(yaz, yaz.p.values + b * (yaz.p.values - pm))[0], b)
+        for b in np.arange(-0.20, 0.06, 0.01)
+    )
+)
+R["beta_taramasi_tavan"] = dict(
+    en_iyi_beta=round(float(best[1]), 3), rmsle=round(best[0], 5), kazanc=round(t0 - best[0], 5)
+)
 print("tavan:", R["beta_taramasi_tavan"])
-json.dump(R, open(os.path.join(BURA, "p07_seviye.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+json.dump(
+    R,
+    open(os.path.join(BURA, "p07_seviye.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
+)

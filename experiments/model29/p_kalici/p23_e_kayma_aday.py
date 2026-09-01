@@ -29,10 +29,13 @@ JSON_YOL = os.path.join(PK, "p23_parti.json")
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kayma", type=float, required=True,
-                    help="Adim 3 kaymasi (kopru - kontrol, tarih-eslesmeli)")
-    ap.add_argument("--kayma_ga", type=float, nargs=2, default=None,
-                    help="kaymanin GA95 alt/ust")
+    ap.add_argument(
+        "--kayma",
+        type=float,
+        required=True,
+        help="Adim 3 kaymasi (kopru - kontrol, tarih-eslesmeli)",
+    )
+    ap.add_argument("--kayma_ga", type=float, nargs=2, default=None, help="kaymanin GA95 alt/ust")
     ap.add_argument("--kur", action="store_true", help="aday CSV'leri yaz")
     ar = ap.parse_args()
 
@@ -48,11 +51,13 @@ def main():
     log_cat[soguk] = aile[:, 0]
 
     # --- delta_zincir: tarih-eslesmeli diff-in-diff (soguk satirlar, >= 05-11)
-    S = pd.DataFrame({
-        "tarih": test["tarih"].to_numpy(),
-        "diff": log_p21 - log_cat,
-        "parti": m_parti,
-    })[soguk]
+    S = pd.DataFrame(
+        {
+            "tarih": test["tarih"].to_numpy(),
+            "diff": log_p21 - log_cat,
+            "parti": m_parti,
+        }
+    )[soguk]
     S = S[S["tarih"] >= "2026-05-11"]
     kp = S[S["parti"]].groupby("tarih")["diff"].agg(["mean", "size"])
     dg = S[~S["parti"]].groupby("tarih")["diff"].mean()
@@ -77,7 +82,7 @@ def main():
         b = {}
         for t in (0.5, 0.75, 1.0):
             c = t * k
-            dmse = pay * (2 * c * k - c * c)   # pozitif = iyilesme
+            dmse = pay * (2 * c * k - c * c)  # pozitif = iyilesme
             b[f"t{t:.2f}"] = {
                 "satir_ici_dMSE": round(2 * c * k - c * c, 5),
                 "test_dMSE": round(dmse, 5),
@@ -107,7 +112,9 @@ def main():
             pd.DataFrame({"id": test["id"], "tuketim": yeni}).to_csv(cikti, index=False)
             dosyalar.append(f"aday_csv/p23_parti_{ad}.csv")
         sonuc["aday_dosyalar"] = dosyalar
-        sonuc["dogrulama"] = "714688 satir, id sirasi birebir, NaN/negatif yok, parti-disi degismedi"
+        sonuc["dogrulama"] = (
+            "714688 satir, id sirasi birebir, NaN/negatif yok, parti-disi degismedi"
+        )
 
     R = {}
     if os.path.exists(JSON_YOL):

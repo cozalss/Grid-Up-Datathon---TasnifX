@@ -1,0 +1,134 @@
+{
+ "yaz25": {
+  "panel_trafoici_BUZME": {
+   "rho": -0.09134,
+   "se": 0.01074,
+   "t": -8.5,
+   "rho_temiz": -0.00943,
+   "yon_rms": 0.04357
+  },
+  "panel_trafoici_YAYILMA": {
+   "rho": 0.09134,
+   "se": 0.01074,
+   "t": 8.5,
+   "rho_temiz": 0.00943,
+   "yon_rms": 0.04357
+  },
+  "panel_gunici_BUZME": {
+   "rho": -0.09951,
+   "se": 0.03402,
+   "t": -2.93,
+   "rho_temiz": 0.12337,
+   "yon_rms": 0.53947
+  },
+  "panel_etkilesim_BUZME": {
+   "rho": 0.16366,
+   "se": 0.03863,
+   "t": 4.24,
+   "rho_temiz": 0.15312,
+   "yon_rms": 0.09152
+  },
+  "panel_hg_sekli_BUZME": {
+   "rho": 0.0023,
+   "se": 0.00193,
+   "t": 1.19,
+   "rho_temiz": -0.00095,
+   "yon_rms": 0.02149
+  },
+  "panel_gun_profili_BUZME": {
+   "rho": -0.18041,
+   "se": 0.03508,
+   "t": -5.14,
+   "rho_temiz": -0.15205,
+   "yon_rms": 0.10508
+  }
+ },
+ "guz25": {
+  "panel_trafoici_BUZME": {
+   "rho": -0.01844,
+   "se": 0.00385,
+   "t": -4.79,
+   "rho_temiz": 0.00263,
+   "yon_rms": 0.04152
+  },
+  "panel_trafoici_YAYILMA": {
+   "rho": 0.01844,
+   "se": 0.00385,
+   "t": 4.79,
+   "rho_temiz": -0.00263,
+   "yon_rms": 0.04152
+  },
+  "panel_gunici_BUZME": {
+   "rho": -0.07815,
+   "se": 0.02801,
+   "t": -2.79,
+   "rho_temiz": -0.03983,
+   "yon_rms": 0.40338
+  },
+  "panel_etkilesim_BUZME": {
+   "rho": 0.0022,
+   "se": 0.01026,
+   "t": 0.21,
+   "rho_temiz": 0.02553,
+   "yon_rms": 0.04147
+  },
+  "panel_hg_sekli_BUZME": {
+   "rho": 0.00023,
+   "se": 0.00112,
+   "t": 0.2,
+   "rho_temiz": 0.00694,
+   "yon_rms": 0.01763
+  },
+  "panel_gun_profili_BUZME": {
+   "rho": -0.02164,
+   "se": 0.01132,
+   "t": -1.91,
+   "rho_temiz": -0.0224,
+   "yon_rms": 0.0396
+  }
+ },
+ "kis26": {
+  "panel_trafoici_BUZME": {
+   "rho": -0.00221,
+   "se": 0.00254,
+   "t": -0.87,
+   "rho_temiz": -0.00221,
+   "yon_rms": 0.02729
+  },
+  "panel_trafoici_YAYILMA": {
+   "rho": 0.00221,
+   "se": 0.00254,
+   "t": 0.87,
+   "rho_temiz": 0.00221,
+   "yon_rms": 0.02729
+  },
+  "panel_gunici_BUZME": {
+   "rho": 0.0354,
+   "se": 0.03459,
+   "t": 1.02,
+   "rho_temiz": 0.0354,
+   "yon_rms": 0.40865
+  },
+  "panel_etkilesim_BUZME": {
+   "rho": -0.00275,
+   "se": 0.00542,
+   "t": -0.51,
+   "rho_temiz": -0.00275,
+   "yon_rms": 0.02638
+  },
+  "panel_hg_sekli_BUZME": {
+   "rho": -0.00128,
+   "se": 0.0013,
+   "t": -0.98,
+   "rho_temiz": -0.00128,
+   "yon_rms": 0.01142
+  },
+  "panel_gun_profili_BUZME": {
+   "rho": 0.00085,
+   "se": 0.00852,
+   "t": 0.1,
+   "rho_temiz": 0.00085,
+   "yon_rms": 0.01451
+  }
+ }
+}

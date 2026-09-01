@@ -1,0 +1,482 @@
+{
+  "_meta": {
+    "olusturuldu_utc": "2026-09-01T08:20:00Z",
+    "yazan": "p29 dis kaynak taramasi",
+    "gorev": "Kaggle disi kaynaklardan yapisal fikir arama + yarisma forumunun yeniden taranmasi",
+    "kural": "Kaggle gonderimi YOK, submissions/ yazilmadi, commit yok",
+    "DURUSTLUK_NOTU": "Kaggle discussion/writeup sayfalari JS ile render ediliyor ve WebFetch ile alinamiyor. Kazanan cozumler hakem dergisi makaleleri, yazarlarin kendi arXiv makaleleri, GitHub kod depolari ve aynalardan dogrulandi. Bulunamayan seyler 'BULUNAMADI' olarak isaretlendi."
+  },
+
+  "0_ACIL_DURUM_DEGISIKLIGI": {
+    "BASLIK": "LIDERLIK TABLOSU 1 EYLUL SABAHI CIDDI SEKILDE HAREKET ETTI -- docs/80 §12 BAYAT",
+    "olcum_zamani_utc": "2026-09-01T08:05Z",
+    "komut": "kaggle competitions leaderboard grid-up-datathon --show",
+    "yeni_tablo": [
+      {"sira": 1, "takim": "Grid Grinders", "skor": 0.97795},
+      {"sira": 2, "takim": "Ahmet Bugrahan ALTUNOK", "skor": 0.99413},
+      {"sira": 3, "takim": "Ahmet Karakoyun", "skor": 0.99487},
+      {"sira": 4, "takim": "Tuna Deniz", "skor": 0.99496},
+      {"sira": 5, "takim": "TRUBA/AIFactory", "skor": 0.99502},
+      {"sira": 6, "takim": "Duo-Electra", "skor": 0.99512},
+      {"sira": 7, "takim": "Abdulbaki Bayir", "skor": 0.99556},
+      {"sira": 8, "takim": "Berke Kus", "skor": 0.99648},
+      {"sira": 9, "takim": "Bilalcan Ustabas", "skor": 0.99784},
+      {"sira": 10, "takim": "Saban Ozdogan", "skor": 0.99810},
+      {"sira": 11, "takim": "shining stars", "skor": 0.99833},
+      {"sira": 12, "takim": "Ahmet Celik", "skor": 0.99883},
+      {"sira": 13, "takim": "Atakan Aldemir", "skor": 0.99937},
+      {"sira": 14, "takim": "Goktug Tabak", "skor": 1.00003},
+      {"sira": 15, "takim": "Kris Dreemurr", "skor": 1.00030},
+      {"sira": 16, "takim": "TasnifX", "skor": 1.00115}
+    ],
+    "SONUC": "docs/80 '12. siradayiz' diyordu; artik 16. siradayiz. 3. sira 0.99556 degil 0.99487 -- gereken kazanc 0.00559 degil 0.00628.",
+    "YENI_ESIK_BILGISI": {
+      "kaynak": "discussion 738577, coderspacetr, 2026-09-01 05:57",
+      "alinti": "oncelikli finalist adaylarimiz her zaman Private Leaderboard'un ilk 10 sirasindaki ekiplerdir; 10-20 arasindaki ekipler ise teknik bir aksama durumunda surece dahil edilecek yedek listeyi olusturmaktadir",
+      "anlam": "ILK 10 gercek finalist kesimi. Su an 16. siradayiz -> yalnizca YEDEK listesindeyiz.",
+      "ilk10_icin_gereken": "0.99810'u gecmek = 0.00305 kazanc",
+      "ilk3_icin_gereken": "0.99487'yi gecmek = 0.00628 kazanc"
+    },
+    "docs80_adayinin_beklentisi_bu_isikta": "docs/80 §2: tasima orani 1.0 senaryosu 0.99151 (ilk 3'e girer), 0.5 senaryosu 0.99634 (artik ancak 8. sira). Yani aday hala ilk 10'a sokuyor ama ilk 3 icin tasima oraninin yuksek cikmasi sart."
+  },
+
+  "1_YARISMANIN_KENDISI": {
+    "public_notebook": {
+      "komut": "kaggle kernels list --competition grid-up-datathon",
+      "sonuc": "Not found -- HIC public notebook yok. Paylasilan cozum yok.",
+      "hukum": "Yarismadan dogrudan cozum ogrenilemez."
+    },
+    "web_erisimi": "kaggle.com/competitions/grid-up-datathon/* WebFetch ile 404 (giris duvarli, in-class). Web aramasi da yarismayi indekslemiyor.",
+    "erisilen_yol": "kaggle CLI: 'competitions topics list/show' ve 'competitions topic-messages' calisiyor. 22 konu tamamen okundu.",
+
+    "YENI_BULGU_1_PUBLIC_PRIVATE_AYRIMI_COZULDU": {
+      "onem": "COK YUKSEK -- k1_yarisma_kurallari.json bunu 'BELIRSIZ' ve 'tum LB-cozme metodolojimizin gecerliligini belirler' diye isaretlemisti. ARTIK CEVAPLI.",
+      "kaynak": "discussion 737076, yorum 3517103, coderspacetr, 2026-08-26 06:11",
+      "birebir_alinti": "Public/Private ayrimi tamamiyle rastgeledir. Tarih bazli bir kesim bulunmamaktadir. Trafo bazli stratified sekilde rastgele secim yapildi. Her trafo hem public hem private'ta orantili temsil ediliyor, tarihe gore degil.",
+      "SONUC": [
+        "Public LB = test satirlarinin trafo-bazli katmanli RASTGELE %30'u.",
+        "LB'den cozulen katsayilar (m111 kappa, span a0+r_hat, sicak/soguk agirliklari) ZAMANSAL rejim degisikligi riski TASIMIYOR -- private ayni donemin ayni trafolarinin baska satirlari.",
+        "k1'in 'SLOT B = LB'ye HIC uydurulmamis, mevsim-saglam cozum' hedge gerekcesi COKUYOR. Iki final slotu artik mevsim riskine karsi degil, YALNIZ olcum gurultusune ve kural riskine karsi ayrilmali.",
+        "Public/private korelasyonu cok yuksek olacak -> public LB'deki 0.00628 fark private'ta da buyuk olasilikla korunur. Shake-up beklentisi DUSUK."
+      ]
+    },
+
+    "YENI_BULGU_2_HOST_SIFIR_VE_SOGUK_TANIMI": {
+      "kaynak": "discussion 737076, yorum 3516450, Elif Gokce, 2026-08-24 11:52",
+      "alintilar": {
+        "sifir": "Tuketim=0 Devre disi birakilmis veya tuketim olmayan trafolari temsil etmektedir.",
+        "soguk": "test verisinde olup egitim verisinde olmayan trafolar da olabilir (son 4 ayda devreye yeni alinmis)",
+        "devreye_alma_tarihi": "Devreye alma tarihi gibi parametrelerin istenilen tahminlemede bir etkisi bulunmamaktadir.",
+        "ek_veri": "Ekstra veri paylasimi yapilmayacaktir."
+      },
+      "yorum": "Host sifirin IKI kokeni oldugunu soyluyor: (a) devre disi birakilmis (olu) trafo, (b) tuketimi olmayan trafo. Bizim p08 olu trafo kuralimiz yalniz (a)'yi hedefliyor ve yalniz SICAK satirlarda calisiyor."
+    },
+
+    "YENI_BULGU_3_EPIAS_IL_BAZLI_TUKETIM_IDDIASI": {
+      "onem": "YUKSEK -- hem firsat hem kural riski",
+      "kaynak": "discussion 737147, 2026-08-23 17:54",
+      "birebir_alinti": "EPIAS retrospektif kullaniminda diskalifiye olma ihtimalimiz nedir? Test donemi dahil gerceklesen tuketim cekilebiliyor. Ustelik sadece ulusal degil, provinceId ile Izmir/Manisa il bazli sektorel tuketimi de cekebiliyoruz. Test donemi il tuketimi, tahmin hedefinin bolgesel toplaminin kendisi. Feature importance payi kucuk (%2,6-3,9) ama ilk 20'ye girerseniz patlayabiliriz diye dusunuyorum.",
+      "host_cevabi": "Yalnizca 'EPIAS'ta dagitim sirketindeki trafolarin tuketim verileri bulunmamaktadir' dedi -- IL BAZLI sorusunu CEVAPLAMADI.",
+      "BIZDEKI_DURUM": {
+        "elimizde_olan": "data/external/epias/tuketim_saatlik.parquet = ULUSAL saatlik tuketim (2020-01-01'den itibaren, 58176 satir, tek seri). scripts/tuketim_model.py satir 538-558'de URETIMDE KULLANILIYOR.",
+        "elimizde_OLMAYAN": "IL BAZLI (Izmir/Manisa) sektorel tuketim. Forumdaki katilimcinin bahsettigi daha keskin nesne.",
+        "olctugumuz_deger": "Asagi bak: 5_KENDI_OLCUMLERIMIZ.ortak_gun_etkisi -- ulusal EPIAS, sicaklik uzerine R2'yi 0.774'ten 0.864'e cikariyor. Yani zaten kullaniyoruz ve ise yariyor."
+      },
+      "KURAL_HUKMU": "IL BAZLI GERCEKLESMIS test donemi tuketimi ONERILMEZ. Gerekce: (a) 31 Mart kurali (discussion 737242, duzenleyici: 'Nisan-Temmuz 2026 donemine ait GERCEKLESMIS ... veriler UYGUN OLMAYACAKTIR') hava icin soylenmis ama il tuketimi hedefin ta kendisinin toplami -- havadan cok daha agir bir ihlal. (b) Notebook incelemesi ilk 20 icin KESIN. (c) Zaten ulusal seriyi kullaniyoruz; marjinal kazanc kucuk, diskalifiye riski buyuk. RISK/GETIRI KOTU."
+    },
+
+    "YENI_BULGU_4_RAKIP_ISTIHBARATI": {
+      "cv_lb_ucurumu": {
+        "kaynak": "discussion 738088, 'Can', 2026-08-30 08:13",
+        "alinti": "Validation Strategy: 5-Fold TimeSeriesSplit Local CV (Mean): 0.82709 Public LB: ~1.27",
+        "yorum": "Siradan bir kurulum LB 1.27 veriyor. Bizim 1.00115'imiz alan icinde cok iyi. Ust siralardaki 0.994-0.998 kumesi dar ve rekabetci; lider 0.97795 ile 2.'den 0.016 ONDE -- bu YAPISAL bir farka isaret ediyor (buyuk olasilikla gerceklesmis dis veri veya bir sizinti)."
+      },
+      "chronos2_denemesi": {
+        "kaynak": "discussion 737260, 2026-08-24",
+        "alinti": "243 kimlik kumesinden olusan sinirli Chronos-2 CPU sentinel testi. Chronos-2 gercek zaman sirasini ters baglamdan daha iyi kullandi; ancak donor-only fingerprint karsilastiricisini gecemedi. Paired MSLE kazanci -0.218846 oldu",
+        "yorum": "Bir rakip temel zaman serisi modelini (Chronos-2) denedi ve KAYBETTI. Bizim de temel-model yoluna girmememiz icin dis kanit."
+      },
+      "coklu_hesap_supheleri": "discussion 738306 (21 yorum): ust siralarda ikincil/ucuncul hesap ve takimlar arasi paylasim iddialari yogun; katilimcilar duzenleyiciye e-posta atmis. Bizim kontrolumuzde degil, aksiyon yok."
+    },
+
+    "KURAL_DURUMU_NET": {
+      "dis_veri_genel": "SERBEST. discussion 736548 + 737147 (Youtube acilis transkripti) + Basak Guner 2026-08-31 (738273). Tek yukumluluk: notebook'ta kaynak ve amac beyani.",
+      "31_MART_KURALI": "discussion 737242, duzenleyici 2026-08-25: Nisan-Temmuz 2026 GERCEKLESMIS hava verisi 'uygun olmayacaktir'. Sonraki mesajlarda yumusatildi ama HIC GERI ALINMADI. k2_veri_kurali.json'daki 'duzenleyici e-postasiyla teyit edildi, yasak yok' hukmu ile ceIiskili -- e-posta 'veri kullanimi yasak degil' diyor, '31 Mart kurali kalkti' DEMIYOR.",
+      "cozulmemis": "discussion 737476 (4 oy) ve 737765 (9 oy) '31 Mart kurali nasil uygulanacak' diye sordu, duzenleyici IKISINE DE CEVAP VERMEDI. 738273'te katilimcilar bu sessizligi elestiriyor.",
+      "BIZE_DUSEN": "Notebook'ta Nisan-Temmuz 2026 gerceklesmis ERA5 hava verisi kullandigimizi ACIKCA beyan et. Yeni bir GERCEKLESMIS test donemi dis kaynagi EKLEME -- mevcut riski buyutur."
+    }
+  },
+
+  "2_BENZER_YARISMALARIN_KAZANAN_COZUMLERI": {
+    "M5_Forecasting_Accuracy": {
+      "kaynak": "Makridakis/Spiliotis/Assimakopoulos, 'The M5 accuracy competition: Results, findings and conclusions', https://statmodeling.stat.columbia.edu/wp-content/uploads/2021/10/M5_accuracy_competition.pdf",
+      "TWEEDIE": {
+        "bulgu": "Ilk 5'in UCU Tweedie kullandi.",
+        "1_YJ_STU": "Tweedie negatif log-olabilirligi maksimize edildi; makale gerekceyi 'sifirda olasilik kutlesi olan, negatif olmayan, saga carpik veri icin etkili' diye veriyor. Variance power BELIRTILMEMIS.",
+        "4_monsaraida": "KOD DOGRULANDI: https://github.com/monsaraida/kaggle-m5-forecasting-accuracy-4th-place -> objective='tweedie', tweedie_variance_power=1.1 (LightGBM varsayilani 1.5 DEGIL), num_leaves=2047, min_data_in_leaf=4095, learning_rate=0.03, n_estimators=1400, boost_from_average=False",
+        "5_Alan_Lahoud": "Poisson",
+        "2_Matthias": "Tweedie DEGIL -- ozel asimetrik kayip",
+        "DURUSTLUK": "Yayimlanmis bir 'Tweedie X kadar kazandirdi' ablasyonu YOK. Ustunluk yalnizca tercih sikligiyla kanitli."
+      },
+      "HIYERARSIK_UZLASTIRMA_HUKMU": {
+        "onem": "BIZIM 'HIC DENENMEDI' MADDEMIZIN CEVABI -- VE CEVAP OLUMSUZ",
+        "makale_alintisi": "This task proved much more challenging than expected in the M5 Accuracy competition, with many teams trying to apply well-known reconciliation methods (Hyndman et al., 2011) but failing to do so, probably due to size of the dataset, the complexity of the underlying hierarchy, and other present limitations (non-negative forecasts and additional computational cost).",
+        "hicbir_ust_takim_kullanmadi": true,
+        "SEVIYE_12_TABLOSU_ONEMLI": {
+          "aciklama": "Seviye 12 = en alt seviye = bizim puanlandigimiz seviyenin karsiligi",
+          "YJ_STU_1inci": {"genel_WRMSSE": 0.520, "seviye12": 0.884, "seviye12_sirasi": "50 icinde 11."},
+          "Matthias_2nci": {"genel_WRMSSE": 0.528, "seviye12": 0.907, "seviye12_sirasi": "50 icinde 48."},
+          "wyzJack_6nci": {"genel_WRMSSE": 0.544, "seviye12": 0.875, "seviye12_sirasi": "50 icinde 1."},
+          "CIKARIM": "En alt seviyede ilk 50 takim 0.875-0.910 araliginda SIKISIK (~%4 yayilim); en ust seviyede yayilim ~%95. Genel siralama neredeyse tamamen UST seviyelerde belirlendi. Bizim metrigimizde ust seviye YOK."
+        },
+        "CARPAN_HILESI_TRANSFER_ETMIYOR": {
+          "kaynak": "Anderer & Li, https://arxiv.org/abs/2103.08250 (M5 2.lik yazarlarinin kendi makalesi)",
+          "yazarlarin_kendi_hukmu": "by alternating the tuning parameter lambda in the customized gradient function, one may lose some accuracy at the bottom level, but the upper levels' accuracy has significantly improved. As a result, the overall accuracy is improved.",
+          "anlam": "M5'in unlu carpani ALT SEVIYE DOGRULUGUNU UST SEVIYE ICIN FEDA EDIYOR. WRMSSE 12 seviyeyi esit agirliklandirdigi icin kazandiriyor. Bizde satin alinacak ust seviye YOK -> UYGULANAMAZ.",
+          "bagimsiz_dogrulama": "https://arxiv.org/pdf/2108.03588 Tablo A.7: en iyi carpan altinda siralama benzerligi ALT seviyede 0.98 (yani hicbir sey degismiyor), UST seviyede 0.55-0.62. 'the more we aggregate, the higher the effects from magic numbers.'"
+        }
+      },
+      "UZUN_UFUK": {
+        "1_YJ_STU": "220 model = {magaza(10), magaza-kategori(30), magaza-departman(70)} x {ozyinelemeli, ozyinelemesiz}; her seri 6 modelin ORTALAMASI. Makale Bulgu 6: 'the recursive models were found to be, on average, more accurate than the non-recursive ones but of greater instability. As such, he decided to combine those two models.'",
+          "4_monsaraida": "UFKA GORE AYRI MODEL: 10 magaza x 4 hafta = 40 model, prediction_horizon_list=[7,14,21,28]. 122 gunluk ufkumuz icin en dogrudan emsal.",
+        "CV": "Ilk dortu de EN AZ son dort adet 28-gunluk pencereyi kullandi."
+      },
+      "SIFIR_HANDLING": "Hicbir ilk-5 takim Croston/SBA gibi kesikli talep yontemi kullanmadi. 3.luk 'zero-sales periods'i acik OZNITELIK olarak verdi. Ilk satis oncesi satirlar egitimden CIKARILDI (yaygin pratik)."
+    },
+
+    "ASHRAE_GEPIII": {
+      "onem": "RMSLE metrigi + enerji -- ama SOGUK BASLANGIC PROBLEMI DEGIL",
+      "yapisal_uyari": "Egitim(2016)/public test(2017)/private test(2018) AYNI 1448 bina. Gorulmemis bina YOK. Bizim %22 soguk satirimiz icin emsal DEGIL.",
+      "kaynak": "Miller et al., https://ar5iv.labs.arxiv.org/html/2007.06933 ; cozum analizi deposu https://github.com/buds-lab/ashrae-great-energy-predictor-3-solution-analysis",
+      "SIFIR_HANDLING_BIZE_UYMUYOR": {
+        "ne_yaptilar": "Sifirlari MODELLEMEDILER, SILDILER. 1.lik: uzun sabit deger serileri + sivri uclar + gorsel anomaliler cikarildi; bir seri AYNI SITE'nin birden cok binasinda ES ZAMANLI gorunuyorsa sayac artefakti sayilip silindi. 3.luk: 'Eliminated 0s in the same period in the same site'. Unlu site-0 temizleyicisi: 3378 saat (~141 gun) bastaki sifir silindi; kod yorumu 'Electrical meters should never be zero'.",
+        "BIZE_CIKARIM": "ASHRAE'nin sifirlari TAHMIN EDILMEYECEK sayac artefaktiydi. Bizimkiler GERCEK ve soguk MSE'nin %55.5'i. ASHRAE tarifi bize UYMAZ -- kopyalamayin."
+      },
+      "hedef_donusumu": "1., 2. ve 3. hepsi log donusumu uyguladi. RMSLE secim gerekcesi makalede: 'reduces the risk that meters with much larger consumption values would unfairly influence the score'.",
+      "KAPASITE_OFSETI_EMSALI": {
+        "ne": "1.lik ayrica log1p(meter_reading / square_feet) hedefiyle model egitti; fikir Artyom Vorobyov'un forum mesajindan geldi. 'added diversity to their final ensemble and improved their score by about 0.002'.",
+        "BIZDE_DURUM": "ZATEN VAR VE URETIMDE. scripts/tuketim_model.py satir 1077-1093 ofsetli_hedef() = log1p(tuketim) - log1p(guc). Docstring: 'taban 1,19673 -> ofset 1,16155, delta -0,0352'. YENI FIKIR DEGIL.",
+        "geriye_kalan": "ASHRAE'de bu AYRI BIR MODEL olarak harmana CESITLILIK icin eklendi (0.002). Bizde ana hedef olarak kullaniliyor. Ofsetsiz bir varyanti harmana cesitlilik icin eklemek KUCUK bir acik kalem."
+      },
+      "kuresel_vs_yerel": "Ilk 5'in hepsi building_id/meter'i KATEGORIK veren KURESEL model kullandi; cesitlilik icin alt-kume modelleri eklediler. Oznitelik sayilari 10-35 arasi -- oznitelik sayisi ayirt edici DEGILDI.",
+      "skorlar": "1.231 / 1.232 / 1.234 / 1.235 / 1.237 -- kil payi."
+    },
+
+    "SOGUK_BASLANGIC_Power_Laws_DrivenData": {
+      "onem": "EN YAKIN EMSAL ama TAM DEGIL",
+      "kaynak": "https://drivendata.co/blog/power-laws-cold-start-winners/ , https://github.com/drivendataorg/power-laws-cold-start",
+      "UYARI": "Test serilerinde 1-14 GUNLUK gecmis vardi. 'Kisa gecmis', bizimki gibi 'SIFIR gecmis' degil.",
+      "kazanan_ne_yapti": {
+        "1_Barbadillo_Walen": "Walen: 21 ayri model = 3 tahmin penceresi x 7 soguk-baslangic gun sayisi -- YANI MEVCUT GECMIS MIKTARINA GORE AYRI MODEL. Barbadillo: gecmis gunlere pozitif katsayili Lasso ile carpimsal agirlik ogrenme.",
+        "KUMELEME_KANITI": "1.lik modelleme raporundan: kume-ozel modeller TEK BASINA genel modelden KOTU; ama kume modellerini genel modelle ORTALAMAK 0.3288 -> 0.3213; KUME OZNITELIKLERINI tek modele beslemek 0.3030 -> 0.2959. Ilerleme: naif tekrar 0.3704 -> LR+tatil 0.3288 -> LR+kume 0.3213 -> ozel NN 0.3030 -> +kume oznitelikleri 0.2959 -> seq2seq 0.2881.",
+        "2_Vasilenko": "Tek kuresel ag + VARLIK GOMULERI (entity embeddings). Gecmis tabanli oznitelikleri ve hedef kodlamalarini BILINCLI OLARAK TERK ETTI. 'scaling to each building played a critical role'.",
+        "3_Hao_Li": "Yalniz 1 gunluk verisi olan binalar icin gunluk tuketimi min/max/ortalama saatlik deger x 24 ile NORMALIZE ETTI -- acik seviye normalizasyonu.",
+        "DOGRULAMA_UYARISI": "1.lik raporu acikca soyluyor: dogrulama ZAMANA gore degil series_id'ye gore bolunmeli."
+      },
+      "SENTEZ": "Soguk varliklar icin kazanan kalip: (a) kuresel model + statik metaveri gomuleri, gecmis oznitelikleri OLMADAN; (b) davranissal kumeleme ve KUME ISTATISTIKLERINI OZNITELIK olarak besleme (kume-ozel modelden DAHA IYI); (c) mevcut gecmis miktarina gore ayri model; (d) varlik bazli olcek normalizasyonu. Saf en-yakin-komsu veya saf grup-medyani ile KIMSE KAZANMADI."
+    },
+
+    "ENERJI_ALANI_SEVIYE_SEKIL_AYRIMI": {
+      "BDEW_standart_yuk_profilleri": "Surekli sayaci OLMAYAN musteriler icin tam da bu amacla var: profil normalize bir SEKIL (yillik 1000 kWh'e normalize 96 ceyrek-saatlik olcum), tahmin = sekil x musterinin beklenen yillik enerjisi. https://flrd.github.io/standardlastprofile/",
+      "Velander_formulu": "P_max_i = alpha*E_i + beta*sqrt(E_i), alpha/beta MUSTERI SEGMENTI BAZINDA fitlenir. Makale: bu modeller 'are indispensable in modeling peak loads for customers without smart meter data and for new customers'. https://arxiv.org/html/2510.19052v1",
+      "RMSLE_NOTU": "Onemli: RMSLE altinda dogru seviye log1p'nin ORTALAMASI'dir, ortalamanin log'u DEGIL. Her seviye kalibrasyonu LOG UZAYINDA yapilmalidir."
+    },
+
+    "WEB_TRAFFIC_1LIK_UZUN_UFUK": {
+      "kaynak": "https://github.com/Arturus/kaggle-web-traffic/blob/master/how_it_works.md",
+      "en_transfer_edilebilir_ders": "Dikkat (attention) mekanizmasi DENENDI VE ATILDI. Yerine ACIK GECIKMELI DEGERLER kondu: 1 yil, yarim yil ve ceyrek onceki degerler oznitelik olarak. 'enables shorter 60-90 day encoders without information loss.' GBDT gecikme oznitelikleriyle birebir ortusuyor.",
+      "kayip": "Ham SMAPE kararsiz; alternatif olarak log1p(veri) uzerinde MAE kullandi -- 'smooth almost everywhere'.",
+      "olcek_oznitelig i": "Seriler bagimsiz normalize edildigi icin olcek bilgisi kayboluyor; 'sayfa populerligi = pageviews medyani' ayri oznitelik olarak geri eklendi.",
+      "varyans_azaltma": "3 tohum x 10 kontrol noktasi = 30 model ortalamasi, SGD/ASGD agirlik ortalamasiyla. 'very noisy' veri icin."
+    },
+
+    "HIYERARSIK_UZLASTIRMA_LITERATURU": {
+      "SORU": "MinT/bottom-up ALT SEVIYE dogrulugunu gercekten artiriyor mu?",
+      "CEVAP": "EVET AMA MUTEVAZI, VE YALNIZCA TABAN TAHMINLER SERI-BAZINDA UNIVARYE OLDUGUNDA.",
+      "fpp3_turizm": {
+        "kaynak": "https://otexts.com/fpp3/tourism.html",
+        "en_alt_seviye_RMSE": {"taban": 19.38, "bottom_up": 19.38, "OLS": 18.32, "MinT": 17.97},
+        "kazanc": "MinT alt seviyede %7.3 RMSE iyilesme"
+      },
+      "MinT_makalesi": {
+        "kaynak": "https://robjhyndman.com/papers/mint.pdf",
+        "turizm_tablo8_en_ayrisik_seviye": "ARIMA tabanla MinT(Shrink) -%3.7, OLS +%1.5 (DAHA KOTU); ETS tabanla MinT(Shrink) -%1.2, OLS +%0.8 (DAHA KOTU). BU 0.0 (tanim geregi).",
+        "KRITIK_ARACI_DEGISKEN": "'The improvements are more pronounced when the base forecasts are less accurate'. Tanilanan sebep: 'Fewer than 50% of the models identified at the bottom level include a seasonal component, and only 5% include both a seasonal and a trending component.' -- yani uzlastirmanin kazanci, ALT SEVIYE MODELIN YAKALAYAMADIGI sinyali ICERI TASIMAK."
+      },
+      "gozden_gecirme": "https://robjhyndman.com/papers/hf_review.pdf : 'even where reconciliation improves forecast accuracy, these improvements do not occur across all levels'. Hicbir Kaggle yazisinda MinT'ten alt seviye kazanci RAPOR EDILMEMIS -- BULUNAMADI.",
+      "BIZE_HUKUM": "Belgelenmis her alt-seviye kazanci, taban tahminlerin BAGIMSIZ UNIVARYE modeller oldugu kurulumdan geliyor (auto.ARIMA/ETS, yarisi mevsimselligi bile bulamamis). Bizim GBDT harmanimiz tum trafolar uzerinde KURESEL egitiliyor ve ilce/bolge oznitelikleri oznitelik matrisinde ZATEN VAR -- M5 makalesinin Bulgu 3'te 'all top 50 performing methods in M5 utilized cross-learning' dedigi sey. Beklenti ETS ucu (~%1) veya daha az, ARIMA ucu (%4-7) DEGIL. ONCELIK DUSUK."
+    }
+  },
+
+  "3_ENERJI_ALANINA_OZGU_YENI": {
+    "zaten_bizde_olan": ["sicaklik ve sicaklik^2", "etkilesim terimleri", "takvim", "HDD/CDD benzeri", "tatil/bayram (olculdu, curutuldu)", "kapasite ofseti log1p(guc)", "EPIAS ulusal gunluk endeks", "arazi ortusu / OSM altyapi statik ilce tablolari"],
+    "YENI_VE_SOMUT": "Asagidaki 5_KENDI_OLCUMLERIMIZ bolumune bak -- SULAMA MEVSIMI imzasi OLCULDU ve modelde YOK."
+  },
+
+  "4_KURAL_KONTROLU": {
+    "okunan": ["experiments/model29/k1_yarisma_kurallari.json", "experiments/model29/k2_veri_kurali.json", "22 forum konusunun tamami"],
+    "DUZELTME": "Gorev brifingi 'host ek veri paylasilmayacak dedi, dis veri kullanimi kurallara aykiri olabilir' diyordu. BU YANLIS. Dis veri kullanimi ACIKCA SERBEST (discussion 736548, 737147 acilis transkripti, 738273). 'Ek veri paylasilmayacak' host'un KENDI ek veri VERMEYECEGI anlamina geliyor, bizim kullanamayacagimiz degil.",
+    "TEK_GERCEK_KISIT": "31 Mart 2026 kurali: Nisan-Temmuz 2026 donemine ait GERCEKLESMIS dis veri 'uygun olmayacaktir' (discussion 737242). Duzenleyici bunu hic geri almadi ve iki kez sorulan uygulama sorusunu cevaplamadi.",
+    "onerilerin_kural_uygunlugu": "Asagidaki tum onerilerin YALNIZCA yarisma verisini kullandigi, dolayisiyla kural riski TASIMADIGI isaretlendi. Yeni dis kaynak ONERILMIYOR."
+  },
+
+  "5_KENDI_OLCUMLERIMIZ": {
+    "not": "Web taramasinin yaninda ham veri uzerinde ucuz yapisal olcumler yapildi (agir egitim YOK). Bunlar onerileri somutlastiriyor.",
+
+    "veri_yapisi": {
+      "kolonlar": "tanim (trafo), guc (kurulu kVA), tarih, tuketim, lokasyon (IL>BOLGE>ILCE)",
+      "hiyerarsi": "2 il, 20 il-bolge, 47 ilce -- COK SIG",
+      "trafo": {"egitim": 5344, "test": 7036, "soguk": 2024},
+      "soguk_satir": "158369 (%22.16)",
+      "panel": "Jan 2025-Mar 2026 = 455 gun, ama trafo basina MEDYAN 170 satir -> panel SEYREK, eksik gunler var (sifir DEGIL, YOK)"
+    },
+
+    "soguk_baslangic_donor_bollugu": {
+      "soguk_trafolarin_ilcesi_egitimde_var": "2024 / 2024 (HEPSI)",
+      "soguk_trafo_basina_ayni_ilcedeki_egitim_trafosu": {"medyan": 139, "ort": 155, "min": 14, "max": 399},
+      "guc_degerleri_egitimde_var": "%99.95",
+      "CIKARIM": "Her soguk trafo icin bol donor var. 'Komsu havuzu' 3/3 kaybetti (docs/80 §5) ama Power Laws 1.ligi de kume-OZEL modelin genel modelden kotu oldugunu buldu; kazanan sey KUME ISTATISTIGINI OZNITELIK olarak beslemekti."
+    },
+
+    "sifirlarin_anatomisi": {
+      "egitimde_tuketim_0_orani": 0.0469,
+      "trafo_bazinda": {"sifir_orani>0.99": 303, "0.5-0.99": 51, "<0.01": 4841},
+      "sifir_satirlarin_kaynagi": "%67.4'u 298 adet TAMAMEN OLU trafodan geliyor",
+      "gec_devreye_giren_trafo": "yalniz 30 trafo >60 gun gecikmeli basladi",
+      "CIKARIM": "Sifirlar birkac OLU trafoda YOGUNLASMIS, gunluk rastgele degil. p08 olu trafo kurali dogru nesneyi hedefliyor. Soguk tarafta esdeger bir kural YOK cunku gecmis yok."
+    },
+
+    "VARYANS_AYRISIMI": {
+      "veri": "log1p(tuketim), yalniz tuketim>0, n=1.168.701",
+      "toplam_varyans": 2.6787,
+      "TRAFO_kimligi": "%91.87",
+      "ORTAK_GUN_etkisi": {"pay": "trafo cikarildiktan sonraki varyansin %14.23'u", "std": 0.1761},
+      "ILCE_x_GUN_ek_etkisi": {"pay": "ortak gun de cikarildiktan sonrakinin %7.77'si", "std": 0.1205},
+      "nihai_artik_std": 0.3997
+    },
+
+    "ortak_gun_etkisi_ne_kadar_aciklaniyor": {
+      "hedef_std": 0.1840,
+      "haftanin_gunu": {"R2": 0.013},
+      "sicaklik_+_kare": {"R2": 0.770, "artik_std": 0.0883},
+      "dow_+_sicaklik_kare": {"R2": 0.774, "artik_std": 0.0874},
+      "EPIAS_ulusal_gunluk_log": {"R2": 0.551},
+      "hepsi_birlikte": {"R2": 0.864, "artik_std": 0.0678},
+      "HUKUM": "Ortak gun ekseni BUYUK OLCUDE COZULMUS. EPIAS ulusal seri sicakligin uzerine gercek katki yapiyor (0.774->0.864) ve URETIMDE ZATEN VAR. Bu eksende buyuk acik kalmadi."
+    },
+
+    "ILCE_x_GUN_ETKISI_ACIKLANMIYOR": {
+      "ilce_sabiti_cikarilmis_std": 0.1505,
+      "yerel_sicaklik_anomalisi_R2": 0.001,
+      "anomali+kare+yagis_R2": 0.002,
+      "ilce_x_AY_bileseni_std": 0.1301,
+      "HUKUM": "ILCE x GUN etkisinin varyansinin ~%75'i ILCE x AY seviyesinde (yavas hareketli) ve YEREL HAVA ILE TAMAMEN ACIKLANMIYOR (R2=0.001). Bu, modelin yapisal olarak goremedigi ~0.13 log birimlik bir sinyal."
+    },
+
+    "SULAMA_MEVSIMI_IMZASI_OLCULDU": {
+      "onem": "EN GUCLU YENI BULGU",
+      "olcum": "Ilce bazinda (YAZ aylari 6,7,8 ortalamasi) - (KIS aylari 12,1,2 ortalamasi), trafo ve ortak gun etkileri cikarilmis artik uzerinde",
+      "yaz_kis_farki_std": 0.241,
+      "arazi_ortusu_ile_korelasyon": {
+        "tarim_orani": 0.541,
+        "agac_yerlesim_orani": 0.624,
+        "yerlesim_orani": -0.422,
+        "ciplak_orani": -0.291,
+        "otlak_orani": -0.024
+      },
+      "eslesen_ilce_sayisi": 18,
+      "UYARI": "Yalniz 18/47 ilce eslesti (ilce_key adlandirma uyusmazligi). Anahtar duzgun baglanip TEKRARLANMALI. n=18'de r=0.54 p~0.02.",
+      "en_uc_ilceler_Nis_Tem_2025": {"pozitif": ["KINIK +0.187", "ODEMIS +0.179", "BAYINDIR +0.168", "BEYDAG +0.078"], "negatif": ["GUZELBAHCE -0.146", "NARLIDERE -0.096", "BERGAMA -0.094", "URLA -0.077"]},
+      "YORUM": "Pozitif uclar Izmir'in TARIM/SULAMA ilceleri (Odemis, Kinik, Bayindir, Beydag -- Kucuk Menderes ovasi), negatif uclar KIYI/MESKEN ilceleri (Guzelbahce, Narlidere, Urla). Yani ilce mevsimsel sapmasi FIZIKSEL: sulama pompaji. Ve TEST DONEMI NISAN-TEMMUZ = TAM SULAMA RAMPASI.",
+      "MODELDE_VAR_MI": "HAYIR. scripts/tuketim_model.py satir 947 yorumu: '+HAFTA+TAKVIM (tk_ay, tk_yilin_gunu, tatil_mi eklenmis) ZARARLI' -- ay/yilin gunu oznitelikleri ZARARLI bulunup CIKARILMIS. Model mevsimselligi YALNIZ sicaklik uzerinden goruyor. tarim_orani statik ilce oznitelig i olarak var ama MEVSIMSEL ETKILESIMI yok."
+    },
+
+    "YIL_UZERI_KARARLILIK_UYARISI": {
+      "test": "ilce x ay etkisi 2025 Oca/Sub/Mar vs 2026 Oca/Sub/Mar",
+      "sonuc": [
+        {"ay": 1, "n_ilce": 29, "korelasyon": 0.747, "egim": 0.386, "std_2025": 0.130, "std_2026": 0.067},
+        {"ay": 2, "n_ilce": 29, "korelasyon": 0.744, "egim": 0.248, "std_2025": 0.178, "std_2026": 0.059},
+        {"ay": 3, "n_ilce": 30, "korelasyon": 0.648, "egim": 0.300, "std_2025": 0.111, "std_2026": 0.051}
+      ],
+      "HUKUM": "ISARET tutarli (kor 0.65-0.75) ama BUYUKLUK cokuyor (egim yalniz 0.25-0.39, 2026 std'si 2025'in yarisindan az). 2025 degerlerini dogrudan capa olarak kullanmak 3-4 KAT ASIRI DUZELTME olur. Dogru buzme carpani ~0.3.",
+      "DURUSTLUK_UYARISI": "Bu kararlilik testi YALNIZ KIS aylarinda yapilabildi (elimizde tek Nisan-Temmuz var: 2025). Nisan-Temmuz capasinin yil-uzeri kararliligi OLCULEMEZ -- p09b'nin dustugu tuzak. Ustelik kis aylarinda olculen sonum, fiziksel surucusu guclu olan YAZ sulama sinyaline uygulanmayabilir. Bu belirsizlik onerinin en zayif halkasidir."
+    }
+  },
+
+  "6_DENENMEMIS_UYGULANABILIR_FIKIRLER_SIRALI": [
+    {
+      "sira": 1,
+      "ad": "ILCE MEVSIMSELLIGI: sulama imzasini FIZIKSEL ETKILESIM olarak ekle",
+      "mekanizma": "Ham 'ay' oznitelig i degil (o zararli bulunmus), ilce STATIK arazi ozniteliginin mevsimsel surucuyle ETKILESIMI: tarim_orani x (sicaklik veya yilin gunu sinusu veya kumulatif buyume-derece-gun), ve yerlesim_orani x ayni surucu. 2-4 yeni kolon.",
+      "neden_bizde_ise_yarar": "OLCULDU: ilce x ay etkisi std 0.13, yerel hava ile R2=0.001 (tamamen aciklanmamis); yaz-kis farki tarim_orani ile r=+0.54, yerlesim_orani ile r=-0.42. Model bu etkilesimi goremiyor cunku takvim oznitelikleri cikarilmis. Test donemi Nisan-Temmuz TAM sulama rampasi. SOGUK satirlara da uygulanir (yalniz statik ilce + tarih gerektirir) -- soguk RMSLE 1.43 iken bu onemli.",
+      "tahmini_kazanc": "dMSE 0.002-0.009 -> dRMSLE 0.001-0.0045 ham. docs/80 §7 tasima orani 0.5 ile LB 0.0005-0.0025. Belirsizlik GENIS.",
+      "20_saatte_olculebilir_mi": "EVET. Oznitelik ekleme; mevcut blok CV tezgahi calisir. Ama bak: KRITIK UYARI.",
+      "KRITIK_UYARI": "yaz25 blogu disinda birakilirsa egitimde HIC yaz kalmaz (veri Oca2025-Mar2026). Yani YAZ etkilesimi durust blok-disi olarak DOGRULANAMAZ. guz25 ve kis26 bloklarinda olculebilir; yaz icin ekstrapolasyona guvenmek gerekir. Bu, docs/80 §5'te p09b'yi olduren ayni yapisal sinir.",
+      "kural_uygunlugu": "TEMIZ -- yalniz yarisma verisi + zaten kullanilan arazi ortusu tablosu.",
+      "ONCE_YAPILACAK": "arazi_ortusu_ilce ilce_key eslesmesini duzelt (18/47 esleşti). Eslesme duzelince korelasyonu 47 ilce ile TEKRAR OLC. r duserse fikir duser."
+    },
+    {
+      "sira": 2,
+      "ad": "HARMANI CESITLILIK ICIN YENIDEN KUR: ALGORITMA degil HEDEF KURGUSU cesitliligi",
+      "mekanizma": "(a) Once TANI: mevcut cat/xgb/lgbm/sinir_agi uyelerinin ARTIK KORELASYONUNU olc ve TOHUM-TOHUMA gurultu tabaniyla karsilastir. Korelasyon gurultu tabanina yakinsa uyeler KOPYA demektir ve harman bedava kazanc vermiyor. (b) Sonra: harmana gercekten DIK bir uye ekle -- ayni algoritmayla ama FARKLI HEDEF KURGUSUYLA egitilmis model (ozyinelemeli varyant, farkli ufuk penceresi, veya ofsetsiz hedef).",
+      "dis_kanit_DOGRULANMIS": [
+        "Favorita 1.lik (Eureka): harman 4 model, agirliklar 0.42/0.28/0.18/0.12 -> 0.504 public / 0.509 private; EN IYI TEKIL 0.506/0.511. Yani 4 modelli harman en iyi tekilin ancak 0.002 onunde -- ALGORITMA harmani KUCUK kazanc.",
+        "btrotta (M5 ilk %3): ESIT AGIRLIKLAR, dogrulamayla ayarlanmis agirliklari GERCEK LB'de GECTI. Agirlik optimizasyonu asiri uydurma riski.",
+        "ASHRAE 1.lik GeneralizedMeanBlender (ashrae/blenders.py): Optuna ile kuvvet-ortalama usteli p, model agirliklari VE kuresel sabit c in (0.95,1.05) birlikte optimize ediliyor; p=0'da bu log1p uzayinda GEOMETRIK ortalama. Yani harman aritmetik ortalamaya sabitlenmemis.",
+        "ASHRAE 1.lik: 17 model (6 LGBM + 6 CatBoost + 4 MLP + 3 taban) ve cesitlilik EGITIM ALT KUMESINI degistirerek uretildi (meter bazli, site bazli, meter x site bazli, primary_use bazli ALT MODELLER).",
+        "ASHRAE 1.lik ayrica log1p(y) ve log1p(y/square_feet) hedeflerini birlikte harmanladi -> ~0.002 (hedef kurgusu cesitliligi)."
+      ],
+      "dis_kanit_SONRADAN_DOGRULANDI": [
+        "Recruit 1.lik: ALGORITMA harmani (0.7 LGB + 0.2 XGB + 0.1 NN) yalniz +0.0002; ayni algoritmanin 14/28/42-gunluk PENCERE modellerini harmanlamak +0.002 -- ON KAT daha fazla. BU KALEMIN EN GUCLU KANITI.",
+        "Recruit 5.lik: agirlik ufuk gunu basina Nelder-Mead ile fitlendi, 39 gunun medyani alindi, agirlikli GEOMETRIK ortalama -> en iyi tekil uzerine +0.004; ustelik DAHA KOTU bir NN kullanarak.",
+        "Rossmann 1.lik: 500 rastgele model ikili taranarak elendi, HARMONIK ORTALAMA ile harmanlandi -> tekil ~0.105'ten ~0.100'e (~%5).",
+        "Store Sales: %70 dogrudan + %30 ozyinelemeli LOG uzayinda; ortak artik korelasyonu 0.917 iken TOHUM GURULTU TABANI 0.972-0.979 -> -0.00507 LB. XGB/LGB/CatBoost varyantlari 0.974-0.99 korelasyonda oturuyor ve KOPYA olarak reddedilmis."
+      ],
+      "PROVENANS_UYARISI": "Bu kalemin ilk taslagindaki sayilar once alt ajan tarafindan GERI CEKILDI (kaynaktan okumadigini bildirdi), sonra gercek arastirmayla YENIDEN DOGRULANDI. Yukaridakiler dogrulanmis surumdur. ANCAK: Store Sales sayilari bir KAZANANDAN degil, ~30. sira civarindaki bir kisinin acik muhendislik gunlugunden geliyor; ayrica Store Sales'in private LB'si YOK ve ust bant kopya kumesi -- o satira DUSUK agirlik verin. Recruit ve Rossmann sayilari kazananlarin kendi belgelerinden.",
+      "neden_bizde_ise_yarar": "docs/80 §8: harmanimiz bagimsiz egitilmis ailelerin SABIT AGIRLIKLI ARITMETIK ORTALAMASI, stacking yok, 'aileler birbirine uyum saglar' mekanizmasi YOK. Dis kanit tam olarak bunun en dusuk getirili cesitlilik bicimi oldugunu soyluyor. Ustelik docs/80 §3'te olculdugu gibi uretim soguk harmani cat-tekil olmus -- yani cesitlilik fiilen SIFIR. Ayrica sinir_agi harmanin %21.9'u ve HICBIR olcumde yok (§8.2).",
+      "tahmini_kazanc": "Tani asamasi kazanc vermez ama HANGI kalemlerin bos oldugunu soyler (yuksek bilgi degeri, cok ucuz). Dik uye ekleme: DOGRULANMIS emsallerde 0.002 (Favorita harman vs en iyi tekil; ASHRAE ofsetli hedef cesitliligi). Bizde gereken ilk10 farki 0.00305 -- ayni buyukluk sinifinda ama emsal kazanclar bunun ALTINDA.",
+      "20_saatte_olculebilir_mi": "TANI EVET (saatler, yalniz mevcut aile_onbellek/*.npy dosyalarindan korelasyon matrisi + tohum gurultu tabani). Dik uye eklemek daha pahali.",
+      "kural_uygunlugu": "TEMIZ.",
+      "not": "Bu, ONERI 1'den daha DUSUK riskli ve daha iyi kanitli. Tani adimini ONCE yapin -- 30-60 dakika ve harmanla ilgili tum sonraki kararlari yonlendirir."
+    },
+    {
+      "sira": 3,
+      "ad": "UFUK-GECIKME ESLESMESI (dogrudan vs ozyinelemeli, ufuk kovalarina gore)",
+      "mekanizma": "Ufku birkac kovaya bol ve her kova icin, o kovada GERCEKTEN erisilebilir olan en taze gecikmeyi kullanan ayri model egit. 122 model DEGIL -- 3-5 kova.",
+      "dis_kanit_DOGRULANMIS": [
+        "Favorita 1.lik (Eureka, discussion 47582): 'her gun icin egitilmis 16 lgb modeli' + 16 nn modeli + 2 tum-ufuk modeli. Ufka gore ayrisma BIRINCILIGIN CEKIRDEGI.",
+        "M5 4.lugu (monsaraida, kod dogrulandi): ufkun her HAFTASI icin ayri model, prediction_horizon_list=[7,14,21,28]. 122 gunluk ufuk icin 'her gun' degil 'her kova' tasarimi emsalli.",
+        "M5 1.ligi (makale, Bulgu 6): ozyinelemeli VE ozyinelemesiz modelleri BIRLIKTE kullandi; gerekcesi 'recursive models were more accurate on average but of greater instability. As such, he decided to combine those two models.'",
+        "Web Traffic 1.lik: uzun bellek yerine 1 yil / yarim yil / ceyrek onceki degerleri ACIK gecikme ozniteligi yapmak, 'even slightly surpassing attention' -- 60 gunluk ufukta kodlayiciyi 300-400 gunden 60-90 gune indirdi."
+      ],
+      "dis_kanit_SONRADAN_DOGRULANDI": [
+        "Rossmann 1.lik (Winning Model Documentation PDF -- 122 gunluk ufkumuz icin EN IYI TASARIM): 'ay ileri modelleri' -- trend oznitelikleri hesaplanirken EN SON AY ATLANIR, boylece oznitelik bayatligi gercek bilgi bosluguyla eslesir; ikinci test ayi icin YALNIZ ay-ileri modellerinden olusan harman kullanildi. Bulgusu birebir: 'the month ahead models performed almost as good as the models that did include information from the most recent month'. NOT: belgesinde OZYINELEMELI TAHMIN HIC YOK -- Bojer & Meldgaard derlemesinin 'hem dogrudan hem yinelemeli' iddiasi YANLIS, o derlemeyi kaynak gostermeyin.",
+        "Rossmann 1.lik ek: GBDT TREND EKSTRAPOLE EDEMEZ. Bunun icin magaza basina gun-numarasi/haftanin gunu/promosyon uzerine RIDGE fitleyip EGIMLERI OZNITELIK olarak besledi (artik duzeltmesi olarak DEGIL).",
+        "Store Sales: havuzlanmis dogrudan 0.40457 vs havuzlanmis ozyinelemeli 0.46879; ufku 1 / 2 / 3-4 / 5-16 kovalarina bolup her kovada en taze MESRU gecikmeyi kullanmak -0.00961 LB. Yanlislanabilir kontrolu de var: 5-16 kovasi kontrol grubu ve TAM BERABERE cikmali, cikiyor."
+      ],
+      "PROVENANS_UYARISI": "Bu sayilar once alt ajan tarafindan geri cekildi, sonra gercek arastirmayla yeniden dogrulandi. Rossmann kazananin kendi PDF'inden -- GUCLU. Store Sales bir kazanandan degil ~30. sira civari bir kisinin gunlugunden ve o yarismanin private LB'si yok -- ZAYIF, yon gostergesi olarak alin.",
+      "neden_bizde_ise_yarar": "Ufkumuz 1-122 gun. Tek bir model tum ufka ayni gecikme ozniteliklerini kullaniyorsa, ya 1. gun icin bilgi israf ediliyor ya 122. gun icin bayat. docs/80 §5'te kapali olan 'p11 ufuk/ofset KALIBRASYONU' bir SON ISLEM duzeltmesiydi; UFUK KOVASINA GORE AYRI MODEL EGITMEK bambaska ve denenmemis.",
+      "tahmini_kazanc": "OLCULMEMIS. Dis emsallerde bu yapisal secim birincilerin standardi ama izole kazanci yayimlanmamis.",
+      "20_saatte_olculebilir_mi": "SINIRDA/HAYIR. docs/80 §9: tam yeniden egitim ~2.3 sa/kosu; 3-4 kova x 3 blok x 3 tohum cok asar. Kucultulmus tarama (1 aile, 2 kova, 1 tohum) ile SINYAL ARANABILIR ama hukum verilemez.",
+      "kural_uygunlugu": "TEMIZ."
+    },
+    {
+      "sira": 4,
+      "ad": "SOGUK icin KUME ISTATISTIGI OZNITELIKLERI (kume-ozel model DEGIL)",
+      "mekanizma": "Egitim trafolarini davranissal olarak kumele (mevsimsel profil sekli, hafta ici/sonu orani, seviye/guc orani). Her kume icin ozet istatistikler cikar. Sonra bir soguk trafonun STATIK ozniteliklerinden (guc, ilce, arazi ortusu, OSM altyapi) kume UYELIK OLASILIGINI tahmin et ve olasilik-agirlikli kume istatistiklerini OZNITELIK olarak kuresel modele besle.",
+      "dis_kanit": "Power Laws Cold Start 1.ligi: kume-OZEL modeller tek basina genel modelden KOTU (bu bizim 'komsu havuzu 3/3 kayip' sonucumuzla BIREBIR ORTUSUYOR), AMA kume oznitelikleri tek modele beslendiginde 0.3030 -> 0.2959; kume modellerini genel modelle ortalamak 0.3288 -> 0.3213. 2.lik: kuresel model + varlik gomuleri, gecmis oznitelikleri OLMADAN.",
+      "neden_bizde_ise_yarar": "docs/80 §5 'komsu havuzu' kapali -- ama o kume-OZEL TAHMIN kullaniyordu. Bu farkli mekanizma: kume bilgisi OZNITELIK olarak, tahmin olarak degil. Dis kanit tam olarak bu ayrimin onemli oldugunu soyluyor. Ayrica soguk trafo basina medyan 139 donor var -- veri bol.",
+      "tahmini_kazanc": "dMSE 0.005-0.02 soguk tarafta; genel dRMSLE 0.001-0.003 ham.",
+      "20_saatte_olculebilir_mi": "SINIRDA. Kumeleme + uyelik siniflandiricisi + oznitelik uretimi + 3 blok CV. 20 saate sigar ama tek is olarak.",
+      "kural_uygunlugu": "TEMIZ."
+    },
+    {
+      "sira": 5,
+      "ad": "TWEEDIE amac fonksiyonu -- DEGERLENDIRILDI, ONCELIGI DUSURULDU",
+      "mekanizma": "log1p uzerinde L2 yerine ham olcekte Tweedie NLL. Tweedie 'sifirda olasilik kutlesi + negatif olmayan surekli saga carpik' dagilimidir -- hedefimizin tanimi.",
+      "ILK_CEKICILIK": "M5 ilk 5'in UCU Tweedie, biri Poisson kullandi. 4.lugun kodu dogrulandi: tweedie_variance_power=1.1 (varsayilan 1.5 DEGIL), num_leaves=2047, min_data_in_leaf=4095, lr=0.03, boost_from_average=False. Ve soguk MSE'mizin %55.5'i sifir satirlarindan.",
+      "NEDEN_ONCELIGI_DUSURULDU": [
+        "METRIK UYUSMAZLIGI (ana gerekce): M5'in metrigi WRMSSE ve SEVIYE UZAYINDA. Tweedie/Poisson seviye uzayindaki KOSULLU ORTALAMAYI hedefler. Bizim metrigimiz RMSLE = log1p uzayinda RMSE; yani log1p+L2 EGITIM KAYBINI METRIGIN TA KENDISI yapar. Tweedie'ye gecmek, dogru fonksiyoneli hedeflemekten VAZGECMEK demektir. M5 kaniti bu metrik degisikligiyle TERSINE DONER.",
+        "RMSLE metrikli yarismalarda dogrulanan kod ORNEKLERI ISTISNASIZ log1p + L2: Favorita 5.lik (objective='regression', metric='l2'; loss='mean_squared_error'), Favorita 12.lik (fit(train, log(1+y), eval_metric='rmse')), ASHRAE 1.lik (target=log1p(meter_reading), metric='rmse').",
+        "Hicbir RMSLE yarismasi kazanani Tweedie/Poisson ile kazanmadi."
+      ],
+      "HUKUM": "ONERILMIYOR (birincil kalem olarak). Yalniz soguk tarafta, sifir kutlesinin log1p altinda bozulmasinin metrik uyumsuzlugundan BUYUK oldugu hipotezini test eden kucuk bir bahis olarak dusunulebilir -- ama 20 saatlik pencerede once 1/2/3'e bakilmali.",
+      "docs80_ile_iliski": "docs/80 §5'in kapali listesinde DEGIL (iki asamali ayristirma ve sifir siniflandiricisindan farkli mekanizma), yani 'tekrar onerme' ihlali degil -- ama dis kanit aleyhte.",
+      "kural_uygunlugu": "TEMIZ."
+    },
+    {
+      "sira": 6,
+      "ad": "OFSETSIZ hedef varyantini harmana CESITLILIK icin ekle",
+      "mekanizma": "Uretim hedefi log1p(tuketim)-log1p(guc). Ek olarak DUZ log1p(tuketim) hedefiyle bir model egit ve harmana kucuk agirlikla kat.",
+      "dis_kanit": "ASHRAE 1.ligi tam TERSINI yapti (ana hedef ham, EK olarak /square_feet) ve 'added diversity to their final ensemble and improved their score by about 0.002'.",
+      "neden_bizde_ise_yarar": "Bizde ofset ANA hedef; ofsetsiz varyant harmana dik bir hata yapisi getirebilir. UCUZ.",
+      "tahmini_kazanc": "KUCUK, ~0.001-0.002 ham (ASHRAE'de 0.002).",
+      "20_saatte_olculebilir_mi": "EVET, en ucuz kalem -- yalniz hedef fonksiyonu degisiyor, oznitelik hatti aynı.",
+      "kural_uygunlugu": "TEMIZ."
+    },
+    {
+      "sira": 7,
+      "ad": "TOHUM/KONTROL-NOKTASI ORTALAMASINI ARTIR (varyans azaltma)",
+      "mekanizma": "Web Traffic 1.ligi 3 tohum x 10 kontrol noktasi = 30 model ortaladi ve bunu 'very noisy' veri icin zorunlu gordu. Bizde 3 tohum var.",
+      "neden_bizde_ise_yarar": "docs/80 §7: olcum gurultu tabanimiz sigma_cift ~0.02 -- COK BUYUK. Tohum sayisini artirmak hem TAHMINI iyilestirir hem de tum gelecek olcumlerin gurultusunu dusurur.",
+      "tahmini_kazanc": "COK KUCUK ama neredeyse RISKSIZ; ~0.0005-0.001.",
+      "20_saatte_olculebilir_mi": "EVET (yalniz hesap suresi).",
+      "kural_uygunlugu": "TEMIZ."
+    }
+  ],
+
+  "6b_EK_DOGRULANMIS_DERSLER": {
+    "KURESEL_CARPANI_FITLEME_TURETIS": {
+      "onem": "docs/80 §7 'tasima orani' tartismasiyla dogrudan ilgili",
+      "Rossmann_vakasi": "0.985 carpani discussion 17601'de KAPALI FORMDA turetilmis: log(Sales)~Normal(sigma) varsayimiyla optimal carpan y* = y0 * exp(-3*sigma^2/2), sigma~0.1'de ~0.985. Konunun kendisi LB kazanci RAPOR ETMIYOR -- tamamen teorik.",
+      "kazananin_kendi_ifadesi": "A factor of 0.995 was optimal for both my validation set and the public test set. But I should have applied the mathematical estimate of 0.985 on the forum to achieve a private leaderboard score well below 0.10.",
+      "DERS": "Kazananin HOLDOUT'u VE PUBLIC LB'si BIRBIRIYLE UYUSTU VE IKISI DE YANLISTI; metrikten TURETILEN sabit dogruydu. Kuresel carpimsal duzeltmeler FITLENMEMELI, METRIGIN YAPISINDAN TURETILMELI.",
+      "BIZE_UYGULAMASI": "RMSLE altinda log uzayinda optimal tahmin KOSULLU ORTALAMADIR ve ek bir buzme/carpan GEREKTIRMEZ (Rossmann'daki duzeltme RMSPE'nin seviye-uzayi yanliligindan doguyor, bizde o yanlilik YOK). Bu, docs/80 §5'teki 'soguk skaler kayma agirlikli olcumde negatif' bulgusuyla TUTARLI. Yani skaler carpan/kayma aramayi BIRAKIN -- teorik olarak da beklenmiyor."
+    },
+    "RECRUIT_GOLDEN_WEEK_TATIL_YENIDEN_ETIKETLEME": {
+      "ne": "Recruit'ta belgelenmis EN BUYUK tekil kazanc son islem degil bir TAKVIM hilesiydi: Golden Week tatil gunlerinin HAFTANIN GUNU ozniteligi yeniden etiketlendi -- tatil gunu -> CUMARTESI, tatil oncesi gun -> CUMA, tatil sonrasi gun -> PAZARTESI.",
+      "olculen": "kaynakta 0.009 iddia; Shize Su 0.008 olctu (private 0.516 -> 0.508); baska bir kullanicida ~0.012. 1.lik takiminda BU HILE YOKTU.",
+      "mekanizma": "Tatil BAYRAGI eklemek DEGIL -- tatilin haftalik ritim uzerindeki etkisini, o gunu DAVRANISSAL ESDEGERI olan gunle DEGISTIREREK modellemek.",
+      "BIZDE_DURUM": "docs/80: 'bayram hipotezi olculdu ve curutuldu' -- ama curutulen sey buyuk olasilikla TATIL BAYRAGIYDI, yeniden etiketleme DEGIL. Turkiye'de Ramazan/Kurban bayrami ve 19 Mayis/30 Agustos gibi gunler ayni yapiyi tasir. UYARI: TEST DONEMI NISAN-TEMMUZ 2026; bu pencerede 23 Nisan, 1 Mayis, 19 Mayis ve Kurban Bayrami var. UCUZ bir kontrol, ama bizim ufkumuz GUNLUK TOPLAM tuketim ve etki restoran ziyaretindeki kadar keskin olmayabilir.",
+      "oncelik": "DUSUK-ORTA, ama olcumu cok ucuz."
+    },
+    "ASHRAE_SIFIR_KURALI_UZERINE_IKI_AJAN_CELISTI": {
+      "ajan_A_gorusu": "ASHRAE'de elektrik sayaclarinin TUM sifirlari egitimden atiliyor (1.lik kodu: 'Electrical meters should never be zero'); 5.lik bagimsiz olarak ayni sonuca vardi; 3.luk site-es-zamanli sifirlari kesinti olarak atti. En yakin alan emsali.",
+      "ajan_B_gorusu": "ASHRAE'nin sifirlari test'te tekrarlamayacak SAYAC ARTEFAKTIYDI; bizimkiler GERCEK ve PUANLANIYOR (host: 'Tuketim=0 devre disi birakilmis veya tuketim olmayan trafolari temsil etmektedir'). Kopyalamak dogrudan zarar verir.",
+      "BIZIM_HUKMUMUZ": "AJAN B HAKLI. Sifirlari egitimden atmak, RMSLE altinda tahminlerimizi YUKARI yanli hale getirir (ASHRAE 2.ligi bu yuzden 0.8-0.85 duzeltme carpani uygulamak ZORUNDA kalmis -- ikisi bir PAKET). Bizde sifirlar hedefin gercek bir parcasi. ATMAYIN.",
+      "AMA_TASINABILIR_TEK_PARCA": "ASHRAE 3.lugunun SITE-ES-ZAMANLI SIFIR = KESINTI fikri. Bizde karsiligi: ayni ilce/fider uzerinde AYNI GUN es zamanli sifira dusen trafo kumeleri = planli/plansiz KESINTI. Ve elimizde data/external/epias/kesinti_plansiz.parquet + panel_ilce_gun VAR (k5/k6 deneyleri). Kesinti kaynakli sifirlar TAHMIN EDILEMEZ gurultudur; bunlari egitimde ORNEK AGIRLIGIYLA ZAYIFLATMAK (atmak degil) mesru bir varyanttir. k5_kesinti/k6_kesinti_kontrol sonuclarini okuyun -- bu yol kismen zaten acilmis olabilir."
+    }
+  },
+
+  "7_ONERILMEYEN_VE_NEDENI": {
+    "hiyerarsik_uzlastirma_MinT_bottom_up": {
+      "hukum": "ONERILMIYOR (gorevde 'HIC DENENMEDI' diye isaretlenmisti -- cevap: denemeyin)",
+      "gerekce": [
+        "M5: hicbir ust takim kullanmadi; makale 'many teams trying ... but failing to do so' diyor.",
+        "Belgelenmis her alt-seviye kazanci (fpp3 %7.3, MinT makalesi %1.2-3.7) BAGIMSIZ UNIVARYE taban tahminlerden geliyor; kazancin sebebi 'alt seviye modelin bulamadigi mevsimselligi iceri tasimak'. Bizim GBDT'miz kuresel egitiliyor ve ilce/bolge oznitelikleri zaten matriste -- o sinyal ZATEN ICERIDE.",
+        "OLS uzlastirma bazi kurulumlarda alt seviyeyi DAHA KOTU yapiyor (+%0.8, +%1.5).",
+        "Hiyerarsimiz cok sig (2 il / 20 bolge / 47 ilce) -- uzlastirmanin kaldiraci az.",
+        "Metrigimiz YALNIZ alt seviyede. Uzlastirmanin sattigi tutarlilik bize puan getirmiyor."
+      ]
+    },
+    "M5_carpan_hilesi": {
+      "hukum": "ONERILMIYOR",
+      "gerekce": "Yazarlarinin kendi ifadesiyle alt seviye dogrulugunu FEDA EDIP ust seviye kazaniyor; WRMSSE 12 seviyeyi ortaladigi icin karliydi. Bizde ust seviye yok. Bagimsiz olcum: en iyi carpan altinda ALT seviye siralama benzerligi 0.98 -- yani hicbir sey degismiyor."
+    },
+    "ASHRAE_tarzi_sifir_silme": {
+      "hukum": "ONERILMIYOR",
+      "gerekce": "ASHRAE'de sifirlar test'te tekrarlamayacak SAYAC ARTEFAKTIYDI, o yuzden silindi. Bizim sifirlarimiz GERCEK ve puanlaniyor (soguk MSE'nin %55.5'i). Silmek dogrudan zarar verir."
+    },
+    "temel_zaman_serisi_modelleri_Chronos_TimesFM": {
+      "hukum": "ONERILMIYOR",
+      "gerekce": "Bir RAKIP bu yarismada Chronos-2'yi denedi ve kaybetti (discussion 737260: paired MSLE kazanci -0.218846, kimlik-kume bootstrap araligi tamamen negatif). Ayrica soguk trafolarda GECMIS YOK -- temel modelin besleyecegi baglam yok."
+    },
+    "EPIAS_il_bazli_gerceklesmis_test_donemi_tuketimi": {
+      "hukum": "ONERILMIYOR -- KURAL RISKI",
+      "gerekce": "31 Mart kurali + notebook incelemesi ilk 20 icin kesin. Hedefin bolgesel toplaminin kendisi; havadan agir ihlal. Ulusal seriyi zaten kullaniyoruz ve ortak gun ekseninde R2 0.864'e ulasmis durumda -- marjinal kazanc kucuk, risk buyuk."
+    },
+    "yeni_dis_veri_kaynagi_eklemek": {
+      "hukum": "GENEL OLARAK ONERILMIYOR",
+      "gerekce": "12 dis kaynak zaten var. Notebook 2 Eylul 13:00'a yetisecek ve her kaynak icin '31 Mart 2026 itibariyla erisilebilirdi' beyani gerekiyor. Yeni kaynak = yeni beyan yuku + yeni risk, olculmemis kazanc."
+    }
+  },
+
+  "8_HUKUM": {
+    "en_degerli_uc_sey": [
+      "1. Public/private ayrimi RASTGELE ve trafo-bazli katmanli (discussion 737076). k1'in en buyuk acik belirsizligi kapandi; LB-cozulmus katsayilar private'a TASINIR; shake-up riski dusuk; iki final slotunun mevsim-hedge gerekcesi gecersiz.",
+      "2. Liderlik tablosu 16. siraya dustuk ve gercek finalist kesimi ILK 10 (discussion 738577). Gereken kazanc ilk10 icin 0.00305, ilk3 icin 0.00628.",
+      "3. Ilce mevsimselligi (sulama imzasi) OLCULDU, modelde YOK, ve test donemi tam o rampa. Tek en buyuk denenmemis modelleme kaldiraci."
+    ],
+    "hiyerarsik_uzlastirma_sorusuna_cevap": "HAYIR. Gorev bunu 'HIC DENENMEDI' diye one cikarmisti; dis kanit denenmemesi gerektigini soyluyor.",
+    "20_saatlik_pencerede_ONCELIK_SIRASI": [
+      "A. (30-60 dk) HARMAN TANISI: mevcut aile_onbellek/*.npy dosyalarindan uyeler arasi ARTIK KORELASYON matrisi + TOHUM-TOHUMA gurultu tabani. Kanit: Store Sales kabul testi 0.917 vs tohum tabani 0.972-0.979. Uyelerimiz gurultu tabanina yakinsa harman BOS demektir ve bu, sonraki tum kararlari yonlendirir. En yuksek bilgi/maliyet orani.",
+      "B. (30 dk) arazi_ortusu ilce_key eslesmesini duzelt, sulama korelasyonunu 18 degil 47 ilce ile TEKRAR OLC -- fikir 1'in kapisi. r duserse fikir 1 duser.",
+      "C. (ucuz) Fikir 6 (ofsetsiz hedef cesitliligi) -- ASHRAE'de ~0.002, en dusuk riskli hedef-kurgusu cesitliligi.",
+      "D. Fikir 1 (sulama etkilesimi) -- en buyuk beklenen kazanc, ama YAZ blogunda durust blok-disi dogrulanamaz.",
+      "E. (cok ucuz) Golden Week tarzi TATIL YENIDEN ETIKETLEME kontrolu (6b).",
+      "F. Fikir 2/3'un tam surumleri 20 saate SIGMAZ -- ancak kucultulmus sinyal aramasi yapilabilir."
+    ],
+    "TEORIK_KAPANIS": "Rossmann turetisi (6b) bize sunu soyluyor: RMSLE altinda log uzayindaki optimal tahmin kosullu ortalamadir ve kuresel bir carpan/kayma TEORIK OLARAK BEKLENMEZ. Bu, docs/80 §5'teki 'soguk skaler kayma negatif' ve 'p01 kalibrasyon 19/20 kayip' bulgularini ACIKLIYOR -- o yollar gurultu yuzunden degil, YAPISAL olarak kapali. Kalibrasyon/carpan ailesini tamamen birakip yapisal (oznitelik + harman cesitliligi) kalemlere yogunlasin.",
+    "DURUSTLUK": "Liderin 0.97795 ile 2.'den 0.016 onde olmasi, bizim bu listedeki hicbir fikrimizin kapatamayacagi bir fark. O fark buyuk olasilikla gerceklesmis dis veri veya bir sizintidan geliyor ve kural-uyumlu yoldan ulasilamaz. Gerceklikci hedef ILK 10; ilk 3 ancak docs/80 adayinin tasima orani yuksek cikarsa mumkun."
+  }
+}

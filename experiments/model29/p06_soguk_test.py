@@ -26,9 +26,11 @@ import pandas as pd
 
 KOK = r"c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
 BURA = os.path.dirname(os.path.abspath(__file__))
-CIKTI = (r"C:/Users/Cem/AppData/Local/Temp/claude/"
-         r"c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/"
-         r"e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad")
+CIKTI = (
+    r"C:/Users/Cem/AppData/Local/Temp/claude/"
+    r"c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/"
+    r"e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad"
+)
 sys.path.insert(0, BURA)
 sys.path.insert(0, os.path.join(KOK, "scripts"))
 
@@ -74,11 +76,16 @@ def main():
     np.save(os.path.join(CIKTI, "p06_test_delta_log.npy"), delta)
     np.save(os.path.join(CIKTI, "p06_test_soguk_maske.npy"), soguk)
     test[["tanim", "tarih"]].assign(delta=delta).to_parquet(
-        os.path.join(CIKTI, "p06_test_delta.parquet"), index=False)
+        os.path.join(CIKTI, "p06_test_delta.parquet"), index=False
+    )
 
     R = dict(
-        w_yeni=list(W_YENI), w_esit=list(W_ESIT), tohum=list(TOHUM), aile=list(AILE),
-        n_test=int(len(test)), n_soguk=int(soguk.sum()),
+        w_yeni=list(W_YENI),
+        w_esit=list(W_ESIT),
+        tohum=list(TOHUM),
+        aile=list(AILE),
+        n_test=int(len(test)),
+        n_soguk=int(soguk.sum()),
         aile_ort={a: round(float(A[:, i].mean()), 4) for i, a in enumerate(AILE)},
         delta_ort=round(float(d_soguk.mean()), 5),
         delta_std=round(float(d_soguk.std()), 5),

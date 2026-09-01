@@ -27,7 +27,9 @@ R["trafo_kaymasi_kaliciligi"] = dict(
 off = yaz.tanim.map(a).fillna(0.0).values
 s_, sw_ = skor(son, son.p.values + son.tanim.map(a).fillna(0.0).values)
 b0, _ = skor(son, son.p.values)
-R["ilk30_kayma_son92ye"] = dict(taban=round(b0, 5), duzeltilmis=round(s_, 5), kazanc=round(b0 - s_, 5))
+R["ilk30_kayma_son92ye"] = dict(
+    taban=round(b0, 5), duzeltilmis=round(s_, 5), kazanc=round(b0 - s_, 5)
+)
 
 # --- B. TASINABILIR mi: dis bloklarin trafo kaymasi yaz25'i duzeltir mi?
 for ad, bl in (("kis26", ["kis26"]), ("guz25", ["guz25"]), ("ikisi", ["guz25", "kis26"])):
@@ -65,4 +67,9 @@ R["ayristirma_sifirsiz"] = dict(
     gun_sabiti=round(float((gd2["size"] * gd2["mean"] ** 2).sum()) / tnz, 4),
 )
 print(json.dumps(R, indent=1, ensure_ascii=False))
-json.dump(R, open(os.path.join(BURA, "p06_sistematik.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+json.dump(
+    R,
+    open(os.path.join(BURA, "p06_sistematik.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
+)

@@ -1,4 +1,5 @@
 """p03: fark analizi nihai raporu."""
+
 import json
 import math
 import os
@@ -33,8 +34,14 @@ R["ozet"] = {
         "cikarildi -> kimlik-ezberi kanali kapali."
     ),
     "betikler": [
-        "p03_kesif.py", "p03_tezgah.py", "p03_taban.py", "p03_fikir.py",
-        "p03_dogrula.py", "p03_fikir2.py", "p03_nihai.py", "p03_rapor.py",
+        "p03_kesif.py",
+        "p03_tezgah.py",
+        "p03_taban.py",
+        "p03_fikir.py",
+        "p03_dogrula.py",
+        "p03_fikir2.py",
+        "p03_nihai.py",
+        "p03_rapor.py",
     ],
 }
 
@@ -86,18 +93,23 @@ R["2_veri_yapisi"] = {
 R["3_rmsle_hata_ayristirmasi"] = {
     "kaynak": "p03_taban.json (yaz25, l2 taban, RMSLE 1,05327)",
     "tuketim_0_satirlar": {
-        "satir_payi": 0.0542, "kare_hata_payi": 0.2692,
+        "satir_payi": 0.0542,
+        "kare_hata_payi": 0.2692,
         "ortalama_sapma_log": 0.8588,
         "yorum": "satirlarin %5,4'u, hatanin %26,9'u; sistematik olarak FAZLA tahmin",
     },
     "tuketim_10_alti": {"satir_payi": 0.0645, "kare_hata_payi": 0.2983},
     "ust_kuyruk_1e5_ustu": {
-        "satir_payi": 0.0027, "kare_hata_payi": 0.0487,
-        "ortalama_sapma_log": -2.6686, "yorum": "ciddi EKSIK tahmin",
+        "satir_payi": 0.0027,
+        "kare_hata_payi": 0.0487,
+        "ortalama_sapma_log": -2.6686,
+        "yorum": "ciddi EKSIK tahmin",
     },
     "soguk_vs_sicak": {
-        "soguk_rmsle": 2.1196, "sicak_rmsle": 0.9137,
-        "soguk_satir_payi_yaz25": 0.0750, "soguk_kare_hata_payi": 0.3039,
+        "soguk_rmsle": 2.1196,
+        "sicak_rmsle": 0.9137,
+        "soguk_satir_payi_yaz25": 0.0750,
+        "soguk_kare_hata_payi": 0.3039,
     },
 }
 
@@ -106,119 +118,126 @@ if nih:
     A = nih["kosular"]["A_tek_l1"]
     Bk = nih["kosular"]["B_iki_huber"]
     C = nih["kosular"]["C_iki_huber_kom"]
-    F.append({
-        "sira": 1,
-        "ad": "IKI ASAMALI AYRISTIRMA: P(tuketim>0) x E[log1p | tuketim>0]",
-        "bir_cumle": (
-            "Tek regresyon yerine bir ikili siniflandirici (sifir mi) ile YALNIZCA "
-            "pozitif satirlarda egitilmis bir seviye regresyonunun CARPIMI; cunku "
-            "RMSLE'nin optimal nokta tahmini kosullu ORTALAMA ve bu ortalama "
-            "P(y>0)*E[log1p|y>0] olarak birebir ayrisiyor."
-        ),
-        "yaz25_taban_l1_tek_asamali": A["ort"]["rmsle"],
-        "yaz25_rmsle": Bk["ort"]["rmsle"],
-        "yaz25_kazanc": Bk["kazanc_vs_A"]["yaz25"],
-        "test_bilesimine_agirlikli": {
-            "aciklama": ("sqrt(0,778*RMSLE_sicak^2 + 0,222*RMSLE_soguk^2), testin "
-                         "%22,2 soguk bilesimi"),
-            "taban": A["ort"]["test_agirlikli"],
-            "fikir": Bk["ort"]["test_agirlikli"],
-            "kazanc": Bk["kazanc_vs_A"]["test_agirlikli"],
-        },
-        "kararlilik": {
-            "tohumlar": [7, 17, 27],
-            "taban_hepsi": [q["rmsle"] for q in A["tohumlar"]],
-            "fikir_hepsi": [q["rmsle"] for q in Bk["tohumlar"]],
-            "taban_std": A["std"]["rmsle"], "fikir_std": Bk["std"]["rmsle"],
-        },
-        "varyantlar_arasi": (f2["amac_iki_asamali"] if f2 else None),
-        "tek_asamali_amac_karsilastirmasi": (f2["amac_tek_asamali"] if f2 else None),
-        "iki_bilesen_de_sart": (
-            "Yalnizca 'sifirsiz satirlarda egit' (carpansiz) 1,15708 -> l2 tabana "
-            "gore -0,110 KAYBETTIRIYOR. Yalnizca '(1-P0) ile carp' (l2 taban "
-            "uzerine) -0,0025 kaybettiriyor. Kazanc IKISININ CARPIMINDAN geliyor."
-        ),
-        "kazancin_kaynagi": (
-            "Kazancin cogu sifir kovasindan DEGIL, UST kuyruktan: toplam kare "
-            "hatanin (1e3,5e3] %4,2 + (5e3,1e5] %5,4 + >1e5 %1,8 kadari duzeliyor; "
-            "sifir kovasindan yalnizca %3,5. Yani sifirlarin ORTAK regresyonu "
-            "asagi cekmesi tum ust kuyrugu bozuyormus."
-        ),
-        "artik_duzeltmesi_tuzagi": (
-            "HAYIR. Blok disinda ogrenilen bir SABIT tasinmiyor; model YAPISI "
-            "degisiyor. Taban da fikir de ayni blok disi veriyle egitiliyor, "
-            "karsilastirma adil."
-        ),
-        "uygulanabilirlik": (
-            "m71/m30 hattina bir lgb ikili siniflandirici + pozitif alt kume "
-            "regresyonu eklenerek kurulur. Egitim maliyeti ~2x; tam test tahmini "
-            "dakikalar. Kapi denetimi etkilenmez -- carpim log-uzayinda negatif "
-            "uretmez."
-        ),
-    })
-    F.append({
-        "sira": 2,
-        "ad": "AMAC FONKSIYONU asama yapisiyla BIRLIKTE secilmeli",
-        "bir_cumle": (
-            "Tek asamali kurulumda log1p hedefi uzerinde l1 (0,99631) l2'yi "
-            "(1,04672) 0,050 doverken huber (1,08008) en kotusu; iki asamali "
-            "kurulumda sira TERSINE donuyor ve huber (0,96048) en iyisi oluyor."
-        ),
-        "yaz25_olculen": {
-            "tek_asamali": (f2["amac_tek_asamali"] if f2 else None),
-            "iki_asamali": (f2["amac_iki_asamali"] if f2 else None),
-        },
-        "yaz25_kazanc_iki_asamali_icinde_l2_den_huber_e": (
-            (f2["amac_iki_asamali"]["l2"] - f2["amac_iki_asamali"]["huber2"])
-            if f2 else None
-        ),
-        "yorum": (
-            "Uretim hatti (m71) zaten huber+l1 harmani kullaniyor, yani tek "
-            "asamalidaki dogru tarafta. Bu fikrin BAGIMSIZ kazanci kucuk; asil "
-            "degeri, 1. fikri kurarken YANLIS amaci secmemek."
-        ),
-        "artik_duzeltmesi_tuzagi": "HAYIR -- egitim amaci degisiyor, sabit tasinmiyor.",
-        "uygulanabilirlik": "Tek parametre; ek maliyet yok.",
-    })
-    F.append({
-        "sira": 3,
-        "ad": "AYNI ILCEDE idnum-KOMSU SEVIYESI (soguk trafo onceligi)",
-        "bir_cumle": (
-            "Her hedef trafo icin ayni ilcede idnum'a en yakin 8 komsunun gecmis "
-            "ortalama log seviyesi ozellik olarak ekleniyor; gecmisi olmayan soguk "
-            "trafolara (testte satirlarin %22,2'si) gercek bir on-bilgi veriyor."
-        ),
-        "yaz25_taban_l2": fikir["taban"],
-        "yaz25_rmsle_l2_uzerine": fikir["f4_idnum_komsu"]["rmsle"],
-        "yaz25_kazanc_l2_uzerine": fikir["f4_idnum_komsu"]["kazanc"],
-        "soguk_satirlarda": {
-            "once": fikir["f4_idnum_komsu"]["soguk_rmsle_once"],
-            "sonra": fikir["f4_idnum_komsu"]["soguk_rmsle_sonra"],
-        },
-        "AMA_1_FIKIRLE_ORTUSUYOR": {
-            "iki_asamali_huber_komsusuz": Bk["ort"]["rmsle"],
-            "iki_asamali_huber_komsulu": C["ort"]["rmsle"],
-            "ek_kazanc": Bk["ort"]["rmsle"] - C["ort"]["rmsle"],
-            "ek_kazanc_test_agirlikli": (
-                Bk["ort"]["test_agirlikli"] - C["ort"]["test_agirlikli"]
+    F.append(
+        {
+            "sira": 1,
+            "ad": "IKI ASAMALI AYRISTIRMA: P(tuketim>0) x E[log1p | tuketim>0]",
+            "bir_cumle": (
+                "Tek regresyon yerine bir ikili siniflandirici (sifir mi) ile YALNIZCA "
+                "pozitif satirlarda egitilmis bir seviye regresyonunun CARPIMI; cunku "
+                "RMSLE'nin optimal nokta tahmini kosullu ORTALAMA ve bu ortalama "
+                "P(y>0)*E[log1p|y>0] olarak birebir ayrisiyor."
             ),
-            "not": "Tek basina buyuk, 1. fikrin uzerine EK kazanci cok daha kucuk.",
-        },
-        "GERCEK_TESTE_TASINIR_MI": {
-            "sonuc": "EVET",
-            "kanit": dog["f4_kapsam"],
-            "not": (
-                "README'nin 'soguk cozulebilirlik TESTTE %0' uyarisi KIMLIK "
-                "ezberine dair; komsu-SEVIYESI ozelligi farkli ve testte kapsami "
-                "DAHA YUKSEK: yaz25 soguk satirlarin %66,0'inda, gercek testte "
-                "soguk satirlarin %77,7'sinde hesaplanabiliyor."
+            "yaz25_taban_l1_tek_asamali": A["ort"]["rmsle"],
+            "yaz25_rmsle": Bk["ort"]["rmsle"],
+            "yaz25_kazanc": Bk["kazanc_vs_A"]["yaz25"],
+            "test_bilesimine_agirlikli": {
+                "aciklama": (
+                    "sqrt(0,778*RMSLE_sicak^2 + 0,222*RMSLE_soguk^2), testin %22,2 soguk bilesimi"
+                ),
+                "taban": A["ort"]["test_agirlikli"],
+                "fikir": Bk["ort"]["test_agirlikli"],
+                "kazanc": Bk["kazanc_vs_A"]["test_agirlikli"],
+            },
+            "kararlilik": {
+                "tohumlar": [7, 17, 27],
+                "taban_hepsi": [q["rmsle"] for q in A["tohumlar"]],
+                "fikir_hepsi": [q["rmsle"] for q in Bk["tohumlar"]],
+                "taban_std": A["std"]["rmsle"],
+                "fikir_std": Bk["std"]["rmsle"],
+            },
+            "varyantlar_arasi": (f2["amac_iki_asamali"] if f2 else None),
+            "tek_asamali_amac_karsilastirmasi": (f2["amac_tek_asamali"] if f2 else None),
+            "iki_bilesen_de_sart": (
+                "Yalnizca 'sifirsiz satirlarda egit' (carpansiz) 1,15708 -> l2 tabana "
+                "gore -0,110 KAYBETTIRIYOR. Yalnizca '(1-P0) ile carp' (l2 taban "
+                "uzerine) -0,0025 kaybettiriyor. Kazanc IKISININ CARPIMINDAN geliyor."
             ),
-        },
-        "artik_duzeltmesi_tuzagi": "HAYIR -- yeni OZELLIK, blok disi sabit degil.",
-        "uygulanabilirlik": (
-            "p03_fikir_ortak.komsu_ozellik, ~15 sn; m30_ozellik.kur icine girer."
-        ),
-    })
+            "kazancin_kaynagi": (
+                "Kazancin cogu sifir kovasindan DEGIL, UST kuyruktan: toplam kare "
+                "hatanin (1e3,5e3] %4,2 + (5e3,1e5] %5,4 + >1e5 %1,8 kadari duzeliyor; "
+                "sifir kovasindan yalnizca %3,5. Yani sifirlarin ORTAK regresyonu "
+                "asagi cekmesi tum ust kuyrugu bozuyormus."
+            ),
+            "artik_duzeltmesi_tuzagi": (
+                "HAYIR. Blok disinda ogrenilen bir SABIT tasinmiyor; model YAPISI "
+                "degisiyor. Taban da fikir de ayni blok disi veriyle egitiliyor, "
+                "karsilastirma adil."
+            ),
+            "uygulanabilirlik": (
+                "m71/m30 hattina bir lgb ikili siniflandirici + pozitif alt kume "
+                "regresyonu eklenerek kurulur. Egitim maliyeti ~2x; tam test tahmini "
+                "dakikalar. Kapi denetimi etkilenmez -- carpim log-uzayinda negatif "
+                "uretmez."
+            ),
+        }
+    )
+    F.append(
+        {
+            "sira": 2,
+            "ad": "AMAC FONKSIYONU asama yapisiyla BIRLIKTE secilmeli",
+            "bir_cumle": (
+                "Tek asamali kurulumda log1p hedefi uzerinde l1 (0,99631) l2'yi "
+                "(1,04672) 0,050 doverken huber (1,08008) en kotusu; iki asamali "
+                "kurulumda sira TERSINE donuyor ve huber (0,96048) en iyisi oluyor."
+            ),
+            "yaz25_olculen": {
+                "tek_asamali": (f2["amac_tek_asamali"] if f2 else None),
+                "iki_asamali": (f2["amac_iki_asamali"] if f2 else None),
+            },
+            "yaz25_kazanc_iki_asamali_icinde_l2_den_huber_e": (
+                (f2["amac_iki_asamali"]["l2"] - f2["amac_iki_asamali"]["huber2"]) if f2 else None
+            ),
+            "yorum": (
+                "Uretim hatti (m71) zaten huber+l1 harmani kullaniyor, yani tek "
+                "asamalidaki dogru tarafta. Bu fikrin BAGIMSIZ kazanci kucuk; asil "
+                "degeri, 1. fikri kurarken YANLIS amaci secmemek."
+            ),
+            "artik_duzeltmesi_tuzagi": "HAYIR -- egitim amaci degisiyor, sabit tasinmiyor.",
+            "uygulanabilirlik": "Tek parametre; ek maliyet yok.",
+        }
+    )
+    F.append(
+        {
+            "sira": 3,
+            "ad": "AYNI ILCEDE idnum-KOMSU SEVIYESI (soguk trafo onceligi)",
+            "bir_cumle": (
+                "Her hedef trafo icin ayni ilcede idnum'a en yakin 8 komsunun gecmis "
+                "ortalama log seviyesi ozellik olarak ekleniyor; gecmisi olmayan soguk "
+                "trafolara (testte satirlarin %22,2'si) gercek bir on-bilgi veriyor."
+            ),
+            "yaz25_taban_l2": fikir["taban"],
+            "yaz25_rmsle_l2_uzerine": fikir["f4_idnum_komsu"]["rmsle"],
+            "yaz25_kazanc_l2_uzerine": fikir["f4_idnum_komsu"]["kazanc"],
+            "soguk_satirlarda": {
+                "once": fikir["f4_idnum_komsu"]["soguk_rmsle_once"],
+                "sonra": fikir["f4_idnum_komsu"]["soguk_rmsle_sonra"],
+            },
+            "AMA_1_FIKIRLE_ORTUSUYOR": {
+                "iki_asamali_huber_komsusuz": Bk["ort"]["rmsle"],
+                "iki_asamali_huber_komsulu": C["ort"]["rmsle"],
+                "ek_kazanc": Bk["ort"]["rmsle"] - C["ort"]["rmsle"],
+                "ek_kazanc_test_agirlikli": (
+                    Bk["ort"]["test_agirlikli"] - C["ort"]["test_agirlikli"]
+                ),
+                "not": "Tek basina buyuk, 1. fikrin uzerine EK kazanci cok daha kucuk.",
+            },
+            "GERCEK_TESTE_TASINIR_MI": {
+                "sonuc": "EVET",
+                "kanit": dog["f4_kapsam"],
+                "not": (
+                    "README'nin 'soguk cozulebilirlik TESTTE %0' uyarisi KIMLIK "
+                    "ezberine dair; komsu-SEVIYESI ozelligi farkli ve testte kapsami "
+                    "DAHA YUKSEK: yaz25 soguk satirlarin %66,0'inda, gercek testte "
+                    "soguk satirlarin %77,7'sinde hesaplanabiliyor."
+                ),
+            },
+            "artik_duzeltmesi_tuzagi": "HAYIR -- yeni OZELLIK, blok disi sabit degil.",
+            "uygulanabilirlik": (
+                "p03_fikir_ortak.komsu_ozellik, ~15 sn; m30_ozellik.kur icine girer."
+            ),
+        }
+    )
 R["4_UC_FIKIR"] = F
 
 R["5_olculup_ELENEN"] = {
@@ -243,7 +262,9 @@ R["6_UYARI"] = (
 )
 
 json.dump(
-    R, open(os.path.join(B, "p03_fark_analizi.json"), "w", encoding="utf-8"),
-    indent=1, ensure_ascii=False,
+    R,
+    open(os.path.join(B, "p03_fark_analizi.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
 )
 print("yazildi")

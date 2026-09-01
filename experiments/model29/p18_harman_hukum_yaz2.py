@@ -19,17 +19,52 @@ R["3b_CELISKININ_YAZILI_KANITI"] = {
 
 R["3c_BLOK_SKORLARI_HAM"] = {
     "aciklama": "SON ISLEM ONCESI, 3 tohum (1000-1002) ortalamasi, log uzayinda kirpma (max(p,0)) ile. SOGUK = soguk_tahmin_*.npz, SICAK = aile_onbellek/*_uretim.npy (sinir_agi dahil).",
-    "yaz25": {"soguk_URETIM_cat": 1.57454, "soguk_TEZGAH_esit": 1.43487, "soguk_lgbm": 1.40519,
-              "sicak_URETIM_3_1_1_14": 0.79655, "sicak_TEZGAH_esit": 0.80304},
-    "guz25": {"soguk_URETIM_cat": 1.69729, "soguk_TEZGAH_esit": 1.60782, "soguk_lgbm": 1.60749,
-              "sicak_URETIM_3_1_1_14": 0.80548, "sicak_TEZGAH_esit": 0.80473},
-    "kis26": {"soguk_URETIM_cat": 1.83864, "soguk_TEZGAH_esit": 1.90615, "soguk_lgbm": 2.00527,
-              "sicak_URETIM_3_1_1_14": 0.74322, "sicak_TEZGAH_esit": 0.73831},
+    "yaz25": {
+        "soguk_URETIM_cat": 1.57454,
+        "soguk_TEZGAH_esit": 1.43487,
+        "soguk_lgbm": 1.40519,
+        "sicak_URETIM_3_1_1_14": 0.79655,
+        "sicak_TEZGAH_esit": 0.80304,
+    },
+    "guz25": {
+        "soguk_URETIM_cat": 1.69729,
+        "soguk_TEZGAH_esit": 1.60782,
+        "soguk_lgbm": 1.60749,
+        "sicak_URETIM_3_1_1_14": 0.80548,
+        "sicak_TEZGAH_esit": 0.80473,
+    },
+    "kis26": {
+        "soguk_URETIM_cat": 1.83864,
+        "soguk_TEZGAH_esit": 1.90615,
+        "soguk_lgbm": 2.00527,
+        "sicak_URETIM_3_1_1_14": 0.74322,
+        "sicak_TEZGAH_esit": 0.73831,
+    },
     "test_bilesimi_sqrt(0.2216*soguk+0.7784*sicak)": {
-        "URETIM (cat soguk + 3/1/1/1.4 sicak)": {"yaz25": 1.02141, "guz25": 1.06930, "kis26": 1.08587, "ORT": 1.05886},
-        "TEZGAH (esit + esit)": {"yaz25": 0.97888, "guz25": 1.03776, "kis26": 1.10881, "ORT": 1.04182},
-        "URETIM sicak + ESIT soguk": {"yaz25": 0.97475, "guz25": 1.03821, "kis26": 1.11137, "ORT": 1.04144},
-        "URETIM sicak + LGBM soguk": {"yaz25": 0.96512, "guz25": 1.03810, "kis26": 1.14937, "ORT": 1.05086},
+        "URETIM (cat soguk + 3/1/1/1.4 sicak)": {
+            "yaz25": 1.02141,
+            "guz25": 1.06930,
+            "kis26": 1.08587,
+            "ORT": 1.05886,
+        },
+        "TEZGAH (esit + esit)": {
+            "yaz25": 0.97888,
+            "guz25": 1.03776,
+            "kis26": 1.10881,
+            "ORT": 1.04182,
+        },
+        "URETIM sicak + ESIT soguk": {
+            "yaz25": 0.97475,
+            "guz25": 1.03821,
+            "kis26": 1.11137,
+            "ORT": 1.04144,
+        },
+        "URETIM sicak + LGBM soguk": {
+            "yaz25": 0.96512,
+            "guz25": 1.03810,
+            "kis26": 1.14937,
+            "ORT": 1.05086,
+        },
     },
     "OLCEK": "Tezgah ile uretim arasindaki bilesim farki ORT 0.017. Yani CV tezgahi, gonderdigimizden ~0.017 DAHA IYI bir nesneyi olcuyor. Bu, tartisilan huber kazancindan (0.0126) BUYUK.",
 }

@@ -1,6 +1,7 @@
 """p02: SOGUK (gecmissiz) trafolarda hangi onceligin gercekten bilgi tasidigi.
 Her onceligi EN IYI sabit kaymayla duzelterek olcuyorum (seviye yanliligini ayirmak icin).
 yaz25 hedefi yalnizca OLCUM icin, hicbir seyi uydurmak icin kullanilmiyor."""
+
 import numpy as np
 import pandas as pd
 
@@ -31,7 +32,8 @@ def olc(ad, v):
     v = pd.Series(np.asarray(v, dtype=float), index=s.index)
     ok = v.notna()
     if ok.sum() < 100:
-        print(f"{ad:26s} kapsam cok dusuk ({ok.sum()})"); return
+        print(f"{ad:26s} kapsam cok dusuk ({ok.sum()})")
+        return
     r = s.y[ok] - v[ok]
     kay = r.mean()
     rm = float(np.sqrt(((r - kay) ** 2).mean()))
@@ -42,17 +44,18 @@ def olc(ad, v):
 
 
 print("\n-- referans --")
-print(f"{'en iyi tek sabit':26s} RMSE={float(np.sqrt(((s.y-s.y.mean())**2).mean())):.4f}")
-print(f"{'ORACLE trafo ortalamasi':26s} "
-      f"RMSE={float(np.sqrt(((s.y-s.groupby(s.tanim).y.transform('mean'))**2).mean())):.4f}")
+print(f"{'en iyi tek sabit':26s} RMSE={float(np.sqrt(((s.y - s.y.mean()) ** 2).mean())):.4f}")
+print(
+    f"{'ORACLE trafo ortalamasi':26s} "
+    f"RMSE={float(np.sqrt(((s.y - s.groupby(s.tanim).y.transform('mean')) ** 2).mean())):.4f}"
+)
 print("\n-- oncelikler (gecmisten) --")
 olc("guc (log, dogrusal)", np.nan)  # yer tutucu
 olc("guc kovasi ort", s.gk.map(hm.groupby("gk").ty.mean()))
 olc("guc (tam deger) ort", s.guc.map(hm.groupby("guc").ty.mean()))
 olc("ilce ort", s.ilce.map(hm.groupby("ilce").ty.mean()))
 ix = pd.MultiIndex.from_arrays([s.ilce, s.gk])
-olc("ilce x guc kovasi",
-    hm.groupby(["ilce", "gk"]).ty.mean().reindex(ix).to_numpy())
+olc("ilce x guc kovasi", hm.groupby(["ilce", "gk"]).ty.mean().reindex(ix).to_numpy())
 for n in (2, 3, 4, 5, 6, 7):
     pr = ty.groupby(ty.index.str[:n]).mean()
     olc(f"kimlik onek {n}", s.tanim.str[:n].map(pr))

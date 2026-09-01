@@ -36,9 +36,14 @@ def main():
     S = {b: blok(b)[lambda x: x.soguk_mu == 1] for b in ("yaz25", "guz25", "kis26")}
     for b, d in S.items():
         m, a, k = fit(d)
-        R[b] = dict(n=int(len(d)), p_ort=round(m, 4), sabit=round(a, 4), egim=round(k, 4),
-                    taban=round(rmsle(d.r), 5),
-                    kahin_afin=round(rmsle(d.y.values - (a + k * (d.p.values - m))), 5))
+        R[b] = dict(
+            n=int(len(d)),
+            p_ort=round(m, 4),
+            sabit=round(a, 4),
+            egim=round(k, 4),
+            taban=round(rmsle(d.r), 5),
+            kahin_afin=round(rmsle(d.y.values - (a + k * (d.p.values - m))), 5),
+        )
         print(b, R[b], flush=True)
 
     dis = pd.concat([S["guz25"], S["kis26"]])
@@ -51,7 +56,8 @@ def main():
     my = float(yz.p.values.mean())
     for kk in (k, 1.05, 1.1, 1.15):
         uy[f"yalniz_egim_b={round(kk, 3)}"] = round(
-            rmsle(yz.y.values - (my + kk * (yz.p.values - my))), 5)
+            rmsle(yz.y.values - (my + kk * (yz.p.values - my))), 5
+        )
     uy["taban"] = round(rmsle(yz.r), 5)
     R["yaz25_uygulama"] = uy
     print(json.dumps(R["yaz25_uygulama"], indent=1))

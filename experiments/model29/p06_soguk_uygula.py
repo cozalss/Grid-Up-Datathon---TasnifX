@@ -18,9 +18,11 @@ import pandas as pd
 
 KOK = r"c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
 BURA = os.path.dirname(os.path.abspath(__file__))
-CIKTI = (r"C:/Users/Cem/AppData/Local/Temp/claude/"
-         r"c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/"
-         r"e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad")
+CIKTI = (
+    r"C:/Users/Cem/AppData/Local/Temp/claude/"
+    r"c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/"
+    r"e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad"
+)
 TABAN = "tuketim_m6_ikiyon.csv"
 
 
@@ -41,7 +43,8 @@ def main():
     np.save(os.path.join(CIKTI, "p06_test_tahmin_log1p.npy"), p1)
     np.save(os.path.join(CIKTI, "p06_test_tahmin_tuketim.npy"), y1)
     pd.DataFrame({"id": te.id.values, "tuketim": y1}).to_csv(
-        os.path.join(CIKTI, "p06_test_tahmin.csv"), index=False)
+        os.path.join(CIKTI, "p06_test_tahmin.csv"), index=False
+    )
 
     R = dict(
         taban_dosya=TABAN,

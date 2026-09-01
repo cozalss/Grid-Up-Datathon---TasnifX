@@ -80,10 +80,7 @@ def main():
     p1_var = set(egitim.loc[(tarih >= "2026-01-01") & (tarih <= "2026-03-31"), "tanim"].unique())
     p2_var = set(egitim.loc[(tarih >= "2025-10-01") & (tarih <= "2025-12-31"), "tanim"].unique())
     trafo_guc = egitim.groupby("tanim", observed=True)["guc"].first()
-    aday = [
-        t for t in trafo_guc.index
-        if t not in parti_hepsi and t in p1_var and t in p2_var
-    ]
+    aday = [t for t in trafo_guc.index if t not in parti_hepsi and t in p1_var and t in p2_var]
     aday_guc = trafo_guc.loc[aday]
     kopru_guc = trafo_guc.loc[[t for t in kopru if t in trafo_guc.index]]
     rng = np.random.default_rng(42)
@@ -107,8 +104,10 @@ def main():
         deger.loc[:, tk] = np.nan
         deger.loc[:, "soguk_mu"] = 1
         n_kopru = deger["tanim"].isin(kopru).sum()
-        log(f"{pad}: egitim {len(parca):,} satir  deger {len(deger):,} "
-            f"(kopru {n_kopru:,} / kontrol {len(deger) - n_kopru:,})")
+        log(
+            f"{pad}: egitim {len(parca):,} satir  deger {len(deger):,} "
+            f"(kopru {n_kopru:,} / kontrol {len(deger) - n_kopru:,})"
+        )
 
         for tohum in ar.tohum:
             cikti = os.path.join(SCRATCH, f"p23_kopru_{pad}_{tohum}.parquet")

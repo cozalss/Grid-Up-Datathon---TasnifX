@@ -109,7 +109,7 @@ def capraz(df, kopru_m, n_boot=500, tohum=7):
         q = np.percentile(dags, [2.5, 97.5])
         sonuc[ad] = {
             "kayma": round(kayma, 4),
-            "olcum_trafo": len(olc_kum & set(df.loc[kopru_m, 'tanim'])),
+            "olcum_trafo": len(olc_kum & set(df.loc[kopru_m, "tanim"])),
             "olcum_satir": len(olc),
             "dMSE": round(dmse, 4),
             "dMSE_GA95": [round(float(q[0]), 4), round(float(q[1]), 4)],
@@ -183,10 +183,12 @@ def pencere_analiz(pad, tohumlar, kiymik_kume):
 
 def main():
     # kiymik kumesi: train ilk tarihi >= 2026-03-01 olan kopru trafolari
-    tr = pd.read_csv(os.path.join(KOK, "data/raw/train.csv"),
-                     dtype={"tanim": str}, usecols=["tanim", "tarih"])
-    test = pd.read_csv(os.path.join(KOK, "data/raw/test.csv"),
-                       dtype={"tanim": str}, usecols=["tanim"])
+    tr = pd.read_csv(
+        os.path.join(KOK, "data/raw/train.csv"), dtype={"tanim": str}, usecols=["tanim", "tarih"]
+    )
+    test = pd.read_csv(
+        os.path.join(KOK, "data/raw/test.csv"), dtype={"tanim": str}, usecols=["tanim"]
+    )
     mk = np.load(os.path.join(PK, "aday_csv/p23_parti_kopru_maske.npy"))
     kopru = set(test["tanim"][mk].unique())
     ilk = tr[tr["tanim"].isin(kopru)].groupby("tanim")["tarih"].min()

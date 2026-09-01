@@ -49,7 +49,9 @@ def main():
 
     # --- 1. SIFIRLAR
     s["sinif"] = np.where(
-        s.tuketim <= 0, "sifir", np.where(s.tuketim < 10, "0-10", np.where(s.tuketim < 100, "10-100", "100+"))
+        s.tuketim <= 0,
+        "sifir",
+        np.where(s.tuketim < 10, "0-10", np.where(s.tuketim < 100, "10-100", "100+")),
     )
     R["sifir_kesiti"] = kesit(s, "sinif")
 
@@ -73,12 +75,22 @@ def main():
     R["tavanlar_sizintili"] = tav
 
     # --- 3. TRAFO SEVIYE SAPMASI: neye bagli?
-    tb = s.groupby("tanim", observed=True).agg(
-        b=("r", "mean"), n=("r", "size"), guc=("guc", "first"),
-        capa=("capa", "first"), pm=("p", "mean"), ym=("y", "mean"),
-        ilk=("p_ilk_ofset", "first"), gun=("p_gun_sayisi", "first"),
-        yay=("p_yayilma", "first"), dol=("p_doluluk", "first"),
-    ).dropna()
+    tb = (
+        s.groupby("tanim", observed=True)
+        .agg(
+            b=("r", "mean"),
+            n=("r", "size"),
+            guc=("guc", "first"),
+            capa=("capa", "first"),
+            pm=("p", "mean"),
+            ym=("y", "mean"),
+            ilk=("p_ilk_ofset", "first"),
+            gun=("p_gun_sayisi", "first"),
+            yay=("p_yayilma", "first"),
+            dol=("p_doluluk", "first"),
+        )
+        .dropna()
+    )
     R["trafo_sapmasi"] = dict(
         n_trafo=int(len(tb)),
         std_b=round(float(tb.b.std()), 4),
@@ -91,7 +103,11 @@ def main():
 
     # --- 4. Uretim modelinin zaten sahip oldugu grup ozellikleri ne kadar isliyor?
     E = pd.read_parquet(os.path.join(DN, "egitim.parquet"))
-    kol = [c for c in ("g_ilce_log_ort", "g_ilce_kova_ort", "g_kova_log_ort", "tanim_num") if c in E.columns]
+    kol = [
+        c
+        for c in ("g_ilce_log_ort", "g_ilce_kova_ort", "g_kova_log_ort", "tanim_num")
+        if c in E.columns
+    ]
     sv = E.loc[s.index, kol]
     R["mevcut_grup_ozellikleri"] = {
         c: dict(

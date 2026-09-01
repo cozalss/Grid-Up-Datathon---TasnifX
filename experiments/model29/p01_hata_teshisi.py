@@ -114,7 +114,9 @@ def main():
 
     # --- 6. SIFIR / COK DUSUK TUKETIM
     bf["sifir_sinif"] = np.where(
-        bf.tuketim <= 0, "sifir", np.where(bf.tuketim < 1, "0-1", np.where(bf.tuketim < 10, "1-10", "10+"))
+        bf.tuketim <= 0,
+        "sifir",
+        np.where(bf.tuketim < 1, "0-1", np.where(bf.tuketim < 10, "1-10", "10+")),
     )
     R["sifir"] = kesit(bf, "sifir_sinif")
 
@@ -122,7 +124,9 @@ def main():
     R["yas"] = kova(bf, "yas", [-1, 30, 90, 180, 365, 500], "yas_gun")
 
     # --- 8. TRAFO BAZINDA YOGUNLASMA
-    g = bf.groupby("tanim", observed=True).r.agg(n="size", ss=lambda x: float((x**2).sum()), ort="mean")
+    g = bf.groupby("tanim", observed=True).r.agg(
+        n="size", ss=lambda x: float((x**2).sum()), ort="mean"
+    )
     g = g.sort_values("ss", ascending=False)
     tk = g.ss.sum()
     cum = g.ss.cumsum() / tk

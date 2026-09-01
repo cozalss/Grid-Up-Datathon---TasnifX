@@ -1,0 +1,116 @@
+{
+ "ARTIK_RIDGE": {
+  "dosya": "C:/Users/Cem/AppData/Local/Temp/claude/c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/d8509f77-6f9b-4e1d-b980-62e299ed4fc5/scratchpad\\yon_ARTIK_RIDGE.npy",
+  "n": 714688,
+  "rms": 0.5492763652273766,
+  "dik_norm": 0.2516626062927276,
+  "dik_pay": 0.4581711907239085,
+  "span_ici_varyans": 0.7900791599906358,
+  "NaN": 0,
+  "inf": 0,
+  "ham_kappa+0.15": {
+   "log_min": -0.11963460042064615,
+   "expm1_min": -0.11275542371172075,
+   "negatif_satir": 298,
+   "negatif_toplam_kwh": -9.16213178488708,
+   "NaN": 0
+  },
+  "ham_kappa-0.15": {
+   "log_min": -0.4269670088043236,
+   "expm1_min": -0.3475149218642955,
+   "negatif_satir": 728,
+   "negatif_toplam_kwh": -73.24588436463304,
+   "NaN": 0
+  },
+  "dik_kappa+0.15": {
+   "log_min": -0.9559215925528974,
+   "expm1_min": -0.6155423320871011,
+   "negatif_satir": 2439,
+   "negatif_toplam_kwh": -223.23831544226027,
+   "NaN": 0
+  },
+  "dik_kappa-0.15": {
+   "log_min": -0.6633928503808981,
+   "expm1_min": -0.48489929326701703,
+   "negatif_satir": 963,
+   "negatif_toplam_kwh": -157.42217093789884,
+   "NaN": 0
+  }
+ },
+ "ARTIK_LGBM": {
+  "dosya": "C:/Users/Cem/AppData/Local/Temp/claude/c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/d8509f77-6f9b-4e1d-b980-62e299ed4fc5/scratchpad\\yon_ARTIK_LGBM.npy",
+  "n": 714688,
+  "rms": 0.6516448362173431,
+  "dik_norm": 0.4474330305360205,
+  "dik_pay": 0.6866210022215048,
+  "span_ici_varyans": 0.5285515993083363,
+  "NaN": 0,
+  "inf": 0,
+  "ham_kappa+0.15": {
+   "log_min": -0.1878827975158077,
+   "expm1_min": -0.17128817137387028,
+   "negatif_satir": 88,
+   "negatif_toplam_kwh": -1.7717373048007197,
+   "NaN": 0
+  },
+  "ham_kappa-0.15": {
+   "log_min": -0.5129354377243026,
+   "expm1_min": -0.40126455391915505,
+   "negatif_satir": 1153,
+   "negatif_toplam_kwh": -87.75163069175649,
+   "NaN": 0
+  },
+  "dik_kappa+0.15": {
+   "log_min": -0.6710844436041364,
+   "expm1_min": -0.48884604052732483,
+   "negatif_satir": 2726,
+   "negatif_toplam_kwh": -168.91575106562783,
+   "NaN": 0
+  },
+  "dik_kappa-0.15": {
+   "log_min": -0.5921073127818448,
+   "expm1_min": -0.4468396262828566,
+   "negatif_satir": 700,
+   "negatif_toplam_kwh": -96.50708131610395,
+   "NaN": 0
+  }
+ },
+ "ARTIK_LGBM_MERK": {
+  "dosya": "C:/Users/Cem/AppData/Local/Temp/claude/c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/d8509f77-6f9b-4e1d-b980-62e299ed4fc5/scratchpad\\yon_ARTIK_LGBM_MERK.npy",
+  "n": 714688,
+  "rms": 0.6362931790352755,
+  "dik_norm": 0.4918290650007012,
+  "dik_pay": 0.7729598260763922,
+  "span_ici_varyans": 0.40253310727195346,
+  "NaN": 0,
+  "inf": 0,
+  "ham_kappa+0.15": {
+   "log_min": -1.6062015058786434,
+   "expm1_min": -0.7993516701252819,
+   "negatif_satir": 7445,
+   "negatif_toplam_kwh": -2509.7008123557744,
+   "NaN": 0
+  },
+  "ham_kappa-0.15": {
+   "log_min": 0.025608391938869532,
+   "expm1_min": 0.025939103772499198,
+   "negatif_satir": 0,
+   "negatif_toplam_kwh": 0.0,
+   "NaN": 0
+  },
+  "dik_kappa+0.15": {
+   "log_min": -2.0518392630413875,
+   "expm1_min": -0.8715016561480239,
+   "negatif_satir": 4030,
+   "negatif_toplam_kwh": -2135.4914029541033,
+   "NaN": 0
+  },
+  "dik_kappa-0.15": {
+   "log_min": -1.0018503581471496,
+   "expm1_min": -0.6328006381604925,
+   "negatif_satir": 3907,
+   "negatif_toplam_kwh": -289.78451443532447,
+   "NaN": 0
+  }
+ }
+}

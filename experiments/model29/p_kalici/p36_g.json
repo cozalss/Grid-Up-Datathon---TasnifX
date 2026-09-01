@@ -1,0 +1,278 @@
+{
+ "01_tavan": [
+  {
+   "blok": "yaz25",
+   "esik": 0.1,
+   "kesinlik": 0.8257,
+   "yakalanan_kutle": 0.05294,
+   "kutle_orani": 0.1183,
+   "kappa": 0.54128,
+   "rho_DP_bileseni": 0.09781,
+   "rho_YP_bileseni": -0.05291,
+   "rho_net": 0.04489,
+   "rho_mukemmel_kesinlik": 0.23009
+  },
+  {
+   "blok": "yaz25",
+   "esik": 0.2,
+   "kesinlik": 0.8587,
+   "yakalanan_kutle": 0.03291,
+   "kutle_orani": 0.0735,
+   "kappa": 0.44994,
+   "rho_DP_bileseni": 0.07313,
+   "rho_YP_bileseni": -0.03805,
+   "rho_net": 0.03509,
+   "rho_mukemmel_kesinlik": 0.1814
+  },
+  {
+   "blok": "yaz25",
+   "esik": 0.3,
+   "kesinlik": 0.8999,
+   "yakalanan_kutle": 0.02796,
+   "kutle_orani": 0.0625,
+   "kappa": 0.31184,
+   "rho_DP_bileseni": 0.08966,
+   "rho_YP_bileseni": -0.06972,
+   "rho_net": 0.01994,
+   "rho_mukemmel_kesinlik": 0.16721
+  },
+  {
+   "blok": "yaz25",
+   "esik": 0.5,
+   "kesinlik": 0.9099,
+   "yakalanan_kutle": 0.0208,
+   "kutle_orani": 0.0465,
+   "kappa": 0.26951,
+   "rho_DP_bileseni": 0.07718,
+   "rho_YP_bileseni": -0.07669,
+   "rho_net": 0.00048,
+   "rho_mukemmel_kesinlik": 0.14422
+  },
+  {
+   "blok": "yaz25",
+   "esik": 0.7,
+   "kesinlik": 0.9415,
+   "yakalanan_kutle": 0.01079,
+   "kutle_orani": 0.0241,
+   "kappa": 0.11149,
+   "rho_DP_bileseni": 0.09674,
+   "rho_YP_bileseni": -0.0899,
+   "rho_net": 0.00684,
+   "rho_mukemmel_kesinlik": 0.10386
+  },
+  {
+   "blok": "yaz25",
+   "esik": 0.9,
+   "kesinlik": 0.9471,
+   "yakalanan_kutle": 0.00701,
+   "kutle_orani": 0.0157,
+   "kappa": 0.09195,
+   "rho_DP_bileseni": 0.0762,
+   "rho_YP_bileseni": -0.10598,
+   "rho_net": -0.02978,
+   "rho_mukemmel_kesinlik": 0.0837
+  },
+  {
+   "blok": "guz25",
+   "esik": 0.1,
+   "kesinlik": 0.5441,
+   "yakalanan_kutle": 0.07409,
+   "kutle_orani": 0.131,
+   "kappa": 0.69609,
+   "rho_DP_bileseni": 0.10644,
+   "rho_YP_bileseni": -0.10052,
+   "rho_net": 0.00591,
+   "rho_mukemmel_kesinlik": 0.2722
+  },
+  {
+   "blok": "guz25",
+   "esik": 0.2,
+   "kesinlik": 0.6439,
+   "yakalanan_kutle": 0.04356,
+   "kutle_orani": 0.077,
+   "kappa": 0.49425,
+   "rho_DP_bileseni": 0.08814,
+   "rho_YP_bileseni": -0.08486,
+   "rho_net": 0.00328,
+   "rho_mukemmel_kesinlik": 0.20871
+  },
+  {
+   "blok": "guz25",
+   "esik": 0.3,
+   "kesinlik": 0.7135,
+   "yakalanan_kutle": 0.02348,
+   "kutle_orani": 0.0415,
+   "kappa": 0.37459,
+   "rho_DP_bileseni": 0.06268,
+   "rho_YP_bileseni": -0.07778,
+   "rho_net": -0.01509,
+   "rho_mukemmel_kesinlik": 0.15323
+  },
+  {
+   "blok": "guz25",
+   "esik": 0.5,
+   "kesinlik": 0.781,
+   "yakalanan_kutle": 0.01975,
+   "kutle_orani": 0.0349,
+   "kappa": 0.28977,
+   "rho_DP_bileseni": 0.06816,
+   "rho_YP_bileseni": -0.08133,
+   "rho_net": -0.01317,
+   "rho_mukemmel_kesinlik": 0.14054
+  },
+  {
+   "blok": "guz25",
+   "esik": 0.7,
+   "kesinlik": 0.8342,
+   "yakalanan_kutle": 0.00862,
+   "kutle_orani": 0.0152,
+   "kappa": 0.20208,
+   "rho_DP_bileseni": 0.04264,
+   "rho_YP_bileseni": -0.0685,
+   "rho_net": -0.02586,
+   "rho_mukemmel_kesinlik": 0.09282
+  },
+  {
+   "blok": "guz25",
+   "esik": 0.9,
+   "kesinlik": 0.9083,
+   "yakalanan_kutle": 0.00491,
+   "kutle_orani": 0.0087,
+   "kappa": 0.08446,
+   "rho_DP_bileseni": 0.05808,
+   "rho_YP_bileseni": -0.0589,
+   "rho_net": -0.00082,
+   "rho_mukemmel_kesinlik": 0.07004
+  },
+  {
+   "blok": "kis26",
+   "esik": 0.1,
+   "kesinlik": 0.7463,
+   "yakalanan_kutle": 0.04275,
+   "kutle_orani": 0.0686,
+   "kappa": 0.60964,
+   "rho_DP_bileseni": 0.07012,
+   "rho_YP_bileseni": -0.0646,
+   "rho_net": 0.00552,
+   "rho_mukemmel_kesinlik": 0.20676
+  },
+  {
+   "blok": "kis26",
+   "esik": 0.2,
+   "kesinlik": 0.8282,
+   "yakalanan_kutle": 0.02438,
+   "kutle_orani": 0.0392,
+   "kappa": 0.4055,
+   "rho_DP_bileseni": 0.06013,
+   "rho_YP_bileseni": -0.0599,
+   "rho_net": 0.00023,
+   "rho_mukemmel_kesinlik": 0.15614
+  },
+  {
+   "blok": "kis26",
+   "esik": 0.3,
+   "kesinlik": 0.8651,
+   "yakalanan_kutle": 0.02193,
+   "kutle_orani": 0.0352,
+   "kappa": 0.34004,
+   "rho_DP_bileseni": 0.0645,
+   "rho_YP_bileseni": -0.04232,
+   "rho_net": 0.02218,
+   "rho_mukemmel_kesinlik": 0.1481
+  },
+  {
+   "blok": "kis26",
+   "esik": 0.5,
+   "kesinlik": 0.9304,
+   "yakalanan_kutle": 0.01722,
+   "kutle_orani": 0.0276,
+   "kappa": 0.20401,
+   "rho_DP_bileseni": 0.0844,
+   "rho_YP_bileseni": -0.04654,
+   "rho_net": 0.03786,
+   "rho_mukemmel_kesinlik": 0.13122
+  },
+  {
+   "blok": "kis26",
+   "esik": 0.7,
+   "kesinlik": 0.9718,
+   "yakalanan_kutle": 0.01236,
+   "kutle_orani": 0.0198,
+   "kappa": 0.1218,
+   "rho_DP_bileseni": 0.10147,
+   "rho_YP_bileseni": -0.0083,
+   "rho_net": 0.09317,
+   "rho_mukemmel_kesinlik": 0.11117
+  },
+  {
+   "blok": "kis26",
+   "esik": 0.9,
+   "kesinlik": 0.9881,
+   "yakalanan_kutle": 0.0054,
+   "kutle_orani": 0.0087,
+   "kappa": 0.07465,
+   "rho_DP_bileseni": 0.0723,
+   "rho_YP_bileseni": -0.00025,
+   "rho_net": 0.07205,
+   "rho_mukemmel_kesinlik": 0.07347
+  }
+ ],
+ "02_durust": [
+  {
+   "hedef": "yaz25",
+   "olcut": "ortalama",
+   "secilen": "c_q_p*1[q>0.9]",
+   "disarda": 0.03562,
+   "hedefte_rho": -0.02978,
+   "hedefte_se": 0.38965
+  },
+  {
+   "hedef": "yaz25",
+   "olcut": "minimaks",
+   "secilen": "c_q_p*1[q>0.2]",
+   "disarda": 0.00023,
+   "hedefte_rho": 0.03509,
+   "hedefte_se": 0.0701
+  },
+  {
+   "hedef": "guz25",
+   "olcut": "ortalama",
+   "secilen": "q>0.7_p>0.0_tam_sifirla",
+   "disarda": 0.06289,
+   "hedefte_rho": -0.04488,
+   "hedefte_se": 0.02541
+  },
+  {
+   "hedef": "guz25",
+   "olcut": "minimaks",
+   "secilen": "q_p*q",
+   "disarda": 0.0453,
+   "hedefte_rho": -0.0513,
+   "hedefte_se": 0.0302
+  },
+  {
+   "hedef": "kis26",
+   "olcut": "ortalama",
+   "secilen": "cep_K1_p>4.0_tam_sifirla",
+   "disarda": 0.0482,
+   "hedefte_rho": -0.08278,
+   "hedefte_se": 0.04153
+  },
+  {
+   "hedef": "kis26",
+   "olcut": "minimaks",
+   "secilen": "cep_K1_p>4.0_tam_sifirla",
+   "disarda": 0.04307,
+   "hedefte_rho": -0.08278,
+   "hedefte_se": 0.04153
+  }
+ ],
+ "03_yaz25_durust_rho": [
+  -0.02978,
+  0.03509
+ ],
+ "04_gerek": {
+  "gereken_rho": 0.12298,
+  "kabul_rho": 0.11436
+ }
+}

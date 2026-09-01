@@ -28,6 +28,7 @@ def log(*a):
 
 tr, te = T.ortam()
 
+
 # ---------- A. F4 kapsami: yaz25 vs GERCEK TEST ----------
 def kapsam(gec, hed):
     hm = hed.drop_duplicates("tanim")[["tanim", "ilce", "idnum", "guc"]]
@@ -50,8 +51,10 @@ st = te[te.tanim.isin(t_soguk)]
 kap_t, _ = kapsam(t_gec_tam, te)
 kap_ts, _ = kapsam(t_gec_tam, st)
 R["f4_kapsam"] = {
-    "yaz25_tum_satir": kap_d, "yaz25_soguk_satir": kap_ds,
-    "test_tum_satir": kap_t, "test_soguk_satir": kap_ts,
+    "yaz25_tum_satir": kap_d,
+    "yaz25_soguk_satir": kap_ds,
+    "test_tum_satir": kap_t,
+    "test_soguk_satir": kap_ts,
     "yaz25_soguk_satir_orani": float(d_hed.tanim.isin(d_soguk).mean()),
     "test_soguk_satir_orani": float(te.tanim.isin(t_soguk).mean()),
 }
@@ -60,9 +63,19 @@ log("F4 kapsam:", json.dumps(R["f4_kapsam"], ensure_ascii=False))
 # ---------- B. F1'in ayristirmasi ve tohum saglamligi ----------
 Xe, ye, Xd, yd, hd, _ = T.veri(tr)
 soguk_d = hd.tanim.isin(d_soguk).to_numpy()
-PK = dict(objective="l2", metric="l2", learning_rate=0.04, num_leaves=63,
-          min_data_in_leaf=200, feature_fraction=0.8, bagging_fraction=0.8,
-          bagging_freq=1, lambda_l2=5.0, num_threads=8, verbose=-1)
+PK = dict(
+    objective="l2",
+    metric="l2",
+    learning_rate=0.04,
+    num_leaves=63,
+    min_data_in_leaf=200,
+    feature_fraction=0.8,
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    lambda_l2=5.0,
+    num_threads=8,
+    verbose=-1,
+)
 PKC = dict(PK, objective="binary", metric="binary_logloss")
 TUR = 600
 poz = ye > 0
@@ -84,15 +97,26 @@ for s in tohumlar:
     son_p0, son_p1 = p0, p1
     log(f"tohum {s}: taban {sonuc['taban'][-1]:.5f} f1 {sonuc['f1'][-1]:.5f}")
 
-R["f1_tohum"] = {k: {"ort": float(np.mean(v)), "std": float(np.std(v)), "hepsi": v}
-                 for k, v in sonuc.items()}
+R["f1_tohum"] = {
+    k: {"ort": float(np.mean(v)), "std": float(np.std(v)), "hepsi": v} for k, v in sonuc.items()
+}
 R["f1_kazanc_ort"] = float(np.mean(sonuc["taban"]) - np.mean(sonuc["f1"]))
 
 # kova bazinda ayristirma
 y = hd.tuketim.to_numpy()
 kesik = [-1, 0, 1, 10, 50, 100, 500, 1000, 5000, 1e5, 1e12]
-etik = ["=0", "(0,1]", "(1,10]", "(10,50]", "(50,100]", "(100,500]",
-        "(500,1e3]", "(1e3,5e3]", "(5e3,1e5]", ">1e5"]
+etik = [
+    "=0",
+    "(0,1]",
+    "(1,10]",
+    "(10,50]",
+    "(50,100]",
+    "(100,500]",
+    "(500,1e3]",
+    "(1e3,5e3]",
+    "(5e3,1e5]",
+    ">1e5",
+]
 kova = pd.cut(y, bins=kesik, labels=etik)
 df = pd.DataFrame({"kova": kova, "e0": (son_p0 - yd) ** 2, "e1": (son_p1 - yd) ** 2})
 g = df.groupby("kova", observed=False).agg(n=("e0", "size"), e0=("e0", "sum"), e1=("e1", "sum"))

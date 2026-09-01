@@ -80,7 +80,9 @@ for f in ("p02_duzeltme.json", "p04_sifir.json", "p07_seviye.json", "p08_dusuk_t
     if os.path.exists(yol):
         j = json.load(open(yol, encoding="utf-8"))
         for k, v in j.get("duzeltmeler", {}).items():
-            OLCULEN[k] = dict(kazanc=v["kazanc"], kazanc_test_bilesimi=v.get("kazanc_test_bilesimi"))
+            OLCULEN[k] = dict(
+                kazanc=v["kazanc"], kazanc_test_bilesimi=v.get("kazanc_test_bilesimi")
+            )
 
 R = dict(
     ozet=dict(
@@ -108,8 +110,13 @@ R = dict(
         yeni_trafo_yas_30gun_alti=dict(satir_payi=0.043, kare_pay=0.1448, yanlilik=0.0836),
     ),
     tavanlar_sizintili=dict(
-        trafo_sabiti=0.2896, sifirlari_mukemmel_bil=0.14775, ufuk_sabiti=0.03333,
-        ay_sabiti=0.03213, gun_sabiti=0.03471, kova_ofseti_p=0.01783, buzme_beta=0.00307,
+        trafo_sabiti=0.2896,
+        sifirlari_mukemmel_bil=0.14775,
+        ufuk_sabiti=0.03333,
+        ay_sabiti=0.03213,
+        gun_sabiti=0.03471,
+        kova_ofseti_p=0.01783,
+        buzme_beta=0.00307,
     ),
     uyarilar=[
         "Geri-test modeli yaz25 blogunu HIC GORMEDI (blok_parcalari: hedef blok "
@@ -120,8 +127,16 @@ R = dict(
         "yaz25'ten ONCE veri yok (ham train 2025-01-01 baslar), bu yuzden gercek "
         "testte kullanilabilecek 'onceki yil ayni mevsim' bilgisi geri-testte YOK.",
     ],
-    betikler=["p01_hata_teshisi.py", "p02_duzeltme.py", "p03_bloklar.py", "p04_sifir.py",
-              "p05_sifir_anatomi.py", "p06_sistematik.py", "p07_seviye.py", "p08_dusuk_tahmin.py"],
+    betikler=[
+        "p01_hata_teshisi.py",
+        "p02_duzeltme.py",
+        "p03_bloklar.py",
+        "p04_sifir.py",
+        "p05_sifir_anatomi.py",
+        "p06_sistematik.py",
+        "p07_seviye.py",
+        "p08_dusuk_tahmin.py",
+    ],
 )
 for f in ("p01_hata_teshisi.json",):
     pass
@@ -129,4 +144,10 @@ eski = os.path.join(BURA, "p01_hata_teshisi.json")
 if os.path.exists(eski):
     R["ayrintili_ayristirma"] = json.load(open(eski, encoding="utf-8"))
 json.dump(R, open(eski, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
-print(json.dumps({k: R[k] for k in ("ozet", "en_buyuk_uc_kaynak", "olculen_duzeltmeler")}, indent=1, ensure_ascii=False))
+print(
+    json.dumps(
+        {k: R[k] for k in ("ozet", "en_buyuk_uc_kaynak", "olculen_duzeltmeler")},
+        indent=1,
+        ensure_ascii=False,
+    )
+)

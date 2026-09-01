@@ -18,9 +18,18 @@ import p03_tezgah as T  # noqa: E402
 
 BURA = os.path.dirname(os.path.abspath(__file__))
 PK = dict(
-    objective="l2", metric="l2", learning_rate=0.04, num_leaves=63,
-    min_data_in_leaf=200, feature_fraction=0.8, bagging_fraction=0.8,
-    bagging_freq=1, lambda_l2=5.0, num_threads=8, verbose=-1, seed=7,
+    objective="l2",
+    metric="l2",
+    learning_rate=0.04,
+    num_leaves=63,
+    min_data_in_leaf=200,
+    feature_fraction=0.8,
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    lambda_l2=5.0,
+    num_threads=8,
+    verbose=-1,
+    seed=7,
 )
 PKC = dict(PK, objective="binary", metric="binary_logloss")
 TUR = 600
@@ -36,8 +45,13 @@ Xe, ye, Xd, yd, hd, d_soguk = T.veri(tr)
 soguk_d = hd.tanim.isin(d_soguk).to_numpy()
 log(f"egitim {Xe.shape} deger {Xd.shape}, deger soguk %{100 * soguk_d.mean():.1f}")
 
-R = {"tezgah": {"egitim_satir": int(len(Xe)), "deger_satir": int(len(Xd)),
-                "deger_soguk_orani": float(soguk_d.mean())}}
+R = {
+    "tezgah": {
+        "egitim_satir": int(len(Xe)),
+        "deger_satir": int(len(Xd)),
+        "deger_soguk_orani": float(soguk_d.mean()),
+    }
+}
 
 # ---------- TABAN ----------
 m0 = lgb.train(PK, lgb.Dataset(Xe, ye), num_boost_round=TUR)
@@ -50,8 +64,9 @@ log(f"TABAN {taban:.5f}")
 kat = (np.arange(len(Xe)) % 2).astype(bool)
 pe = np.empty(len(Xe))
 for b in (False, True):
-    mm = lgb.train(PK, lgb.Dataset(Xe[~np.equal(kat, b)], ye[~np.equal(kat, b)]),
-                   num_boost_round=TUR)
+    mm = lgb.train(
+        PK, lgb.Dataset(Xe[~np.equal(kat, b)], ye[~np.equal(kat, b)]), num_boost_round=TUR
+    )
     pe[np.equal(kat, b)] = mm.predict(Xe[np.equal(kat, b)])
 log("egitim blogu katli tahmin hazir")
 
@@ -65,7 +80,9 @@ ppos_d = mp.predict(Xd)
 # RMSLE optimal nokta tahmini E[log1p] = (1-P0)*E[log1p | y>0]
 p1 = (1 - P0d) * ppos_d
 R["f1_iki_asamali"] = {"rmsle": T.rmsle(yd, p1), "kazanc": taban - T.rmsle(yd, p1)}
-log(f"F1 iki-asamali {R['f1_iki_asamali']['rmsle']:.5f} (kazanc {R['f1_iki_asamali']['kazanc']:+.5f})")
+log(
+    f"F1 iki-asamali {R['f1_iki_asamali']['rmsle']:.5f} (kazanc {R['f1_iki_asamali']['kazanc']:+.5f})"
+)
 # varyant: taban regresyonu ile carpim
 p1b = (1 - P0d) * p0
 R["f1b_carpim"] = {"rmsle": T.rmsle(yd, p1b), "kazanc": taban - T.rmsle(yd, p1b)}
@@ -74,8 +91,9 @@ log(f"F1b carpim {R['f1b_carpim']['rmsle']:.5f} ({R['f1b_carpim']['kazanc']:+.5f
 P0e = None
 mce = np.empty(len(Xe))
 for b in (False, True):
-    mm = lgb.train(PKC, lgb.Dataset(Xe[~np.equal(kat, b)], z_e[~np.equal(kat, b)]),
-                   num_boost_round=TUR)
+    mm = lgb.train(
+        PKC, lgb.Dataset(Xe[~np.equal(kat, b)], z_e[~np.equal(kat, b)]), num_boost_round=TUR
+    )
     mce[np.equal(kat, b)] = mm.predict(Xe[np.equal(kat, b)])
 en, esik = 1e9, None
 for th in np.arange(0.3, 0.96, 0.05):
@@ -84,8 +102,12 @@ for th in np.arange(0.3, 0.96, 0.05):
     if v < en:
         en, esik = v, float(th)
 p1c = np.where(P0d > esik, 0.0, p0)
-R["f1c_esik"] = {"esik": esik, "egitim_rmsle": en,
-                 "rmsle": T.rmsle(yd, p1c), "kazanc": taban - T.rmsle(yd, p1c)}
+R["f1c_esik"] = {
+    "esik": esik,
+    "egitim_rmsle": en,
+    "rmsle": T.rmsle(yd, p1c),
+    "kazanc": taban - T.rmsle(yd, p1c),
+}
 log(f"F1c esik={esik:.2f} {R['f1c_esik']['rmsle']:.5f} ({R['f1c_esik']['kazanc']:+.5f})")
 
 # ================= FIKIR 2: soguk satirlara ayri muamele =================
@@ -108,18 +130,30 @@ if soguk_e.sum() > 500:
     p2 = p0.copy()
     mu = p0[soguk_d].mean()
     p2[soguk_d] = lam * (p0[soguk_d] - mu) + mu + a
-    R["f2_soguk_kalibrasyon"] = {"kaydirma": a, "buzme": lam,
-                                 "rmsle": T.rmsle(yd, p2), "kazanc": taban - T.rmsle(yd, p2)}
-    log(f"F2 soguk a={a:+.2f} lam={lam:.2f} {R['f2_soguk_kalibrasyon']['rmsle']:.5f} "
-        f"({R['f2_soguk_kalibrasyon']['kazanc']:+.5f})")
+    R["f2_soguk_kalibrasyon"] = {
+        "kaydirma": a,
+        "buzme": lam,
+        "rmsle": T.rmsle(yd, p2),
+        "kazanc": taban - T.rmsle(yd, p2),
+    }
+    log(
+        f"F2 soguk a={a:+.2f} lam={lam:.2f} {R['f2_soguk_kalibrasyon']['rmsle']:.5f} "
+        f"({R['f2_soguk_kalibrasyon']['kazanc']:+.5f})"
+    )
 
 # ================= FIKIR 3: genel sapma duzeltmesi =================
 a3 = float((ye - pe).mean())
 p3 = p0 + a3
-R["f3_genel_kaydirma"] = {"kaydirma": a3, "rmsle": T.rmsle(yd, p3),
-                          "kazanc": taban - T.rmsle(yd, p3)}
-log(f"F3 genel kaydirma {a3:+.4f} -> {R['f3_genel_kaydirma']['rmsle']:.5f} "
-    f"({R['f3_genel_kaydirma']['kazanc']:+.5f})")
+R["f3_genel_kaydirma"] = {
+    "kaydirma": a3,
+    "rmsle": T.rmsle(yd, p3),
+    "kazanc": taban - T.rmsle(yd, p3),
+}
+log(
+    f"F3 genel kaydirma {a3:+.4f} -> {R['f3_genel_kaydirma']['rmsle']:.5f} "
+    f"({R['f3_genel_kaydirma']['kazanc']:+.5f})"
+)
+
 
 # ================= FIKIR 4: idnum-komsu seviyesi (soguk trafo onceligi) =================
 def komsu_ozellik(gec, hed_tanim_df, k=8):
@@ -159,14 +193,19 @@ def ekle_komsu(X, hed, gec):
 d_gec = tr[(tr.tarih <= T.D_KESIM) & (tr.tarih >= T.D_GEC_BAS)]
 Xe2 = ekle_komsu(Xe, e_hed, e_gec[~e_gec.tanim.isin(d_soguk)])
 Xd2 = ekle_komsu(Xd, hd, d_gec)
-log(f"komsu ozelligi: egitim NaN %{100 * Xe2.k_komsu.isna().mean():.1f} "
-    f"deger NaN %{100 * Xd2.k_komsu.isna().mean():.1f}")
+log(
+    f"komsu ozelligi: egitim NaN %{100 * Xe2.k_komsu.isna().mean():.1f} "
+    f"deger NaN %{100 * Xd2.k_komsu.isna().mean():.1f}"
+)
 if len(Xe2) == len(ye):
     m4 = lgb.train(PK, lgb.Dataset(Xe2, ye), num_boost_round=TUR)
     p4 = m4.predict(Xd2)
-    R["f4_idnum_komsu"] = {"rmsle": T.rmsle(yd, p4), "kazanc": taban - T.rmsle(yd, p4),
-                           "soguk_rmsle_once": float(np.sqrt(np.mean((p0[soguk_d] - yd[soguk_d]) ** 2))),
-                           "soguk_rmsle_sonra": float(np.sqrt(np.mean((p4[soguk_d] - yd[soguk_d]) ** 2)))}
+    R["f4_idnum_komsu"] = {
+        "rmsle": T.rmsle(yd, p4),
+        "kazanc": taban - T.rmsle(yd, p4),
+        "soguk_rmsle_once": float(np.sqrt(np.mean((p0[soguk_d] - yd[soguk_d]) ** 2))),
+        "soguk_rmsle_sonra": float(np.sqrt(np.mean((p4[soguk_d] - yd[soguk_d]) ** 2))),
+    }
     log(f"F4 idnum-komsu {R['f4_idnum_komsu']['rmsle']:.5f} ({R['f4_idnum_komsu']['kazanc']:+.5f})")
 else:
     log("F4 ATLANDI: satir sayisi uyusmuyor", len(Xe2), len(ye))
@@ -177,8 +216,11 @@ try:
     P0d4 = P0d
     if "f2_soguk_kalibrasyon" in R:
         mu = pk[soguk_d].mean()
-        pk[soguk_d] = R["f2_soguk_kalibrasyon"]["buzme"] * (pk[soguk_d] - mu) + mu \
+        pk[soguk_d] = (
+            R["f2_soguk_kalibrasyon"]["buzme"] * (pk[soguk_d] - mu)
+            + mu
             + R["f2_soguk_kalibrasyon"]["kaydirma"]
+        )
     pk = np.where(P0d4 > esik, 0.0, pk)
     R["f5_birlesik"] = {"rmsle": T.rmsle(yd, pk), "kazanc": taban - T.rmsle(yd, pk)}
     log(f"F5 birlesik {R['f5_birlesik']['rmsle']:.5f} ({R['f5_birlesik']['kazanc']:+.5f})")

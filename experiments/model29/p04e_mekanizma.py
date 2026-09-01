@@ -13,17 +13,31 @@ KOK = r"c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
 DN, AO = os.path.join(KOK, "data/interim/deney"), os.path.join(KOK, "data/interim/aile_onbellek")
 BURA = os.path.dirname(os.path.abspath(__file__))
 HEDEF_SOGUK = 0.222
-e = pd.read_parquet(os.path.join(DN, "egitim.parquet"),
-                    columns=["tanim", "tarih", "tuketim", "ilce_key", "soguk_mu", "_blok",
-                             "et0_toplam", "tarim_orani", "cdd24"])
+e = pd.read_parquet(
+    os.path.join(DN, "egitim.parquet"),
+    columns=[
+        "tanim",
+        "tarih",
+        "tuketim",
+        "ilce_key",
+        "soguk_mu",
+        "_blok",
+        "et0_toplam",
+        "tarim_orani",
+        "cdd24",
+    ],
+)
 
 
 def ba(ad):
     blk = e[e._blok == ad]
     sic, sog = blk[blk.soguk_mu == 0], blk[blk.soguk_mu == 1]
-    P = [np.load(os.path.join(AO, f"{ad}_{t}_{aa}_uretim.npy")).astype(np.float64)
-         for t in (1000, 1001, 1002) for aa in ("cat", "xgb", "lgbm")
-         if os.path.exists(os.path.join(AO, f"{ad}_{t}_{aa}_uretim.npy"))]
+    P = [
+        np.load(os.path.join(AO, f"{ad}_{t}_{aa}_uretim.npy")).astype(np.float64)
+        for t in (1000, 1001, 1002)
+        for aa in ("cat", "xgb", "lgbm")
+        if os.path.exists(os.path.join(AO, f"{ad}_{t}_{aa}_uretim.npy"))
+    ]
     z = np.load(os.path.join(DN, f"soguk_tahmin_{ad}.npz"))
     idx = np.concatenate([sic.index.values, sog.index.values])
     pb = np.concatenate([np.mean(P, axis=0), np.mean([z[q] for q in z.files], axis=0)])
@@ -92,10 +106,15 @@ print("yazildi p04e_mekanizma.json", flush=True)
 print("\n=== EK: 2025-04-01..04 (Ramazan idari izin kuyrugu) ===", flush=True)
 mm = (Y.tarih >= "2025-04-01") & (Y.tarih <= "2025-04-04")
 tot = float((Y.w * Y.r**2).sum())
-print(f"  satir%={mm.mean():.4f} SSE%={(Y.w[mm]*Y.r[mm]**2).sum()/tot:.4f} "
-      f"ort_artik={np.average(Y.r[mm], weights=Y.w[mm]):+.4f} "
-      f"(4-11 Nisan {np.average(Y.r[(Y.tarih>='2025-04-05')&(Y.tarih<='2025-04-11')], weights=Y.w[(Y.tarih>='2025-04-05')&(Y.tarih<='2025-04-11')]):+.4f})",
-      flush=True)
-gn = Y[Y.tarih <= "2025-04-14"].groupby("tarih").apply(
-    lambda g: float(np.average(g.r, weights=g.w)), include_groups=False)
+print(
+    f"  satir%={mm.mean():.4f} SSE%={(Y.w[mm] * Y.r[mm] ** 2).sum() / tot:.4f} "
+    f"ort_artik={np.average(Y.r[mm], weights=Y.w[mm]):+.4f} "
+    f"(4-11 Nisan {np.average(Y.r[(Y.tarih >= '2025-04-05') & (Y.tarih <= '2025-04-11')], weights=Y.w[(Y.tarih >= '2025-04-05') & (Y.tarih <= '2025-04-11')]):+.4f})",
+    flush=True,
+)
+gn = (
+    Y[Y.tarih <= "2025-04-14"]
+    .groupby("tarih")
+    .apply(lambda g: float(np.average(g.r, weights=g.w)), include_groups=False)
+)
 print(gn.round(4).to_string(), flush=True)

@@ -1,0 +1,473 @@
+{
+ "00_BASLIK": "p30 kirmizi takim -- ezber kanali nicelemesi + KIRLILIK TESTI",
+ "01_kimlik_kanali": {
+  "tanim_num_benzersiz": 5300,
+  "tanim_benzersiz": 5309,
+  "tanim_num_basina_max_trafo": 1,
+  "tanim_onekli_kolonlar": [
+   "tanim",
+   "tanim_num",
+   "tanim_on2",
+   "tanim_on3",
+   "tanim_on4",
+   "tanim_on5",
+   "tanim_uzunluk"
+  ],
+  "not": "maske yalnizca 't_' onekli kolonlari siler; tanim* kolonlari SAG KALIR"
+ },
+ "02_ezber_orani": {
+  "yaz25": {
+   "n_soguk_satir": 20633,
+   "n_soguk_trafo": 678,
+   "ezberlenebilir_satir_orani": 0.9718,
+   "ezberlenebilir_trafo_orani": 0.941,
+   "ezber_satir_medyan_egitim_satiri": 51.0
+  },
+  "guz25": {
+   "n_soguk_satir": 39405,
+   "n_soguk_trafo": 1173,
+   "ezberlenebilir_satir_orani": 0.977,
+   "ezberlenebilir_trafo_orani": 0.9488,
+   "ezber_satir_medyan_egitim_satiri": 121.0
+  },
+  "kis26": {
+   "n_soguk_satir": 61918,
+   "n_soguk_trafo": 1223,
+   "ezberlenebilir_satir_orani": 0.0,
+   "ezberlenebilir_trafo_orani": 0.0,
+   "ezber_satir_medyan_egitim_satiri": 0.0
+  },
+  "TEST": {
+   "n_soguk_trafo": 2024,
+   "egitimde_gorunen_trafo": 0,
+   "ezberlenebilir_satir_orani": 0.0
+  }
+ },
+ "03_KIRLILIK_TESTI": {
+  "yaz25": {
+   "TUMU": {
+    "ham": {
+     "n": 20633,
+     "rmsle_cat": 1.575841,
+     "rmsle_311_seviyesiz": 1.473398,
+     "rmsle_311_seviyeli": 1.475791,
+     "KAZANC_yapi": 0.102443,
+     "KAZANC_ham311": 0.10005
+    },
+    "agr": {
+     "n": 20633,
+     "rmsle_cat": 1.5821,
+     "rmsle_311_seviyesiz": 1.485936,
+     "rmsle_311_seviyeli": 1.489316,
+     "KAZANC_yapi": 0.096164,
+     "KAZANC_ham311": 0.092784
+    }
+   },
+   "EZBERLENEBILIR": {
+    "ham": {
+     "n": 20051,
+     "rmsle_cat": 1.427688,
+     "rmsle_311_seviyesiz": 1.311239,
+     "rmsle_311_seviyeli": 1.315824,
+     "KAZANC_yapi": 0.116449,
+     "KAZANC_ham311": 0.111864
+    },
+    "agr": {
+     "n": 20051,
+     "rmsle_cat": 1.423144,
+     "rmsle_311_seviyesiz": 1.313341,
+     "rmsle_311_seviyeli": 1.319658,
+     "KAZANC_yapi": 0.109803,
+     "KAZANC_ham311": 0.103486
+    }
+   },
+   "TEMIZ_ezberlenemez": {
+    "ham": {
+     "n": 582,
+     "rmsle_cat": 4.220632,
+     "rmsle_311_seviyesiz": 4.214811,
+     "rmsle_311_seviyeli": 4.19083,
+     "KAZANC_yapi": 0.005821,
+     "KAZANC_ham311": 0.029802
+    },
+    "agr": {
+     "n": 582,
+     "rmsle_cat": 4.564743,
+     "rmsle_311_seviyesiz": 4.55688,
+     "rmsle_311_seviyeli": 4.528605,
+     "KAZANC_yapi": 0.007862,
+     "KAZANC_ham311": 0.036138
+    }
+   }
+  },
+  "guz25": {
+   "TUMU": {
+    "ham": {
+     "n": 39405,
+     "rmsle_cat": 1.698797,
+     "rmsle_311_seviyesiz": 1.633339,
+     "rmsle_311_seviyeli": 1.633713,
+     "KAZANC_yapi": 0.065458,
+     "KAZANC_ham311": 0.065084
+    },
+    "agr": {
+     "n": 39405,
+     "rmsle_cat": 1.678095,
+     "rmsle_311_seviyesiz": 1.610357,
+     "rmsle_311_seviyeli": 1.610431,
+     "KAZANC_yapi": 0.067738,
+     "KAZANC_ham311": 0.067665
+    }
+   },
+   "EZBERLENEBILIR": {
+    "ham": {
+     "n": 38498,
+     "rmsle_cat": 1.707869,
+     "rmsle_311_seviyesiz": 1.641397,
+     "rmsle_311_seviyeli": 1.641716,
+     "KAZANC_yapi": 0.066472,
+     "KAZANC_ham311": 0.066153
+    },
+    "agr": {
+     "n": 38498,
+     "rmsle_cat": 1.690325,
+     "rmsle_311_seviyesiz": 1.622327,
+     "rmsle_311_seviyeli": 1.622488,
+     "KAZANC_yapi": 0.067998,
+     "KAZANC_ham311": 0.067837
+    }
+   },
+   "TEMIZ_ezberlenemez": {
+    "ham": {
+     "n": 907,
+     "rmsle_cat": 1.254626,
+     "rmsle_311_seviyesiz": 1.250535,
+     "rmsle_311_seviyeli": 1.247519,
+     "KAZANC_yapi": 0.004091,
+     "KAZANC_ham311": 0.007107
+    },
+    "agr": {
+     "n": 907,
+     "rmsle_cat": 1.285666,
+     "rmsle_311_seviyesiz": 1.257834,
+     "rmsle_311_seviyeli": 1.221863,
+     "KAZANC_yapi": 0.027832,
+     "KAZANC_ham311": 0.063803
+    }
+   }
+  },
+  "kis26": {
+   "TUMU": {
+    "ham": {
+     "n": 61918,
+     "rmsle_cat": 1.838642,
+     "rmsle_311_seviyesiz": 1.86137,
+     "rmsle_311_seviyeli": 1.867198,
+     "KAZANC_yapi": -0.022729,
+     "KAZANC_ham311": -0.028557
+    },
+    "agr": {
+     "n": 61918,
+     "rmsle_cat": 1.970847,
+     "rmsle_311_seviyesiz": 1.989214,
+     "rmsle_311_seviyeli": 1.991539,
+     "KAZANC_yapi": -0.018366,
+     "KAZANC_ham311": -0.020692
+    }
+   },
+   "EZBERLENEBILIR": {
+    "ham": {
+     "n": 0,
+     "rmsle_cat": NaN,
+     "rmsle_311_seviyesiz": NaN,
+     "rmsle_311_seviyeli": NaN,
+     "KAZANC_yapi": NaN,
+     "KAZANC_ham311": NaN
+    },
+    "agr": {
+     "n": 0,
+     "rmsle_cat": NaN,
+     "rmsle_311_seviyesiz": NaN,
+     "rmsle_311_seviyeli": NaN,
+     "KAZANC_yapi": NaN,
+     "KAZANC_ham311": NaN
+    }
+   },
+   "TEMIZ_ezberlenemez": {
+    "ham": {
+     "n": 61918,
+     "rmsle_cat": 1.838642,
+     "rmsle_311_seviyesiz": 1.86137,
+     "rmsle_311_seviyeli": 1.867198,
+     "KAZANC_yapi": -0.022729,
+     "KAZANC_ham311": -0.028557
+    },
+    "agr": {
+     "n": 61918,
+     "rmsle_cat": 1.970847,
+     "rmsle_311_seviyesiz": 1.989214,
+     "rmsle_311_seviyeli": 1.991539,
+     "KAZANC_yapi": -0.018366,
+     "KAZANC_ham311": -0.020692
+    }
+   }
+  }
+ },
+ "04_global_merkezlemeli_altkume": {
+  "yaz25": {
+   "GLOBAL_merkezleme_ile_altkume_kazanci": {
+    "TUMU": {
+     "n": 20633,
+     "ham_kazanc": 0.102443,
+     "agr_kazanc": 0.095723
+    },
+    "EZBERLENEBILIR": {
+     "n": 20051,
+     "ham_kazanc": 0.116473,
+     "agr_kazanc": 0.108899
+    },
+    "TEMIZ_ezberlenemez": {
+     "n": 582,
+     "ham_kazanc": 0.00994,
+     "agr_kazanc": 0.013801
+    }
+   }
+  },
+  "guz25": {
+   "GLOBAL_merkezleme_ile_altkume_kazanci": {
+    "TUMU": {
+     "n": 39405,
+     "ham_kazanc": 0.065458,
+     "agr_kazanc": 0.068174
+    },
+    "EZBERLENEBILIR": {
+     "n": 38498,
+     "ham_kazanc": 0.06646,
+     "agr_kazanc": 0.06823
+    },
+    "TEMIZ_ezberlenemez": {
+     "n": 907,
+     "ham_kazanc": 0.01122,
+     "agr_kazanc": 0.068708
+    }
+   }
+  },
+  "kis26": {
+   "GLOBAL_merkezleme_ile_altkume_kazanci": {
+    "TUMU": {
+     "n": 61918,
+     "ham_kazanc": -0.022729,
+     "agr_kazanc": -0.017304
+    },
+    "EZBERLENEBILIR": null,
+    "TEMIZ_ezberlenemez": {
+     "n": 61918,
+     "ham_kazanc": -0.022729,
+     "agr_kazanc": -0.017304
+    }
+   }
+  }
+ },
+ "05_tohum_bazinda_ham_kazanc": {
+  "yaz25": {
+   "1000": {
+    "TUMU": 0.101413,
+    "EZBER": 0.116607,
+    "TEMIZ": -0.007898
+   },
+   "1001": {
+    "TUMU": 0.102333,
+    "EZBER": 0.114849,
+    "TEMIZ": 0.023935
+   },
+   "1002": {
+    "TUMU": 0.103182,
+    "EZBER": 0.118049,
+    "TEMIZ": -0.013228
+   },
+   "1003": {
+    "TUMU": 0.102048,
+    "EZBER": 0.115984,
+    "TEMIZ": 0.006964
+   },
+   "1004": {
+    "TUMU": 0.105079,
+    "EZBER": 0.118627,
+    "TEMIZ": 0.019997
+   }
+  },
+  "guz25": {
+   "1000": {
+    "TUMU": 0.065761,
+    "EZBER": 0.066717,
+    "TEMIZ": 0.009217
+   },
+   "1001": {
+    "TUMU": 0.067285,
+    "EZBER": 0.068639,
+    "TEMIZ": -0.012244
+   },
+   "1002": {
+    "TUMU": 0.061693,
+    "EZBER": 0.062893,
+    "TEMIZ": -0.008758
+   },
+   "1003": {
+    "TUMU": 0.071438,
+    "EZBER": 0.072186,
+    "TEMIZ": 0.020179
+   },
+   "1004": {
+    "TUMU": 0.060411,
+    "EZBER": 0.061165,
+    "TEMIZ": 0.014364
+   }
+  },
+  "kis26": {
+   "1000": {
+    "TUMU": -0.02174,
+    "EZBER": null,
+    "TEMIZ": -0.02174
+   },
+   "1001": {
+    "TUMU": -0.021075,
+    "EZBER": null,
+    "TEMIZ": -0.021075
+   },
+   "1002": {
+    "TUMU": -0.024318,
+    "EZBER": null,
+    "TEMIZ": -0.024318
+   }
+  }
+ },
+ "06_onyukleme_trafo_kumeli": {
+  "yaz25": {
+   "EZBERLENEBILIR": {
+    "n_trafo": 638,
+    "ort": 0.116253,
+    "GA95": [
+     0.08519,
+     0.151109
+    ],
+    "P_pozitif": 1.0
+   },
+   "TEMIZ_ezberlenemez": {
+    "n_trafo": 40,
+    "ort": 0.004632,
+    "GA95": [
+     -0.092749,
+     0.075583
+    ],
+    "P_pozitif": 0.588
+   }
+  },
+  "guz25": {
+   "EZBERLENEBILIR": {
+    "n_trafo": 1113,
+    "ort": 0.06655,
+    "GA95": [
+     0.044762,
+     0.088483
+    ],
+    "P_pozitif": 1.0
+   },
+   "TEMIZ_ezberlenemez": {
+    "n_trafo": 60,
+    "ort": 0.005974,
+    "GA95": [
+     -0.069269,
+     0.067065
+    ],
+    "P_pozitif": 0.6
+   }
+  },
+  "kis26": {
+   "EZBERLENEBILIR": null,
+   "TEMIZ_ezberlenemez": {
+    "n_trafo": 1223,
+    "ort": -0.02269,
+    "GA95": [
+     -0.035765,
+     -0.010112
+    ],
+    "P_pozitif": 0.0
+   }
+  }
+ },
+ "07_havuzlanmis_TEMIZ": {
+  "aciklama": "Uc blogun EZBERLENEMEZ (testle ayni kosul) soguk satirlari birlestirildi.",
+  "n": 63407,
+  "ham_satir_agirlikli_kazanc": -0.02208,
+  "agr_satir_agirlikli_kazanc": -0.01746,
+  "ham_blok_esit_ortalama": -0.00427,
+  "agr_blok_esit_ortalama": 0.00578,
+  "isaret_temiz_altkumelerde": "yaz25 +0.006 (GA95 sifiri kapsiyor), guz25 +0.004 (GA95 sifiri kapsiyor), kis26 -0.0227 (GA95 tamami negatif). 0/3 anlamli pozitif."
+ },
+ "08_LB_KANITI": {
+  "dogrudan_cift_cat_tekil_vs_3_1_1": "YOK. Hicbir gonderim cifti yalnizca soguk harmani degistirmiyor.",
+  "en_yakin_dogrudan_cift": {
+   "v18 (soguk 3/1/1)": 1.0337,
+   "v23 (soguk ESIT 1/1/1 + hafta gunu)": 1.0482,
+   "yon": "cat agirligini AZALTMAK LB'de +0.0145 ZARARLI (karisik degisiklik)"
+  },
+  "docs80_ek_destek_iddiasi_YANLIS": {
+   "iddia": "docs/80 §4: '3/1/1 ... o donemin BIRINCILIGI (LB 1.01750) onunla alindi'",
+   "gercek": "experiments/rekor.jsonl: v46/v47 kaydi acikca 'cat-only soguk' diyor. BIRINCILIK 1.01750 CAT-TEKIL soguk harmanla alindi, 3/1/1 ile DEGIL. p21'in tek 'LB'de olculmus noktaya donus' gerekcesi COKTU."
+  },
+  "rekor_jsonl_blok_CV_uretim_olcutu": {
+   "v27 harman 3/1/1 soguk": 1.86509,
+   "v32 cat-only soguk": 1.83606,
+   "v30 (3/1/1 + buzme)": 1.83979,
+   "v33 (cat-only + buzme)": 1.8225,
+   "yorum": "URETIM olcutunde cat-tekil 3/1/1'den 0.029 IYI. p20'nin tersi."
+  },
+  "gonderim_zaman_cizgisi": {
+   "v30 (3/1/1, 3 tohum, sinir agi YOK)": 1.02639,
+   "v47 (cat-tekil, 15 tohum, sinir agi VAR)": 1.0175,
+   "not": "karisik degisiklik; ama 3/1/1 lehine LB kaniti YOK"
+  }
+ },
+ "09_DOKTRIN": {
+  "kural": "Soguk rejim kararlari YALNIZ kis26 ile verilir (docs/36 §3, scripts/tuketim_model.py:830-836).",
+  "dayanagi": "Ezber kanali. yaz25/guz25 soguk satirlarinin %97'si egitim katlarinda gorunen trafolara ait; testte %0. Kural mevsime degil OLCUM GECERLILIGINE dayaniyor.",
+  "hala_gecerli_mi": "EVET -- p30/02 kuralin dayanagini bagimsiz olarak yeniden uretti (yaz25 %97.18, guz25 %97.70, kis26 %0.00, test %0.00).",
+  "mevsim_analogu_ile_catisma": {
+   "docs66_kural55": "olcut yaz25 (test'in mevsimsel ikizi)",
+   "cozum": "CATISMA DEGIL, KAPSAM FARKI. Mevsim analogu SICAK satirlar icin gecerli (orada ezber kanali yok: sicak trafolarin gecmisi testte de var). SOGUK satirlarda yaz25 GECERSIZ bir olcum araci -- mevsimsel yakinlik ezber kirliligini kapatmaz. Ezber kirliligi bir YANLILIK; mevsim uyusmazligi bir VARYANS/kayma sorunu. Yanli bir olcumu daha ilgili bir populasyonda yapmak onu duzeltmez.",
+   "kohort_sayilari (p14_guc)": {
+    "agirlikli_etkin_trafo": {
+     "yaz25": 34.3,
+     "guz25": 156.5,
+     "kis26": 192.7
+    },
+    "tv_teste": {
+     "yaz25": 0.7227,
+     "guz25": 0.531,
+     "kis26": 0.5538
+    },
+    "test_hucre_kapsami": {
+     "yaz25": 0.9727,
+     "guz25": 0.9718,
+     "kis26": 0.9997
+    }
+   },
+   "sonuc": "kis26 hem tek TEMIZ blok, hem kohort kapsami en genis (%99.97), hem etkin trafo sayisi en yuksek (192.7 vs 34.3). yaz25'in tek ustunlugu takvim ayi -- ve onun agirlikli etkin trafo sayisi 34, yani zaten en gurultulu blok."
+  }
+ },
+ "10_NET_HUKUM": {
+  "SORU": "p21_harman311_olu50.csv yarin Hak 1 olarak gonderilmeli mi?",
+  "CEVAP": "HAYIR. GONDERME.",
+  "GEREKCE_SIRALI": [
+   "1. KIRLILIK TESTI: p21'in kazanci EZBERLENEBILIR satirlarda yasiyor. yaz25 ezber +0.1164 / temiz +0.0058; guz25 ezber +0.0665 / temiz +0.0041; kis26 (%100 temiz) -0.0227. Testin TAMAMI temiz kosulda.",
+   "2. Havuzlanmis temiz satirlarda (n=63.407, uc blok) kazanc NEGATIF (-0.022 ham / -0.017 agr). Uc temiz altkumenin HICBIRI anlamli pozitif degil (0/3); tek yuksek gucli temiz olcum (kis26, 1223 trafo) GA95'i tamamen negatif, P(+)=0.000.",
+   "3. Kapi (c) isaret tutarliligi COKTU: docs/80'in '3/3 yapida pozitif' iddiasi ezber kirliligiyle uretilmis iki bloktan besleniyor. Kirliligi cikarinca 1/3 (ve o da negatif).",
+   "4. p21'in tek LB dayanagi (docs/80 §4 'birincilik 3/1/1 ile alindi') OLGUSAL OLARAK YANLIS -- rekor.jsonl v46/v47 cat-tekil soguk diyor.",
+   "5. Ayni yonde LB kaniti VAR ama TERS isaretli: v18 (3/1/1) 1.03370 -> v23 (cat agirligi azaltilmis) 1.04820.",
+   "6. Doktrin (kis26) bu soru icin dogru mercidir ve p21'e HAYIR diyor. p28 zaten olcmustu: kis26'da her ikisi kendi optimum beta'sindayken 3/1/1 (1.83333) cat-tekilden (1.82519) KOTU."
+  ],
+  "GUC_UYARISI": "yaz25/guz25 temiz altkumeleri kucuk (40 ve 60 trafo) ve gurultulu -- tek baslarina '3/1/1 kotu' demeye yetmezler. Hukmu tasiyan sey kis26'nin 1223 trafoluk TEMIZ ve NEGATIF olcumu ile temiz havuzun negatifligi.",
+  "ALTERNATIF_HAK1": "Olculmus YP_seviye (1.00115) tabani KORUNSUN. p21 ve p28_beta50 ikisi de ayni kirli kaynaktan besleniyor (p28 zaten 'HAK 1 icin ONERILMEZ' demisti). Haklar soguk harmana degil, kirlilikten BAGIMSIZ katmanlara harcanmali: p08 olu trafo deltasi (sicak satirlar, uc blokta da pozitif, ezberden bagimsiz) ve dogrulanmis sicak taraf kazanclari (p15 cat tau=480).",
+  "EGER_YINE_DE_GONDERILECEKSE": "Hak 1 olarak DEGIL. Once p08 gibi temiz bir katman olculur; p21 ancak elde bos hak kalirsa ve YEDEK secimde kalmak kosuluyla bir ARASTIRMA PROBU olarak gonderilebilir -- kazanc beklentisi negatiftir."
+ }
+}

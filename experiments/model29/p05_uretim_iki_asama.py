@@ -53,9 +53,17 @@ ATLA = ["tanim", "tarih", "tuketim", "lokasyon", "_blok", "id"]
 BLOKLAR = ["yaz25", "guz25", "kis26"]
 TUR = 500
 TOHUM = [7]
-ORT = dict(learning_rate=0.05, num_leaves=127, min_data_in_leaf=100,
-           feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
-           lambda_l2=5.0, num_threads=8, verbose=-1)
+ORT = dict(
+    learning_rate=0.05,
+    num_leaves=127,
+    min_data_in_leaf=100,
+    feature_fraction=0.8,
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    lambda_l2=5.0,
+    num_threads=8,
+    verbose=-1,
+)
 PC = dict(ORT, objective="binary", metric="binary_logloss")
 PR_HUB = dict(ORT, objective="huber", alpha=2.0, lambda_l2=20.0, metric="l2")
 t0 = time.time()
@@ -67,8 +75,11 @@ def log(*a):
 
 # ---------------- veri ----------------
 e = pd.read_parquet(os.path.join(DN, "egitim.parquet"))
-SAY = [c for c in e.columns
-       if c not in ATLA and c not in KIMLIK and pd.api.types.is_numeric_dtype(e[c])]
+SAY = [
+    c
+    for c in e.columns
+    if c not in ATLA and c not in KIMLIK and pd.api.types.is_numeric_dtype(e[c])
+]
 log(f"egitim {len(e)} satir, {len(SAY)} ozellik")
 
 
@@ -76,9 +87,12 @@ def uretim_tahmini(blok):
     """m148_demet_plani.py satir 95-113 ile AYNI birlestirme."""
     blk = e[e._blok == blok]
     sic, sog = blk[blk.soguk_mu == 0], blk[blk.soguk_mu == 1]
-    P = [np.load(os.path.join(AO, f"{blok}_{t}_{aa}_uretim.npy")).astype(np.float64)
-         for t in (1000, 1001, 1002) for aa in ("cat", "xgb", "lgbm")
-         if os.path.exists(os.path.join(AO, f"{blok}_{t}_{aa}_uretim.npy"))]
+    P = [
+        np.load(os.path.join(AO, f"{blok}_{t}_{aa}_uretim.npy")).astype(np.float64)
+        for t in (1000, 1001, 1002)
+        for aa in ("cat", "xgb", "lgbm")
+        if os.path.exists(os.path.join(AO, f"{blok}_{t}_{aa}_uretim.npy"))
+    ]
     z = np.load(os.path.join(DN, f"soguk_tahmin_{blok}.npz"))
     idx = np.concatenate([sic.index.values, sog.index.values])
     pb = np.concatenate([np.mean(P, axis=0), np.mean([z[q] for q in z.files], axis=0)])
@@ -122,23 +136,29 @@ def komsu_sutunu(df):
 
 
 def egit_tahmin(pk, X, y, Xh, tohumlar=TOHUM, tur=TUR):
-    return np.mean([lgb.train(dict(pk, seed=s), lgb.Dataset(X, y),
-                              num_boost_round=tur).predict(Xh)
-                    for s in tohumlar], axis=0)
+    return np.mean(
+        [
+            lgb.train(dict(pk, seed=s), lgb.Dataset(X, y), num_boost_round=tur).predict(Xh)
+            for s in tohumlar
+        ],
+        axis=0,
+    )
 
 
 def olcucu(yv, sgm):
-    ww = np.where(sgm == 1, HEDEF_SOGUK / sgm.mean(),
-                  (1 - HEDEF_SOGUK) / (1 - sgm.mean()))
+    ww = np.where(sgm == 1, HEDEF_SOGUK / sgm.mean(), (1 - HEDEF_SOGUK) / (1 - sgm.mean()))
     ww = ww / ww.mean()
     s = sgm == 1
 
     def olc(p):
         r = np.asarray(p, dtype=np.float64) - yv
-        return {"duz": float(np.sqrt(np.mean(r * r))),
-                "test_agirlikli": float(np.sqrt(np.mean(ww * r * r))),
-                "soguk": float(np.sqrt(np.mean(r[s] ** 2))),
-                "sicak": float(np.sqrt(np.mean(r[~s] ** 2)))}
+        return {
+            "duz": float(np.sqrt(np.mean(r * r))),
+            "test_agirlikli": float(np.sqrt(np.mean(ww * r * r))),
+            "soguk": float(np.sqrt(np.mean(r[s] ** 2))),
+            "sicak": float(np.sqrt(np.mean(r[~s] ** 2))),
+        }
+
     return olc
 
 
@@ -160,8 +180,10 @@ def blok_kosusu(hedef_blok):
     Xh = bf[SAY].astype(np.float32)
 
     P0 = egit_tahmin(PC, Xe, ze, Xh)
-    log(f"{hedef_blok} P0 ort {P0.mean():.4f} (gercek sifir "
-        f"{float((bf.tuketim.to_numpy() == 0).mean()):.4f}), egitim sifir {ze.mean():.4f}")
+    log(
+        f"{hedef_blok} P0 ort {P0.mean():.4f} (gercek sifir "
+        f"{float((bf.tuketim.to_numpy() == 0).mean()):.4f}), egitim sifir {ze.mean():.4f}"
+    )
     ppos = egit_tahmin(PR_HUB, Xe[poz], ye[poz], Xh)
     log(f"{hedef_blok} ppos hazir")
 
@@ -172,13 +194,17 @@ def blok_kosusu(hedef_blok):
     delta = ppos - pall
     log(f"{hedef_blok} delta ort {delta.mean():.4f} std {delta.std():.4f}")
 
-    R = {"n": int(len(pb)), "soguk_pay": float(sgm.mean()), "uretim_tabani": taban,
-         "P0_ort": float(P0.mean()),
-         "gercek_sifir": float((bf.tuketim.to_numpy() == 0).mean()),
-         "egitim_sifir": float(ze.mean()),
-         "a_carpim": olc((1 - P0) * pb),
-         "b_huber": olc((1 - P0) * ppos),
-         "b_ham_ppos": olc(ppos)}
+    R = {
+        "n": int(len(pb)),
+        "soguk_pay": float(sgm.mean()),
+        "uretim_tabani": taban,
+        "P0_ort": float(P0.mean()),
+        "gercek_sifir": float((bf.tuketim.to_numpy() == 0).mean()),
+        "egitim_sifir": float(ze.mean()),
+        "a_carpim": olc((1 - P0) * pb),
+        "b_huber": olc((1 - P0) * ppos),
+        "b_ham_ppos": olc(ppos),
+    }
     for w in (0.25, 0.5, 0.75):
         R[f"b2_harman_w{w}"] = olc((1 - P0) * (w * ppos + (1 - w) * pb))
     R["d_delta_ham"] = olc(pb + delta)
@@ -203,9 +229,11 @@ def blok_kosusu(hedef_blok):
     kom_e = np.array([kom_map[i] for i in egt.index.to_numpy()], dtype=np.float32)
     Xe2 = Xe.assign(k_komsu=kom_e)
     Xh2 = Xh.assign(k_komsu=kom_h)
-    log(f"{hedef_blok} komsu NaN: egitim {np.isnan(kom_e).mean():.3f} "
+    log(
+        f"{hedef_blok} komsu NaN: egitim {np.isnan(kom_e).mean():.3f} "
         f"hedef {np.isnan(kom_h).mean():.3f} "
-        f"hedef-soguk {np.isnan(kom_h[sgm == 1]).mean():.3f}")
+        f"hedef-soguk {np.isnan(kom_h[sgm == 1]).mean():.3f}"
+    )
     P0c = egit_tahmin(PC, Xe2, ze, Xh2)
     pposc = egit_tahmin(PR_HUB, Xe2[poz], ye[poz], Xh2)
     R["c_komsu"] = olc((1 - P0c) * pposc)
@@ -216,8 +244,12 @@ def blok_kosusu(hedef_blok):
 
     def kaz(d):
         return {k: taban[k] - d[k] for k in taban}
-    R["kazanclar"] = {k: kaz(v) for k, v in R.items()
-                      if isinstance(v, dict) and "duz" in v and k != "uretim_tabani"}
+
+    R["kazanclar"] = {
+        k: kaz(v)
+        for k, v in R.items()
+        if isinstance(v, dict) and "duz" in v and k != "uretim_tabani"
+    }
     np.save(os.path.join(ARA, f"p05_P0_{hedef_blok}.npy"), P0)
     np.save(os.path.join(ARA, f"p05_ppos_{hedef_blok}.npy"), ppos)
     np.save(os.path.join(ARA, f"p05_pb_{hedef_blok}.npy"), pb)

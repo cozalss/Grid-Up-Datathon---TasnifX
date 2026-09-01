@@ -12,6 +12,7 @@ Tasarim:
   Disgüdumlu (hava/takvim/cografya/nufus/ulusal) sutunlari mevcut
   parquet'ten SADECE BEYAZ LISTE ile aliyorum -- bunlar hedefe bagli degil.
 """
+
 import numpy as np
 import pandas as pd
 
@@ -20,19 +21,52 @@ DN = f"{K}/data/interim/deney"
 
 # hedefe BAGLI OLMAYAN sutunlar (t_*, g_*, gp_*, p_*, ozet_*, soguk_mu HARIC)
 DIS = [
-    "sicaklik_ort", "sicaklik_max", "sicaklik_min", "hissedilen_max",
-    "yagis_toplam", "ruzgar_max", "nem_ort", "vpd_ort", "toprak_nem_ort",
-    "et0_toplam", "gunes_ghi_gunluk", "gun_uzunlugu_saat",
-    "cdd18", "cdd22", "cdd24", "cdd22_ort7", "cdd24_ort7",
-    "sicaklik_ort_ort7", "sicaklik_ort_ort14",
-    "tatil_mi", "tatil_agirligi", "tatil_mesafe", "tatil_veya_haftasonu",
-    "ramazan_ayi", "ramazan_ilerleme", "ramazan_bayrama_kalan",
-    "agac_orani", "tarim_orani", "yerlesim_orani", "bitki_ortusu_orani",
-    "osm_direk_yogunlugu", "osm_hat_yogunlugu",
-    "ilce_trafo_sayisi", "ilce_toplam_guc", "ilce_guc_medyan",
-    "nufus", "alan_km2", "ilce_nufus_yogunlugu", "trafo_basina_nufus",
-    "kva_basina_nufus", "guc_yuzdelik", "guc_payi", "guc_medyan_orani",
-    "ulusal_gunluk", "ulusal_tepe_orani", "ulusal_yillik_buyume",
+    "sicaklik_ort",
+    "sicaklik_max",
+    "sicaklik_min",
+    "hissedilen_max",
+    "yagis_toplam",
+    "ruzgar_max",
+    "nem_ort",
+    "vpd_ort",
+    "toprak_nem_ort",
+    "et0_toplam",
+    "gunes_ghi_gunluk",
+    "gun_uzunlugu_saat",
+    "cdd18",
+    "cdd22",
+    "cdd24",
+    "cdd22_ort7",
+    "cdd24_ort7",
+    "sicaklik_ort_ort7",
+    "sicaklik_ort_ort14",
+    "tatil_mi",
+    "tatil_agirligi",
+    "tatil_mesafe",
+    "tatil_veya_haftasonu",
+    "ramazan_ayi",
+    "ramazan_ilerleme",
+    "ramazan_bayrama_kalan",
+    "agac_orani",
+    "tarim_orani",
+    "yerlesim_orani",
+    "bitki_ortusu_orani",
+    "osm_direk_yogunlugu",
+    "osm_hat_yogunlugu",
+    "ilce_trafo_sayisi",
+    "ilce_toplam_guc",
+    "ilce_guc_medyan",
+    "nufus",
+    "alan_km2",
+    "ilce_nufus_yogunlugu",
+    "trafo_basina_nufus",
+    "kva_basina_nufus",
+    "guc_yuzdelik",
+    "guc_payi",
+    "guc_medyan_orani",
+    "ulusal_gunluk",
+    "ulusal_tepe_orani",
+    "ulusal_yillik_buyume",
 ]
 
 KESIM = {

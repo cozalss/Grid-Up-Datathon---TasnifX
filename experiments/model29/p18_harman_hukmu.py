@@ -97,6 +97,7 @@ def main() -> None:
             "b_lgbm": round(float(b[3]), 4),
             "R2": round(1 - float(art.var() / L.var()), 5),
         }
+
         # 2) kVA kovasi icinde merkezlenmis (hucre sabitleri temizlenir)
         def merkez(v: np.ndarray) -> np.ndarray:
             s = pd.Series(v)
@@ -118,8 +119,11 @@ def main() -> None:
             "R2": round(1 - float(artc.var() / Lc.var()), 5),
         }
         # 3) iki hipotezin dogrudan uyumu (olcek serbest, afin uydurma)
-        for ad, v in (("CAT_TEKIL", A[:, 0]), ("ESIT", A.mean(axis=1)),
-                      ("URETIM_SICAK_3_1_1", A @ np.array([0.6, 0.2, 0.2]))):
+        for ad, v in (
+            ("CAT_TEKIL", A[:, 0]),
+            ("ESIT", A.mean(axis=1)),
+            ("URETIM_SICAK_3_1_1", A @ np.array([0.6, 0.2, 0.2])),
+        ):
             Xh = np.c_[np.ones(len(L)), v]
             bh, *_ = np.linalg.lstsq(Xh, L, rcond=None)
             arth = L - Xh @ bh

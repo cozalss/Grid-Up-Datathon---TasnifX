@@ -21,18 +21,35 @@ DN = os.path.join(KOK, "data/interim/deney")
 AO = os.path.join(KOK, "data/interim/aile_onbellek")
 BURA = os.path.dirname(os.path.abspath(__file__))
 HEDEF_SOGUK = 0.222
-KOL = ["tanim", "tarih", "tuketim", "ilce_key", "soguk_mu", "_blok", "guc",
-       "tarim_orani", "et0_toplam", "cdd24", "t_sifir_orani", "t_log_ort",
-       "t_son_kayit_yasi", "t_olu_mu", "yerlesim_orani"]
+KOL = [
+    "tanim",
+    "tarih",
+    "tuketim",
+    "ilce_key",
+    "soguk_mu",
+    "_blok",
+    "guc",
+    "tarim_orani",
+    "et0_toplam",
+    "cdd24",
+    "t_sifir_orani",
+    "t_log_ort",
+    "t_son_kayit_yasi",
+    "t_olu_mu",
+    "yerlesim_orani",
+]
 e = pd.read_parquet(os.path.join(DN, "egitim.parquet"), columns=KOL)
 
 
 def blok_artik(ad):
     blk = e[e._blok == ad]
     sic, sog = blk[blk.soguk_mu == 0], blk[blk.soguk_mu == 1]
-    P = [np.load(os.path.join(AO, f"{ad}_{t}_{aa}_uretim.npy")).astype(np.float64)
-         for t in (1000, 1001, 1002) for aa in ("cat", "xgb", "lgbm")
-         if os.path.exists(os.path.join(AO, f"{ad}_{t}_{aa}_uretim.npy"))]
+    P = [
+        np.load(os.path.join(AO, f"{ad}_{t}_{aa}_uretim.npy")).astype(np.float64)
+        for t in (1000, 1001, 1002)
+        for aa in ("cat", "xgb", "lgbm")
+        if os.path.exists(os.path.join(AO, f"{ad}_{t}_{aa}_uretim.npy"))
+    ]
     z = np.load(os.path.join(DN, f"soguk_tahmin_{ad}.npz"))
     idx = np.concatenate([sic.index.values, sog.index.values])
     pb = np.concatenate([np.mean(P, axis=0), np.mean([z[q] for q in z.files], axis=0)])
@@ -53,8 +70,18 @@ m0 = float((Y.w * Y.r**2).mean())
 R = {"taban_rmsle": float(np.sqrt(m0))}
 print(f"taban RMSLE={np.sqrt(m0):.6f}", flush=True)
 
-KIYI = {"cesme", "karaburun", "urla", "seferihisar", "foca", "dikili", "selcuk",
-        "guzelbahce", "menderes", "aliaga"}
+KIYI = {
+    "cesme",
+    "karaburun",
+    "urla",
+    "seferihisar",
+    "foca",
+    "dikili",
+    "selcuk",
+    "guzelbahce",
+    "menderes",
+    "aliaga",
+}
 
 
 def mrk(df, x):
@@ -91,17 +118,21 @@ d_et0 = bd * mrk(Y, x_kiyi_et0(Y))
 R["kiyi_et0_ortalama"] = olc(d_et0, "guz25+kis26 ortalamasi (BLOK DISI)")
 
 print("\n=== SINAV 2: bayram ilce katsayisi (blok disi) + et0 ===", flush=True)
-KURBAN25 = pd.to_datetime(["2025-06-05", "2025-06-06", "2025-06-07", "2025-06-08",
-                           "2025-06-09"])
+KURBAN25 = pd.to_datetime(["2025-06-05", "2025-06-06", "2025-06-07", "2025-06-08", "2025-06-09"])
 DISB = pd.concat([B["guz25"], B["kis26"]], ignore_index=True)
 RAM26 = pd.to_datetime(["2026-03-19", "2026-03-20", "2026-03-21", "2026-03-22"])
-TATIL_HEPSI = pd.to_datetime(list(RAM26) + ["2025-08-30", "2025-10-29", "2026-01-01",
-                                            "2025-12-31", "2025-10-28"])
+TATIL_HEPSI = pd.to_datetime(
+    list(RAM26) + ["2025-08-30", "2025-10-29", "2026-01-01", "2025-12-31", "2025-10-28"]
+)
 ILCE_OF = e.drop_duplicates("tanim").set_index("tanim").ilce_key
 par = []
 for g in RAM26:
-    pen = DISB[(DISB.tarih >= g - pd.Timedelta(days=10)) & (DISB.tarih <= g + pd.Timedelta(days=10))
-               & (DISB.tarih.dt.dayofweek == g.dayofweek) & (~DISB.tarih.isin(TATIL_HEPSI))]
+    pen = DISB[
+        (DISB.tarih >= g - pd.Timedelta(days=10))
+        & (DISB.tarih <= g + pd.Timedelta(days=10))
+        & (DISB.tarih.dt.dayofweek == g.dayofweek)
+        & (~DISB.tarih.isin(TATIL_HEPSI))
+    ]
     tb = pen.groupby("tanim").r.agg(["mean", "size"])
     tb = tb[tb["size"] >= 2]["mean"]
     gn = DISB[DISB.tarih == g].groupby("tanim").r.mean()
@@ -120,19 +151,26 @@ R["birlesik"] = olc(d_bay + d_et0, "BIRLESIK: bayram + kiyi_x_et0")
 print("\n=== SINAV 3: SIFIR KANALI ===", flush=True)
 sf = Y.tuketim.values == 0
 tot = float((Y.w * Y.r**2).sum())
-print(f"  yaz25 sifir: satir%={sf.mean():.4f} SSE%={(Y.w[sf]*Y.r[sf]**2).sum()/tot:.4f} "
-      f"ort_tahmin(log1p)={Y.p.values[sf].mean():.4f}", flush=True)
+print(
+    f"  yaz25 sifir: satir%={sf.mean():.4f} SSE%={(Y.w[sf] * Y.r[sf] ** 2).sum() / tot:.4f} "
+    f"ort_tahmin(log1p)={Y.p.values[sf].mean():.4f}",
+    flush=True,
+)
 # mevsimlik abone tezi: sifir orani ilce tipine gore aya bagli mi?
 Y["_ay"] = Y.tarih.dt.month
 Y["_kiyi"] = Y.ilce_key.isin(KIYI)
 tab = Y.assign(sf=sf).pivot_table(index="_ay", columns="_kiyi", values="sf", aggfunc="mean")
 print("  yaz25 sifir orani (ay x kiyi):\n", tab.round(4).to_string(), flush=True)
-R["sifir_ay_kiyi"] = {str(k): {str(c): float(v) for c, v in row.items()}
-                      for k, row in tab.iterrows()}
+R["sifir_ay_kiyi"] = {
+    str(k): {str(c): float(v) for c, v in row.items()} for k, row in tab.iterrows()
+}
 for a, df in B.items():
     s2 = df.tuketim.values == 0
-    print(f"  {a}: sifir orani={s2.mean():.4f}  kiyi={s2[df.ilce_key.isin(KIYI).values].mean():.4f}"
-          f"  tarim={s2[~df.ilce_key.isin(KIYI).values].mean():.4f}", flush=True)
+    print(
+        f"  {a}: sifir orani={s2.mean():.4f}  kiyi={s2[df.ilce_key.isin(KIYI).values].mean():.4f}"
+        f"  tarim={s2[~df.ilce_key.isin(KIYI).values].mean():.4f}",
+        flush=True,
+    )
 # tahmin edilen sifir satirlari icin en iyi SABIT (blok disinda secilir)
 for a in ("guz25", "kis26"):
     df = B[a]

@@ -1,0 +1,13 @@
+{
+ "kurulum": "lgbm_ham_KIMLIKSIZ_takvimsiz",
+ "isaret": -1.0,
+ "agac": 1500,
+ "n_egitim": 1038737,
+ "n": 714688,
+ "rms": 0.6516448362173431,
+ "ort": -0.27490133065330363,
+ "dik_norm": 0.4474330305360205,
+ "dik_pay": 0.6866210022215048,
+ "span_ici_varyans": 0.5285515993083363,
+ "dosya": "C:\\Users\\Cem\\AppData\\Local\\Temp\\claude\\c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX\\d8509f77-6f9b-4e1d-b980-62e299ed4fc5\\scratchpad\\yon_ARTIK_LGBM.npy"
+}

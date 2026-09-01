@@ -1,0 +1,60 @@
+{
+ "soguk_sabit_dikpay_QR": 8.856951095616273e-11,
+ "soguk_sabit_dikpay_lstsqV30": 1.262340247338753e-10,
+ "kapasite_buzme_dikpay": 0.23901614099796598,
+ "adaylar": [
+  {
+   "ad": "soguk_SABIT (kis26 temiz)",
+   "rho_cv": 0.1239,
+   "kaynak": "kis26 (n=61918, %100 temiz)",
+   "dik_pay": 0.0,
+   "lb_ham": 1.0006857148975397,
+   "lb_dik": 0.9929857451141986
+  },
+  {
+   "ad": "soguk_SABIT (havuz temiz)",
+   "rho_cv": 0.072,
+   "kaynak": "havuz temiz (n=63407)",
+   "dik_pay": 0.0,
+   "lb_ham": 1.0006857148975397,
+   "lb_dik": 0.9980921300160622
+  },
+  {
+   "ad": "soguk_SABIT (yaz25 ham)",
+   "rho_cv": 0.0301,
+   "kaynak": "yaz25 (mevsimsel ikiz)",
+   "dik_pay": 0.0,
+   "lb_ham": 1.0006857148975397,
+   "lb_dik": 1.0002329178746319
+  },
+  {
+   "ad": "kapasite_BUZME (yaz25 temiz)",
+   "rho_cv": 0.0674,
+   "kaynak": "yaz25 temiz (n=582)",
+   "dik_pay": 0.23901614099796598,
+   "lb_ham": 1.000556034390708,
+   "lb_dik": 0.9984133112093408
+  },
+  {
+   "ad": "kapasite_BUZME (kis26)",
+   "rho_cv": 0.0266,
+   "kaynak": "kis26",
+   "dik_pay": 0.23901614099796598,
+   "lb_ham": 1.0006655175461725,
+   "lb_dik": 1.0003321148498634
+  },
+  {
+   "ad": "kapasite_BUZME (yaz25 HAM=EZBER)",
+   "rho_cv": 0.2118,
+   "kaynak": "yaz25 ham -- SAHTE",
+   "dik_pay": 0.23901614099796598,
+   "lb_ham": 0.9994043972453923,
+   "lb_dik": 0.9780146522419795
+  }
+ ],
+ "dogrulama": {
+  "nan": 0,
+  "negatif_expm1": 3253,
+  "min_expm1": -0.5710656616567575
+ }
+}

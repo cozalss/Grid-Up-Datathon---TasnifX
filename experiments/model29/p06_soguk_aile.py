@@ -42,7 +42,9 @@ def main():
     W = {}
     for bad in ("yaz25", "guz25", "kis26"):
         sog, y, z = blok_soguk(bad)
-        aile_p = {a: np.mean([v for k, v in z.items() if k.endswith("_" + a)], axis=0) for a in AILE}
+        aile_p = {
+            a: np.mean([v for k, v in z.items() if k.endswith("_" + a)], axis=0) for a in AILE
+        }
         hepsi = np.mean(list(z.values()), axis=0)
         r = dict(n=int(len(y)), uye=len(z), hepsi=round(rmsle(y - hepsi), 5))
         for a in AILE:
@@ -78,7 +80,11 @@ def main():
     for bad in ("guz25", "kis26"):
         sog, y, z = blok_soguk(bad)
         Ys.append(y)
-        As.append(np.c_[[np.mean([v for k, v in z.items() if k.endswith("_" + a)], axis=0) for a in AILE]].T)
+        As.append(
+            np.c_[
+                [np.mean([v for k, v in z.items() if k.endswith("_" + a)], axis=0) for a in AILE]
+            ].T
+        )
     yd, Ad = np.concatenate(Ys), np.vstack(As)
     from itertools import product
 

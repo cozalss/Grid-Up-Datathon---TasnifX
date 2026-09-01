@@ -1,0 +1,72 @@
+{
+ "T_kapasite_BUZME": {
+  "norm_rms": 0.239363,
+  "dik_pay": 0.238966,
+  "dik_rms": 0.0572
+ },
+ "T_soguk_SABIT": {
+  "norm_rms": 0.470735,
+  "dik_pay": 0.0,
+  "dik_rms": 0.0
+ },
+ "T_guc_egim": {
+  "norm_rms": 0.396972,
+  "dik_pay": 0.721853,
+  "dik_rms": 0.286555
+ },
+ "T_guc_egim_kare": {
+  "norm_rms": 0.476815,
+  "dik_pay": 0.889499,
+  "dik_rms": 0.424126
+ },
+ "T_p_seviye_egim": {
+  "norm_rms": 0.497297,
+  "dik_pay": 0.62353,
+  "dik_rms": 0.31008
+ },
+ "T_ilce_ort_BUZME": {
+  "norm_rms": 0.396519,
+  "dik_pay": 0.770233,
+  "dik_rms": 0.305412
+ },
+ "T_kova_ort_BUZME": {
+  "norm_rms": 0.228966,
+  "dik_pay": 0.482889,
+  "dik_rms": 0.110565
+ },
+ "T_cdd18": {
+  "norm_rms": 1.741231,
+  "dik_pay": 0.500508,
+  "dik_rms": 0.871499
+ },
+ "T_ufuk": {
+  "norm_rms": 11.550027,
+  "dik_pay": 0.38022,
+  "dik_rms": 4.391548
+ },
+ "T_yas": {
+  "norm_rms": 0.437126,
+  "dik_pay": 0.628803,
+  "dik_rms": 0.274866
+ },
+ "T_nufus_yog": {
+  "norm_rms": 0.813843,
+  "dik_pay": 0.819233,
+  "dik_rms": 0.666727
+ },
+ "T_guc_yuzdelik": {
+  "norm_rms": 0.129125,
+  "dik_pay": 0.864624,
+  "dik_rms": 0.111644
+ },
+ "ref_KURESEL_SABIT": {
+  "norm_rms": 1.0,
+  "dik_pay": 0.0,
+  "dik_rms": 0.0
+ },
+ "ref_SICAK_SABIT": {
+  "norm_rms": 0.882274,
+  "dik_pay": 0.0,
+  "dik_rms": 0.0
+ }
+}

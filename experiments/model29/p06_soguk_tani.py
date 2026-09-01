@@ -127,8 +127,11 @@ def main():
         katsayi=[round(float(v), 4) for v in cf],
         soguk_rmsle=round(rmsle(s.y.values - X @ cf), 5),
         yalniz_p_rmsle=round(
-            rmsle(s.y.values - np.c_[np.ones(len(s)), s.p.values]
-                  @ np.linalg.lstsq(np.c_[np.ones(len(s)), s.p.values], s.y.values, rcond=None)[0]),
+            rmsle(
+                s.y.values
+                - np.c_[np.ones(len(s)), s.p.values]
+                @ np.linalg.lstsq(np.c_[np.ones(len(s)), s.p.values], s.y.values, rcond=None)[0]
+            ),
             5,
         ),
         uyari="yaz25 uzerinde fit -- UST SINIR, uretimde kullanilamaz",

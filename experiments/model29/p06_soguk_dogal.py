@@ -33,7 +33,9 @@ from p06_soguk_tani import hazirla  # noqa: E402
 
 E = pd.read_parquet(os.path.join(DN, "egitim.parquet"))
 ATLA = {"tanim", "tarih", "tuketim", "lokasyon", "_blok", "p", "y", "r", "ay", "soguk_mu"}
-KOL = [c for c in E.columns if c not in ATLA and not c.startswith("t_") and E[c].dtype.kind in "ifbu"]
+KOL = [
+    c for c in E.columns if c not in ATLA and not c.startswith("t_") and E[c].dtype.kind in "ifbu"
+]
 
 
 def rmsle(x):
@@ -60,22 +62,39 @@ def main():
     def y_ofs(d):
         return d.y.values - np.log1p(d.guc.values.astype("float64"))
 
-    PK = dict(objective="l2", learning_rate=0.05, num_leaves=63, min_data_in_leaf=50,
-              feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1,
-              lambda_l2=5.0, num_threads=8, verbose=-1)
+    PK = dict(
+        objective="l2",
+        learning_rate=0.05,
+        num_leaves=63,
+        min_data_in_leaf=50,
+        feature_fraction=0.8,
+        bagging_fraction=0.8,
+        bagging_freq=1,
+        lambda_l2=5.0,
+        num_threads=8,
+        verbose=-1,
+    )
     TOHUM = (7, 17, 27)
 
     def egit(dtr, dte, tur, komsu):
         Xtr, Xte = X(dtr, komsu), X(dte, komsu)
-        ps = [lgb.train(dict(PK, seed=s), lgb.Dataset(Xtr, y_ofs(dtr)),
-                        num_boost_round=tur).predict(Xte) for s in TOHUM]
+        ps = [
+            lgb.train(dict(PK, seed=s), lgb.Dataset(Xtr, y_ofs(dtr)), num_boost_round=tur).predict(
+                Xte
+            )
+            for s in TOHUM
+        ]
         return np.mean(ps, axis=0) + np.log1p(dte.guc.values.astype("float64"))
 
-    R = dict(taban=dict(yaz25_soguk=round(rmsle(ys.r), 5),
-                        guz25_soguk=round(rmsle(gs.r), 5),
-                        kis26_soguk=round(rmsle(ks.r), 5)),
-             n=dict(guz=int(len(gs)), kis=int(len(ks)), yaz=int(len(ys))),
-             ozellik=len(KOL))
+    R = dict(
+        taban=dict(
+            yaz25_soguk=round(rmsle(ys.r), 5),
+            guz25_soguk=round(rmsle(gs.r), 5),
+            kis26_soguk=round(rmsle(ks.r), 5),
+        ),
+        n=dict(guz=int(len(gs)), kis=int(len(ks)), yaz=int(len(ys))),
+        ozellik=len(KOL),
+    )
 
     # --- ic secim: guz25'te egit, kis26'da olc (agac sayisi + komsu ekseni + harman)
     ic = {}
@@ -96,9 +115,12 @@ def main():
     ww = np.linspace(0, 1, 21)
     sk = [rmsle(ks.y.values - ((1 - w) * ks.p.values + w * pk_kis)) for w in ww]
     W = float(ww[int(np.argmin(sk))])
-    R["harman_agirligi_ic"] = dict(w=round(W, 3), kis26_taban=round(rmsle(ks.r), 5),
-                                   kis26_harman=round(min(sk), 5),
-                                   kis26_yalniz_dogal=round(rmsle(ks.y.values - pk_kis), 5))
+    R["harman_agirligi_ic"] = dict(
+        w=round(W, 3),
+        kis26_taban=round(rmsle(ks.r), 5),
+        kis26_harman=round(min(sk), 5),
+        kis26_yalniz_dogal=round(rmsle(ks.y.values - pk_kis), 5),
+    )
     print(json.dumps(R["harman_agirligi_ic"], indent=1), flush=True)
 
     # --- UYGULA: guz25+kis26 dogal soguk -> yaz25 soguk
@@ -110,7 +132,9 @@ def main():
         harman_w_ic=round(rmsle(ys.y.values - ((1 - W) * ys.p.values + W * py)), 5),
     )
     for w in (0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 1.0):
-        R["yaz25"][f"harman_w={w}"] = round(rmsle(ys.y.values - ((1 - w) * ys.p.values + w * py)), 5)
+        R["yaz25"][f"harman_w={w}"] = round(
+            rmsle(ys.y.values - ((1 - w) * ys.p.values + w * py)), 5
+        )
     print(json.dumps(R["yaz25"], indent=1))
 
     np.save(os.path.join(BURA, "p06_dogal_yaz25_soguk.npy"), py)

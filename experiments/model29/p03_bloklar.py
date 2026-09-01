@@ -21,8 +21,12 @@ for b, d in B.items():
         yanlilik=round(float(d.r.mean()), 4),
         sifir_orani=round(float((d.tuketim <= 0).mean()), 4),
         soguk_orani=round(float(d.soguk_mu.mean()), 4),
-        ufuk_yanlilik={str(k): round(float(v), 4) for k, v in d.groupby(uf, observed=True).r.mean().items()},
-        ay_yanlilik={str(k): round(float(v), 4) for k, v in d.groupby(d.ay, observed=True).r.mean().items()},
+        ufuk_yanlilik={
+            str(k): round(float(v), 4) for k, v in d.groupby(uf, observed=True).r.mean().items()
+        },
+        ay_yanlilik={
+            str(k): round(float(v), 4) for k, v in d.groupby(d.ay, observed=True).r.mean().items()
+        },
         sifir_satir_yanlilik=round(float(d.loc[d.tuketim <= 0, "r"].mean()), 4),
         sifir_satir_kare_pay=round(
             float((d.loc[d.tuketim <= 0, "r"] ** 2).sum() / (d.r**2).sum()), 4
@@ -32,4 +36,9 @@ for b, d in B.items():
 tr = pd.read_csv(os.path.join(KOK, "data/raw/train.csv"), usecols=["tarih"], parse_dates=["tarih"])
 R["ham_train_araligi"] = [str(tr.tarih.min().date()), str(tr.tarih.max().date())]
 print(json.dumps(R, indent=1, ensure_ascii=False))
-json.dump(R, open(os.path.join(BURA, "p03_bloklar.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+json.dump(
+    R,
+    open(os.path.join(BURA, "p03_bloklar.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
+)

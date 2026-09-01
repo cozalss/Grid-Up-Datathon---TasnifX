@@ -16,9 +16,21 @@ yaz = blok("yaz25")
 dis = pd.concat([blok("guz25"), blok("kis26")], ignore_index=True)
 z = (dis.tuketim.values <= 0).astype(int)
 m = lgb.train(
-    dict(objective="binary", learning_rate=0.05, num_leaves=63, min_data_in_leaf=200,
-         feature_fraction=0.8, bagging_fraction=0.8, bagging_freq=1, verbose=-1, seed=7, num_threads=8),
-    lgb.Dataset(dis[OZ], z), 500)
+    dict(
+        objective="binary",
+        learning_rate=0.05,
+        num_leaves=63,
+        min_data_in_leaf=200,
+        feature_fraction=0.8,
+        bagging_fraction=0.8,
+        bagging_freq=1,
+        verbose=-1,
+        seed=7,
+        num_threads=8,
+    ),
+    lgb.Dataset(dis[OZ], z),
+    500,
+)
 qd, qy = m.predict(dis[OZ]), m.predict(yaz[OZ])
 yaz["q"], dis["q"] = qy, qd
 R = {}
@@ -47,14 +59,18 @@ for i, (lo, hi) in enumerate(zip([0] + QK, QK + [1.0])):
         if mk.sum() == 0:
             continue
         dd = d[mk]
-        tab.append(dict(
-            kova=f"[{lo:.2f},{hi:.2f})", blok=ad, n=int(len(dd)),
-            gercek_sifir_orani=round(float((dd.tuketim <= 0).mean()), 4),
-            p_ort=round(float(dd.p.mean()), 3),
-            y_ort=round(float(dd.y.mean()), 3),
-            en_iyi_ofset=round(float(dd.r.mean()), 3),
-            kare_pay=round(float((dd.r**2).sum() / float((d.r**2).sum())), 4),
-        ))
+        tab.append(
+            dict(
+                kova=f"[{lo:.2f},{hi:.2f})",
+                blok=ad,
+                n=int(len(dd)),
+                gercek_sifir_orani=round(float((dd.tuketim <= 0).mean()), 4),
+                p_ort=round(float(dd.p.mean()), 3),
+                y_ort=round(float(dd.y.mean()), 3),
+                en_iyi_ofset=round(float(dd.r.mean()), 3),
+                kare_pay=round(float((dd.r**2).sum() / float((d.r**2).sum())), 4),
+            )
+        )
 R["q_kovalari"] = tab
 
 # --- yanlis pozitif maliyeti: q yuksek ama tuketim buyuk olan satirlar
@@ -67,7 +83,9 @@ R["yaz25_q_ust_0.5"] = dict(
 )
 
 # --- sifir satirlar trafo bazinda mi gun bazinda mi?
-sg = yaz.groupby("tanim", observed=True).apply(lambda d: (d.tuketim <= 0).mean(), include_groups=False)
+sg = yaz.groupby("tanim", observed=True).apply(
+    lambda d: (d.tuketim <= 0).mean(), include_groups=False
+)
 R["sifir_trafo_profili"] = dict(
     tam_olu_trafo=int((sg > 0.99).sum()),
     kismi_sifir_trafo=int(((sg > 0.01) & (sg <= 0.99)).sum()),
@@ -82,4 +100,9 @@ mk2 = yaz.tanim.isin(tam) & (yaz.tuketim <= 0)
 R["tam_olu_kare_pay"] = round(float((yaz.loc[mk2, "r"] ** 2).sum() / tk), 4)
 
 print(json.dumps(R, indent=1, ensure_ascii=False))
-json.dump(R, open(os.path.join(BURA, "p05_sifir_anatomi.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+json.dump(
+    R,
+    open(os.path.join(BURA, "p05_sifir_anatomi.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
+)

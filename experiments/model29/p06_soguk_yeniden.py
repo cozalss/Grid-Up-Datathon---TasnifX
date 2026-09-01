@@ -68,8 +68,9 @@ def main():
             ps.append(di.egit_tahmin("lgbm", maskeli, dogrulama, kols, tohum)[soguk])
             log(f"{ad} tohum {tohum}: RMSLE {rmsle(y - ps[-1]):.5f}")
         p = np.mean(ps, axis=0)
-        R[ad] = dict(soguk_rmsle=round(rmsle(y - p), 5),
-                     tohumlar=[round(rmsle(y - q), 5) for q in ps])
+        R[ad] = dict(
+            soguk_rmsle=round(rmsle(y - p), 5), tohumlar=[round(rmsle(y - q), 5) for q in ps]
+        )
         np.save(os.path.join(BURA, f"p06_yeniden_{ad}.npy"), p)
         log(f"{ad} HARMAN soguk RMSLE {R[ad]['soguk_rmsle']:.5f}")
     R["kazanc"] = round(R["taban"]["soguk_rmsle"] - R["komsu"]["soguk_rmsle"], 5)

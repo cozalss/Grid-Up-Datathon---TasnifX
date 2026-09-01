@@ -58,7 +58,7 @@ assert not (m_soguk & m_kopru).any()
 # --- p06 soguk maskesiyle tutarlilik: parti-soguk MUTLAKA soguk olmali
 p06 = np.load(os.path.join(AC, "p06_test_soguk_maske.npy"))
 assert p06.shape == (714688,)
-ihlal_soguk = int((m_soguk & ~p06).sum())   # parti-soguk ama p06'ya gore sicak -> 0 olmali
+ihlal_soguk = int((m_soguk & ~p06).sum())  # parti-soguk ama p06'ya gore sicak -> 0 olmali
 kopru_p06_soguk = int((m_kopru & p06).sum())  # kopru p06'ya gore soguk olmamali -> 0 beklenir
 
 # --- p21 aday csv id sirasi test.csv ile birebir mi
@@ -76,8 +76,13 @@ sonuc = {
     "parti_kopru_satir": int(m_kopru.sum()),
     "parti_soguk_satir_pay": round(float(m_soguk.sum()) / len(test), 4),
     "parti_kopru_satir_pay": round(float(m_kopru.sum()) / len(test), 4),
-    "iddia": {"trafo": 2222, "soguk": 1326, "kopru": 896,
-              "soguk_satir": 108253, "kopru_satir": 72785},
+    "iddia": {
+        "trafo": 2222,
+        "soguk": 1326,
+        "kopru": 896,
+        "soguk_satir": 108253,
+        "kopru_satir": 72785,
+    },
     "p06_tutarlilik": {
         "parti_soguk_ama_p06_sicak": ihlal_soguk,
         "kopru_ama_p06_soguk": kopru_p06_soguk,
@@ -91,8 +96,7 @@ if ihlal_soguk != 0:
 else:
     np.save(os.path.join(AC, "p23_parti_soguk_maske.npy"), m_soguk)
     np.save(os.path.join(AC, "p23_parti_kopru_maske.npy"), m_kopru)
-    sonuc["maskeler"] = ["aday_csv/p23_parti_soguk_maske.npy",
-                        "aday_csv/p23_parti_kopru_maske.npy"]
+    sonuc["maskeler"] = ["aday_csv/p23_parti_soguk_maske.npy", "aday_csv/p23_parti_kopru_maske.npy"]
 
 R = {}
 if os.path.exists(JSON_YOL):

@@ -27,7 +27,9 @@ def tablo(d):
 R["p_kova_yanlilik"] = {}
 for ad, d in (("yaz25", yaz), ("guz25", blok("guz25")), ("kis26", blok("kis26"))):
     t = tablo(d)
-    R["p_kova_yanlilik"][ad] = {int(k): [round(float(v["mean"]), 3), int(v["size"])] for k, v in t.iterrows()}
+    R["p_kova_yanlilik"][ad] = {
+        int(k): [round(float(v["mean"]), 3), int(v["size"])] for k, v in t.iterrows()
+    }
 
 # dis bloklarin BLOK-ICI ORTALAMASI CIKARILMIS kova ofseti (seviye kaymasi transfer etmiyor)
 off = np.zeros(len(KEN) + 1)
@@ -53,8 +55,9 @@ for lam in (0.5, 1.0):
 R["duzeltmeler"] = {}
 for ad, x in D.items():
     s, sw = skor(yaz, x)
-    R["duzeltmeler"][ad] = dict(rmsle=round(s, 5), kazanc=round(t0 - s, 5),
-                                kazanc_test_bilesimi=round(t0w - sw, 5))
+    R["duzeltmeler"][ad] = dict(
+        rmsle=round(s, 5), kazanc=round(t0 - s, 5), kazanc_test_bilesimi=round(t0w - sw, 5)
+    )
     print(f"{ad:24s} RMSLE={s:.5f} kazanc={t0 - s:+.5f} (agirlikli {t0w - sw:+.5f})")
 
 # tavan: yaz25'in KENDI kova ofseti (sizintili)
@@ -66,4 +69,9 @@ s, _ = skor(yaz, yaz.p.values + oy[by])
 R["tavan_kendi_kova_ofseti"] = dict(rmsle=round(s, 5), kazanc=round(t0 - s, 5))
 print("tavan (sizintili):", R["tavan_kendi_kova_ofseti"])
 print(json.dumps(R["p_kova_yanlilik"], ensure_ascii=False))
-json.dump(R, open(os.path.join(BURA, "p08_dusuk_tahmin.json"), "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+json.dump(
+    R,
+    open(os.path.join(BURA, "p08_dusuk_tahmin.json"), "w", encoding="utf-8"),
+    indent=1,
+    ensure_ascii=False,
+)

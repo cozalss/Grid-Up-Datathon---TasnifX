@@ -170,7 +170,9 @@ def main():
             kazanc_test_bilesimi=round(t0w - sw, 5),
             parametre=par,
         )
-        print(f"{ad:22s} RMSLE={s:.5f}  kazanc={t0 - s:+.5f}   (agirlikli {sw:.5f} {t0w - sw:+.5f})")
+        print(
+            f"{ad:22s} RMSLE={s:.5f}  kazanc={t0 - s:+.5f}   (agirlikli {sw:.5f} {t0w - sw:+.5f})"
+        )
 
     # --- TAVAN olcumleri (duzeltilebilirligin ust siniri, SIZINTILI -- sadece teshis)
     tav = {}
@@ -178,7 +180,9 @@ def main():
         o = yaz.groupby(kol, observed=True).r.transform("mean")
         s, sw = skor(yaz, yaz.p.values + o.values)
         tav[ad] = dict(rmsle=round(s, 5), kazanc=round(t0 - s, 5))
-    o = yaz.groupby(pd.cut(yaz.ufuk_gun, [0, 15, 30, 45, 60, 75, 90, 105, 122]), observed=True).r.transform("mean")
+    o = yaz.groupby(
+        pd.cut(yaz.ufuk_gun, [0, 15, 30, 45, 60, 75, 90, 105, 122]), observed=True
+    ).r.transform("mean")
     s, _ = skor(yaz, yaz.p.values + o.values)
     tav["ufuk_sabiti"] = dict(rmsle=round(s, 5), kazanc=round(t0 - s, 5))
     msk = yaz.tuketim.values <= 0

@@ -38,7 +38,9 @@ def main():
             rows.append(
                 dict(
                     kova=int(k),
-                    gun_araligi=f"<={KEN[k] if k < len(KEN) else '+'}" if k < len(KEN) else f">{KEN[-1]}",
+                    gun_araligi=f"<={KEN[k] if k < len(KEN) else '+'}"
+                    if k < len(KEN)
+                    else f">{KEN[-1]}",
                     n_satir=int(len(g)),
                     n_trafo=int(g.tanim.nunique()),
                     sifir_orani=round(float(g.sf.mean()), 4),

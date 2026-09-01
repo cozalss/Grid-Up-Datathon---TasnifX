@@ -21,8 +21,15 @@ import pandas as pd
 
 BURA = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BURA)
-from p11_agirlik import (PG_HAKIM, agirlik, kova, onyukleme_w, rmsle,  # noqa: E402
-                         test_dagilimi, wrmsle)
+from p11_agirlik import (
+    PG_HAKIM,
+    agirlik,
+    kova,
+    onyukleme_w,
+    rmsle,  # noqa: E402
+    test_dagilimi,
+    wrmsle,
+)
 from p11_ortak import BLOKLAR, DN, egitim, kirp, sicak_rmsle, toplam  # noqa: E402
 
 W = (0.6, 0.2, 0.2)
@@ -42,9 +49,13 @@ def main():
     del T
     E = egitim()
 
-    R = {"aciklama": "3/1/1 uye degisimleri; taban B = p21 adayi (0.6 cat7 / 0.2 xgb / 0.2 lgbm)",
-         "etiket": "KESIF -- p19 on-kayit disinda, ayni agirlikli rig ile",
-         "bloklar": {}, "kazanclar": {}, "toplama": {}}
+    R = {
+        "aciklama": "3/1/1 uye degisimleri; taban B = p21 adayi (0.6 cat7 / 0.2 xgb / 0.2 lgbm)",
+        "etiket": "KESIF -- p19 on-kayit disinda, ayni agirlikli rig ile",
+        "bloklar": {},
+        "kazanclar": {},
+        "toplama": {},
+    }
 
     bil = {}
     for b in BLOKLAR:
@@ -56,8 +67,7 @@ def main():
         sic = sicak_rmsle(b)
         z = np.load(os.path.join(DN, f"soguk_tahmin_{b}.npz"))
         npz_ts = sorted({int(k.split("_")[0]) for k in z.files})
-        ts = [t for t in npz_ts
-              if os.path.exists(yol_d8(b, t)) and os.path.exists(yol_hub(b, t))]
+        ts = [t for t in npz_ts if os.path.exists(yol_d8(b, t)) and os.path.exists(yol_hub(b, t))]
         if not ts:
             R["bloklar"][b] = {"uyari": "ortak tohum yok"}
             continue
@@ -80,12 +90,18 @@ def main():
 
         def olc(lg):
             r = y - kirp(lg)
-            return dict(ham=round(rmsle(r), 5), agr=round(wrmsle(r, w), 5),
-                        pg=round(rmsle(r[m]), 5),
-                        bilesim_agr=round(toplam(wrmsle(r, w), sic), 5))
+            return dict(
+                ham=round(rmsle(r), 5),
+                agr=round(wrmsle(r, w), 5),
+                pg=round(rmsle(r[m]), 5),
+                bilesim_agr=round(toplam(wrmsle(r, w), sic), 5),
+            )
 
-        R["bloklar"][b] = {"ortak_tohum": ts, "sicak_rmsle": round(sic, 5),
-                           "seviye": {k: olc(v) for k, v in Y.items()}}
+        R["bloklar"][b] = {
+            "ortak_tohum": ts,
+            "sicak_rmsle": round(sic, 5),
+            "seviye": {k: olc(v) for k, v in Y.items()},
+        }
 
         rB = y - kirp(Y["B_std"])
         for k in ("C1_lgbm_huber", "C2_cat_derin8", "C3_ikisi"):
@@ -94,8 +110,7 @@ def main():
                 ortak_tohum=ts,
                 agr=round(wrmsle(rB, w) - wrmsle(rC, w), 5),
                 pg=round(rmsle(rB[m]) - rmsle(rC[m]), 5),
-                bilesim_agr=round(toplam(wrmsle(rB, w), sic)
-                                  - toplam(wrmsle(rC, w), sic), 5),
+                bilesim_agr=round(toplam(wrmsle(rB, w), sic) - toplam(wrmsle(rC, w), sic), 5),
                 onyukleme_agr=onyukleme_w(sog.tanim.values, rB, rC, w, 500),
             )
             R["kazanclar"].setdefault(k, {})[b] = kz
@@ -104,8 +119,9 @@ def main():
     for k, v in bil.items():
         if len(v) == 3:
             a = np.array([v[b] for b in BLOKLAR])
-            R["toplama"][k] = dict(blok=v, ort=round(float(a.mean()), 5),
-                                   pozitif_blok=int((a > 0).sum()))
+            R["toplama"][k] = dict(
+                blok=v, ort=round(float(a.mean()), 5), pozitif_blok=int((a > 0).sum())
+            )
 
     yol = os.path.join(BURA, "p19_f_311_bilesim.json")
     with open(yol, "w", encoding="utf-8") as fh:
@@ -115,13 +131,17 @@ def main():
     for b in BLOKLAR:
         sv = R["bloklar"][b].get("seviye", {})
         for k, v in sv.items():
-            print(f"{k:16}{b:7}{v['ham']:>9.5f}{v['agr']:>9.5f}{v['pg']:>9.5f}"
-                  f"{v['bilesim_agr']:>9.5f}")
+            print(
+                f"{k:16}{b:7}{v['ham']:>9.5f}{v['agr']:>9.5f}{v['pg']:>9.5f}"
+                f"{v['bilesim_agr']:>9.5f}"
+            )
     print("\nKAZANC (B_std'ye karsi, + = degisim IYI)")
     for k, bb in R["kazanclar"].items():
         for b, v in bb.items():
-            print(f"{k:16}{b:7} agr={v['agr']:+.5f} pg={v['pg']:+.5f} "
-                  f"bil={v['bilesim_agr']:+.5f} oy+={v['onyukleme_agr']['pozitif_oran']:.3f}")
+            print(
+                f"{k:16}{b:7} agr={v['agr']:+.5f} pg={v['pg']:+.5f} "
+                f"bil={v['bilesim_agr']:+.5f} oy+={v['onyukleme_agr']['pozitif_oran']:.3f}"
+            )
     print("\nTOPLAMA")
     print(json.dumps(R["toplama"], indent=1, ensure_ascii=False))
     print("\nyazildi", yol)

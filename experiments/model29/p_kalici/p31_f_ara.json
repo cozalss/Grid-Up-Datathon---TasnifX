@@ -1,0 +1,11 @@
+{
+ "15_TESHIS_ham_vekil_vs_model_artigi": {
+  "n_hucre": 564,
+  "std_model_artigi": 0.183,
+  "std_ham_vekil": 0.1297,
+  "korelasyon": 0.571,
+  "R2": 0.326,
+  "egim_model_uzerine_ham": 0.807,
+  "ANLAM": "Ham-vekil ilce x ay etkisi (p29'un sulama imzasi) ile MODELIN artik yanliligi ayni nesne DEGILSE, sulama capasi modelin hatasini duzeltemez."
+ }
+}

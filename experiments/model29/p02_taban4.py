@@ -4,6 +4,7 @@ hedef sizintisi DEGIL. Bir trafonun pencerede kac gun gorundugu, ilk/son ofseti,
 doluluk orani soguk trafo icin guclu bir isaret.
 Tur sayilari yaz25'e BAKMADAN secildi: sicak icin v1 semasi (kis26'da egit,
 guz25'te erken durdur), soguk icin ayrilan trafo semasi."""
+
 import json
 import os
 import sys
@@ -18,14 +19,16 @@ from p02_oznitelik import DIS, KESIM, blok_kur, grup_onceligi, ham  # noqa
 
 K = "c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX"
 DN = f"{K}/data/interim/deney"
-SC = ("C:/Users/Cem/AppData/Local/Temp/claude/"
-      "c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/"
-      "e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad")
+SC = (
+    "C:/Users/Cem/AppData/Local/Temp/claude/"
+    "c--Users-Cem-Desktop-Datahon-Laptop-Grid-Up-Datathon---TasnifX/"
+    "e98517bd-fcb3-465e-95ae-9f16be93da6b/scratchpad"
+)
 T0 = time.time()
 
 
 def log(*a):
-    print(f"[{time.time()-T0:6.1f}s]", *a, flush=True)
+    print(f"[{time.time() - T0:6.1f}s]", *a, flush=True)
 
 
 tr, te = ham()
@@ -43,7 +46,8 @@ for ad, (k0, k1) in KESIM.items():
         s = te[["id", "tanim", "guc", "tarih", "lokasyon"]].copy()
     else:
         s = tr[(tr.tarih >= kes) & (tr.tarih <= son)][
-            ["tanim", "guc", "tarih", "lokasyon", "y"]].copy()
+            ["tanim", "guc", "tarih", "lokasyon", "y"]
+        ].copy()
     s = s.reset_index(drop=True)
     grp = grup_onceligi(h[["tanim", "y"]], meta[["tanim", "guc", "ilce"]])
     d = blok_kur(s, h, meta, k0, grp)
@@ -89,10 +93,20 @@ trn = pd.concat([bloklar["guz25"], bloklar["kis26"]], ignore_index=True)
 assert (trn.tarih >= pd.Timestamp("2025-08-01")).all(), "SIZINTI: yaz25 egitimde"
 log("sicak oz", len(TUM), "soguk oz", len(SOZ))
 
-PAR = dict(objective="regression", metric="l2", learning_rate=0.04,
-           num_leaves=127, min_data_in_leaf=200, feature_fraction=0.6,
-           bagging_fraction=0.8, bagging_freq=1, lambda_l2=10.0,
-           num_threads=8, verbosity=-1, max_bin=255)
+PAR = dict(
+    objective="regression",
+    metric="l2",
+    learning_rate=0.04,
+    num_leaves=127,
+    min_data_in_leaf=200,
+    feature_fraction=0.6,
+    bagging_fraction=0.8,
+    bagging_freq=1,
+    lambda_l2=10.0,
+    num_threads=8,
+    verbosity=-1,
+    max_bin=255,
+)
 rs = np.random.RandomState(7)
 tans = trn.tanim.unique()
 hold = set(rs.choice(tans, size=int(0.15 * len(tans)), replace=False))
@@ -104,21 +118,26 @@ for et, oz, msk in (("sicak", TUM, 0), ("soguk", SOZ, 1)):
     if et == "sicak":  # kis26'da egit, guz25'te dogrula (blok-disi)
         A = a[a.tarih >= "2025-12-01"]
         B = a[a.tarih < "2025-12-01"]
-    else:              # gorulmemis trafolar
+    else:  # gorulmemis trafolar
         A, B = a[~a._hold], a[a._hold]
-    m = lgb.train(PAR, lgb.Dataset(A[oz], label=A.y - A._ofs, categorical_feature=KAT),
-                  num_boost_round=4000,
-                  valid_sets=[lgb.Dataset(B[oz], label=B.y - B._ofs, categorical_feature=KAT)],
-                  callbacks=[lgb.early_stopping(150, verbose=False)])
+    m = lgb.train(
+        PAR,
+        lgb.Dataset(A[oz], label=A.y - A._ofs, categorical_feature=KAT),
+        num_boost_round=4000,
+        valid_sets=[lgb.Dataset(B[oz], label=B.y - B._ofs, categorical_feature=KAT)],
+        callbacks=[lgb.early_stopping(150, verbose=False)],
+    )
     ni = max(40, int(m.best_iteration * 1.1))
     log(et, "best_iter", m.best_iteration, "-> nihai", ni)
-    mf = lgb.train(PAR, lgb.Dataset(a[oz], label=a.y - a._ofs, categorical_feature=KAT),
-                   num_boost_round=ni)
+    mf = lgb.train(
+        PAR, lgb.Dataset(a[oz], label=a.y - a._ofs, categorical_feature=KAT), num_boost_round=ni
+    )
     for ad in ("yaz25", "test"):
         d = bloklar[ad]
         s2 = d.soguk == msk
-        d.loc[s2, "p4"] = np.clip(mf.predict(d.loc[s2, oz], num_iteration=ni)
-                                  + d.loc[s2, "_ofs"].to_numpy(), 0, None)
+        d.loc[s2, "p4"] = np.clip(
+            mf.predict(d.loc[s2, oz], num_iteration=ni) + d.loc[s2, "_ofs"].to_numpy(), 0, None
+        )
     v = bloklar["yaz25"]
     vv = v[v.soguk == msk]
     R[et] = float(np.sqrt(((vv.p4 - vv.y) ** 2).mean()))

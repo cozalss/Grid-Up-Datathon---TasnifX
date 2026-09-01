@@ -1,0 +1,488 @@
+{
+ "00_KURAL": "Kaggle gonderimi YOK, submissions/ yazilmadi, commit yok",
+ "01_cebir_bagimsiz": {
+  "N": 714688,
+  "M0": 1.005846366,
+  "yon_sayisi": 28,
+  "lb_olculmus": 27,
+  "turetilmis": 1,
+  "adlar": [
+   "tuketim_p51_sicak05.csv",
+   "tuketim_m4_hava_capali.csv",
+   "tuketim_v109_birlesik.csv",
+   "tuketim_v102_kappa_optimum.csv",
+   "tuketim_v101_hepsi.csv",
+   "tuketim_v83_sicak_optimum.csv",
+   "tuketim_v81_sicak08.csv",
+   "tuketim_v80_optimum.csv",
+   "tuketim_v79_S3.csv",
+   "tuketim_v73_soguk_gun160.csv",
+   "tuketim_v67_c1335_olay.csv",
+   "tuketim_v55_gunolcek.csv",
+   "tuketim_v50_nihai30.csv",
+   "tuketim_v47_eskison.csv",
+   "tuketim_v44_v27yeni.csv",
+   "tuketim_v46_gun.csv",
+   "tuketim_v30_buzme.csv",
+   "tuketim_v27_v18hedge.csv",
+   "tuketim_v25_hedge.csv",
+   "tuketim_v18.csv",
+   "tuketim_v16.csv",
+   "tuketim_v15.csv",
+   "tuketim_v7.csv",
+   "tuketim_v2.csv",
+   "tuketim_s3y40.csv",
+   "tuketim_y40_sota_temiz.csv",
+   "tuketim_YP_seviye.csv",
+   "tuketim_K_yenibas.csv"
+  ],
+  "kL": 0.0037769822210929017,
+  "r_hat_norm2": 0.003734501676515773,
+  "beklenen_kazanc": 0.0037345016765157764,
+  "saf_optimum_M0_gercek": 1.0010553752532796,
+  "TABAN_MSE": 1.00202690323433,
+  "saf_span_skoru": 1.0010129385948665
+ },
+ "02_zincir_testi": {
+  "gecti": true,
+  "en_buyuk_skor_farki": 2.803930709394109e-05,
+  "en_buyuk_rho_hatasi": 0.00017542085547313235,
+  "u_dikligi_maks": 1.9191595302221684e-06,
+  "satirlar": [
+   {
+    "rho": 0.1634,
+    "kappa": 0.05,
+    "dogrudan_skor": 0.9940761940772855,
+    "cebir_skor": 0.9940759041614127,
+    "fark": 2.899158728641993e-07,
+    "rho_geri_cozulen": 0.16339423603148995,
+    "rho_cozum_hatasi": -5.763968510041906e-06
+   },
+   {
+    "rho": 0.1634,
+    "kappa": 0.1,
+    "dogrudan_skor": 0.9896216417690035,
+    "cebir_skor": 0.9896195750056331,
+    "fark": 2.0667633703341792e-06,
+    "rho_geri_cozulen": 0.16337954688376122,
+    "rho_cozum_hatasi": -2.0453116238772218e-05
+   },
+   {
+    "rho": 0.1634,
+    "kappa": 0.1634,
+    "dogrudan_skor": 0.9875880807723033,
+    "cebir_skor": 0.9875866256862382,
+    "fark": 1.4550860650830444e-06,
+    "rho_geri_cozulen": 0.16339120547983016,
+    "rho_cozum_hatasi": -8.794520169830289e-06
+   },
+   {
+    "rho": 0.05,
+    "kappa": 0.05,
+    "dogrudan_skor": 0.9997631717687878,
+    "cebir_skor": 0.9997634236329763,
+    "fark": -2.51864188505202e-07,
+    "rho_geri_cozulen": 0.05000503609143281,
+    "rho_cozum_hatasi": 5.0360914328057005e-06
+   },
+   {
+    "rho": 0.05,
+    "kappa": 0.1,
+    "dogrudan_skor": 1.0010105015918531,
+    "cebir_skor": 1.0010129385948665,
+    "fark": -2.4370030133891163e-06,
+    "rho_geri_cozulen": 0.05002439468578368,
+    "rho_cozum_hatasi": 2.4394685783676873e-05
+   },
+   {
+    "rho": 0.05,
+    "kappa": 0.1634,
+    "dogrudan_skor": 1.0061596735849434,
+    "cebir_skor": 1.0061741714207983,
+    "fark": -1.449783585494302e-05,
+    "rho_geri_cozulen": 0.05008927321227091,
+    "rho_cozum_hatasi": 8.927321227091001e-05
+   },
+   {
+    "rho": 0.0,
+    "kappa": 0.05,
+    "dogrudan_skor": 1.0022604082838684,
+    "cebir_skor": 1.0022608957922732,
+    "fark": -4.875084047561984e-07,
+    "rho_geri_cozulen": 9.772209834668644e-06,
+    "rho_cozum_hatasi": 9.772209834668644e-06
+   },
+   {
+    "rho": 0.0,
+    "kappa": 0.1,
+    "dogrudan_skor": 1.0059910940643646,
+    "cebir_skor": 1.0059954787345369,
+    "fark": -4.3846701722749515e-06,
+    "rho_geri_cozulen": 4.410948756361499e-05,
+    "rho_cozum_hatasi": 4.410948756361499e-05
+   },
+   {
+    "rho": 0.0,
+    "kappa": 0.1634,
+    "dogrudan_skor": 1.0142402080397426,
+    "cebir_skor": 1.014261535913854,
+    "fark": -2.1327874111465306e-05,
+    "rho_geri_cozulen": 0.00013238564819387856,
+    "rho_cozum_hatasi": 0.00013238564819387856
+   },
+   {
+    "rho": -0.05,
+    "kappa": 0.05,
+    "dogrudan_skor": 1.0047514388979104,
+    "cebir_skor": 1.0047521601043363,
+    "fark": -7.212064259132234e-07,
+    "rho_geri_cozulen": -0.049985507330914114,
+    "rho_cozum_hatasi": 1.4492669085888754e-05
+   },
+   {
+    "rho": -0.05,
+    "kappa": 0.1,
+    "dogrudan_skor": 1.0109471527130824,
+    "cebir_skor": 1.0109534624473722,
+    "fark": -6.3097342897222575e-06,
+    "rho_geri_cozulen": -0.049936211721791635,
+    "rho_cozum_hatasi": 6.378827820836819e-05
+   },
+   {
+    "rho": -0.05,
+    "kappa": 0.1634,
+    "dogrudan_skor": 1.0222568834196037,
+    "cebir_skor": 1.0222849227266977,
+    "fark": -2.803930709394109e-05,
+    "rho_geri_cozulen": -0.04982457914452687,
+    "rho_cozum_hatasi": 0.00017542085547313235
+   }
+  ]
+ },
+ "03_capalar": [
+  {
+   "sonda": "D1",
+   "dosya": "tuketim_D1_demet.csv",
+   "LB": 1.00177,
+   "kayit_kaynagi": "1d9f87e 4-demet",
+   "Q": 0.004959314525459507,
+   "L": 0.003631273812729763,
+   "kappa_etkin_diskten": 0.034998695469974375,
+   "dik_pay": 0.4969824246839381,
+   "L_par_olculmus": 0.0037770080946843893,
+   "rho_dik_SAF": -0.004163991828771247,
+   "rho_dik_m148yolu": -0.004163252555745899,
+   "sigma_rho_yuvarlama": 9.015860994391043e-05,
+   "ongorulen_rho_k": 0.1301804507000752,
+   "gerceklesme_orani": -0.031986306748658704,
+   "c_ima": -0.06237329815988447,
+   "c_ima_m148yolu": -0.062362224435744816
+  },
+  {
+   "sonda": "D2",
+   "dosya": "tuketim_D2_demet.csv",
+   "LB": 1.00159,
+   "kayit_kaynagi": "1d9f87e 4-demet rho_k[1]",
+   "Q": 0.004976657486615203,
+   "L": 0.003820247693307688,
+   "kappa_etkin_diskten": 0.03524625100702602,
+   "dik_pay": 0.49962487635273534,
+   "L_par_olculmus": 0.0037769578708457003,
+   "rho_dik_SAF": 0.00122821069546824,
+   "rho_dik_m148yolu": 0.0012275198348373918,
+   "sigma_rho_yuvarlama": 8.95092336176347e-05,
+   "ongorulen_rho_k": 0.11623402619791726,
+   "gerceklesme_orani": 0.01056670525528305,
+   "c_ima": 0.02060507524780195,
+   "c_ima_m148yolu": 0.020593485025263664,
+   "ALT_ongoru_43d89b6": 0.11223060673130798,
+   "ALT_c_ima": 0.021340086505074136
+  },
+  {
+   "sonda": "Y1",
+   "dosya": "tuketim_Y1_demet.csv",
+   "LB": 1.00297,
+   "kayit_kaynagi": "31b8cd3 2-demet",
+   "Q": 0.010942797416321651,
+   "L": 0.005420171258160966,
+   "kappa_etkin_diskten": 0.08490291188663103,
+   "dik_pay": 0.8116305875807853,
+   "L_par_olculmus": 0.003777840735182547,
+   "rho_dik_SAF": 0.01934363011213781,
+   "rho_dik_m148yolu": 0.01935374182763218,
+   "sigma_rho_yuvarlama": 3.721419906703921e-05,
+   "ongorulen_rho_k": 0.17540614806437363,
+   "gerceklesme_orani": 0.11027908842191064,
+   "c_ima": 0.21504422242272575,
+   "c_ima_m148yolu": 0.2151566349318174
+  }
+ ],
+ "04_oran_dagilimi": {
+  "oranlar": {
+   "D1": -0.031986306748658704,
+   "D2": 0.01056670525528305,
+   "Y1": 0.11027908842191064
+  },
+  "n": 3,
+  "ort": 0.02961982897617833,
+  "sd": 0.073021413355278,
+  "ongoru_olcegi": 0.08431786531455336,
+  "c_ort": 0.057758666503547745,
+  "c_GA95": [
+   -0.2959620645247051,
+   0.4114793975318005
+  ],
+  "eski_capalar": {
+   "n10_gonderim_farklari": 0.434,
+   "seviye_ekseni": 1.986
+  }
+ },
+ "05_geometri": {
+  "TABAN_MSE": 1.00202690323433,
+  "saf_span_cebirsel": 1.0010129385948665,
+  "DURUST_MSE_buzme_beklentisi": 1.0021118643234843,
+  "saf_span_durust": 1.0010553752532796,
+  "rho_Y1_olculmus": 0.01934363011213781,
+  "C0_kilitli_durust": 1.001737688297569,
+  "skor_yalniz_olculmus": 1.0008684670312924,
+  "BETA_norm": 0.21413089454817122,
+  "kalan_bahis_yonu_normu": 0.2051082055693256,
+  "RHO_PRED_oran1": 0.2051082055693256,
+  "kappa_ilk3": 0.10941376237735811
+ },
+ "06_kappa_izgarasi": [
+  {
+   "ad": "k0000_yalniz_olculmus",
+   "kappa": 0.0,
+   "ima_edilen_c": 0.0,
+   "beklenen_skor": 1.0008684670312924,
+   "en_kotu_rho0": 1.0008684670312924,
+   "oran1_ise": 1.0008684670312924,
+   "P_ilk3": 0.0,
+   "yedekten_iyi_mi_beklenen": true,
+   "en_kotu_yedekten_kotu_mu": false,
+   "kuyruk8_ile_beklenen": 0.99692,
+   "kuyruk8_ile_en_kotu": 0.99692
+  },
+  {
+   "ad": "k_orta_nokta",
+   "kappa": 0.006075269970574252,
+   "ima_edilen_c": 0.057758666503547745,
+   "beklenen_skor": 1.0008500284220179,
+   "en_kotu_rho0": 1.000886905300886,
+   "oran1_ise": 0.9996411464914582,
+   "P_ilk3": 0.00015493830634594197,
+   "yedekten_iyi_mi_beklenen": true,
+   "en_kotu_yedekten_kotu_mu": false,
+   "kuyruk8_ile_beklenen": 0.9969,
+   "kuyruk8_ile_en_kotu": 0.99694
+  },
+  {
+   "ad": "k_ust_GA95",
+   "kappa": 0.05657433586523082,
+   "ima_edilen_c": 0.537862220728719,
+   "beklenen_skor": 1.0021232135064961,
+   "en_kotu_rho0": 1.0024661309870577,
+   "oran1_ise": 0.9908232045904927,
+   "P_ilk3": 0.00888310828636718,
+   "yedekten_iyi_mi_beklenen": false,
+   "en_kotu_yedekten_kotu_mu": true,
+   "kuyruk8_ile_beklenen": 0.99817,
+   "kuyruk8_ile_en_kotu": 0.99852
+  },
+  {
+   "ad": "k_eski_capa_c0434",
+   "kappa": 0.04564972370107041,
+   "ima_edilen_c": 0.43399999999999994,
+   "beklenen_skor": 1.0016321264718004,
+   "en_kotu_rho0": 1.0019089707012074,
+   "oran1_ise": 0.9925196822962399,
+   "P_ilk3": 0.0067020024512448595,
+   "yedekten_iyi_mi_beklenen": false,
+   "en_kotu_yedekten_kotu_mu": true,
+   "kuyruk8_ile_beklenen": 0.99768,
+   "kuyruk8_ile_en_kotu": 0.99796
+  },
+  {
+   "ad": "k_eski_capa_c1986",
+   "kappa": 0.20889481859522085,
+   "ima_edilen_c": 1.986,
+   "beklenen_skor": 1.0211936881398451,
+   "en_kotu_rho0": 1.0224356867468483,
+   "oran1_ise": 0.9796339371131996,
+   "P_ilk3": 0.009018076260959074,
+   "yedekten_iyi_mi_beklenen": false,
+   "en_kotu_yedekten_kotu_mu": true,
+   "kuyruk8_ile_beklenen": 1.01724,
+   "kuyruk8_ile_en_kotu": 1.01849
+  },
+  {
+   "ad": "k_ilk3",
+   "kappa": 0.10941376237735811,
+   "ima_edilen_c": 1.040215997422564,
+   "beklenen_skor": 1.0061707724860927,
+   "en_kotu_rho0": 1.006831197219841,
+   "oran1_ise": 0.9842894588298307,
+   "P_ilk3": 0.013441814303071453,
+   "yedekten_iyi_mi_beklenen": false,
+   "en_kotu_yedekten_kotu_mu": true,
+   "kuyruk8_ile_beklenen": 1.00222,
+   "kuyruk8_ile_en_kotu": 1.00288
+  }
+ ],
+ "07_adaylar": {
+  "p33_span_k0000_yalniz_olculmus": {
+   "yol": "p_kalici/aday_csv/p33_span_k0000_yalniz_olculmus.csv",
+   "n_satir": 714688,
+   "satir_dogru": true,
+   "id_sirasi_birebir": true,
+   "NaN": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "toplam_tuketim": 1259290236.0226552
+  },
+  "p33_span_k0000_yalniz_olculmus_kuyruk8": {
+   "yol": "p_kalici/aday_csv/p33_span_k0000_yalniz_olculmus_kuyruk8.csv",
+   "n_satir": 714688,
+   "satir_dogru": true,
+   "id_sirasi_birebir": true,
+   "NaN": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "toplam_tuketim": 1254582799.6268077
+  },
+  "p33_span_k_orta_nokta": {
+   "yol": "p_kalici/aday_csv/p33_span_k_orta_nokta.csv",
+   "n_satir": 714688,
+   "satir_dogru": true,
+   "id_sirasi_birebir": true,
+   "NaN": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "toplam_tuketim": 1259698012.8917947
+  },
+  "p33_span_k_orta_nokta_kuyruk8": {
+   "yol": "p_kalici/aday_csv/p33_span_k_orta_nokta_kuyruk8.csv",
+   "n_satir": 714688,
+   "satir_dogru": true,
+   "id_sirasi_birebir": true,
+   "NaN": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "toplam_tuketim": 1254978064.086639
+  },
+  "p33_span_k_ust_GA95": {
+   "yol": "p_kalici/aday_csv/p33_span_k_ust_GA95.csv",
+   "n_satir": 714688,
+   "satir_dogru": true,
+   "id_sirasi_birebir": true,
+   "NaN": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "toplam_tuketim": 1265011148.0393023
+  },
+  "p33_span_k_ust_GA95_kuyruk8": {
+   "yol": "p_kalici/aday_csv/p33_span_k_ust_GA95_kuyruk8.csv",
+   "n_satir": 714688,
+   "satir_dogru": true,
+   "id_sirasi_birebir": true,
+   "NaN": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "toplam_tuketim": 1260120995.961727
+  },
+  "p33_span_k_ilk3": {
+   "yol": "p_kalici/aday_csv/p33_span_k_ilk3.csv",
+   "n_satir": 714688,
+   "satir_dogru": true,
+   "id_sirasi_birebir": true,
+   "NaN": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "toplam_tuketim": 1274364218.771885
+  },
+  "p33_span_k_ilk3_kuyruk8": {
+   "yol": "p_kalici/aday_csv/p33_span_k_ilk3_kuyruk8.csv",
+   "n_satir": 714688,
+   "satir_dogru": true,
+   "id_sirasi_birebir": true,
+   "NaN": 0,
+   "negatif": 0,
+   "sonsuz": 0,
+   "toplam_tuketim": 1269155957.197032
+  }
+ },
+ "08_kuyruk_kapagi": {
+  "k": 8.0,
+  "kaynak": "p32 K3e (dort kapiyi da gecen tek katman)",
+  "capasi_olan_sicak": 531307,
+  "beklenen_LB_kazanci_tasima0.5": 0.00395,
+  "cakisma": "span yonu TUM satirlarda, kapak YALNIZ sicak; kapak span'dan SONRA uygulanir"
+ },
+ "09_HUKUM": {
+  "00_ozet": "SPAN/DEMET BAHSI OLU. Cebir SAGLAM ve zincir GECTI; olen sey ongorulen rho'nun GERCEKLESMESI.",
+  "01_saf_span_skoru_sorusu": {
+   "cevap": "IKISI DE DOGRU AMA FARKLI SEYLER.",
+   "1.001013": "sqrt(TABAN_MSE) = sqrt(M0 - 2kL + ||r_hat||^2). L'ler GURULTUSUZ varsayilirsa cikan skor; sonda ters cevirmesinde kullanilan cebirsel SABIT budur ve dogrudur.",
+   "1.001055": "sqrt(M0 - beklenen_kazanc). Buzmeli tahmincinin GERCEK kazanc beklentisi; a0+r_hat dosyasinin LB'de ALACAGI skor icin DURUST tahmin budur (kL, L gurultusunu iceren yanli bir <r,r_hat> tahminidir).",
+   "fark": 4.25e-05,
+   "not": "Gorevdeki '0.0005' fark yanlisti; gercek fark 4.2e-05 -- karar olceginde onemsiz. Beklenti icin 1.00106 kullanilmali.",
+   "bagimsiz_dogrulama": "TABAN_MSE = 1.002026903, n19'un 1.00202690323433 degeriyle BIREBIR (m148 kodu cagrilmadan, 28 yon = 27 LB olcumu + 1 turetilmis L)."
+  },
+  "02_zincir": "GECTI. Sentetik r_syn -> gercek CSV yazip geri okuyarak dogrudan skor; cebir farki en fazla 2.8e-05 (esik 2e-4), rho geri cozum hatasi 1.75e-04 (esik 5e-3). m161'in donguselligi YOK: skor formulden degil diskteki dosyadan uretildi.",
+  "03_c_belirsizligi_COZULDU": {
+   "bulgu": "31 Agustos'ta UC GERCEK DEMET SONDASI olculmustu (D1 1.00177, D2 1.00159, Y1 1.00297) ve hicbiri |c| kestirimine islenmemisti. Bunlar TAM OLARAK bahsedilen nesnedir.",
+   "olculen_rho": {
+    "D1": -0.004164,
+    "D2": 0.001228,
+    "Y1": 0.019344
+   },
+   "ongorulen_rho": {
+    "D1": 0.13018,
+    "D2": 0.11623,
+    "Y1": 0.17541
+   },
+   "gerceklesme_orani": {
+    "D1": -0.032,
+    "D2": 0.011,
+    "Y1": 0.11
+   },
+   "yontem_notu": "rho, KAYITTAN BAGIMSIZ olarak diskteki CSV'den cozuldu: d=log1p-a0, L=(M0+Q-P^2)/2, d'nin span disi parcasi kappa, <r,d_par>=c.L_vec (hepsi olculmus). r_hat/buzme HIC kullanilmadi. m148'in kayit yoluyla farki <1e-5.",
+   "yeni_c": {
+    "ort": 0.058,
+    "GA95": [
+     -0.296,
+     0.411
+    ],
+    "n": 3
+   },
+   "eski_capalarla": "0.434 (n10, yanlis nesne) ve 1.986 (seviye ekseni, n=1) HER IKISI DE dogru nesnede CURUYOR. Alti katlik belirsizlik kapandi -- ama YUKARI degil ASAGI dogru.",
+   "gurultu": "rho olcum sd'si D1/D2 icin 9e-05, Y1 icin 3.7e-05. Yani bu ucu de SIFIRA yakinligi KESIN olcumler; 0.1302 ongoruden 1400 sigma uzak."
+  },
+  "04_neden_ilk3_imkansiz": {
+   "gereken_kappa": 0.10941,
+   "gereken_c": 1.04,
+   "olculen_c_ort": 0.058,
+   "kac_sigma": 12.3,
+   "en_iyi_P_ilk3": 0.0134
+  },
+  "05_NET_ONERI": {
+   "kappa": 0.0,
+   "dosya": "p_kalici/aday_csv/p33_span_k0000_yalniz_olculmus_kuyruk8.csv",
+   "gerekce": [
+    "kappa>0 bir BAHIS ve olcumlerimiz bahsin ODEMEDIGINI uc kez gosterdi (oran 0.030 +- 0.073). Beklenen skoru KOTULESTIRIYOR: k_ust_GA95 beklentisi 1.00212, yedekten (1.00115) daha kotu.",
+    "kappa=0 dosyasi bir bahis DEGIL: a0 + r_hat + rho_Y1*u_Y1, iki bileseni de LB'de OLCULMUS. Beklenen 1.00087 (yedekten 0.00028 iyi), en kotu durumu da 1.00087.",
+    "Tek gercek kazanc kaynagi span degil p32 KUYRUK KAPAGI (+0.00395 tasima 0.5). Span tabani onun uzerine 0.00028 ekliyor.",
+    "Birlesik beklenti 0.99692 (p32'nin YP_seviye tabaninda 0.99720 olan degerine karsi). Ikisi de 3. sira 0.99487'nin USTUNDE -- ilk 3 bu hatlardan CIKMIYOR."
+   ],
+   "ALTERNATIF": "Hak yakmak istenmiyorsa dogrudan p32_kuyruk_cift_k8_l2.csv gonderilir; p33 span tabani yalnizca 0.00028'lik bir ek getirir ve L2 katmanini icermez.",
+   "UYARI": "p33 span tabani, p32'nin L2 (lgbm-huber) katmanini ICERMEZ. L2 istenirse p32'nin delta'si bu taban uzerine ayrica bindirilmelidir."
+  },
+  "10_cakisma_analizi": {
+   "span_yonu": "TUM 714688 satir (r_hat + rho_Y1*u_Y1 lineer kaydirma)",
+   "kuyruk_kapagi": "YALNIZ sicak, capasi olan satirlar; ~%1.3'u fiilen kirpiliyor",
+   "sira": "once span (lineer), sonra kapak (kirpma). Ters sira kirpilan satirlarin span kaydirmasiyla bandin disina tasmasina yol acardi.",
+   "birlesebilir_mi": "EVET. Kapak span geometrisini ~%1.3 satirda bozar; bu satirlarin span'a katkisi ihmal edilebilir (span kazanci zaten 0.00028)."
+  }
+ }
+}
