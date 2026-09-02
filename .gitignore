@@ -95,3 +95,9 @@ experiments/model29/*.npy
 
 # 100MB ustu ara diziler (GitHub siniri)
 experiments/model29/p_kalici/*.npy
+
+# --- Ara ciktilar: deney onbellekleri repoda TASINMAZ (2026-09-02) ---
+# 130 dosya / 293 MB idi; hepsi betiklerden yeniden uretilebilir.
+*.npy
+*.npz
+*.log

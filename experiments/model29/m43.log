@@ -1,6 +1,0 @@
-2025-11-30: GLOBAL yanlilik -0.1535  (soguk -0.2550  sicak -0.1371)
-    RMSLE 0.9416 -> yanlilik giderilince 0.9290  (kazanc 0.0126)
-    rejim bazli kaydirma ile 0.9281
-2025-09-30: GLOBAL yanlilik +0.1735  (soguk +0.2701  sicak +0.1451)
-    RMSLE 1.2519 -> yanlilik giderilince 1.2398  (kazanc 0.0121)
-    rejim bazli kaydirma ile 1.2387

@@ -1,7 +1,0 @@
-kis26 penceresi (2025-12-01..2026-03-31) -- URETIM HATTI KAYDI:
-  v83  sicak 0.77826  soguk 1.90610
-  YIGIN(en iyi CV) sicak 0.76150  soguk 1.86720
-
-cakisma kapali                     egitim 1,703,901 tur  108  RMSLE 0.9621  soguk 1.8541  sicak 0.7216  (39s)
-cakisma+ezber kapali               egitim 1,703,901 tur  108  RMSLE 0.9621  soguk 1.8541  sicak 0.7216  (80s)
-cakisma+ezber kapali, idnum yok    egitim 1,703,901 tur   77  RMSLE 0.9746  soguk 1.8549  sicak 0.7405  (118s)

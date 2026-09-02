@@ -1,0 +1,28 @@
+{
+ "kappa": 0.12298085216813287,
+ "hedef_T": 0.9931,
+ "yon": "yon_buyuk_kacirma_dnq1",
+ "dik_norm": 0.027562457044571106,
+ "aday": {
+  "yol": "c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX\\experiments/model29/p_kalici\\aday_csv\\p35_SON_HAK.csv",
+  "satir": 714688,
+  "satir_dogru": true,
+  "id_birebir": true,
+  "NaN": 0,
+  "negatif": 0,
+  "sonsuz": 0,
+  "maks": 178644.74977296867,
+  "toplam": 1247381016.7631853
+ },
+ "taban": {
+  "yol": "c:/Users/Cem/Desktop/Datahon_Laptop/Grid-Up-Datathon---TasnifX\\experiments/model29/p_kalici\\aday_csv\\p35_TABAN_saf_span.csv",
+  "satir": 714688,
+  "satir_dogru": true,
+  "id_birebir": true,
+  "NaN": 0,
+  "negatif": 0,
+  "sonsuz": 0,
+  "maks": 170924.34215270713,
+  "toplam": 1257531010.0634203
+ }
+}
