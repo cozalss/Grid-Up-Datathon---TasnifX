@@ -116,11 +116,18 @@ uv run python scripts/kapi_denetim.py   # 714.688 satır, 0 NaN, 0 negatif, ID s
 | `src/` | paket kodu (öznitelik üretimi, doğrulama, metrik) |
 | `docs/` | 80 karar belgesi — her hükmün gerekçesi ve ölçümü, tarih sırasıyla |
 | `experiments/` | ölçüm betikleri; her biri tek bir soruyu kapatır |
-| `tests/` | 92 test |
+| `tests/` | 1533 test |
 | `data/prior/` | 2023 provası için halka açık kesinti verisi (11 MB, kaynağı `data/sources.yml`) |
 
 Ara çıktılar (`.npy` / `.npz` önbellekleri, koşu logları) depoda taşınmaz;
 hepsi ilgili betikten yeniden üretilebilir.
+
+Kaggle için internetsiz paket ve wheel'leri hazırlayıp doğrulanmış dataset yolundan
+yüklemek için:
+
+```powershell
+uv run python scripts/build_kaggle_package.py --wheels --upload
+```
 
 ## Dış veri
 

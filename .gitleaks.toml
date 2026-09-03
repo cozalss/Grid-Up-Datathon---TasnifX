@@ -1,0 +1,3 @@
+[allowlist]
+description = "Measured model documentation is not a credential"
+regexes = ['''47/47 ilce eslesti \(p29: 18/47\)\. Kapi ACILDI\.''']

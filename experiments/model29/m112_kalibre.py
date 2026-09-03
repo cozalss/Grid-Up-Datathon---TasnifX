@@ -133,6 +133,8 @@ def cikti_adini_dogrula(ad, *, ek_korunan=()):
     if (
         yol.name != ad
         or yol.is_absolute()
+        or "/" in ad
+        or "\\" in ad
         or yol.suffix.lower() != ".csv"
         or ad in KORUNAN_CIKTILAR
         or ad in ek_korunan

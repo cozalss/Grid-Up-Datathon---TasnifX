@@ -5,7 +5,7 @@ NEDEN BU MODUL VAR
 Uc veri seti cekilmis ama HICBIR kod okumuyordu (olculdu: 2026-08-17):
 
   data/external/epias/tuketim_saatlik.parquet   58.044 saat, Turkiye toplami
-  data/external/epias/uretim_saatlik.parquet    58.044 saat, 18 kaynak kirilimi
+  EPIAS ulusal uretim verisi 58.044 saat, 18 kaynak kirilimi
   data/external/turizm_geceleme.parquet         234 satir, YILLIK, ilce bazli
 
 Ikisi ULUSAL (ilceye gore degismez), biri YILLIK (gune gore degismez).
